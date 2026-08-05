@@ -8,7 +8,7 @@ dev = [
   "cz-path>=0.0.7",
   "mypy>=2.3.0",
   "ruff==0.16.0",
-  "ty>=0.0.63",
+  "ty>=0.0.64",
   "yapf>=0.43.0",
 ]
 docs = [
@@ -26,7 +26,7 @@ docs = [
 tests = [
   "coveralls>=4.1.0",
   "mock>=5.2.0",
-  "pytest-asyncio>=0.24.0",
+  "pytest-asyncio>=1.4.0",
   "pytest-cov>=7.1.0",
   "pytest-mock>=3.15.1",
   "pytest>=9.1.1",
@@ -85,7 +85,7 @@ version_files = [
   "docs/badges.rst",
   "docs/index.rst",
   "incoming_extractor/__init__.py",
-  "man/incoming_extractor.1",
+  "man/incoming-extractor.1",
   "package.json",
   "sh.tat.incoming-extractor.yml",
   "snapcraft.yaml",
@@ -174,7 +174,21 @@ quote-style = "single"
 
 [tool.ruff.lint]
 extend-select = ["ALL"]
-ignore = ["ANN401", "COM812", "CPY001", "D203", "D204", "D212", "N818", "S404", "S603", "TD002"]
+ignore = [
+  "ANN401",
+  "COM812",
+  "CPY001",
+  "D203",
+  "D204",
+  "D212",
+  "N818",
+  "RUF105",
+  "RUF106",
+  "RUF201",
+  "S404",
+  "S603",
+  "TD002",
+]
 preview = true
 
 [tool.ruff.lint.flake8-builtins]
