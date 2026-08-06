@@ -355,38 +355,65 @@ def _resolve_backend(name: Backend) -> _GpuBackend:
             return _load_cuda() or _load_opencl() or _crack_cpu
 
 
+def _has_devices(list_devices: Callable[[], list[str]]) -> bool:  # pragma: no cover
+    """
+    Report whether a GPU backend has at least one usable device.
+
+    A backend's optional package can import on a host with no working driver or platform, so
+    importability alone does not mean a device can be used. Enumerating the devices surfaces a
+    broken driver or missing platform, letting ``auto`` fall back to the CPU instead of dispatching
+    to a device that would fail.
+
+    Parameters
+    ----------
+    list_devices : collections.abc.Callable[[], list[str]]
+        The backend's device enumerator.
+
+    Returns
+    -------
+    bool
+        Whether at least one device is present and enumeration did not raise.
+    """
+    try:
+        return bool(list_devices())
+    except Exception:  # noqa: BLE001  # A broken driver or missing platform means no usable device.
+        return False
+
+
 def _load_cuda() -> _GpuBackend | None:
     """
-    Import the CUDA backend if its optional dependency is present.
+    Import the CUDA backend if its optional dependency and a usable device are present.
 
     Returns
     -------
     _GpuBackend | None
-        The CUDA backend callable, or ``None`` when :py:mod:`cupy` cannot be imported.
+        The CUDA backend callable, or ``None`` when :py:mod:`cupy` cannot be imported or no usable
+        CUDA device is available.
     """
     try:
-        from .cuda import crack_cuda  # noqa: PLC0415
+        from .cuda import crack_cuda, list_devices  # noqa: PLC0415
     except ImportError:
         return None
-    # Only reached when cupy is importable on an NVIDIA GPU host, absent from CI.
-    return crack_cuda  # pragma: no cover
+    # Only reached when cupy is importable, on an NVIDIA GPU host or a CI runner with the extra.
+    return crack_cuda if _has_devices(list_devices) else None  # pragma: no cover
 
 
 def _load_opencl() -> _GpuBackend | None:
     """
-    Import the OpenCL backend if its optional dependency is present.
+    Import the OpenCL backend if its optional dependency and a usable device are present.
 
     Returns
     -------
     _GpuBackend | None
-        The OpenCL backend callable, or ``None`` when :py:mod:`pyopencl` cannot be imported.
+        The OpenCL backend callable, or ``None`` when :py:mod:`pyopencl` cannot be imported or no
+        usable OpenCL device is available.
     """
     try:
-        from .opencl import crack_opencl  # noqa: PLC0415
+        from .opencl import crack_opencl, list_devices  # noqa: PLC0415
     except ImportError:
         return None
-    # Only reached when pyopencl is importable with an OpenCL device, absent from CI.
-    return crack_opencl  # pragma: no cover
+    # Only reached when pyopencl is importable, on an OpenCL host or a CI runner with the extra.
+    return crack_opencl if _has_devices(list_devices) else None  # pragma: no cover
 
 
 def crack(installer: str | Path | bytes | bytearray | memoryview | Reader,
