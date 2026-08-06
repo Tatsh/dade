@@ -3,6 +3,10 @@ jobs:
     env:
       WINDOWS_SIGNING_CERT: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE }}
       APPLE_SIGNING_CERT: ${{ secrets.APPLE_SIGNING_CERTIFICATE }}
+    permissions:
+      attestations: 'write'
+      contents: 'read'
+      id-token: 'write'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
@@ -290,7 +294,4 @@ name: 'PyInstaller'
       - 'poetry.lock'
     tags:
       - 'v*.*.*'
-permissions:
-  attestations: 'write'
-  contents: 'write'
-  id-token: 'write'
+permissions: {}

@@ -124,12 +124,12 @@ exclude_also = ["if TYPE_CHECKING:"]
 omit = [
   "conftest.py",
   "destin/__main__.py",
-  "destin/bitrock/password_cracker/cuda.py",
-  "destin/bitrock/password_cracker/opencl.py",
-  "destin/*/__main__.py",
   "tests.py",
   "tests/*/test_*.py",
   "tests/test_*.py",
+  "destin/bitrock/password_cracker/cuda.py",
+  "destin/bitrock/password_cracker/opencl.py",
+  "destin/*/__main__.py",
   "destin/*/typing.py",
 ]
 show_missing = true
@@ -139,12 +139,12 @@ branch = true
 omit = [
   "conftest.py",
   "destin/__main__.py",
-  "destin/bitrock/password_cracker/cuda.py",
-  "destin/bitrock/password_cracker/opencl.py",
-  "destin/*/__main__.py",
   "tests.py",
   "tests/*/test_*.py",
   "tests/test_*.py",
+  "destin/bitrock/password_cracker/cuda.py",
+  "destin/bitrock/password_cracker/opencl.py",
+  "destin/*/__main__.py",
   "destin/*/typing.py",
 ]
 
