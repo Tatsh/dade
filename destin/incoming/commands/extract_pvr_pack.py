@@ -4,8 +4,8 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from incoming_extractor.converters.images import pvr_pack_to_files, pvr_pack_to_png
-from incoming_extractor.utils import pluralize
+from destin.common.utils import pluralize
+from destin.incoming.converters.images import pvr_pack_to_files, pvr_pack_to_png
 import click
 
 from .utils import debug_option

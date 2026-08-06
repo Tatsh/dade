@@ -90,4 +90,5 @@ local utils = import 'utils.libjsonnet';
       },
     },
   },
+  shared_ignore+: ['*.cl'],
 }

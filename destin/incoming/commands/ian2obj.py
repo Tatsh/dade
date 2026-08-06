@@ -4,10 +4,10 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from incoming_extractor.context import using_input_root
-from incoming_extractor.converters.models import ian_to_obj
-from incoming_extractor.converters.models_dc import mbin_to_obj
-from incoming_extractor.utils import pluralize
+from destin.common.context import using_input_root
+from destin.common.utils import pluralize
+from destin.incoming.converters.models import ian_to_obj
+from destin.incoming.converters.models_dc import mbin_to_obj
 import click
 
 from .utils import debug_option

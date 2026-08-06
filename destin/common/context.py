@@ -3,7 +3,7 @@ Ambient per-conversion context.
 
 Converters that resolve sibling assets (for example a model's textures) need to know the root of the
 source tree, and they may need an explicit path to a native helper tool. Rather than thread these
-through every converter signature, the dispatcher and the command line publish them here for the
+through every converter signature, a game's dispatcher and command line publish them here for the
 duration of a run.
 """
 from __future__ import annotations
@@ -13,7 +13,7 @@ from contextvars import ContextVar
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping
+    from collections.abc import Generator, Mapping
     from pathlib import Path
 
 __all__ = ('input_root', 'tool_path', 'using_input_root', 'using_tool_paths')
@@ -35,7 +35,7 @@ def input_root() -> Path | None:
 
 
 @contextmanager
-def using_input_root(root: Path) -> Iterator[None]:
+def using_input_root(root: Path) -> Generator[None]:
     """
     Publish *root* as the source-tree root for the duration of the context.
 
@@ -75,7 +75,7 @@ def tool_path(name: str) -> Path | None:
 
 
 @contextmanager
-def using_tool_paths(paths: Mapping[str, Path | None]) -> Iterator[None]:
+def using_tool_paths(paths: Mapping[str, Path | None]) -> Generator[None]:
     """
     Publish explicit native-tool paths for the duration of the context.
 

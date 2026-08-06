@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, NamedTuple
 import logging
 import struct
 
-from incoming_extractor.context import input_root
-from incoming_extractor.textures import place_ian_texture
+from destin.common.context import input_root
+from destin.incoming.textures import place_ian_texture
 
 from ._base import ConversionError
 

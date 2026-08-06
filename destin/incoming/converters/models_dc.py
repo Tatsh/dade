@@ -17,8 +17,8 @@ import logging
 import shutil
 import struct
 
-from incoming_extractor.context import input_root
-from incoming_extractor.textures import find_level_pack, place_pack_textures
+from destin.common.context import input_root
+from destin.incoming.textures import find_level_pack, place_pack_textures
 
 from ._base import ConversionError
 
