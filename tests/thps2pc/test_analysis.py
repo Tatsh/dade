@@ -43,6 +43,13 @@ def test_describe_counts_local_looking_sectors(scene: Scene) -> None:
     assert f'|centroid| < {analysis.LOCAL_THRESHOLD} on all axes: 2/2' in report
 
 
+def test_describe_counts_descriptors_matching_a_centroid() -> None:
+    spec = SectorSpec(vertices=((0, 0, 0), (10, 0, 0), (0, 0, 10)), faces=(), count_b=0)
+    parsed = Scene.parse(psx_scene(sectors=(spec,), descriptors=((0, (3, 0, 3)),)))
+    report = '\n'.join(analysis.describe(parsed))
+    assert 'matches a sector centroid: 1/1' in report
+
+
 def test_describe_handles_a_scene_without_sectors() -> None:
     parsed = Scene.parse(psx_scene())
     report = '\n'.join(analysis.describe(parsed))

@@ -2,7 +2,13 @@
 from __future__ import annotations
 
 from destin.thps2pc import textures
+from destin.thps2pc.test_utils import psx_lighting
 import pytest
+
+
+def test_parse_lighting_walks_past_the_chunk_list() -> None:
+    data = psx_lighting(checksums=(0xABCDEF01,), chunks=((0x52454948, b'\x00' * 8),))
+    assert textures.parse_lighting(data).checksums == (0xABCDEF01,)
 
 
 def test_parse_lighting_reads_every_table(lighting_bytes: bytes) -> None:

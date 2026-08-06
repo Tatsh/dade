@@ -268,7 +268,9 @@ def bnk_to_json(data: bytes) -> BankMeta:
     samples: list[SampleMeta] = []
     for i in range(count):
         p = 8 + i * stride
-        if p + 10 > len(data):
+        # The stride is derived from the ``SANM`` offset and the name count, and every name lies
+        # past that offset, so the last descriptor always fits; this only bounds a hostile file.
+        if p + 10 > len(data):  # pragma: no cover
             break
         samples.append({
             'name': names[i],

@@ -7,6 +7,7 @@ import re
 import shutil
 import struct
 
+from destin.common.obj import encode_obj
 from destin.common.utils import safe_name
 
 from .typing import Geometry
@@ -186,24 +187,29 @@ def mesh_to_obj(data: bytes) -> str | None:
         if max(struct.unpack_from('<3H', data,
                                   geo.face_start + k * _FACE_STRIDE)) >= geo.vertex_count:
             return None
-    lines = ['# Harmonix RndMesh -> OBJ']
+    header = ['# Harmonix RndMesh -> OBJ']
     if geo.material:
-        lines.append(f'# material: {geo.material}')
-    verts, uvs, normals = [], [], []
+        header.append(f'# material: {geo.material}')
+    vertices, texcoords, normals = [], [], []
     for k in range(geo.vertex_count):
         base = geo.vertex_start + k * _VERTEX_STRIDE
         x, y, z = struct.unpack_from('<3f', data, base)
         nx, ny, nz = struct.unpack_from('<3f', data, base + normal_off)
         u, v = struct.unpack_from('<2f', data, base + uv_off)
-        verts.append(f'v {x:.6g} {y:.6g} {z:.6g}')
-        uvs.append(f'vt {u:.6g} {1.0 - v:.6g}')  # OBJ uses a bottom-left UV origin.
-        normals.append(f'vn {nx:.6g} {ny:.6g} {nz:.6g}')
-    lines += verts + uvs + normals
-    for k in range(geo.face_count):
-        a, b, c = (i + 1
-                   for i in struct.unpack_from('<3H', data, geo.face_start + k * _FACE_STRIDE))
-        lines.append(f'f {a}/{a}/{a} {b}/{b}/{b} {c}/{c}/{c}')
-    return '\n'.join(lines) + '\n'
+        vertices.append((x, y, z))
+        texcoords.append((u, 1.0 - v))  # OBJ uses a bottom-left UV origin.
+        normals.append((nx, ny, nz))
+    faces = [
+        struct.unpack_from('<3H', data, geo.face_start + k * _FACE_STRIDE)
+        for k in range(geo.face_count)
+    ]
+    return encode_obj(vertices,
+                      faces,
+                      texcoords=texcoords,
+                      normals=normals,
+                      header=header,
+                      coordinate_format='{:.6g}',
+                      texcoord_format='{:.6g}')
 
 
 def convert(path: Path) -> Path | None:

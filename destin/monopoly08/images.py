@@ -157,7 +157,10 @@ def _untile(data: bytes, blocks_w: int, blocks_h: int, elem_bytes: int) -> bytes
             y = _tiled_y(lin, blocks_w, elem_bytes)
             d = (y * blocks_w + x) * elem_bytes
             s = lin * elem_bytes
-            if d >= 0 and d + elem_bytes <= n and s + elem_bytes <= len(data):
+            # Defensive only: the tiled mapping is a bijection over the 32-element-aligned grid
+            # _untile_crop always passes, and that caller pads the data to exactly ``n`` bytes, so
+            # neither bound can be exceeded.
+            if d >= 0 and d + elem_bytes <= n and s + elem_bytes <= len(data):  # pragma: no branch
                 out[d:d + elem_bytes] = data[s:s + elem_bytes]
     return bytes(out)
 
@@ -1092,10 +1095,10 @@ def _idx_pal4(raw: npt.NDArray[np.uint8], w: int, h: int) -> npt.NDArray[np.uint
         Flat array of ``w * h`` 4-bit palette indices.
     """
     if w < _MIN_TILED_WIDTH:
-        nib = np.empty(raw.size * 2, np.uint8)
-        nib[0::2] = raw & 0xF
-        nib[1::2] = raw >> 4
-        return nib[:w * h]
+        flat = np.empty(raw.size * 2, np.uint8)
+        flat[0::2] = raw & 0xF
+        flat[1::2] = raw >> 4
+        return flat[:w * h]
     key = (w, h)
     if key not in _pal4_cache:
         # Bytes deswizzled as half-width PSMT8.
@@ -1137,7 +1140,8 @@ def _csm1_unswizzle(pal: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
     n = len(pal)
     j = np.array([(i & ~0x18) | ((i & 0x10) >> 1) | ((i & 0x08) << 1) for i in range(n)])
     j = np.where(j < n, j, np.arange(n))
-    return pal[j]
+    reordered: npt.NDArray[np.uint8] = pal[j]
+    return reordered
 
 
 def _palette(b: bytes) -> npt.NDArray[np.uint8]:
@@ -1163,9 +1167,9 @@ def _palette(b: bytes) -> npt.NDArray[np.uint8]:
     pal = np.frombuffer(b[att + 16:att + 16 + n * 4], np.uint8)
     if len(pal) < n * 4:
         pal = np.concatenate([pal, np.zeros(n * 4 - len(pal), np.uint8)])
-    pal = pal.reshape(n, 4).astype(np.uint16).copy()
-    pal[:, 3] = np.clip(pal[:, 3] * 2, 0, 255)  # PS2 alpha 0-128 -> 0-255.
-    return _csm1_unswizzle(pal.astype(np.uint8))
+    wide = pal.reshape(n, 4).astype(np.uint16).copy()
+    wide[:, 3] = np.clip(wide[:, 3] * 2, 0, 255)  # PS2 alpha 0-128 -> 0-255.
+    return _csm1_unswizzle(wide.astype(np.uint8))
 
 
 def _decode_shps(b: bytes) -> tuple[Image.Image, str, int, int]:
@@ -1243,7 +1247,7 @@ _TYPE_NAMES = {
 
 
 def _u16be(b: bytes, o: int) -> int:
-    return struct.unpack_from('>H', b, o)[0]
+    return int(struct.unpack_from('>H', b, o)[0])
 
 
 def _entry(b: bytes) -> tuple[int, int, int, int, int]:

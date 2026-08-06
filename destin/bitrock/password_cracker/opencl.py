@@ -23,6 +23,7 @@ import warnings
 
 from destin.bitrock.crypto import verify_password
 import numpy as np
+import numpy.typing as npt
 import pyopencl as cl
 
 from .kernel_source import MAX_IV_POOL as _MAX_IV_POOL, MAX_PASSWORD as _MAX_PASSWORD, kernel_source
@@ -166,7 +167,7 @@ def _display(password: bytes) -> str:
     return password.decode(errors='backslashreplace')
 
 
-def _pack_batch(batch: list[bytes]) -> tuple[np.ndarray, np.ndarray]:
+def _pack_batch(batch: list[bytes]) -> tuple[npt.NDArray[np.uint8], npt.NDArray[np.int32]]:
     """
     Pack a batch of candidates into host arrays.
 

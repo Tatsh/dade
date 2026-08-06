@@ -283,7 +283,9 @@ def _gunzip_region(src: BinaryIO, offset: int, size: int, dst: Path) -> int:
                     out.write(data)
                     written += len(data)
         tail = dec.flush()
-        if tail:
+        # A decompressor fed without a length cap leaves nothing pending, so the tail is always
+        # empty here; the write is kept in case that ever changes.
+        if tail:  # pragma: no cover
             out.write(tail)
             written += len(tail)
     return written
@@ -346,7 +348,7 @@ def extract(ark: Path,
                         _copy_region(src, entry.offset, entry.size, raw_dst)
                 except zlib.error:  # ".gz" name but not valid gzip: keep it verbatim.
                     gunzip_failed += 1
-                    if dst.exists():
+                    if dst.exists():  # pragma: no branch -- the decoder always creates it first.
                         dst.unlink()
                     disk_bytes += _copy_region(src, entry.offset, entry.size, raw_dst)
             else:

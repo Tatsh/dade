@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 import logging
 import struct
 
+from destin.common.obj import encode_obj
+
 from .hashstring import iw_hash_string
 
 __all__ = ('Model', 'decode_model')
@@ -53,15 +55,13 @@ class Model:
             OBJ document (trailing newline included).
         """
         head = f'# CIwModel -> OBJ  verts={len(self.vertices)} tris={len(self.triangles)}'
-        out = [head + (f'  {comment}' if comment else '')]
-        out.extend(f'v {x} {y} {z}' for x, y, z in self.vertices)
-        out.extend(f'vt {u:.5f} {v:.5f}' for u, v in self.uvs)
-        if self.uvs:
-            out.extend(
-                f'f {a + 1}/{a + 1} {b + 1}/{b + 1} {c + 1}/{c + 1}' for a, b, c in self.triangles)
-        else:
-            out.extend(f'f {a + 1} {b + 1} {c + 1}' for a, b, c in self.triangles)
-        return '\n'.join(out) + '\n'
+        head += f'  {comment}' if comment else ''
+        return encode_obj(self.vertices,
+                          self.triangles,
+                          texcoords=self.uvs or None,
+                          header=(head,),
+                          coordinate_format='{}',
+                          texcoord_format='{:.5f}')
 
 
 def _find_block(body: bytes, block_hash: int) -> int | None:

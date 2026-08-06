@@ -6,6 +6,7 @@ import logging
 import struct
 
 from destin.common.context import input_root
+from destin.common.obj import encode_obj
 from destin.incoming.textures import place_ian_texture
 
 from ._base import ConversionError
@@ -111,26 +112,26 @@ def _iter_triangles(data: bytes, offset: int, count: int) -> Iterator[tuple[int,
             data, base + 0x0c)[0], _U16.unpack_from(data, base + 0x14)[0])
 
 
-def _obj_lines(model: IANModel, mtl_name: str) -> Iterator[str]:
-    yield f'# Converted from Incoming .ian model `{model.name}`.'
-    yield '# Incoming is left-handed with up = -Y; OBJ is right-handed with up = +Y.'
-    yield '# Negating Y alone performs that left-to-right-handed conversion and the up flip, and'
-    yield '# turns the game clockwise-front winding into OBJ counter-clockwise-front (kept as-is).'
-    yield '# Texture V is flipped (1 - v) from the game top-left origin to the OBJ bottom-left.'
-    yield f'mtllib {mtl_name}'
-    yield f'o {model.name or "model"}'
-    for vertex in model.vertices:
-        x, y, z = vertex.position
-        yield f'v {x} {-y} {z}'
-    for vertex in model.vertices:
-        nx, ny, nz = vertex.normal
-        yield f'vn {nx} {-ny} {nz}'
-    for vertex in model.vertices:
-        u, v = vertex.uv
-        yield f'vt {u} {1.0 - v}'
-    yield f'usemtl {_MATERIAL_NAME}'
-    for a, b, c in model.triangles:
-        yield (f'f {a + 1}/{a + 1}/{a + 1} {b + 1}/{b + 1}/{b + 1} {c + 1}/{c + 1}/{c + 1}')
+def _obj_text(model: IANModel, mtl_name: str) -> str:
+    header = (
+        f'# Converted from Incoming .ian model `{model.name}`.',
+        '# Incoming is left-handed with up = -Y; OBJ is right-handed with up = +Y.',
+        '# Negating Y alone performs that left-to-right-handed conversion and the up flip, and',
+        '# turns the game clockwise-front winding into OBJ counter-clockwise-front (kept as-is).',
+        '# Texture V is flipped (1 - v) from the game top-left origin to the OBJ bottom-left.',
+        f'mtllib {mtl_name}',
+        f'o {model.name or "model"}',
+    )
+    return encode_obj(
+        [(x, -y, z) for x, y, z in (vertex.position for vertex in model.vertices)],
+        model.triangles,
+        texcoords=[(u, 1.0 - v) for u, v in (vertex.uv for vertex in model.vertices)],
+        normals=[(nx, -ny, nz) for nx, ny, nz in (vertex.normal for vertex in model.vertices)],
+        header=header,
+        material=_MATERIAL_NAME,
+        coordinate_format='{}',
+        texcoord_format='{}',
+        normals_before_texcoords=True)
 
 
 def ian_to_obj(source: Path, dest_dir: Path) -> tuple[Path, ...]:
@@ -156,7 +157,7 @@ def ian_to_obj(source: Path, dest_dir: Path) -> tuple[Path, ...]:
     model = parse_ian(source.read_bytes())
     obj_path = dest_dir / f'{source.stem}.obj'
     mtl_path = dest_dir / f'{source.stem}.mtl'
-    obj_path.write_text('\n'.join(_obj_lines(model, mtl_path.name)) + '\n', encoding='utf-8')
+    obj_path.write_text(_obj_text(model, mtl_path.name), encoding='utf-8')
     texture_name = None
     if (root := input_root()) is not None:
         texture_name = place_ian_texture(source, root, dest_dir)

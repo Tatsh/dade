@@ -140,3 +140,10 @@ def test_bmp_to_png_rejects_a_non_bitmap(tmp_path: Path) -> None:
     source = tmp_path / 'in.bmp'
     source.write_bytes(b'RIFF' + b'\x00' * 64)
     assert not bmp_to_png(source, tmp_path / 'out.png')
+
+
+def test_decode_ci_treats_missing_four_bit_data_as_index_zero() -> None:
+    tlut = [b'\xff\x00\x00\xff', *([b'\x00\xff\x00\xff'] * 15)]
+    rgba = decode_ci(b'\x10', 0, 4, 1, tlut, 4, 4)
+    assert rgba[:4] == b'\x00\xff\x00\xff'
+    assert rgba[4:] == b'\xff\x00\x00\xff' * 3

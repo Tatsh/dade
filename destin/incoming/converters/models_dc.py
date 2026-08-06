@@ -18,6 +18,7 @@ import shutil
 import struct
 
 from destin.common.context import input_root
+from destin.common.obj import encode_obj
 from destin.incoming.textures import find_level_pack, place_pack_textures
 
 from ._base import ConversionError
@@ -113,24 +114,25 @@ def _iter_objects(model: bytes, offsets: tuple[int, ...]) -> Iterator[_Object]:
             yield parsed
 
 
-def _object_obj_lines(obj: _Object, index: int, mtl_name: str) -> Iterator[str]:
-    yield '# Incoming Dreamcast _M.BIN object.'
-    yield '# Incoming is left-handed with up = -Y; OBJ is right-handed with up = +Y.'
-    yield '# Negating Y alone performs that left-to-right-handed conversion and the up flip, and'
-    yield '# turns the game clockwise-front winding into OBJ counter-clockwise-front (kept as-is).'
-    yield '# Texture V is flipped (1 - v) from the game top-left origin to the OBJ bottom-left.'
-    yield f'mtllib {mtl_name}'
-    yield f'o object_{index}'
-    for vert in obj.vertices:
-        yield f'v {vert[0]} {-vert[1]} {vert[2]}'
-    for vert in obj.vertices:
-        yield f'vn {vert[3]} {-vert[4]} {vert[5]}'
-    for vert in obj.vertices:
-        yield f'vt {vert[6]} {1.0 - vert[7]}'
-    yield f'usemtl tex_{obj.texture_index}'
-    for a, b, c in obj.triangles:
-        ai, bi, ci = a + 1, b + 1, c + 1
-        yield f'f {ai}/{ai}/{ai} {bi}/{bi}/{bi} {ci}/{ci}/{ci}'
+def _object_obj_text(obj: _Object, index: int, mtl_name: str) -> str:
+    header = (
+        '# Incoming Dreamcast _M.BIN object.',
+        '# Incoming is left-handed with up = -Y; OBJ is right-handed with up = +Y.',
+        '# Negating Y alone performs that left-to-right-handed conversion and the up flip, and',
+        '# turns the game clockwise-front winding into OBJ counter-clockwise-front (kept as-is).',
+        '# Texture V is flipped (1 - v) from the game top-left origin to the OBJ bottom-left.',
+        f'mtllib {mtl_name}',
+        f'o object_{index}',
+    )
+    return encode_obj([(vert[0], -vert[1], vert[2]) for vert in obj.vertices],
+                      obj.triangles,
+                      texcoords=[(vert[6], 1.0 - vert[7]) for vert in obj.vertices],
+                      normals=[(vert[3], -vert[4], vert[5]) for vert in obj.vertices],
+                      header=header,
+                      material=f'tex_{obj.texture_index}',
+                      coordinate_format='{}',
+                      texcoord_format='{}',
+                      normals_before_texcoords=True)
 
 
 def _object_mtl_lines(obj: _Object, texture_name: str | None) -> Iterator[str]:
@@ -182,8 +184,7 @@ def mbin_to_obj(source: Path, dest_dir: Path) -> tuple[Path, ...]:
             stem = f'{source.stem}_{index:03d}'
             obj_path = model_dir / f'{stem}.obj'
             mtl_path = model_dir / f'{stem}.mtl'
-            obj_path.write_text('\n'.join(_object_obj_lines(obj, index, mtl_path.name)) + '\n',
-                                encoding='utf-8')
+            obj_path.write_text(_object_obj_text(obj, index, mtl_path.name), encoding='utf-8')
             texture_name = None
             if (cached := index_pngs.get(obj.texture_index)) is not None:
                 texture_name = f'{stem}.png'

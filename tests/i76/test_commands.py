@@ -336,6 +336,22 @@ def test_stage_i82_custom_texture_pool(runner: CliRunner, tmp_path: Path, i82_so
     assert (out / 'tex' / 'grass.tga').read_bytes() == b'grass'
 
 
+def test_stage_i82_every_texture_found(runner: CliRunner, tmp_path: Path, i82_source: Path) -> None:
+    (pool := tmp_path / 'pool').mkdir()
+    (pool / 'grass.tga').write_bytes(b'grass')
+    result = runner.invoke(cli, [
+        'stage-i82',
+        str(i82_source),
+        str(tmp_path / 'out'), '--texture-pool',
+        str(i82_source / 'bmp'), '--texture-pool',
+        str(i82_source / 'tga'), '--texture-pool',
+        str(pool)
+    ])
+    assert result.exit_code == 0
+    assert 'Textures: 4 staged, 0 missing.' in result.output
+    assert 'Missing:' not in result.output
+
+
 def test_stage_i82_objects(runner: CliRunner, tmp_path: Path, i82_source: Path) -> None:
     result = runner.invoke(
         cli, ['stage-i82-objects',
@@ -433,6 +449,19 @@ def test_stage_i82_objects_missing_chassis_file(runner: CliRunner, tmp_path: Pat
     result = runner.invoke(cli, ['stage-i82-objects', str(source), str(tmp_path / 'out')])
     assert result.exit_code == 0
     assert 'ghost.cdf' in result.output
+
+
+def test_stage_i82_objects_chassis_without_assets(runner: CliRunner, tmp_path: Path,
+                                                  mrm_terrain: bytes) -> None:
+    world = b'Object_Header {\nFile: car.vdf\n}\n'
+    source = _objects_source(tmp_path, world, mrm_terrain, {
+        'car.vdf': b'Chassis = sedan\n',
+        'sedan.cdf': b'Name = sedan\n'
+    })
+    result = runner.invoke(cli, ['stage-i82-objects', str(source), str(out := tmp_path / 'out')])
+    assert result.exit_code == 0
+    assert 'Staged 0 .stf, 1 .vdf, 0 meshes, 0 textures.' in result.output
+    assert (out / 'meshes' / 'sedan.cdf').is_file()
 
 
 def test_stage_i82_objects_reports_missing_textures(runner: CliRunner, tmp_path: Path,

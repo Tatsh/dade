@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from destin.xg2.main import cli
 from destin.xg2.offsets import GAME_CODE_OFFSET, XG1_GAME_CODE, XG2_GAME_CODE
 from destin.xg2.smf import GM_DRUM_MAP, split_tracks
+from destin.xg2.typing import Texture
 import pytest
 
 if TYPE_CHECKING:
@@ -259,3 +260,32 @@ def test_commands_reject_a_missing_rom(runner: CliRunner, tmp_path: Path) -> Non
 
 def test_group_is_named_cli() -> None:
     assert cli.name == 'cli'
+
+
+def test_montage_n64_labels_each_texture(runner: CliRunner, tmp_path: Path,
+                                         mocker: MockerFixture) -> None:
+    rom = tmp_path / 'game.z64'
+    rom.write_bytes(_rom())
+    mocker.patch('destin.xg2.main.iter_n64_model_blobs', return_value=[('mfs/file000', b'\x00')])
+    mocker.patch('destin.xg2.main.collect_textures',
+                 return_value=[Texture('ci8', 0x40, 8, 8, b'\xff' * (8 * 8 * 4))])
+    index = tmp_path / 'index.txt'
+    result = runner.invoke(
+        cli, ['montage-n64', str(rom),
+              str(tmp_path / 'sheet.png'), '-i',
+              str(index)])
+    assert result.exit_code == 0
+    assert '1 textures' in result.output
+    assert 'mfs/file000#0000040' in index.read_text()
+
+
+def test_montage_pc_labels_each_texture(runner: CliRunner, tmp_path: Path,
+                                        mocker: MockerFixture) -> None:
+    data1 = tmp_path / 'data1'
+    data1.mkdir()
+    mocker.patch('destin.xg2.main.iter_pc_model_blobs', return_value=[('bike.cmp', b'\x00')])
+    mocker.patch('destin.xg2.main.collect_textures',
+                 return_value=[Texture('ci8', 0x80, 8, 8, b'\xff' * (8 * 8 * 4))])
+    result = runner.invoke(cli, ['montage-pc', str(data1), str(tmp_path / 'sheet.png')])
+    assert result.exit_code == 0
+    assert '1 textures' in result.output

@@ -11,6 +11,8 @@ from __future__ import annotations
 from itertools import product
 from typing import TYPE_CHECKING, Literal
 
+from typing_extensions import assert_never
+
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence
 
@@ -62,6 +64,8 @@ def _apply(word: bytes, rule: Rule) -> Iterator[bytes]:
         case 'append_years':
             for year in _APPENDED_YEARS:
                 yield word + year
+        case _:  # pragma: no cover
+            assert_never(rule)
 
 
 def mangle(words: Iterable[str | bytes], rules: Sequence[Rule] = _DEFAULT_RULES) -> Iterator[bytes]:

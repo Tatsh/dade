@@ -6,8 +6,11 @@ import math
 import struct
 
 from destin.amplitude import rndobject
+from destin.amplitude.typing import InvalidFormatError
+import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
     from pathlib import Path
 
 _IDENTITY = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 5.0, 6.0, 7.0)
@@ -187,3 +190,42 @@ def test_convert_returns_none_on_unknown_suffix(tmp_path: Path) -> None:
     source = tmp_path / 'thing.bin'
     source.write_bytes(_view())
     assert rndobject.convert(source) is None
+
+
+def test_tmov_to_json_without_body() -> None:
+    meta = rndobject.tmov_to_json(struct.pack('<IIII', 2, 0, 0, 0))
+    assert meta['movie'] is None
+    assert meta['frames'] is None
+    assert meta['tex'] is None
+
+
+def test_tmov_to_json_unterminated_movie_name() -> None:
+    meta = rndobject.tmov_to_json(struct.pack('<IIII', 2, 0, 0, 0) + b'tutorial1.gif')
+    assert meta['movie'] == 'tutorial1.gif'
+    assert meta['frames'] is None
+
+
+@pytest.mark.parametrize('parser', [
+    rndobject.view_to_json, rndobject.tnm_to_json, rndobject.mmesh_to_json, rndobject.lnm_to_json,
+    rndobject.arena_to_json
+])
+def test_scene_graph_parsers_reject_short_data(
+        parser: Callable[[bytes], Mapping[str, object]]) -> None:
+    with pytest.raises(InvalidFormatError, match='too short'):
+        parser(b'\x00\x00\x00')
+
+
+@pytest.mark.parametrize(('parser', 'match', 'data'),
+                         [(rndobject.mat_to_json, 'Rnd::Mat', struct.pack('<III', 9, 0, 0)),
+                          (rndobject.lit_to_json, 'Rnd::Light', bytes(200)),
+                          (rndobject.env_to_json, 'Rnd::Environ', struct.pack('<I', 1) + bytes(16)),
+                          (rndobject.tmov_to_json, 'Rnd::Movie', struct.pack('<III', 9, 0, 0))])
+def test_leaf_parsers_reject_wrong_format(parser: Callable[[bytes], Mapping[str, object]],
+                                          match: str, data: bytes) -> None:
+    with pytest.raises(InvalidFormatError, match=match):
+        parser(data)
+
+
+def test_env_to_json_unknown_fog_mode() -> None:
+    # The trailing u32 is the fog mode; a value past the known modes is reported verbatim.
+    assert rndobject.env_to_json(_env()[:-4] + struct.pack('<I', 99))['fog_mode'] == '99'

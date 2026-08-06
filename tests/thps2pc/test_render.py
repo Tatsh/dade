@@ -45,6 +45,29 @@ def test_render_authoritative_can_hide_the_nonrendering_layer() -> None:
     assert _body(shown) == _body(culled)
 
 
+def _mixed_scenes() -> tuple[Scene, Scene]:
+    vertices = ((0, 0, 0), (100, 0, 0), (0, 0, 100))
+    drawable = face_record((0, 1, 2), flags=0x11)
+    untextured = face_record((0, 1, 2), flags=0x10)
+    dangling = face_record((0, 1, 200), flags=0x11)
+    only_drawable = SectorSpec(vertices=vertices, faces=(drawable,), count_b=0)
+    mixed = SectorSpec(vertices=vertices, faces=(drawable, untextured, dangling), count_b=0)
+    return (Scene.parse(psx_scene(sectors=(only_drawable,), checksums=(1,))),
+            Scene.parse(psx_scene(sectors=(mixed,), checksums=(1,))))
+
+
+def test_render_authoritative_skips_untextured_and_dangling_faces() -> None:
+    reference, mixed = _mixed_scenes()
+    assert _body(render.render_authoritative(mixed, width=32, height=32, padding=2)) == _body(
+        render.render_authoritative(reference, width=32, height=32, padding=2))
+
+
+def test_render_layers_skips_untextured_and_dangling_faces() -> None:
+    reference, mixed = _mixed_scenes()
+    assert _body(render.render_layers(mixed, width=32, height=32, padding=2)) == _body(
+        render.render_layers(reference, width=32, height=32, padding=2))
+
+
 def test_render_layers_uses_the_layer_palette() -> None:
     faces = tuple(face_record((0, 1, 2), flags=0x11 | layer) for layer in (0x00, 0x40, 0x80, 0xC0))
     spec = SectorSpec(vertices=((0, 0, 0), (200, 0, 0), (0, 0, 200)), faces=faces, count_b=0)

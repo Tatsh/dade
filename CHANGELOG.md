@@ -21,6 +21,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `destin incoming extract-pvr-pack`.
 - `ian2obj` converts Dreamcast `*_M.BIN` model packs in addition to PC `.ian` meshes.
 - `-j`/`--jobs` option to run Incoming file conversions concurrently, defaulting to the CPU count.
+- Shared format code used by more than one game lives in a single `destin.common` package: WAV, PNG,
+  and PPM writers, an LZSS decompressor, a Twofish cipher, a CookFS reader, memory-mapped and
+  byte-range readers, native-tool location, a converter registry, worker-pool helpers, per-run
+  context, and text and filename utilities.
 
 ### Changed
 

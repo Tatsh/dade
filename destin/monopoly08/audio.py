@@ -36,6 +36,7 @@ import tempfile
 import wave
 
 import numpy as np
+import numpy.typing as npt
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -176,7 +177,7 @@ class AudioJob(NamedTuple):
 
 
 def _vgmstream_be32(b: bytes, o: int) -> int:
-    return struct.unpack_from('>I', b, o)[0]
+    return int(struct.unpack_from('>I', b, o)[0])
 
 
 @functools.cache
@@ -519,7 +520,9 @@ def _find_streams(b: bytes, data_start: int) -> list[tuple[int, int, int, int]]:
                 o += 1
         else:
             o += 1
-            if o - data_start > len(b):
+            # Defensive only: ``o`` never runs further past ``data_start`` than the bank is long,
+            # so this runaway guard cannot fire.
+            if o - data_start > len(b):  # pragma: no cover
                 break
     return streams
 
@@ -628,7 +631,8 @@ def _synth_snr(codec: int, ch: int, sr: int, nsamp: int, typ: int = 1) -> bytes:
     return struct.pack('>II', h1, h2)
 
 
-def _decode_array(snr_bytes: bytes, sns_bytes: bytes) -> tuple[np.ndarray | None, bool, int | None]:
+def _decode_array(snr_bytes: bytes,
+                  sns_bytes: bytes) -> tuple[npt.NDArray[np.int16] | None, bool, int]:
     """
     Run vgmstream on a synthesized ``.snr`` / ``.sns`` pair and read the PCM.
 
@@ -641,25 +645,25 @@ def _decode_array(snr_bytes: bytes, sns_bytes: bytes) -> tuple[np.ndarray | None
 
     Returns
     -------
-    tuple[numpy.ndarray | None, bool, int | None]
+    tuple[numpy.ndarray | None, bool, int]
         ``(samples, corrupt, sample_rate)`` where ``samples`` is an
         ``int16 [frames, channels]`` array (or ``None`` if decoding produced no
         output), ``corrupt`` indicates vgmstream reported corruption, and
-        ``sample_rate`` is the decoded rate.
+        ``sample_rate`` is the decoded rate (``0`` when there is no output).
     """
     with tempfile.TemporaryDirectory() as td:
         out = Path(td) / 'o.wav'
         log_text = _decode_snr_sns(snr_bytes, sns_bytes, out)
         corrupt = 'corrupt' in log_text.lower()
         if not out.exists():
-            return None, corrupt, None
+            return None, corrupt, 0
         with wave.open(str(out), 'rb') as w:
             a = np.frombuffer(w.readframes(w.getnframes()), dtype='<i2').reshape(
                 -1, w.getnchannels())
             return a, corrupt, w.getframerate()
 
 
-def _active_silence(a: np.ndarray) -> float:
+def _active_silence(a: npt.NDArray[np.int16]) -> float:
     """
     Median percentage of near-silent frames across signal-carrying channels.
 
@@ -686,7 +690,7 @@ def _active_silence(a: np.ndarray) -> float:
     return float(np.median(act)) if act else 100.0
 
 
-def _write_wav_multich(path: Path, a: np.ndarray, sr: int) -> None:
+def _write_wav_multich(path: Path, a: npt.NDArray[np.int16], sr: int) -> None:
     """
     Write an ``int16 [frames, channels]`` array as a WAV file.
 
@@ -765,9 +769,11 @@ def _decode_ealayer3_stream(b: bytes, start: int, end: int, nsamp: int, out_wav:
             and _active_silence(base_a) < _MAX_ACTIVE_SILENCE_PCT):
         _write_wav_multich(out_wav, base_a, base_sr)
         return
-    best: tuple[np.ndarray, float, int] | None = None
+    best: tuple[npt.NDArray[np.int16], float, int] | None = None
     for nch in dict.fromkeys([ch, ch * 2, ch * 3]):  # 1->{1,2,3}, 2->{2,4,6}
-        if nch > _MAX_SURROUND_CHANNELS:
+        # Defensive only: the MPEG channel-mode table yields 1 or 2, so the largest candidate is
+        # exactly _MAX_SURROUND_CHANNELS.
+        if nch > _MAX_SURROUND_CHANNELS:  # pragma: no cover
             continue
         a, corrupt, asr = _decode_array(_synth_snr(_EAAC_EALAYER3_V1, nch, sr, nsamp), sns)
         if a is None or corrupt:

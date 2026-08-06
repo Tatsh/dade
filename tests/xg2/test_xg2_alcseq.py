@@ -83,3 +83,43 @@ def test_to_midi_skips_tracks_with_no_offset() -> None:
 
 def test_to_midi_handles_a_program_change(alcseq_blob: bytes) -> None:
     assert bytes([0xC0, 3]) in split_tracks(to_midi(alcseq_blob)[0])[1][0]
+
+
+def _sequence(track: bytes) -> bytes:
+    header = bytearray(0x44)
+    struct.pack_into('>I', header, 0, 0x44)
+    struct.pack_into('>I', header, 0x40, 384)
+    return bytes(header) + track
+
+
+def test_decode_track_takes_a_loop_once() -> None:
+    track = bytes([
+        0x00, 0xFF, 0x2E, 0x00, 0x00, 0x00, 0xFF, 0x2D, 0, 0, 0, 0, 0, 0, 0x00, 0xC0, 5, 0x00, 0xFF,
+        0x2F
+    ])
+    assert [kind for _, kind, _ in decode_track(_sequence(track), 0x44)] == ['M']
+
+
+def test_decode_track_resolves_running_status() -> None:
+    track = bytes([0x00, 0xC0, 5, 0x10, 7, 0x00, 0xFF, 0x2F])
+    events = decode_track(_sequence(track), 0x44)
+    assert [(tick, payload) for tick, _, payload in events] == [(0, (0xC0, 5, 0)),
+                                                                (0x10, (0xC0, 7, 0))]
+
+
+def test_decode_track_stops_at_an_unknown_meta_event() -> None:
+    assert decode_track(_sequence(bytes([0x00, 0xFF, 0x10])), 0x44) == []
+
+
+def test_decode_track_gives_up_at_the_event_guard() -> None:
+    track = bytes([0x00, 0xC0, 5]) + bytes([0x00, 0x00]) * 500000
+    assert len(decode_track(_sequence(track), 0x44)) == 500000
+
+
+def test_decode_track_reads_a_two_byte_message() -> None:
+    track = bytes([0x00, 0xB0, 7, 120, 0x00, 0xFF, 0x2F])
+    assert decode_track(_sequence(track), 0x44)[0][2] == (0xB0, 7, 120)
+
+
+def test_reader_vlq_three_bytes() -> None:
+    assert CSeqReader(b'\x81\x80\x00', 0).vlq() == 16384

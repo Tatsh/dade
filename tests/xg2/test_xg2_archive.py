@@ -129,3 +129,8 @@ def test_round_trip_through_both_byte_orders(make_archive: Callable[..., bytes])
         blob = make_archive(payloads, endian)
         decoded = [b for _, b in decode_entries(blob, parse_archive(blob, 0, endian))]
         assert decoded == [b'one', b'two']
+
+
+def test_try_sized_lzss_rejects_a_stream_running_past_the_end() -> None:
+    # Eight literal flags with only three literals behind them.
+    assert try_sized_lzss(struct.pack('<I', 4096) + b'\xff\x01\x02\x03') is None

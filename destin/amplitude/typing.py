@@ -3,20 +3,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias, TypedDict
 
+from destin.common.typing import InvalidFormatError
 from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 __all__ = ('ARKEntry', 'ArenaMeta', 'BankMeta', 'DataArrayNode', 'EnvironMeta', 'Geometry',
-           'IPUMeta', 'IconSysMeta', 'InvalidFormatError', 'LightMeta', 'LnmMeta', 'MIDIFile',
-           'MIDITrack', 'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta', 'PoolOutcome', 'SampleMeta',
-           'TnmMeta', 'ViewMeta')
-
-
-class InvalidFormatError(ValueError):
-    """Raised when a parser is given data that does not match its expected format."""
-
+           'IPUMeta', 'InvalidFormatError', 'LightMeta', 'LnmMeta', 'MIDIFile', 'MIDITrack',
+           'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta', 'PoolOutcome', 'SampleMeta', 'TnmMeta',
+           'ViewMeta')
 
 DataArrayNode: TypeAlias = 'int | float | str | list[DataArrayNode]'
 """
@@ -123,25 +119,6 @@ class MMVMeta(TypedDict):
     """Container version (8 = animated texture, 16 = soundbank movie)."""
     width: NotRequired[int]
     """Frame width in pixels (animated texture)."""
-
-
-class IconSysMeta(TypedDict):
-    """Decoded PS2 ``icon.sys`` save metadata."""
-
-    background_transparency: int
-    """Background transparency (``0..128``)."""
-    icon_copy: str
-    """Filename of the copy-action icon."""
-    icon_delete: str
-    """Filename of the delete-action icon."""
-    icon_normal: str
-    """Filename of the normal icon."""
-    magic: str
-    """Always ``'PS2D'``."""
-    title: str
-    """The save's display title (Shift-JIS decoded)."""
-    title_line_break: int
-    """Character offset at which the title wraps to a second line."""
 
 
 class SampleMeta(TypedDict):

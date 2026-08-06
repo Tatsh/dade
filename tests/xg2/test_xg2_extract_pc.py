@@ -121,3 +121,55 @@ def test_iter_model_blobs_ignores_directories(tmp_path: Path) -> None:
     data1 = _make_data1(tmp_path)
     (data1 / 'BIKES' / 'nested').mkdir()
     assert iter_model_blobs(data1) == []
+
+
+def _sized_lzss() -> bytes:
+    # Eight maximum-length matches against the zero-filled ring: 17 bytes in, 144 out.
+    return struct.pack('<I', 144) + bytes([0x00]) + bytes([0x00, 0x0F]) * 8
+
+
+def _truncated_container() -> bytes:
+    return struct.pack('<I', 100) + b'\x00' * 8 + b'SSZL' + b'\x00' * 8
+
+
+def test_run_skips_a_container_with_an_unreadable_directory(tmp_path: Path) -> None:
+    data1 = _make_data1(tmp_path)
+    (data1 / 'BULK' / 'DATA' / 'short.bin').write_bytes(_truncated_container())
+    counts = run(data1, tmp_path / 'out')
+    assert counts['containers'] == 0
+    assert counts['raw'] == 1
+
+
+def test_run_decompresses_a_sized_blob(tmp_path: Path) -> None:
+    data1 = _make_data1(tmp_path)
+    (data1 / 'BIKES' / 'bike.cmp').write_bytes(_sized_lzss())
+    out = tmp_path / 'out'
+    assert run(data1, out)['containers'] == 1
+    assert (out / 'BIKES' / 'bike.bin').read_bytes() == b'\x00' * 144
+
+
+def test_run_ignores_directories_inside_a_subdirectory(tmp_path: Path) -> None:
+    data1 = _make_data1(tmp_path)
+    (data1 / 'TRACKS' / 'nested').mkdir()
+    assert run(data1, tmp_path / 'out')['raw'] == 0
+
+
+def test_run_ignores_a_bitmap_it_cannot_convert(tmp_path: Path, mocker: MockerFixture) -> None:
+    data1 = _make_data1(tmp_path)
+    for name in ('a.bmp', 'b.bmp'):
+        (data1 / name).write_bytes(b'BM')
+    mocker.patch('destin.xg2.extract_pc.bmp_to_png', return_value=False)
+    assert run(data1, tmp_path / 'out')['bitmaps'] == 0
+
+
+def test_iter_model_blobs_skips_a_missing_subdirectory(tmp_path: Path) -> None:
+    data1 = tmp_path / 'data1'
+    (data1 / 'BIKES').mkdir(parents=True)
+    (data1 / 'BIKES' / 'bike.cmp').write_bytes(_sized_lzss())
+    assert [label for label, _ in iter_model_blobs(data1)] == ['bike.cmp']
+
+
+def test_iter_model_blobs_decompresses_a_sized_blob(tmp_path: Path) -> None:
+    data1 = _make_data1(tmp_path)
+    (data1 / 'BIKES' / 'bike.cmp').write_bytes(_sized_lzss())
+    assert iter_model_blobs(data1)[0][1] == b'\x00' * 144

@@ -102,6 +102,28 @@ def test_faces_stop_at_a_zero_length_record() -> None:
     assert len(list(parsed.faces(parsed.sectors[0]))) == 1
 
 
+def test_faces_stop_when_a_counted_record_has_zero_length() -> None:
+    spec = SectorSpec(vertices=((0, 0, 0),) * 3,
+                      faces=(face_record((0, 1, 2), flags=0x11), bytes(8)),
+                      count_b=0)
+    parsed = Scene.parse(psx_scene(sectors=(spec,)))
+    sector = parsed.sectors[0]
+    assert sector.num_faces == 2
+    assert sector.faces_end - sector.faces_offset == 28
+    assert len(list(parsed.faces(sector))) == 1
+
+
+def test_short_face_records_carry_no_texture_index() -> None:
+    record = face_record((0, 1, 2), texture_index=9, flags=0x11, length=4)
+    spec = SectorSpec(vertices=((0, 0, 0),) * 3, faces=(record,), count_b=0)
+    parsed = Scene.parse(psx_scene(sectors=(spec,)))
+    face = next(iter(parsed.faces(parsed.sectors[0])))
+    assert len(record) == 16
+    assert face.corners == (0, 1, 2)
+    assert not face.is_textured
+    assert face.texture_index == -1
+
+
 def test_faces_reject_an_unknown_corner_source(scene: Scene) -> None:
     with pytest.raises(ValueError, match=r'Unknown corner source'):
         list(scene.faces(scene.sectors[0], corner_source='guess'))

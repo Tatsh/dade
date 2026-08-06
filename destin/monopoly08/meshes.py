@@ -324,7 +324,8 @@ def _in_bbox_frac(hdr: _MeshHeader, vo: int, stride: int, vcount: int) -> float:
     # lands far outside the bbox -- so this rejects bad stride guesses.
     n = min(vcount, 24)
     if n <= 0:
-        return 0.0
+        # Defensive only: the sole caller derives vcount with max(1, ...), so n is never zero.
+        return 0.0  # pragma: no cover
     ok = 0
     for i in range(n):
         p = _decode_pos(hdr, vo + i * stride)

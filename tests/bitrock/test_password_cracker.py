@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from importlib.util import find_spec
 from typing import TYPE_CHECKING
+import importlib
+import itertools
+import signal
 
 from destin.bitrock.commands.crack import crack_main
 from destin.bitrock.exceptions import BitrockError, NotEncryptedError
@@ -228,3 +231,165 @@ def test_crack_main_rejects_negative_device(runner: CliRunner) -> None:
     result = runner.invoke(crack_main, ['--device', '-1'])
     assert result.exit_code == 2
     assert "Invalid value for '--device'" in result.output
+
+
+def test_progress_callback_alias_importable() -> None:
+    from destin.bitrock.password_cracker import typing as pc_typing
+    assert pc_typing.__all__ == ('ProgressCallback',)
+    assert vars(pc_typing)['ProgressCallback'] == 'Callable[[int, bytes], None]'
+
+
+def test_mangle_append_years() -> None:
+    result = list(mangle(['a'], ['append_years']))
+    assert result[0] == b'a1940'
+    assert result[-1] == b'a2030'
+    assert len(result) == 2031 - 1940
+
+
+def test_crack_auto_backend_falls_back_to_cpu(encrypted_installer: Path) -> None:
+    assert crack(encrypted_installer, [b'ab'], backend='auto') == b'ab'
+
+
+def test_crack_cpu_parallel_finds_password(encrypted_installer: Path) -> None:
+    assert crack(encrypted_installer, Mask(b'ab', 1, 2), backend='cpu', jobs=2) == b'ab'
+
+
+def test_crack_cpu_serial_periodic_progress(encrypted_installer: Path,
+                                            mocker: MockerFixture) -> None:
+    # The package re-exports the ``crack`` function, shadowing the submodule name, so resolve the
+    # module object explicitly before patching its clock.
+    crack_module = importlib.import_module('destin.bitrock.password_cracker.crack')
+    # A clock that jumps 0.2s per read forces the periodic-report branch on every candidate.
+    mocker.patch.object(crack_module.time, 'monotonic', side_effect=itertools.count(0.0, 0.2))
+    calls: list[tuple[int, bytes]] = []
+    result = crack(encrypted_installer, [b'no', b'ab'],
+                   backend='cpu',
+                   jobs=1,
+                   on_progress=lambda tested, latest: calls.append((tested, latest)))
+    assert result == b'ab'
+    assert calls[-1] == (2, b'ab')
+
+
+def test_crack_main_wordlist_with_rule(runner: CliRunner, encrypted_installer: Path,
+                                       tmp_path: Path) -> None:
+    words = tmp_path / 'words.txt'
+    words.write_bytes(b'AB\n')
+    result = runner.invoke(
+        crack_main,
+        [str(encrypted_installer), '--wordlist',
+         str(words), '--rule', 'lower', '--backend', 'cpu'])
+    assert result.exit_code == 0
+    assert result.output.splitlines()[-1] == 'ab'
+
+
+def test_crack_main_reports_large_duration(runner: CliRunner, encrypted_installer: Path,
+                                           mocker: MockerFixture) -> None:
+    mocker.patch('destin.bitrock.commands.crack.crack', return_value=b'ab')
+    mocker.patch('destin.bitrock.commands.crack.time.monotonic', side_effect=[0.0, 0.0, 4e18])
+    result = runner.invoke(
+        crack_main,
+        [str(encrypted_installer), '--charset', 'ab', '--max-length', '2', '--backend', 'cpu'])
+    assert result.exit_code == 0
+    assert 'Gy' in result.output
+    assert 'millennia' in result.output
+
+
+def test_crack_main_list_devices_via_import(runner: CliRunner, mocker: MockerFixture) -> None:
+    module = mocker.MagicMock()
+    module.list_devices.return_value = ['Device A', 'Device B']
+    mocker.patch('destin.bitrock.commands.crack.import_module', return_value=module)
+    result = runner.invoke(crack_main, ['--list-devices'])
+    assert result.exit_code == 0
+    assert 'cuda 0: Device A' in result.output
+    assert 'opencl 1: Device B' in result.output
+
+
+def test_crack_main_list_devices_no_devices_via_import(runner: CliRunner,
+                                                       mocker: MockerFixture) -> None:
+    module = mocker.MagicMock()
+    module.list_devices.return_value = []
+    mocker.patch('destin.bitrock.commands.crack.import_module', return_value=module)
+    result = runner.invoke(crack_main, ['--list-devices'])
+    assert result.exit_code == 0
+    assert result.output == 'cuda: no devices\nopencl: no devices\n'
+
+
+def test_crack_main_list_devices_unavailable_via_import(runner: CliRunner,
+                                                        mocker: MockerFixture) -> None:
+    mocker.patch('destin.bitrock.commands.crack.import_module',
+                 side_effect=RuntimeError('no driver'))
+    result = runner.invoke(crack_main, ['--list-devices'])
+    assert result.exit_code == 0
+    assert result.output == ('cuda: unavailable (no driver)\n'
+                             'opencl: unavailable (no driver)\n')
+
+
+def test_crack_main_debug_and_quiet_conflict(runner: CliRunner, encrypted_installer: Path) -> None:
+    result = runner.invoke(crack_main, [str(encrypted_installer), '--debug', '--quiet'])
+    assert result.exit_code != 0
+    assert 'mutually exclusive' in result.output
+
+
+def test_crack_main_progress_updates_display(runner: CliRunner, encrypted_installer: Path,
+                                             mocker: MockerFixture) -> None:
+    def fake_crack(_installer: object, _source: object, *,
+                   on_progress: Callable[[int, bytes], None], **_kwargs: object) -> bytes:
+        on_progress(3, b'ab')
+        return b'ab'
+
+    mocker.patch('destin.bitrock.commands.crack.crack', side_effect=fake_crack)
+    result = runner.invoke(
+        crack_main,
+        [str(encrypted_installer), '--charset', 'ab', '--max-length', '2', '--backend', 'cpu'])
+    assert result.exit_code == 0
+    assert '3 tried' in result.output
+
+
+def test_crack_main_quiet_found_suppresses_output(runner: CliRunner, encrypted_installer: Path,
+                                                  mocker: MockerFixture) -> None:
+    def fake_crack(_installer: object, _source: object, *,
+                   on_progress: Callable[[int, bytes], None], **_kwargs: object) -> bytes:
+        on_progress(3, b'ab')
+        return b'ab'
+
+    mocker.patch('destin.bitrock.commands.crack.crack', side_effect=fake_crack)
+    result = runner.invoke(crack_main, [
+        str(encrypted_installer), '--charset', 'ab', '--max-length', '2', '--backend', 'cpu',
+        '--quiet'
+    ])
+    assert result.exit_code == 0
+    assert result.output == 'ab\n'
+
+
+def test_crack_main_quiet_not_found(runner: CliRunner, encrypted_installer: Path,
+                                    mocker: MockerFixture) -> None:
+    mocker.patch('destin.bitrock.commands.crack.crack', return_value=None)
+    result = runner.invoke(crack_main, [
+        str(encrypted_installer), '--charset', 'ab', '--max-length', '2', '--backend', 'cpu',
+        '--quiet'
+    ])
+    assert result.exit_code == 1
+    assert not result.output
+
+
+def test_crack_main_keyboard_interrupt_cpu(runner: CliRunner, encrypted_installer: Path,
+                                           mocker: MockerFixture) -> None:
+    mocker.patch('destin.bitrock.commands.crack.crack', side_effect=KeyboardInterrupt)
+    result = runner.invoke(
+        crack_main,
+        [str(encrypted_installer), '--charset', 'ab', '--max-length', '2', '--backend', 'cpu'])
+    assert result.exit_code == 128 + signal.SIGINT
+    assert 'Interrupted.' in result.output
+
+
+def test_crack_main_keyboard_interrupt_gpu(runner: CliRunner, encrypted_installer: Path,
+                                           mocker: MockerFixture) -> None:
+    mocker.patch('destin.bitrock.commands.crack.crack', side_effect=KeyboardInterrupt)
+    exit_mock = mocker.patch('destin.bitrock.commands.crack.os._exit',
+                             side_effect=SystemExit(128 + signal.SIGINT))
+    result = runner.invoke(crack_main, [
+        str(encrypted_installer), '--charset', 'ab', '--max-length', '2', '--backend', 'cuda',
+        '--quiet'
+    ])
+    assert result.exit_code == 128 + signal.SIGINT
+    exit_mock.assert_called_once_with(128 + signal.SIGINT)

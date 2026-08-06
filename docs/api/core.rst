@@ -4,10 +4,10 @@ Core
 The top-level modules that drive a run: source detection, the mirroring dispatcher, the ambient
 per-run context, the texture and pack readers, and native-tool location.
 
-``destin.incoming.context``
-------------------------------
+``destin.common.context``
+-------------------------
 
-.. automodule:: destin.incoming.context
+.. automodule:: destin.common.context
    :members:
 
 ``destin.incoming.sources``

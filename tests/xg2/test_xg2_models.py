@@ -174,3 +174,16 @@ def test_build_index_lines_up_with_the_grid() -> None:
 def test_build_index_requires_matching_labels() -> None:
     with pytest.raises(ValueError, match='argument 2 is shorter'):
         build_index([Texture('ci8', 0, 8, 8, b'\x00' * 256)], [], columns=2)
+
+
+def test_walk_sub_archive_stops_at_a_non_contiguous_record(
+        make_sub_archive: Callable[..., bytes]) -> None:
+    blob = bytearray(make_sub_archive([b'a' * 16, b'b' * 16]))
+    struct.pack_into('>I', blob, 8 + 12 + 4, 40)  # Valid, but not where the first record ended.
+    assert len(walk_sub_archive(bytes(blob))) == 1
+
+
+def test_collect_textures_parses_flat_sub_models(make_sub_archive: Callable[..., bytes],
+                                                 n64_model: bytes) -> None:
+    blob = make_sub_archive([n64_model, *([b'\x05\x00\x00\x00' + b'\x00' * 12] * 3)])
+    assert len(collect_textures(blob)) == 1

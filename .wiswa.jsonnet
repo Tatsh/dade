@@ -43,12 +43,20 @@ local utils = import 'utils.libjsonnet';
       coverage+: {
         report+: {
           omit+: [
+            // GPU-only backends: require cupy/pyopencl and a real device, so they cannot run in
+            // CI. Excluded from coverage.
+            '%s/bitrock/password_cracker/cuda.py' % top.primary_module,
+            '%s/bitrock/password_cracker/opencl.py' % top.primary_module,
             '%s/*/__main__.py' % top.primary_module,
             '%s/*/typing.py' % top.primary_module,
           ],
         },
         run+: {
           omit+: [
+            // GPU-only backends: require cupy/pyopencl and a real device, so they cannot run in
+            // CI. Excluded from coverage.
+            '%s/bitrock/password_cracker/cuda.py' % top.primary_module,
+            '%s/bitrock/password_cracker/opencl.py' % top.primary_module,
             '%s/*/__main__.py' % top.primary_module,
             '%s/*/typing.py' % top.primary_module,
           ],
@@ -59,9 +67,9 @@ local utils = import 'utils.libjsonnet';
           anyio: utils.latestPypiPackageVersionCaret('anyio'),
           jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
           mido: utils.latestPypiPackageVersionCaret('mido'),
-          // numpy 2.5+ requires Python >= 3.12; keep a loose lower bound so uv can fork-resolve an
-          // older numpy for Python 3.10 and 3.11.
-          numpy: '>=1.26',
+          // numpy 2.3+ drops Python 3.10 and 3.11, which the project still supports, so cap at the
+          // last 2.2.x release rather than the floating caret the helper would produce.
+          numpy: '<=2.2.6',
           pillow: utils.latestPypiPackageVersionCaret('pillow'),
           rich: utils.latestPypiPackageVersionCaret('rich'),
         },

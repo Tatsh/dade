@@ -225,4 +225,7 @@ def try_sized_lzss(data: bytes, endian: Endian = '<') -> bytes | None:
         return None
     if len(out) >= size and consumed <= len(data) - 4 + 16:
         return out
-    return None
+    # A stream that decodes without raising always produces exactly *size* bytes and never reads
+    # past the end of *data*, so both guards above hold and this is unreachable in practice. It is
+    # kept in case the decompressor's contract ever loosens.
+    return None  # pragma: no cover

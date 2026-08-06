@@ -22,6 +22,8 @@ import pytest
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from pytest_mock import MockerFixture
+
 # Official Twofish known-answer test vectors (key, plaintext is all zero, ciphertext).
 _KAT = [
     ('00000000000000000000000000000000', '9F589F5CF6122C32B6BFEC2F2AE8C35A'),
@@ -155,3 +157,17 @@ def test_decrypt_page_lzham_missing(build_encrypted_page: Callable[..., bytes],
     body = build_encrypted_page(zlib_raw(b'x'), _KEY, _IVS)
     with pytest.raises(DecryptionError, match='pylzham'):
         decrypt_page(body, _KEY, _IVS, 'lzham')
+
+
+def test_decrypt_page_lzham_with_stub_module(build_encrypted_page: Callable[..., bytes],
+                                             monkeypatch: pytest.MonkeyPatch,
+                                             mocker: MockerFixture) -> None:
+    payload = b'lzham content here' * 4
+    stub = mocker.MagicMock()
+    stub.decompress.return_value = payload
+    monkeypatch.setitem(sys.modules, 'lzham', stub)
+    framed = struct.pack('>II', len(payload), zlib.adler32(payload)) + b'compressed-stream'
+    body = build_encrypted_page(framed, _KEY, _IVS)
+    assert decrypt_page(body, _KEY, _IVS, 'lzham') == payload
+    stub.decompress.assert_called_once()
+    assert stub.decompress.call_args.args[1] == len(payload)

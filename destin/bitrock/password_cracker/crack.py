@@ -50,7 +50,7 @@ _worker_state: dict[str, PayloadInfo] = {}
 """Per-process payload header, seeded by :py:func:`_worker_init` in each pool worker."""
 
 
-def _worker_init(info: PayloadInfo) -> None:
+def _worker_init(info: PayloadInfo) -> None:  # pragma: no cover
     """
     Seed a pool worker with the payload header and let the parent own interruption.
 
@@ -65,7 +65,7 @@ def _worker_init(info: PayloadInfo) -> None:
     _worker_state['info'] = info
 
 
-def _worker_verify(candidate: str | bytes) -> tuple[bytes, bool]:
+def _worker_verify(candidate: str | bytes) -> tuple[bytes, bool]:  # pragma: no cover
     """
     Test one candidate against the worker's payload header.
 
@@ -341,13 +341,15 @@ def _resolve_backend(name: Backend) -> _GpuBackend:
                 msg = ('The CUDA backend requires the optional "cupy" package and an NVIDIA GPU; '
                        'install it with `pip install pybitrock[cuda]`.')
                 raise BitrockError(msg)
-            return cuda
+            # Only reached when cupy is importable on an NVIDIA GPU host, absent from CI.
+            return cuda  # pragma: no cover
         case 'opencl':
             if (opencl := _load_opencl()) is None:
                 msg = ('The OpenCL backend requires the optional "pyopencl" package and an OpenCL '
                        'device; install it with `pip install pybitrock[opencl]`.')
                 raise BitrockError(msg)
-            return opencl
+            # Only reached when pyopencl is importable with an OpenCL device, absent from CI.
+            return opencl  # pragma: no cover
         case _:
             # ``auto``: prefer CUDA, then OpenCL, then fall back to the CPU.
             return _load_cuda() or _load_opencl() or _crack_cpu
@@ -366,7 +368,8 @@ def _load_cuda() -> _GpuBackend | None:
         from .cuda import crack_cuda  # noqa: PLC0415
     except ImportError:
         return None
-    return crack_cuda
+    # Only reached when cupy is importable on an NVIDIA GPU host, absent from CI.
+    return crack_cuda  # pragma: no cover
 
 
 def _load_opencl() -> _GpuBackend | None:
@@ -382,7 +385,8 @@ def _load_opencl() -> _GpuBackend | None:
         from .opencl import crack_opencl  # noqa: PLC0415
     except ImportError:
         return None
-    return crack_opencl
+    # Only reached when pyopencl is importable with an OpenCL device, absent from CI.
+    return crack_opencl  # pragma: no cover
 
 
 def crack(installer: str | Path | bytes | bytearray | memoryview | Reader,
@@ -434,4 +438,5 @@ def crack(installer: str | Path | bytes | bytearray | memoryview | Reader,
         run = _resolve_backend(backend)
         if run is _crack_cpu:
             return _crack_cpu(info, source, on_progress, jobs)
-        return run(info, source, on_progress, device)
+        # A GPU backend was resolved; it dispatches to a real device, unavailable in CI.
+        return run(info, source, on_progress, device)  # pragma: no cover

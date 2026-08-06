@@ -7,13 +7,13 @@ import logging
 import struct
 
 from PIL import Image
-
-from .typing import InvalidFormatError
+from destin.common.obj import encode_obj
+from destin.common.typing import InvalidFormatError
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from .typing import IconSysMeta
+    from destin.common.typing import IconSysMeta
 
 __all__ = ('EXTENSIONS', 'convert', 'icon_sys_to_json', 'ps2_icon_decompose')
 
@@ -105,21 +105,22 @@ def ps2_icon_decompose(path: Path, out_dir: Path) -> Path | None:  # noqa: PLR09
         rgba[o + 2] = ((pixel >> 10) & 0x1F) << 3
         rgba[o + 3] = 255
     Image.frombytes('RGBA', (_TEXTURE_DIM, _TEXTURE_DIM), bytes(rgba)).save(out_dir / 'texture.png')
-    lines = ['# PS2 icon -> OBJ', 'mtllib model.mtl', 'usemtl icon']
-    verts, uvs, normals = [], [], []
+    vertices, texcoords, normals = [], [], []
     for i in range(nverts):
         off = 0x14 + i * stride
         x, y, z = struct.unpack_from('<3h', data, off)
         nx, ny, nz = struct.unpack_from('<3h', data, off + 8 * anim)
         u, v = struct.unpack_from('<2h', data, off + 8 * anim + 8)
-        verts.append(f'v {x / _FIXED:.5g} {y / _FIXED:.5g} {z / _FIXED:.5g}')
-        uvs.append(f'vt {u / _FIXED:.5g} {1 - v / _FIXED:.5g}')
-        normals.append(f'vn {nx / _FIXED:.5g} {ny / _FIXED:.5g} {nz / _FIXED:.5g}')
-    lines += verts + uvs + normals
-    for t in range(nverts // 3):
-        a, b, c = t * 3 + 1, t * 3 + 2, t * 3 + 3
-        lines.append(f'f {a}/{a}/{a} {b}/{b}/{b} {c}/{c}/{c}')
-    (out_dir / 'model.obj').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        vertices.append((x / _FIXED, y / _FIXED, z / _FIXED))
+        texcoords.append((u / _FIXED, 1 - v / _FIXED))
+        normals.append((nx / _FIXED, ny / _FIXED, nz / _FIXED))
+    obj_text = encode_obj(vertices, [(t * 3, t * 3 + 1, t * 3 + 2) for t in range(nverts // 3)],
+                          texcoords=texcoords,
+                          normals=normals,
+                          header=('# PS2 icon -> OBJ', 'mtllib model.mtl', 'usemtl icon'),
+                          coordinate_format='{:.5g}',
+                          texcoord_format='{:.5g}')
+    (out_dir / 'model.obj').write_text(obj_text, encoding='utf-8')
     (out_dir / 'model.mtl').write_text('newmtl icon\nKd 1 1 1\nmap_Kd texture.png\n',
                                        encoding='utf-8')
     log.debug('PS2 icon `%s`: %d verts, 128x128 texture -> `%s/`.', path.name, nverts, out_dir.name)

@@ -7,9 +7,10 @@ import logging
 import logging.handlers
 import multiprocessing
 
+from destin.common import ps2_icon
 from typing_extensions import override
 
-from . import audio, bitmap, dataarray, icon, mesh, midi, milo, movie, rndobject, video
+from . import audio, bitmap, dataarray, mesh, midi, milo, movie, rndobject, video
 from .typing import PoolOutcome
 
 if TYPE_CHECKING:
@@ -24,7 +25,7 @@ log = logging.getLogger(__name__)
 
 _CONVERTERS: dict[str, Callable[[Path], Path | None]] = {
     ext: module.convert
-    for module in (bitmap, dataarray, mesh, midi, audio, icon, video, movie, rndobject)
+    for module in (bitmap, dataarray, mesh, midi, audio, ps2_icon, video, movie, rndobject)
     for ext in module.EXTENSIONS
 }
 # Longest extension first so multi-suffix names (e.g. ``.txt.bin``) win over ``.bin``.

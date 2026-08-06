@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import json
 
+from destin.thps2pc.commands import render as render_commands
 from destin.thps2pc.commands.convert_scene import convert_scene
 from destin.thps2pc.commands.decode_textures import decode_textures
 from destin.thps2pc.commands.dump_descriptors import dump_descriptors
@@ -16,7 +17,14 @@ from destin.thps2pc.commands.render import (
     render_objects_command,
 )
 from destin.thps2pc.commands.unpack_pkr import unpack_pkr
-from destin.thps2pc.test_utils import pkr_archive, psx_lighting, stored_file
+from destin.thps2pc.test_utils import (
+    SectorSpec,
+    face_record,
+    pkr_archive,
+    psx_lighting,
+    psx_scene,
+    stored_file,
+)
 import pytest
 
 if TYPE_CHECKING:
@@ -76,6 +84,14 @@ def test_unpack_pkr_warns_on_a_child_count_mismatch(runner: CliRunner, tmp_path:
     result = runner.invoke(unpack_pkr, [str(source), '--list'])
     assert result.exit_code == 0
     assert 'sum(childCount)=0 does not equal fileCount=1' in result.output
+
+
+def test_unpack_pkr_rejects_an_escaping_entry(runner: CliRunner, tmp_path: Path) -> None:
+    source = tmp_path / 'All.pkr'
+    source.write_bytes(pkr_archive((('../escape/', (stored_file('x.bin', b'x'),)),)))
+    result = runner.invoke(unpack_pkr, [str(source), str(tmp_path / 'out')])
+    assert result.exit_code == 1
+    assert 'Unsafe path in archive' in result.output
 
 
 def test_psx_info_summarises(runner: CliRunner, scene_file: Path) -> None:
@@ -139,6 +155,97 @@ def test_convert_scene_reports_a_conversion_failure(runner: CliRunner, scene_fil
         [str(scene_file), str(tmp_path / 'out'), '--texture-dir',
          str(textures)])
     assert result.exit_code == 1
+
+
+def test_convert_scene_skips_untextured_and_already_written_textures(runner: CliRunner,
+                                                                     tmp_path: Path,
+                                                                     mocker: MockerFixture) -> None:
+    textured = face_record((0, 1, 2), texture_index=0, flags=0x11)
+    untextured = face_record((0, 1, 2), flags=0x10)
+    spec = SectorSpec(vertices=((0, 0, 0), (100, 0, 0), (0, 0, 100)),
+                      faces=(textured, untextured),
+                      count_b=0)
+    source = tmp_path / 'S.PSX'
+    source.write_bytes(psx_scene(sectors=(spec,), checksums=(0xDEADBEEF,)))
+    out = tmp_path / 'out'
+    (out / 'textures' / 'S').mkdir(parents=True)
+    (out / 'textures' / 'S' / 'DEADBEEF.png').write_bytes(b'\x89PNG')
+    convert = mocker.patch('destin.thps2pc.commands.convert_scene.convert')
+    result = runner.invoke(convert_scene, [str(source), str(out)])
+    assert result.exit_code == 0
+    convert.assert_not_called()
+    assert 'textures_resolved=1' in result.output
+    assert 'untextured/placeholder verts=3' in result.output
+
+
+def test_render_reports_a_write_failure(runner: CliRunner, scene_file: Path, tmp_path: Path,
+                                        mocker: MockerFixture) -> None:
+    mocker.patch('destin.thps2pc.commands.utils.write_image', side_effect=OSError('boom'))
+    result = runner.invoke(render_authoritative_command, [
+        str(scene_file),
+        str(tmp_path / 'out.png'), '--width', '32', '--height', '32', '--padding', '2'
+    ])
+    assert result.exit_code == 1
+    assert 'Could not write' in result.output
+
+
+def test_render_object_models_reports_a_montage_failure(runner: CliRunner, scene_file: Path,
+                                                        tmp_path: Path,
+                                                        mocker: MockerFixture) -> None:
+    mocker.patch('destin.thps2pc.commands.utils.montage', side_effect=OSError('boom'))
+    result = runner.invoke(render_object_models_command, [
+        str(scene_file),
+        str(tmp_path / 'models'), '--suffix', '.ppm', '--size', '24', '--padding', '2'
+    ])
+    assert result.exit_code == 1
+    assert 'Could not build' in result.output
+
+
+def test_render_object_models_reports_an_empty_scene(runner: CliRunner, tmp_path: Path) -> None:
+    empty = tmp_path / 'E.PSX'
+    empty.write_bytes(psx_scene())
+    result = runner.invoke(render_object_models_command,
+                           [str(empty), str(tmp_path / 'models'), '--suffix', '.ppm'])
+    assert result.exit_code == 0
+    assert 'The scene holds no sectors.' in result.output
+
+
+def test_render_node_map_annotates_with_a_detected_font(runner: CliRunner, scene_file: Path,
+                                                        tmp_path: Path, mocker: MockerFixture,
+                                                        monkeypatch: pytest.MonkeyPatch) -> None:
+    fonts = tmp_path / 'fonts' / 'truetype'
+    fonts.mkdir(parents=True)
+    (fonts / 'DejaVuSans.ttf').write_bytes(b'\x00')
+    monkeypatch.setattr(render_commands, '_FONT_ROOT', tmp_path / 'fonts')
+    write_image = mocker.patch('destin.thps2pc.commands.utils.write_image')
+    result = runner.invoke(render_node_map_command, [
+        str(scene_file),
+        str(tmp_path / 'nodes.png'), '--width', '64', '--height', '64', '--padding', '2'
+    ])
+    assert result.exit_code == 0
+    args = list(write_image.call_args.args[3])
+    assert args[args.index('-font') + 1] == str(fonts / 'DejaVuSans.ttf')
+
+
+@pytest.mark.parametrize('populate', [False, True])
+def test_render_node_map_annotates_without_a_font(runner: CliRunner, scene_file: Path,
+                                                  tmp_path: Path, mocker: MockerFixture,
+                                                  monkeypatch: pytest.MonkeyPatch, *,
+                                                  populate: bool) -> None:
+    fonts = tmp_path / 'fonts'
+    if populate:
+        fonts.mkdir()
+        (fonts / 'Cursive.ttf').write_bytes(b'\x00')
+    monkeypatch.setattr(render_commands, '_FONT_ROOT', fonts)
+    write_image = mocker.patch('destin.thps2pc.commands.utils.write_image')
+    result = runner.invoke(render_node_map_command, [
+        str(scene_file),
+        str(tmp_path / 'nodes.png'), '--width', '64', '--height', '64', '--padding', '2'
+    ])
+    assert result.exit_code == 0
+    args = list(write_image.call_args.args[3])
+    assert '-annotate' in args
+    assert '-font' not in args
 
 
 def test_decode_textures_writes_ppm_without_imagemagick(runner: CliRunner, lighting_file: Path,

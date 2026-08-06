@@ -16,6 +16,8 @@ from destin.xg2.soundfont import (
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from destin.xg2.typing import ParsedBank, SampleMeta, Sf2Preset, Sf2Zone, SoundZone
 
 
@@ -161,3 +163,35 @@ def test_parse_bank_rejects_a_zero_instrument_count() -> None:
 def test_build_combined_rejects_a_bank_it_cannot_parse() -> None:
     with pytest.raises(ValueError, match='No ALBankFile could be parsed'):
         build_combined(b'\x00' * 64, 0)
+
+
+def test_build_sf2_omits_optional_generators(sf2_sample: SampleMeta, sf2_zone: Sf2Zone,
+                                             sf2_preset: Sf2Preset) -> None:
+    zone: Sf2Zone = {**sf2_zone, 'attack': 0, 'decay': 0, 'release': 0, 'loop': False}
+    assert build_sf2([sf2_sample], [[zone]], [sf2_preset], 22050, 'Test')[:4] == b'RIFF'
+
+
+def test_build_sf2_falls_back_to_the_whole_sample(sf2_zone: Sf2Zone, sf2_preset: Sf2Preset) -> None:
+    sample: SampleMeta = {'pcm': [1, 2, 3, 4], 'loop_start': 3, 'loop_end': 1}
+    data = build_sf2([sample], [[sf2_zone]], [sf2_preset], 22050, 'Test')
+    assert struct.unpack_from('<II', data, data.index(b's000') + 20) == (0, 4)
+
+
+def test_build_combined_writes_the_percussion_kit(make_albank: Callable[..., bytes]) -> None:
+    assert b'Drums' in build_combined(make_albank(percussion=True), 0)
+
+
+def test_build_combined_borrows_a_fallback_kit(make_albank: Callable[..., bytes]) -> None:
+    bank = make_albank()
+    assert b'Drums' in build_combined(bank + bank, 0, len(bank))
+
+
+def test_build_combined_ignores_a_fallback_it_cannot_parse(
+        make_albank: Callable[..., bytes]) -> None:
+    bank = make_albank()
+    assert b'Drums' not in build_combined(bank + b'\x00' * 0x40, 0, len(bank))
+
+
+def test_build_combined_drops_a_kit_key_off_the_keyboard(make_albank: Callable[..., bytes]) -> None:
+    bank = make_albank()
+    assert b'Drums' not in build_combined(bank + bank, 0, len(bank), 'ExtremeG', 1)

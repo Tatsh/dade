@@ -127,6 +127,16 @@ def test_unpack_writes_decompressed_section() -> None:
     assert out[0x1000:0x1010] == b'\xcd' * 16
 
 
+def test_unpack_skips_section_without_raw_data() -> None:
+    block = struct.pack('<II', 16, 0x00CD00)
+    overlay = struct.pack('<IIII', OVERLAY_MAGIC, 1, 0x1234, 0) + struct.pack('<II', 0, 0) + block
+    image = _build_pe((('.text', 0x2000, 0x1000, 0x400, 0x400), ('.bss', 0x1000, 0x3000, 0, 0)),
+                      overlay=overlay)
+    out = unpack(image)
+    assert out[0x1000:0x1010] == b'\xcd' * 16
+    assert out[0x3000:0x3010] == b'\x00' * 16
+
+
 def test_unpack_sets_file_alignment_to_section_alignment() -> None:
     block = struct.pack('<II', 4, 0x00CD00)
     overlay = struct.pack('<IIII', OVERLAY_MAGIC, 1, 0x20, 0) + struct.pack('<II', 0, 0) + block

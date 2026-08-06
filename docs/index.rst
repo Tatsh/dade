@@ -16,6 +16,7 @@ The games currently supported are *Incoming* (PC and Dreamcast), *Amplitude* and
    :maxdepth: 2
 
    installation
+   cli
    usage
    utilities
    native-tools

@@ -81,3 +81,13 @@ def test_render_directory_skips_a_missing_directory(mocker: MockerFixture, tmp_p
     soundfont = tmp_path / 'bank.sf2'
     soundfont.write_bytes(b'sf2')
     assert render_directory(tmp_path / 'missing', soundfont) == 0
+
+
+def test_render_directory_ignores_a_midi_that_produced_nothing(mocker: MockerFixture,
+                                                               tmp_path: Path) -> None:
+    mocker.patch('destin.xg2.fluidsynth.shutil.which', return_value='/usr/bin/fluidsynth')
+    soundfont = tmp_path / 'bank.sf2'
+    soundfont.write_bytes(b'sf2')
+    (tmp_path / 'a.mid').write_bytes(b'MThd')
+    mocker.patch('destin.xg2.fluidsynth.sp.run')
+    assert render_directory(tmp_path, soundfont) == 0

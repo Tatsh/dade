@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING
 import logging
 import struct
 
+from destin.common.obj import encode_obj as common_encode_obj
+
 from .geo import parse as parse_geo
 from .typing import Mesh, SdfPart
 
@@ -193,10 +195,7 @@ def encode_obj(mesh: Mesh, *, name: str = 'model') -> str:
     str
         The complete OBJ document, ending in a newline.
     """
-    lines = [f'o {name}']
-    lines.extend(f'v {x:.6f} {y:.6f} {z:.6f}' for x, y, z in mesh.vertices)
-    lines.extend(f'f {a + 1} {b + 1} {c + 1}' for a, b, c in mesh.triangles)
-    return '\n'.join(lines) + '\n'
+    return common_encode_obj(mesh.vertices, mesh.triangles, header=(f'o {name}',))
 
 
 def write_obj(mesh: Mesh, path: Path, *, name: str = 'model') -> None:

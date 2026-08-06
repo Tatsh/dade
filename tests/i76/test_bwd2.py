@@ -25,6 +25,10 @@ def test_ascii_strings_min_length() -> None:
     assert ascii_strings(b'ab\x00hello', min_length=2) == ('ab', 'hello')
 
 
+def test_ascii_strings_drops_short_trailing_run() -> None:
+    assert ascii_strings(b'hello\x00a', min_length=2) == ('hello',)
+
+
 def test_walk_top_level(bwd2_container: bytes) -> None:
     chunks = walk(bwd2_container)
     assert len(chunks) == 1

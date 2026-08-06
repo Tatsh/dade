@@ -125,3 +125,22 @@ def test_rewrite_rejects_an_unhandled_status() -> None:
 
 def test_gm_drum_map_targets_valid_notes() -> None:
     assert all(0 <= key <= 127 and 0 <= value <= 127 for key, value in GM_DRUM_MAP.items())
+
+
+def _midi(track: bytes) -> bytes:
+    return (b'MThd' + struct.pack('>IHHH', 6, 0, 1, 384) + b'MTrk' + struct.pack('>I', len(track)) +
+            track)
+
+
+def test_used_channels_resolves_running_status() -> None:
+    assert used_channels(_midi(bytes([0x00, 0x92, 60, 100, 0x00, 62, 100]))) == {2}
+
+
+def test_used_channels_skips_a_system_exclusive_message() -> None:
+    track = bytes([0x00, 0xF0, 3, 1, 2, 3, 0x00, 0x93, 60, 100])
+    assert used_channels(_midi(track)) == {3}
+
+
+def test_used_channels_stops_at_an_unknown_status() -> None:
+    track = bytes([0x00, 0x94, 60, 100, 0x00, 0xF1, 0x00, 0x00, 0x95, 60, 100])
+    assert used_channels(_midi(track)) == {4}
