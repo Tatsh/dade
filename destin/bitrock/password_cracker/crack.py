@@ -336,20 +336,18 @@ def _resolve_backend(name: Backend) -> _GpuBackend:
     match name:
         case 'cpu':
             return _crack_cpu
-        case 'cuda':
+        case 'cuda':  # pragma: no cover
             if (cuda := _load_cuda()) is None:
                 msg = ('The CUDA backend requires the optional "cupy" package and an NVIDIA GPU; '
                        'install it with `pip install pybitrock[cuda]`.')
                 raise BitrockError(msg)
-            # Only reached when cupy is importable on an NVIDIA GPU host, absent from CI.
-            return cuda  # pragma: no cover
-        case 'opencl':
+            return cuda
+        case 'opencl':  # pragma: no cover
             if (opencl := _load_opencl()) is None:
                 msg = ('The OpenCL backend requires the optional "pyopencl" package and an OpenCL '
                        'device; install it with `pip install pybitrock[opencl]`.')
                 raise BitrockError(msg)
-            # Only reached when pyopencl is importable with an OpenCL device, absent from CI.
-            return opencl  # pragma: no cover
+            return opencl
         case _:
             # ``auto``: prefer CUDA, then OpenCL, then fall back to the CPU.
             return _load_cuda() or _load_opencl() or _crack_cpu
@@ -392,9 +390,8 @@ def _load_cuda() -> _GpuBackend | None:
     """
     try:
         from .cuda import crack_cuda, list_devices  # noqa: PLC0415
-    except ImportError:
+    except ImportError:  # pragma: no cover
         return None
-    # Only reached when cupy is importable, on an NVIDIA GPU host or a CI runner with the extra.
     return crack_cuda if _has_devices(list_devices) else None  # pragma: no cover
 
 
@@ -410,9 +407,8 @@ def _load_opencl() -> _GpuBackend | None:
     """
     try:
         from .opencl import crack_opencl, list_devices  # noqa: PLC0415
-    except ImportError:
+    except ImportError:  # pragma: no cover
         return None
-    # Only reached when pyopencl is importable, on an OpenCL host or a CI runner with the extra.
     return crack_opencl if _has_devices(list_devices) else None  # pragma: no cover
 
 
