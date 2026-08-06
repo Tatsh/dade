@@ -4,44 +4,44 @@ Core
 The top-level modules that drive a run: source detection, the mirroring dispatcher, the ambient
 per-run context, the texture and pack readers, and native-tool location.
 
-``incoming_extractor.context``
+``destin.incoming.context``
 ------------------------------
 
-.. automodule:: incoming_extractor.context
+.. automodule:: destin.incoming.context
    :members:
 
-``incoming_extractor.sources``
+``destin.incoming.sources``
 ------------------------------
 
-.. automodule:: incoming_extractor.sources
+.. automodule:: destin.incoming.sources
    :members:
 
-``incoming_extractor.dispatch``
+``destin.incoming.dispatch``
 -------------------------------
 
-.. automodule:: incoming_extractor.dispatch
+.. automodule:: destin.incoming.dispatch
    :members:
 
-``incoming_extractor.pvrpack``
+``destin.incoming.pvrpack``
 ------------------------------
 
-.. automodule:: incoming_extractor.pvrpack
+.. automodule:: destin.incoming.pvrpack
    :members:
 
-``incoming_extractor.textures``
+``destin.incoming.textures``
 -------------------------------
 
-.. automodule:: incoming_extractor.textures
+.. automodule:: destin.incoming.textures
    :members:
 
-``incoming_extractor.tools``
+``destin.incoming.tools``
 ----------------------------
 
-.. automodule:: incoming_extractor.tools
+.. automodule:: destin.incoming.tools
    :members:
 
-``incoming_extractor.typing``
+``destin.incoming.typing``
 -----------------------------
 
-.. automodule:: incoming_extractor.typing
+.. automodule:: destin.incoming.typing
    :members:

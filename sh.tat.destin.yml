@@ -1,5 +1,5 @@
-app-id: 'sh.tat.incoming-extractor'
-command: 'incoming-extractor'
+app-id: 'sh.tat.destin'
+command: 'destin'
 finish-args:
   - '--share=ipc'
   - '--share=network'
@@ -13,7 +13,7 @@ modules:
       build-args:
         - '--share=network'
     buildsystem: 'simple'
-    name: 'incoming-extractor'
+    name: 'destin'
     sources:
       - path: '.'
         type: 'dir'

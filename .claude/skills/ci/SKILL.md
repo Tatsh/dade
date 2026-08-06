@@ -24,12 +24,12 @@ changed, skip the click-auditor).
 
 ### When Python code is being committed
 
-If any changed files are under `incoming_extractor/` or `tests/`, run the following
+If any changed files are under `destin/` or `tests/`, run the following
 agents **in order**:
 
 1. **python-moderniser** - upgrade to modern Python features.
 1. **click-auditor** - validate Click command consistency. **Only run if files under
-   `incoming_extractor/commands/` changed.**
+   `destin/commands/` changed.**
 1. **docstring-fixer** - fix missing or incomplete docstrings.
 1. **copy-editor** - fix prose in comments, docstrings, and strings.
 1. **test-writer** - generate/update tests for new/changed code. **Skip if the only changes are in
@@ -43,7 +43,7 @@ agents **in order**:
   check if `CHANGELOG.md` was modified (`git diff CHANGELOG.md`). If it was, stage it with the
   relevant commit. Follow `.claude/agents/changelog.md`, including its skip list.
 
-  Files under `incoming_extractor/`, `tests/`, or version changes in `pyproject.toml` are **candidates**
+  Files under `destin/`, `tests/`, or version changes in `pyproject.toml` are **candidates**
   for the changelog agent only when they **change what users see or
   how the software behaves**. Editing those paths is not sufficient on its own.
 
@@ -65,7 +65,7 @@ file in a commit:
 - `CHANGELOG.md`
 - `.vscode/dictionary.txt`
 
-For example, if a commit contains `incoming_extractor/commands/main.py`,
+For example, if a commit contains `destin/commands/main.py`,
 `tests/test_main_command.py`, and `CHANGELOG.md`, the component is determined by
 the source files only. `CHANGELOG.md` is simply staged alongside them.
 
@@ -123,11 +123,11 @@ Closes: #123
 
 ### Component prefix rules
 
-For Python files, strip the `incoming_extractor/` prefix and replace `/` with `.` (like module imports).
+For Python files, strip the `destin/` prefix and replace `/` with `.` (like module imports).
 
-- Python file `incoming_extractor/media.py` → `media:`.
-- Multiple files under `incoming_extractor/commands/` → `commands:`.
-- Single command file `incoming_extractor/commands/admin.py` → `commands.admin:`.
+- Python file `destin/media.py` → `media:`.
+- Multiple files under `destin/commands/` → `commands:`.
+- Single command file `destin/commands/admin.py` → `commands.admin:`.
 - Workflow file `.github/workflows/qa.yml` → `workflows/qa:`.
 - Multiple workflows → `workflows/*:`.
 - Agent files `.claude/agents/*.md` → `.claude:` or specific agent name.

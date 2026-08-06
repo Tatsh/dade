@@ -1,7 +1,6 @@
 """Command-line interface."""
 from __future__ import annotations
 
-from os import cpu_count
 from tempfile import TemporaryDirectory
 import asyncio
 import logging
@@ -9,14 +8,15 @@ import pathlib
 
 from anyio import Path
 from bascom import setup_logging
+from destin import __version__
+from destin.common.context import using_tool_paths
+from destin.common.utils import pluralize
+from destin.common.workers import default_jobs
 import click
 
-from . import __version__
-from .context import using_tool_paths
 from .dispatch import run_conversions
 from .sources import SourceError, prepare_source
 from .tools import ToolNotFoundError
-from .utils import pluralize
 
 __all__ = ('main',)
 
@@ -50,7 +50,7 @@ async def _run(source: pathlib.Path, output: Path, *, jobs: int | None,
         If the source cannot be prepared.
     """
     await output.mkdir(parents=True, exist_ok=True)
-    concurrency = jobs if jobs and jobs > 0 else (cpu_count() or 1)
+    concurrency = jobs if jobs and jobs > 0 else default_jobs()
     with using_tool_paths(tools), TemporaryDirectory() as work:
         try:
             prepared = await asyncio.to_thread(prepare_source, source, pathlib.Path(work))
@@ -103,7 +103,7 @@ def main(source: pathlib.Path,
     mirrored into the output directory: recognised assets are converted and every other file is
     copied verbatim. The source is never modified.
     """  # ruff:ignore[docstring-missing-exception]
-    setup_logging(debug=debug, loggers={'incoming_extractor': {}})
+    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.incoming': {}})
     tools = {'gdiextract': gdiextract_path, 'spvr2png': spvr2png_path, 'unshield': unshield_path}
     if asyncio.run(_run(source, output, jobs=jobs, tools=tools)):
         raise click.exceptions.Exit(1)

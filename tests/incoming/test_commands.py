@@ -4,9 +4,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PIL import Image
-from incoming_extractor.commands.extract_pvr_pack import extract_pvr_pack
-from incoming_extractor.commands.ian2obj import ian2obj
-from incoming_extractor.test_utils import ian_model, mbin_pair, pvr_pack, pvrt_chunk
+from destin.incoming.commands.extract_pvr_pack import extract_pvr_pack
+from destin.incoming.commands.ian2obj import ian2obj
+from destin.incoming.test_utils import ian_model, mbin_pair, pvr_pack, pvrt_chunk
 
 if TYPE_CHECKING:
     from click.testing import CliRunner
@@ -51,7 +51,7 @@ def test_extract_pvr_pack_raw(runner: CliRunner, tmp_path: Path) -> None:
 def test_extract_pvr_pack_png(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
     pack = tmp_path / 'A_T.PVR'
     pack.write_bytes(pvr_pack([pvrt_chunk(2, 2)]))
-    mocker.patch('incoming_extractor.converters.images.find_spvr2png', return_value=Path('/spv'))
+    mocker.patch('destin.incoming.converters.images.find_spvr2png', return_value=Path('/spv'))
 
     def run(args: list[str], **_: object) -> object:
         raw_dir, dest = Path(args[2]), Path(args[4])
@@ -59,7 +59,7 @@ def test_extract_pvr_pack_png(runner: CliRunner, tmp_path: Path, mocker: MockerF
             (dest / f'{pvr.stem}.png').write_bytes(b'PNG')
         return mocker.Mock()
 
-    mocker.patch('incoming_extractor.converters.images.sp.run', side_effect=run)
+    mocker.patch('destin.incoming.converters.images.sp.run', side_effect=run)
     out = tmp_path / 'out'
     result = runner.invoke(extract_pvr_pack, ['--png', str(pack), str(out)])
     assert result.exit_code == 0
@@ -107,7 +107,7 @@ def test_ian2obj_no_game_root_found(runner: CliRunner, tmp_path: Path) -> None:
 
 def test_ian2obj_dc_auto_texture(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
     model = _build_dc_game(tmp_path)
-    mocker.patch('incoming_extractor.textures.find_spvr2png', return_value=Path('/spv'))
+    mocker.patch('destin.incoming.textures.find_spvr2png', return_value=Path('/spv'))
 
     def run(args: list[str], **_: object) -> object:
         raw_dir, dest = Path(args[2]), Path(args[4])
@@ -115,7 +115,7 @@ def test_ian2obj_dc_auto_texture(runner: CliRunner, tmp_path: Path, mocker: Mock
             (dest / f'{pvr.stem}.png').write_bytes(b'PNG')
         return mocker.Mock()
 
-    mocker.patch('incoming_extractor.textures.sp.run', side_effect=run)
+    mocker.patch('destin.incoming.textures.sp.run', side_effect=run)
     out = tmp_path / 'out'
     result = runner.invoke(ian2obj, [str(model), str(out)])
     assert result.exit_code == 0
@@ -128,7 +128,7 @@ def test_ian2obj_dc_explicit_game_root(runner: CliRunner, tmp_path: Path,
                                        mocker: MockerFixture) -> None:
     root = tmp_path / 'game'
     model = _build_dc_game(root)
-    mocker.patch('incoming_extractor.textures.find_spvr2png', return_value=Path('/spv'))
+    mocker.patch('destin.incoming.textures.find_spvr2png', return_value=Path('/spv'))
 
     def run(args: list[str], **_: object) -> object:
         raw_dir, dest = Path(args[2]), Path(args[4])
@@ -136,7 +136,7 @@ def test_ian2obj_dc_explicit_game_root(runner: CliRunner, tmp_path: Path,
             (dest / f'{pvr.stem}.png').write_bytes(b'PNG')
         return mocker.Mock()
 
-    mocker.patch('incoming_extractor.textures.sp.run', side_effect=run)
+    mocker.patch('destin.incoming.textures.sp.run', side_effect=run)
     out = tmp_path / 'out'
     result = runner.invoke(ian2obj, ['--game-root', str(root), str(model), str(out)])
     assert result.exit_code == 0

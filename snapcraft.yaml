@@ -1,21 +1,21 @@
 apps:
-  incoming-extractor:
-    command: 'bin/incoming-extractor'
+  destin:
+    command: 'bin/destin'
     plugs:
       - 'home'
       - 'network'
       - 'network-bind'
 base: 'core24'
 confinement: 'strict'
-contact: 'https://github.com/Tatsh/incoming-extractor/issues'
-description: 'Extract and convert assets from the PC and Dreamcast versions of Incoming.'
+contact: 'https://github.com/Tatsh/destin/issues'
+description: 'Extract and convert assets from a collection of PC and console video games.'
 donation: 'https://buymeacoffee.com/Tatsh'
 grade: 'stable'
-issues: 'https://github.com/Tatsh/incoming-extractor/issues'
+issues: 'https://github.com/Tatsh/destin/issues'
 license: 'MIT'
-name: 'incoming-extractor'
+name: 'destin'
 parts:
-  incoming-extractor:
+  destin:
     build-packages: []
     plugin: 'python'
     python-packages:
@@ -27,8 +27,8 @@ platforms:
     build-on: 'amd64'
   arm64:
     build-on: 'arm64'
-source-code: 'https://github.com/Tatsh/incoming-extractor'
-summary: 'Extract and convert assets from the PC and Dreamcast versions of Incoming.'
-title: 'incoming-extractor'
+source-code: 'https://github.com/Tatsh/destin'
+summary: 'Extract and convert assets from a collection of PC and console video games.'
+title: 'destin'
 version: '0.0.0'
-website: 'https://tatsh.github.io/incoming-extractor/'
+website: 'https://tatsh.github.io/destin/'

@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import wave
 
-from incoming_extractor.converters import ConversionError
-from incoming_extractor.converters.audio import raw_to_wav
+from destin.incoming.converters import ConversionError
+from destin.incoming.converters.audio import raw_to_wav
 import pytest
 
 if TYPE_CHECKING:
@@ -33,6 +33,6 @@ def test_raw_bad_size(tmp_path: Path) -> None:
 def test_raw_io_error(tmp_path: Path, mocker: MockerFixture) -> None:
     source = tmp_path / 't.raw'
     source.write_bytes(bytes(2352))
-    mocker.patch('incoming_extractor.converters.audio.wave.open', side_effect=OSError('disk full'))
+    mocker.patch('destin.incoming.converters.audio.wave.open', side_effect=OSError('disk full'))
     with pytest.raises(ConversionError, match='Failed to convert'):
         raw_to_wav(source, tmp_path)

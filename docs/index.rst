@@ -1,15 +1,15 @@
-incoming-extractor
-==================
+destin
+======
 
 .. include:: badges.rst
 
-Extract and convert assets from the PC and Dreamcast versions of *Incoming* (Rage Software,
-published by Interplay, 1998-1999).
+``destin`` bundles a collection of asset extractors and converters for a set of PC and console
+video games into a single package. Each game is a sub-command of one ``destin`` command, invoked as
+``destin <game> <subcommand>``.
 
-Given a PC disc (directory, ISO, or ``DATA1.CAB``), a Dreamcast GDI, or a directory of already
-extracted PC or GD-ROM content, ``incoming-extractor`` mirrors the source tree into an output
-directory, converting the proprietary assets to open formats and copying everything else verbatim.
-The source is never modified.
+The games currently supported are *Incoming* (PC and Dreamcast), *Amplitude* and *FreQuency* (PS2),
+*Tone Sphere*, any Marmalade SDK title, BitRock / InstallBuilder installers, *Monopoly* (2008),
+*Extreme-G* and *Extreme-G 2* (N64 and PC), *Interstate '76*, and *Tony Hawk's Pro Skater 2* (PC).
 
 .. toctree::
    :caption: User guide

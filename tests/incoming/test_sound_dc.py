@@ -5,9 +5,9 @@ import json
 import logging
 import wave
 
-from incoming_extractor.converters import ConversionError
-from incoming_extractor.converters.sound_dc import mlt_to_json, osb_to_wav
-from incoming_extractor.test_utils import mlt_container, osb_bank
+from destin.incoming.converters import ConversionError
+from destin.incoming.converters.sound_dc import mlt_to_json, osb_to_wav
+from destin.incoming.test_utils import mlt_container, osb_bank
 import pytest
 
 if TYPE_CHECKING:
@@ -50,7 +50,7 @@ def test_osb_bad_bank_magic(tmp_path: Path) -> None:
 def test_osb_truncated_record(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
     source = tmp_path / 'b.osb'
     source.write_bytes(osb_bank(lea=4)[:0x4c])  # drop the sample data
-    with caplog.at_level(logging.WARNING, logger='incoming_extractor.converters.sound_dc'):
+    with caplog.at_level(logging.WARNING, logger='destin.incoming.converters.sound_dc'):
         outputs = osb_to_wav(source, tmp_path)
     assert outputs == ()
     assert 'past the end' in caplog.text

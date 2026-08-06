@@ -4,11 +4,11 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-  "commitizen>=4.16.5",
+  "commitizen>=4.17.0",
   "cz-path>=0.0.7",
   "mypy>=2.3.0",
   "ruff==0.16.0",
-  "ty>=0.0.64",
+  "ty>=0.0.65",
   "yapf>=0.43.0",
 ]
 docs = [
@@ -48,13 +48,38 @@ dependencies = [
   "anyio>=4.14.2",
   "bascom>=0.1.3",
   "click>=8.4.2",
+  "jinja2>=3.1.6",
+  "mido>=1.3.3",
+  "numpy>=1.26",
   "pillow>=12.3.0",
+  "rich>=15.0.0",
   "typing-extensions>=4.16.0",
 ]
-description = "Extract and convert assets from the PC and Dreamcast versions of Incoming."
-keywords = ["dreamcast", "extractor", "incoming", "pvr", "reverse engineering"]
+description = "Extract and convert assets from a collection of PC and console video games."
+keywords = [
+  "acclaim",
+  "activision",
+  "amplitude",
+  "bit192labs",
+  "bitrock",
+  "dreamcast",
+  "extractor",
+  "extreme-g",
+  "harmonix",
+  "incoming",
+  "installbuilder",
+  "interplay",
+  "interstate 76",
+  "interstate 82",
+  "marmalade",
+  "monopoly",
+  "neversoft",
+  "rage software",
+  "tone sphere",
+  "tony hawk",
+]
 license = "MIT"
-name = "incoming-extractor"
+name = "destin"
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
 version = "0.0.0"
@@ -63,31 +88,33 @@ version = "0.0.0"
 email = "audvare@gmail.com"
 name = "Andrew Udvare"
 
+[project.optional-dependencies]
+cuda = ["cupy-cuda12x>=13.0.0"]
+lzham = ["pylzham>=0.1.3"]
+opencl = ["pyopencl>=2024.1"]
+
 [project.scripts]
-extract-pvr-pack = "incoming_extractor.commands.extract_pvr_pack:extract_pvr_pack"
-ian2obj = "incoming_extractor.commands.ian2obj:ian2obj"
-incoming-extractor = "incoming_extractor.main:main"
+destin = "destin.main:main"
 
 [project.urls]
-Issues = "https://github.com/Tatsh/incoming-extractor/issues"
-documentation = "https://incoming-extractor.readthedocs.org"
-homepage = "https://tatsh.github.io/incoming-extractor/"
-repository = "https://github.com/Tatsh/incoming-extractor"
+Issues = "https://github.com/Tatsh/destin/issues"
+documentation = "https://destin.readthedocs.org"
+homepage = "https://tatsh.github.io/destin/"
+repository = "https://github.com/Tatsh/destin"
 
 [tool.commitizen]
 name = "cz_path"
-remove_path_prefixes = ["include", "incoming_extractor", "src"]
+remove_path_prefixes = ["destin", "include", "src"]
 tag_format = "v$version"
 version_files = [
   ".wiswa.jsonnet",
   "CITATION.cff",
   "README.md",
+  "destin/__init__.py",
   "docs/badges.rst",
   "docs/index.rst",
-  "incoming_extractor/__init__.py",
-  "man/incoming-extractor.1",
   "package.json",
-  "sh.tat.incoming-extractor.yml",
+  "sh.tat.destin.yml",
   "snapcraft.yaml",
 ]
 version_provider = "pep621"
@@ -96,11 +123,11 @@ version_provider = "pep621"
 exclude_also = ["if TYPE_CHECKING:"]
 omit = [
   "conftest.py",
-  "incoming_extractor/__main__.py",
+  "destin/__main__.py",
   "tests.py",
   "tests/*/test_*.py",
   "tests/test_*.py",
-  "incoming_extractor/typing.py",
+  "destin/*/typing.py",
 ]
 show_missing = true
 
@@ -108,21 +135,21 @@ show_missing = true
 branch = true
 omit = [
   "conftest.py",
-  "incoming_extractor/__main__.py",
+  "destin/__main__.py",
   "tests.py",
   "tests/*/test_*.py",
   "tests/test_*.py",
-  "incoming_extractor/typing.py",
+  "destin/*/typing.py",
 ]
 
 [tool.doc8]
 max-line-length = 100
 
 [tool.hatch.build.targets.sdist]
-include = ["incoming_extractor", "man", "tests"]
+include = ["destin", "man", "tests"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["incoming_extractor"]
+packages = ["destin"]
 
 [tool.mypy]
 cache_dir = "~/.cache/mypy"
@@ -138,7 +165,7 @@ warn_unreachable = true
 deprecateTypingAliases = true
 enableExperimentalFeatures = true
 exclude = [".venv", "**/node_modules", "**/__pycache__", "**/.*"]
-include = ["./incoming_extractor", "./tests"]
+include = ["./destin", "./tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.10"
 reportCallInDefaultInitializer = "warning"
@@ -152,6 +179,7 @@ venv = ".venv"
 venvPath = "."
 
 [tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
 asyncio_mode = "strict"
 mock_use_standalone_module = true
 norecursedirs = ["node_modules"]
@@ -212,7 +240,7 @@ max-complexity = 20
 extend-ignore-names = ["test_*"]
 
 [tool.ruff.lint.per-file-ignores]
-"incoming_extractor/main.py" = ["PLR0913"]
+"destin/main.py" = ["PLR0913"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

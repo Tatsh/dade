@@ -89,7 +89,7 @@ def process(data: str, *, verbose: bool = False) -> int:
 
 ## Workflow
 
-1. For each Python file in `incoming_extractor/` (not tests, not `.venv`):
+1. For each Python file in `destin/` (not tests, not `.venv`):
    a. Read the file.
    b. Identify symbols in `__all__`.
    c. Check each for a docstring. Flag missing or incomplete ones.

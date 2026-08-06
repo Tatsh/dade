@@ -12,16 +12,20 @@ skipped and the affected files are copied verbatim.
    * - Tool
      - Used for
      - Option
-   * - `spvr2png <https://github.com/nextgeniuspro/spvr2png>`_
-     - Converting Sega Dreamcast PVR images to PNG.
-     - ``--spvr2png-path``
+   * - `7z <https://www.7-zip.org/>`_
+     - Extracting ``DATA1.CAB`` from a PC ISO, when ``isodump`` is not found.
+     -
    * - `gdiextract <https://github.com/MachXNU/gdiextract>`_
      - Extracting the ISO 9660 file system from a Dreamcast GDI.
      - ``--gdiextract-path``
+   * - `isodump <https://sourceforge.net/projects/cdrtools/>`_
+     - Extracting ``DATA1.CAB`` from a PC ISO.
+     -
+   * - `spvr2png <https://github.com/nextgeniuspro/spvr2png>`_
+     - Converting Sega Dreamcast PVR images to PNG.
+     - ``--spvr2png-path``
    * - `unshield <https://github.com/twogood/unshield>`_
      - Unpacking the InstallShield ``DATA1.CAB`` cabinet on the PC disc.
      - ``--unshield-path``
 
-Extracting ``DATA1.CAB`` from a PC ISO additionally uses one of
-`isodump <https://sourceforge.net/projects/cdrtools/>`_ or `7z <https://www.7-zip.org/>`_, whichever
-is found first on ``PATH``.
+Of ``isodump`` and ``7z``, whichever is found first on ``PATH`` is used.

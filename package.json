@@ -1,8 +1,8 @@
 {
   "_wiswa": {
     "commandLine": "wiswa -d",
-    "lastRun": "2026-08-05T02:06:47Z",
-    "version": "149a6b0"
+    "lastRun": "2026-08-06T03:35:15Z",
+    "version": "ee89345-dirty"
   },
   "contributors": ["Andrew Udvare <audvare@gmail.com>"],
   "cspell": {
@@ -39,7 +39,7 @@
     ],
     "useGitignore": true
   },
-  "description": "Extract and convert assets from the PC and Dreamcast versions of Incoming.",
+  "description": "Extract and convert assets from a collection of PC and console video games.",
   "devDependencies": {
     "@prettier/plugin-xml": "^3.4.2",
     "cspell": "^10.0.1",
@@ -50,9 +50,30 @@
     "prettier-plugin-toml": "^2.0.6",
     "pyright": "^1.1.411"
   },
-  "files": ["LICENSE.txt", "README.md", "man/incoming-extractor.1"],
-  "homepage": "https://tatsh.github.io/incoming-extractor/",
-  "keywords": ["dreamcast", "extractor", "incoming", "pvr", "reverse engineering"],
+  "files": ["LICENSE.txt", "README.md", "man/destin.1"],
+  "homepage": "https://tatsh.github.io/destin/",
+  "keywords": [
+    "acclaim",
+    "activision",
+    "amplitude",
+    "bit192labs",
+    "bitrock",
+    "dreamcast",
+    "extractor",
+    "extreme-g",
+    "harmonix",
+    "incoming",
+    "installbuilder",
+    "interplay",
+    "interstate 76",
+    "interstate 82",
+    "marmalade",
+    "monopoly",
+    "neversoft",
+    "rage software",
+    "tone sphere",
+    "tony hawk"
+  ],
   "license": "MIT",
   "markdownlint-cli2": {
     "config": {
@@ -74,7 +95,7 @@
     "noBanner": true,
     "showFound": true
   },
-  "name": "incoming-extractor",
+  "name": "destin",
   "packageManager": "yarn@4.18.0",
   "prettier": {
     "endOfLine": "lf",
@@ -100,7 +121,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tatsh/incoming-extractor.git"
+    "url": "git+https://github.com/Tatsh/destin.git"
   },
   "scripts": {
     "check-formatting": "prettier --check . && uv run yapf --diff --parallel --recursive . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2",

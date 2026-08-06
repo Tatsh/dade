@@ -5,16 +5,16 @@ Install from PyPI with your preferred tool:
 
 .. code-block:: shell
 
-   pip install incoming-extractor
+   pip install destin
 
 Or with `uv <https://docs.astral.sh/uv/>`_:
 
 .. code-block:: shell
 
-   uv tool install incoming-extractor
+   uv tool install destin
 
-This installs three console scripts: ``incoming-extractor`` (the main extractor) and the
-:doc:`standalone utilities <utilities>` ``ian2obj`` and ``extract-pvr-pack``.
+This installs a single console script, ``destin``, whose sub-commands cover every supported game
+(see :doc:`usage` and the :doc:`utilities`).
 
 Prerequisites
 -------------

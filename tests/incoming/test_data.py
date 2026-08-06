@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import json
 
-from incoming_extractor.converters import ConversionError, UnsupportedFormatError
-from incoming_extractor.converters.data import bin_to_json, ctl_to_json
-from incoming_extractor.test_utils import ctl_records
+from destin.incoming.converters import ConversionError, UnsupportedFormatError
+from destin.incoming.converters.data import bin_to_json, ctl_to_json
+from destin.incoming.test_utils import ctl_records
 import pytest
 
 if TYPE_CHECKING:

@@ -2,66 +2,66 @@ Converters
 ==========
 
 Each converter turns one asset format into an open output. The package root re-exports the shared
-conversion-rule types, and :mod:`~incoming_extractor.converters.registry` assembles every rule into
+conversion-rule types, and :mod:`~destin.incoming.converters.registry` assembles every rule into
 the dispatch table.
 
 Shared types
 ------------
 
-.. automodule:: incoming_extractor.converters
+.. automodule:: destin.incoming.converters
    :members: ConversionError, Rule, UnsupportedFormatError
    :imported-members:
 
-``incoming_extractor.converters.registry``
+``destin.incoming.converters.registry``
 ------------------------------------------
 
-.. automodule:: incoming_extractor.converters.registry
+.. automodule:: destin.incoming.converters.registry
    :members:
 
-``incoming_extractor.converters.images``
+``destin.incoming.converters.images``
 ----------------------------------------
 
-.. automodule:: incoming_extractor.converters.images
+.. automodule:: destin.incoming.converters.images
    :members:
 
-``incoming_extractor.converters.models``
+``destin.incoming.converters.models``
 ----------------------------------------
 
-.. automodule:: incoming_extractor.converters.models
+.. automodule:: destin.incoming.converters.models
    :members:
 
-``incoming_extractor.converters.models_dc``
+``destin.incoming.converters.models_dc``
 -------------------------------------------
 
-.. automodule:: incoming_extractor.converters.models_dc
+.. automodule:: destin.incoming.converters.models_dc
    :members:
 
-``incoming_extractor.converters.audio``
+``destin.incoming.converters.audio``
 ---------------------------------------
 
-.. automodule:: incoming_extractor.converters.audio
+.. automodule:: destin.incoming.converters.audio
    :members:
 
-``incoming_extractor.converters.sound_dc``
+``destin.incoming.converters.sound_dc``
 ------------------------------------------
 
-.. automodule:: incoming_extractor.converters.sound_dc
+.. automodule:: destin.incoming.converters.sound_dc
    :members:
 
-``incoming_extractor.converters.data``
+``destin.incoming.converters.data``
 --------------------------------------
 
-.. automodule:: incoming_extractor.converters.data
+.. automodule:: destin.incoming.converters.data
    :members:
 
-``incoming_extractor.converters.state``
+``destin.incoming.converters.state``
 ---------------------------------------
 
-.. automodule:: incoming_extractor.converters.state
+.. automodule:: destin.incoming.converters.state
    :members:
 
-``incoming_extractor.converters.text``
+``destin.incoming.converters.text``
 --------------------------------------
 
-.. automodule:: incoming_extractor.converters.text
+.. automodule:: destin.incoming.converters.text
    :members:

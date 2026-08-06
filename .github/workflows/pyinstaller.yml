@@ -18,6 +18,11 @@ jobs:
         uses: 'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97'
         with:
           python-version: '3.13'
+      - if: runner.os == 'Windows'
+        name: 'Shorten uv cache path'
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value 'UV_CACHE_DIR=C:\uv'
+        shell: 'pwsh'
       - name: 'Install dependencies (uv)'
         run: |
           uv sync
@@ -171,7 +176,7 @@ jobs:
         uses: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'
         with:
           if-no-files-found: error
-          name: incoming-extractor-binaries-${{ matrix.suffix }}
+          name: destin-binaries-${{ matrix.suffix }}
           path: |
             ${{ matrix.dist_path }}
       - name: 'Attest'
@@ -181,7 +186,7 @@ jobs:
       - name: 'Generate SBOM'
         uses: 'anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610'
         env:
-          SYFT_SOURCE_NAME: 'incoming-extractor'
+          SYFT_SOURCE_NAME: 'destin'
           SYFT_SOURCE_VERSION: ${{ github.ref_name }}
         with:
           path: 'dist/'
@@ -202,7 +207,7 @@ jobs:
           rm -fR _out
           mkdir _out
           # shellcheck disable=SC2086 # DIST_PATH is a glob and must expand.
-          zip -j "_out/incoming-extractor-${REF_NAME}-${SUFFIX}.zip" $DIST_PATH
+          zip -j "_out/destin-${REF_NAME}-${SUFFIX}.zip" $DIST_PATH
       - if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && github.ref_type == 'tag'
         name: 'Zip files'
         env:
@@ -212,7 +217,7 @@ jobs:
         run: |
           Remove-Item -Force _out -ErrorAction Continue
           New-Item -ItemType Directory -Name _out
-          Compress-Archive -Path $env:DIST_PATH -DestinationPath "_out/incoming-extractor-$env:REF_NAME-$env:SUFFIX.zip"
+          Compress-Archive -Path $env:DIST_PATH -DestinationPath "_out/destin-$env:REF_NAME-$env:SUFFIX.zip"
         shell: pwsh
       - if: github.ref_type == 'tag'
         name: 'Attest'
@@ -225,13 +230,6 @@ jobs:
         with:
           subject-path: '_out/*.zip'
           sbom-path: 'sbom.spdx.json'
-      - if: github.ref_type == 'tag'
-        name: Create or update draft release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$GITHUB_REF_NAME" --draft --notes '' _out/*.zip ||
-            gh release upload "$GITHUB_REF_NAME" _out/*.zip --clobber
     strategy:
       matrix:
         include:
@@ -247,13 +245,45 @@ jobs:
           - os: 'windows-11-arm'
             dist_path: 'dist/*.exe'
             suffix: 'win-arm64'
+  release-assets:
+    concurrency:
+      group: release-assets-${{ github.ref }}
+      queue: max
+    if: github.ref_type == 'tag'
+    needs:
+      - 'build'
+    permissions:
+      contents: 'write'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Download build artifacts'
+        uses: 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c'
+        with:
+          merge-multiple: true
+          path: '_release_assets'
+          pattern: destin-binaries-*
+      - name: 'Create or update draft release'
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        shell: 'bash'
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 ||
+            gh release create "$GITHUB_REF_NAME" --draft --notes ''
+          shopt -s nullglob
+          assets=(_release_assets/*)
+          if [ -z "${assets[0]-}" ]; then
+            echo 'No build artifacts to attach.'
+            exit 0
+          fi
+          gh release upload "$GITHUB_REF_NAME" "${assets[@]}" --clobber
 name: 'PyInstaller'
 'on':
   push:
     branches:
       - 'master'
     paths:
-      - 'incoming_extractor/**'
+      - 'destin/**'
       - '.github/workflows/pyinstaller.yml'
       - 'pyproject.toml'
       - 'uv.lock'

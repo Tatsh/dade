@@ -1,34 +1,20 @@
 """Location and invocation of the native helper tools."""
 from __future__ import annotations
 
-from pathlib import Path
-from shutil import which
+from typing import TYPE_CHECKING
 import logging
 import os
 import subprocess as sp
 
-from incoming_extractor.context import tool_path
+from destin.common.tools import ToolNotFoundError, locate_tool
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 __all__ = ('ToolNotFoundError', 'find_gdiextract', 'find_spvr2png', 'find_unshield',
            'run_gdiextract', 'run_unshield')
 
 log = logging.getLogger(__name__)
-
-
-class ToolNotFoundError(Exception):
-    """Raised when a required native helper tool cannot be located."""
-
-
-def _locate(name: str, override: Path | None) -> Path:
-    if (candidate := override or tool_path(name)) is not None:
-        if not candidate.is_file():
-            msg = f'Specified path for `{name}` does not exist: {candidate}.'
-            raise ToolNotFoundError(msg)
-        return candidate
-    if (found := which(name)) is not None:
-        return Path(found)
-    msg = f'Could not find `{name}`. Put it on PATH or pass `--{name}-path`.'
-    raise ToolNotFoundError(msg)
 
 
 def find_spvr2png(override: Path | None = None) -> Path:
@@ -45,7 +31,7 @@ def find_spvr2png(override: Path | None = None) -> Path:
     Path
         The resolved path to the binary.
     """
-    return _locate('spvr2png', override)
+    return locate_tool('spvr2png', override)
 
 
 def find_gdiextract(override: Path | None = None) -> Path:
@@ -62,7 +48,7 @@ def find_gdiextract(override: Path | None = None) -> Path:
     Path
         The resolved path to the binary.
     """
-    return _locate('gdiextract', override)
+    return locate_tool('gdiextract', override)
 
 
 def find_unshield(override: Path | None = None) -> Path:
@@ -79,7 +65,7 @@ def find_unshield(override: Path | None = None) -> Path:
     Path
         The resolved path to the binary.
     """
-    return _locate('unshield', override)
+    return locate_tool('unshield', override)
 
 
 def run_unshield(cabinet: Path, output_dir: Path) -> None:
