@@ -67,9 +67,21 @@ local utils = import 'utils.libjsonnet';
           anyio: utils.latestPypiPackageVersionCaret('anyio'),
           jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
           mido: utils.latestPypiPackageVersionCaret('mido'),
-          // numpy 2.3+ drops Python 3.10 and 3.11, which the project still supports, so cap at the
-          // last 2.2.x release rather than the floating caret the helper would produce.
-          numpy: '<=2.2.6',
+          // numpy 2.3 dropped Python 3.10 (it requires >=3.11), which the project still supports,
+          // so cap at the last 2.2.x release rather than the floating caret the helper would
+          // produce. Windows on ARM64 is the exception: numpy ships win_arm64 wheels only from 2.3,
+          // so on that platform (where Python is always >=3.11) require >=2.3 so numpy installs
+          // from a wheel rather than failing to build from source.
+          numpy: [
+            {
+              markers: "platform_machine != 'ARM64' or sys_platform != 'win32' or python_version < '3.11'",
+              version: '<=2.2.6',
+            },
+            {
+              markers: "platform_machine == 'ARM64' and sys_platform == 'win32' and python_version >= '3.11'",
+              version: '>=2.3',
+            },
+          ],
           pillow: utils.latestPypiPackageVersionCaret('pillow'),
           rich: utils.latestPypiPackageVersionCaret('rich'),
         },
