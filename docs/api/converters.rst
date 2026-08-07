@@ -2,14 +2,14 @@ Converters
 ==========
 
 Each converter turns one asset format into an open output. The package root re-exports the shared
-conversion-rule types, and :mod:`~destin.incoming.converters.registry` assembles every rule into
-the dispatch table.
+:py:class:`~destin.common.registry.Rule` type, and :mod:`~destin.incoming.converters.registry`
+assembles every rule into the dispatch table.
 
 Shared types
 ------------
 
 .. automodule:: destin.incoming.converters
-   :members: ConversionError, Rule, UnsupportedFormatError
+   :members: ConversionError, UnsupportedFormatError
    :imported-members:
 
 ``destin.incoming.converters.registry``

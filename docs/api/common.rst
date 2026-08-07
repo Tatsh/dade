@@ -4,6 +4,12 @@ Common
 Shared format readers, writers, and helpers used by more than one game submodule. Each was lifted
 from a game package once a second consumer appeared, so a single implementation is maintained.
 
+``destin.common.compress``
+--------------------------
+
+.. automodule:: destin.common.compress
+   :members:
+
 ``destin.common.context``
 -------------------------
 
@@ -16,10 +22,22 @@ from a game package once a second consumer appeared, so a single implementation 
 .. automodule:: destin.common.cookfs
    :members:
 
+``destin.common.image``
+-----------------------
+
+.. automodule:: destin.common.image
+   :members:
+
 ``destin.common.io``
 --------------------
 
 .. automodule:: destin.common.io
+   :members:
+
+``destin.common.json``
+----------------------
+
+.. automodule:: destin.common.json
    :members:
 
 ``destin.common.lz``

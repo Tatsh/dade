@@ -1,14 +1,9 @@
 Core
 ====
 
-The top-level modules that drive a run: source detection, the mirroring dispatcher, the ambient
-per-run context, the texture and pack readers, and native-tool location.
-
-``destin.common.context``
--------------------------
-
-.. automodule:: destin.common.context
-   :members:
+The top-level modules that drive a run: source detection, the mirroring dispatcher, the texture and
+pack readers, and native-tool location. The ambient per-run context lives in
+:mod:`destin.common.context`.
 
 ``destin.incoming.sources``
 ------------------------------

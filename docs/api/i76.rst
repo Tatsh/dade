@@ -1,0 +1,72 @@
+Interstate '76 and Interstate '82
+=================================
+
+Readers and converters for the Activision vehicular-combat games *Interstate '76* and
+*Interstate '82*: geometry, terrain, textures, the horizon renderer, the ZFS and PAK archives,
+LZO decompression, and portable-executable unpacking.
+
+``destin.i76.bwd2``
+-------------------
+
+.. automodule:: destin.i76.bwd2
+   :members:
+
+``destin.i76.geo``
+------------------
+
+.. automodule:: destin.i76.geo
+   :members:
+
+``destin.i76.horizon``
+----------------------
+
+.. automodule:: destin.i76.horizon
+   :members:
+
+``destin.i76.i82``
+------------------
+
+.. automodule:: destin.i76.i82
+   :members:
+
+``destin.i76.i82_objects``
+--------------------------
+
+.. automodule:: destin.i76.i82_objects
+   :members:
+
+``destin.i76.lzo``
+------------------
+
+.. automodule:: destin.i76.lzo
+   :members:
+
+``destin.i76.pak``
+------------------
+
+.. automodule:: destin.i76.pak
+   :members:
+
+``destin.i76.pe_unpack``
+------------------------
+
+.. automodule:: destin.i76.pe_unpack
+   :members:
+
+``destin.i76.sdf``
+------------------
+
+.. automodule:: destin.i76.sdf
+   :members:
+
+``destin.i76.textures``
+-----------------------
+
+.. automodule:: destin.i76.textures
+   :members:
+
+``destin.i76.zfs``
+------------------
+
+.. automodule:: destin.i76.zfs
+   :members:
