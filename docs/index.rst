@@ -28,6 +28,7 @@ destin
 
       installation
       usage
+      harmonix
       utilities
       native-tools
 
