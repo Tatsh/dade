@@ -156,5 +156,4 @@ def convert(path: Path) -> Path | None:
     out_dir = path.with_suffix('')
     if ps2_icon_decompose(path, out_dir) is None:
         return None
-    path.unlink()
     return out_dir

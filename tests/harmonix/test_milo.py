@@ -44,7 +44,7 @@ def test_convert_decomposes_objects(make_milo: Callable[..., bytes], tmp_path: P
     source.write_bytes(make_milo(_objects(3)))
     out = milo.convert(source)
     assert out == tmp_path / 'scene'
-    assert not source.exists()
+    assert source.exists()  # The original is left in place.
     manifest = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
     assert manifest['version'] == 10
     assert manifest['object_count'] == 3

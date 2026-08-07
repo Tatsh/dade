@@ -21,7 +21,7 @@ from . import ark, audio, bitmap, mesh, workers
 from .typing import InvalidFormatError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from .typing import ArkLayout
 
@@ -29,31 +29,77 @@ __all__ = ('run', 'run_game')
 
 log = logging.getLogger(__name__)
 
+_BANK_SIBLINGS = {'.bnk': '.nse', '.hd': '.bd'}
+"""Companion file removed alongside each consumed sample bank keyed by the bank's suffix.
 
-async def _decompose_milo(root: anyio.Path, *, jobs: int, ignore_failures: bool) -> int:
+:meta hide-value:
+"""
+
+
+def _delete_intermediates(paths: Iterable[Path]) -> int:
+    """
+    Delete converted intermediate files (and any sample-bank companion) from the output tree.
+
+    Parameters
+    ----------
+    paths : collections.abc.Iterable[pathlib.Path]
+        The intermediate input files whose conversions succeeded.
+
+    Returns
+    -------
+    int
+        The number of files removed.
+    """
+    removed = 0
+    for path in paths:
+        targets = [path]
+        if (sibling := _BANK_SIBLINGS.get(path.suffix.lower())) is not None:
+            targets.append(path.with_suffix(sibling))
+        for target in targets:
+            if target.is_file():
+                target.unlink()
+                removed += 1
+    return removed
+
+
+async def _decompose_milo(root: anyio.Path,
+                          *,
+                          jobs: int,
+                          ignore_failures: bool,
+                          consumed: list[Path] | None = None) -> int:
     rnd_files = sorted([Path(p) async for p in root.rglob('*.rnd')])
     outcome = await workers.run_pool(workers.decompose_milo_file,
                                      rnd_files,
-                                     jobs=jobs,
+                                     consumed=consumed,
                                      ignore_failures=ignore_failures,
+                                     jobs=jobs,
                                      label='decompose')
     return outcome.succeeded
 
 
-async def _convert_assets(root: anyio.Path, *, jobs: int, ignore_failures: bool) -> tuple[int, int]:
+async def _convert_assets(root: anyio.Path,
+                          *,
+                          jobs: int,
+                          ignore_failures: bool,
+                          consumed: list[Path] | None = None) -> tuple[int, int]:
     assets = sorted([
         Path(path) async for path in root.rglob('*')
         if await path.is_file() and workers.has_converter(path.name)
     ])
     outcome = await workers.run_pool(workers.convert_file,
                                      assets,
-                                     jobs=jobs,
+                                     consumed=consumed,
                                      ignore_failures=ignore_failures,
+                                     jobs=jobs,
                                      label='convert')
     return outcome.succeeded, outcome.failed
 
 
-async def _split_banks(root: anyio.Path, *, jobs: int, ignore_failures: bool) -> tuple[int, int]:
+async def _split_banks(root: anyio.Path,
+                       *,
+                       jobs: int,
+                       ignore_failures: bool,
+                       consumed: list[Path] | None = None) -> tuple[int, int]:
     # The heavy VAG-ADPCM decode (per-sample WAV extraction) runs in the pool; the cheap
     # metadata-only sidecar for an ``.nse``-less ``.bnk`` is handled sequentially afterwards.
     splittable = sorted(
@@ -61,8 +107,9 @@ async def _split_banks(root: anyio.Path, *, jobs: int, ignore_failures: bool) ->
     splittable += sorted([Path(hd) async for hd in root.rglob('*.hd')])
     outcome = await workers.run_pool(workers.split_bank_file,
                                      splittable,
-                                     jobs=jobs,
+                                     consumed=consumed,
                                      ignore_failures=ignore_failures,
+                                     jobs=jobs,
                                      label='split bank')
     json_only = 0
     for bnk in sorted([bnk async for bnk in root.rglob('*.bnk')]):
@@ -77,6 +124,8 @@ async def _split_banks(root: anyio.Path, *, jobs: int, ignore_failures: bool) ->
                    bank,
                    ensure_ascii=False,
                    trailing_newline=False)
+        if consumed is not None:
+            consumed.append(Path(bnk))
         json_only += 1
     return outcome.succeeded, json_only
 
@@ -103,6 +152,7 @@ async def run(ark_path: Path,
               gunzip: bool = True,
               keep_gz: bool = False,
               ignore_failures: bool = False,
+              delete: bool = False,
               jobs: int = 1,
               disc_audio: Path | None = None,
               layout: ArkLayout | None = None,
@@ -124,6 +174,9 @@ async def run(ark_path: Path,
         Keep the original ``.gz`` entry alongside the decompressed output.
     ignore_failures : bool
         Log and skip a converter/decompose failure instead of stopping the run.
+    delete : bool
+        Delete each converted intermediate file from ``out`` once the reference-linking passes have
+        run (the extracted source stays untouched). Ignored when ``convert`` is false.
     jobs : int
         Maximum concurrent workers for the CPU-bound conversion phases; ``0`` uses the CPU count.
     disc_audio : pathlib.Path | None
@@ -147,15 +200,24 @@ async def run(ark_path: Path,
     if not convert:
         return steps
     anyio_out = anyio.Path(out)
+    # Intermediates are collected across the conversion phases and pruned only after the
+    # reference-linking passes below, which rewrite every reference to a converted name.
+    consumed: list[Path] | None = [] if delete else None
     log.info('Decomposing Milo (.rnd) scenes...')
     if on_status is not None:
         on_status('Decomposing Milo scenes')
-    decomposed = await _decompose_milo(anyio_out, jobs=jobs, ignore_failures=ignore_failures)
+    decomposed = await _decompose_milo(anyio_out,
+                                       consumed=consumed,
+                                       ignore_failures=ignore_failures,
+                                       jobs=jobs)
     steps['milo'] = f'{decomposed} archives decomposed'
     log.info('Converting assets...')
     if on_status is not None:
         on_status('Converting assets')
-    converted, failed = await _convert_assets(anyio_out, jobs=jobs, ignore_failures=ignore_failures)
+    converted, failed = await _convert_assets(anyio_out,
+                                              consumed=consumed,
+                                              ignore_failures=ignore_failures,
+                                              jobs=jobs)
     steps['convert'] = f'{converted} converted, {failed} failed'
     log.info('Linking texture references...')
     referenced = await asyncio.to_thread(bitmap.link_references, out)
@@ -165,10 +227,15 @@ async def run(ark_path: Path,
     log.info('Linked %d material reference(s).', linked)
     steps['materials'] = f'{linked} linked'
     bank_split, bank_json = await _split_banks(anyio_out,
-                                               jobs=jobs,
-                                               ignore_failures=ignore_failures)
+                                               consumed=consumed,
+                                               ignore_failures=ignore_failures,
+                                               jobs=jobs)
     log.info('Split %d sample bank(s) (%d json-only).', bank_split, bank_json)
     steps['banks'] = f'{bank_split} split, {bank_json} json-only'
+    if consumed is not None:
+        removed = await asyncio.to_thread(_delete_intermediates, consumed)
+        log.info('Deleted %d intermediate file(s).', removed)
+        steps['deleted'] = f'{removed} intermediates removed'
     if disc_audio is not None:
         n_str = await _convert_disc_str(anyio.Path(disc_audio),
                                         anyio.Path(out / 'disc_audio'),
@@ -189,6 +256,7 @@ async def run_game(game_dir: Path,
                    gunzip: bool = True,
                    keep_gz: bool = False,
                    ignore_failures: bool = False,
+                   delete: bool = False,
                    jobs: int = 1,
                    layout: ArkLayout | None = None,
                    on_status: Callable[[str], None] | None = None) -> dict[str, str]:
@@ -215,6 +283,9 @@ async def run_game(game_dir: Path,
         Keep the original ``.gz`` entry alongside the decompressed output.
     ignore_failures : bool
         Log and skip a converter/decompose failure instead of stopping the run.
+    delete : bool
+        Delete each converted intermediate file from ``out`` after the reference-linking passes (the
+        extracted source stays untouched). Ignored when ``convert`` is false.
     jobs : int
         Maximum concurrent workers for the CPU-bound conversion phases; ``0`` uses the CPU count.
     layout : destin.harmonix.typing.ArkLayout | None
@@ -253,6 +324,7 @@ async def run_game(game_dir: Path,
         steps = await run(ark_path,
                           dest,
                           convert=convert,
+                          delete=delete,
                           gunzip=gunzip,
                           ignore_failures=ignore_failures,
                           jobs=jobs,

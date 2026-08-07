@@ -185,7 +185,7 @@ def decode_freq_abm(data: bytes) -> tuple[int, int, bytes] | None:
 
 def convert(path: Path) -> Path | None:
     """
-    Convert a bitmap to a sibling ``.png`` and delete the original.
+    Convert a bitmap to a sibling ``.png``, leaving the original in place.
 
     Console-native formats (HMX ``.bmp``, FreQuency ``.abm``) are decoded here; any other file
     Pillow recognises (e.g. a standard Windows BMP) is converted by Pillow directly.
@@ -209,7 +209,6 @@ def convert(path: Path) -> Path | None:
         write_rgba(png, width, height, rgba)
         log.debug('Bitmap `%s`: %s %dx%d -> `%s`', path.name, 'HMX' if hmx else 'ABitmap', width,
                   height, png.name)
-        path.unlink()
         return png
     try:  # Standard image (e.g. a Windows BMP) -- let Pillow decode it.
         with Image.open(path) as im:
@@ -220,7 +219,6 @@ def convert(path: Path) -> Path | None:
         log.debug('Bitmap `%s`: not a decodable bitmap (%s)', path.name, e)
         return None
     log.debug('Bitmap `%s`: Pillow %dx%d -> `%s`', path.name, width, height, png.name)
-    path.unlink()
     return png
 
 

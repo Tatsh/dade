@@ -56,6 +56,17 @@ def test_main_accepts_iso_file(make_iso9660: Callable[..., bytes], mocker: Mocke
     assert seen['ark'] == bytes(16)
 
 
+def test_main_delete_flag(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
+    game = tmp_path / 'game'
+    game.mkdir()
+    (game / 'MAIN.ARK').write_bytes(bytes(16))
+    run_game = mocker.patch('destin.harmonix.unpacker.run_game',
+                            return_value={'GEN/MAIN.ARK': 'ok'})
+    result = runner.invoke(main, (str(game), '-o', str(tmp_path / 'out'), '--delete'))
+    assert result.exit_code == 0
+    assert run_game.call_args.kwargs['delete'] is True
+
+
 def test_main_default_output_dir(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     (tmp_path / 'MAIN.ARK').write_bytes(bytes(16))
     run_game = mocker.patch('destin.harmonix.unpacker.run_game',

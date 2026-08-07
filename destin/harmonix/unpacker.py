@@ -130,6 +130,7 @@ class Unpacker:
                      gunzip: bool = True,
                      keep_gz: bool = False,
                      ignore_failures: bool = False,
+                     delete: bool = False,
                      jobs: int = 0,
                      on_status: Callable[[str], None] | None = None) -> dict[str, str]:
         """
@@ -151,6 +152,8 @@ class Unpacker:
             Keep the original ``.gz`` entry alongside the decompressed output.
         ignore_failures : bool
             Log and skip a converter/decompose failure instead of stopping the run.
+        delete : bool
+            Delete each converted intermediate file from ``out`` (the source is never touched).
         jobs : int
             Maximum concurrent workers for the CPU-bound conversion phases; ``0`` uses the CPU
             count.
@@ -179,6 +182,7 @@ class Unpacker:
             return await run_game(root,
                                   out,
                                   convert=convert,
+                                  delete=delete,
                                   gunzip=gunzip,
                                   ignore_failures=ignore_failures,
                                   jobs=jobs,

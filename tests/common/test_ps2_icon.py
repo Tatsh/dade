@@ -105,7 +105,7 @@ def test_convert_ps2_icon(make_ps2_icon: Callable[..., bytes], tmp_path: Path) -
     source.write_bytes(make_ps2_icon())
     out = icon.convert(source)
     assert out == tmp_path / 'save'
-    assert not source.exists()  # The icon is replaced by its decomposed folder.
+    assert source.exists()  # The icon is kept beside its decomposed folder.
     assert (out / 'model.obj').is_file()
 
 

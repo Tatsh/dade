@@ -192,7 +192,7 @@ def test_convert_hmx_bitmap(make_hmx_bitmap: Callable[..., bytes], tmp_path: Pat
     source = _write(tmp_path / 'logo.bmp', make_hmx_bitmap(4, 4, bpp=8))
     out = bitmap.convert(source)
     assert out == tmp_path / 'logo.png'
-    assert not source.exists()
+    assert source.exists()  # The original is left in place.
     with Image.open(out) as image:
         assert image.size == (4, 4)
 
@@ -201,7 +201,7 @@ def test_convert_freq_abm(make_abm: Callable[..., bytes], tmp_path: Path) -> Non
     source = _write(tmp_path / 'logo.abm', make_abm(4, 4, bpp=8))
     out = bitmap.convert(source)
     assert out == tmp_path / 'logo.png'
-    assert not source.exists()
+    assert source.exists()  # The original is left in place.
 
 
 def test_convert_falls_back_to_pillow(tmp_path: Path) -> None:
@@ -209,7 +209,7 @@ def test_convert_falls_back_to_pillow(tmp_path: Path) -> None:
     Image.new('RGB', (3, 2), (10, 20, 30)).save(source)
     out = bitmap.convert(source)
     assert out == tmp_path / 'plain.png'
-    assert not source.exists()
+    assert source.exists()  # The original is left in place.
     with Image.open(out) as image:
         assert image.size == (3, 2)
 

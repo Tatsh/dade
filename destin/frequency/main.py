@@ -55,6 +55,9 @@ debug_option = bascom.debug_option({
 @click.option('--ignore-failures',
               is_flag=True,
               help='Log and skip a conversion failure instead of stopping.')
+@click.option('--delete',
+              is_flag=True,
+              help='Delete converted intermediate files (the source is never touched).')
 def main(input_: Path,
          *,
          output_dir: Path = Path(),
@@ -62,13 +65,15 @@ def main(input_: Path,
          no_convert: bool = False,
          no_gunzip: bool = False,
          keep_gz: bool = False,
-         ignore_failures: bool = False) -> None:
+         ignore_failures: bool = False,
+         delete: bool = False) -> None:
     """Unpack a PS2 FreQuency disc (directory, ISO image, or cue/bin) and convert its assets."""
     unpacker = FrequencyUnpacker(input_)
 
     async def run(on_status: Callable[[str], None] | None) -> dict[str, str]:
         return await unpacker.unpack(output_dir,
                                      convert=not no_convert,
+                                     delete=delete,
                                      gunzip=not no_gunzip,
                                      ignore_failures=ignore_failures,
                                      jobs=jobs,

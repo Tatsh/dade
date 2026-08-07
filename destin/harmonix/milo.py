@@ -184,5 +184,4 @@ def convert(path: Path) -> Path | None:  # noqa: PLR0914
     if note is not None:
         manifest['note'] = note
     write_json(out_dir / 'manifest.json', manifest, ensure_ascii=False, trailing_newline=False)
-    path.unlink()
     return out_dir

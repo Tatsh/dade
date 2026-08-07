@@ -71,7 +71,7 @@ destin amplitude [OPTIONS] COMMAND [ARGS]...
 .UNINDENT
 .SS main
 .sp
-Unpack a PS2 Amplitude disc directory and convert its assets.
+Unpack a PS2 Amplitude disc (directory or ISO image) and convert its assets.
 .sp
 Usage
 .INDENT 0.0
@@ -118,6 +118,11 @@ Keep the original .gz entry alongside the decompressed output.
 .TP
 .B \-\-ignore\-failures
 Log and skip a conversion failure instead of stopping.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-delete
+Delete converted intermediate files (the source is never touched).
 .UNINDENT
 .sp
 Arguments
@@ -1548,7 +1553,7 @@ destin frequency [OPTIONS] COMMAND [ARGS]...
 .UNINDENT
 .SS main
 .sp
-Unpack a PS2 FreQuency disc directory and convert its assets.
+Unpack a PS2 FreQuency disc (directory, ISO image, or cue/bin) and convert its assets.
 .sp
 Usage
 .INDENT 0.0
@@ -1595,6 +1600,11 @@ Keep the original .gz entry alongside the decompressed output.
 .TP
 .B \-\-ignore\-failures
 Log and skip a conversion failure instead of stopping.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-delete
+Delete converted intermediate files (the source is never touched).
 .UNINDENT
 .sp
 Arguments

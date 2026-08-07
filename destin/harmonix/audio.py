@@ -103,7 +103,7 @@ def str_to_wav(data: bytes, *, rate: int = STR_RATE, block: int = STR_BLOCK) -> 
 
 def convert(path: Path) -> Path | None:
     """
-    Convert a ``.str`` stream to a sibling ``.wav`` and delete the original.
+    Convert a ``.str`` stream to a sibling ``.wav``, leaving the original in place.
 
     Parameters
     ----------
@@ -117,7 +117,6 @@ def convert(path: Path) -> Path | None:
     """
     out = path.with_suffix('.wav')
     out.write_bytes(str_to_wav(path.read_bytes(), rate=STR_RATE, block=STR_BLOCK))
-    path.unlink()
     log.debug('Stream `%s` -> `%s`.', path.name, out.name)
     return out
 

@@ -129,8 +129,13 @@ def _concurrency(jobs: int) -> int:
     return (os.cpu_count() or 1) if jobs <= 0 else jobs
 
 
-async def run_pool(func: Callable[[Any], Path | None], items: Iterable[Any], *, jobs: int,
-                   ignore_failures: bool, label: str) -> PoolOutcome:
+async def run_pool(func: Callable[[Any], Path | None],
+                   items: Iterable[Any],
+                   *,
+                   jobs: int,
+                   ignore_failures: bool,
+                   label: str,
+                   consumed: list[Any] | None = None) -> PoolOutcome:
     """
     Run ``func`` over ``items`` concurrently and tally the outcomes.
 
@@ -151,6 +156,9 @@ async def run_pool(func: Callable[[Any], Path | None], items: Iterable[Any], *, 
         Log and skip a failing item instead of raising.
     label : str
         Short verb phrase for log messages (e.g. ``'convert'``).
+    consumed : list[typing.Any] | None
+        If given, each item whose task produced an output at a different path (a true intermediate,
+        not an in-place edit) is appended to it, so a caller can delete those inputs afterwards.
 
     Returns
     -------
@@ -178,4 +186,6 @@ async def run_pool(func: Callable[[Any], Path | None], items: Iterable[Any], *, 
             continue
         if result is not None:
             succeeded += 1
+            if consumed is not None and result != item:
+                consumed.append(item)
     return PoolOutcome(succeeded, failed)

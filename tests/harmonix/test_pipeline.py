@@ -70,6 +70,56 @@ async def test_run_converts_assets(make_amp_ark: _Builder, make_hmx_bitmap: _Bui
 
 
 @pytest.mark.asyncio
+async def test_run_keeps_intermediates_by_default(make_amp_ark: _Builder, make_hmx_bitmap: _Builder,
+                                                  make_dtb: _Builder, make_milo: _Builder,
+                                                  make_v14_mesh: _Builder, make_samp_bank: _Builder,
+                                                  make_vag: _Builder, tmp_path: Path) -> None:
+    entries = _ark_entries(make_hmx_bitmap, make_dtb, make_milo, make_v14_mesh, make_samp_bank,
+                           make_vag)
+    archive = tmp_path / 'MAIN.ARK'
+    archive.write_bytes(make_amp_ark(entries))
+    out = tmp_path / 'out'
+    steps = await pipeline.run(archive, out)
+    assert 'deleted' not in steps
+    assert (out / 'gen' / 'ship_tex.bmp').is_file()
+    assert (out / 'gen' / 'config.txt.bin').is_file()
+    assert (out / 'gen' / 'scene.rnd').is_file()
+    assert (out / 'audio' / 'song.bnk').is_file()
+
+
+@pytest.mark.asyncio
+async def test_run_deletes_intermediates(make_amp_ark: _Builder, make_hmx_bitmap: _Builder,
+                                         make_dtb: _Builder, make_milo: _Builder,
+                                         make_v14_mesh: _Builder, make_samp_bank: _Builder,
+                                         make_vag: _Builder, tmp_path: Path) -> None:
+    entries = _ark_entries(make_hmx_bitmap, make_dtb, make_milo, make_v14_mesh, make_samp_bank,
+                           make_vag)
+    archive = tmp_path / 'MAIN.ARK'
+    archive.write_bytes(make_amp_ark(entries))
+    out = tmp_path / 'out'
+    steps = await pipeline.run(archive, out, delete=True)
+    assert steps['deleted'].endswith('intermediates removed')
+    # The converted outputs (and the references they point at) survive.
+    assert (out / 'gen' / 'ship_tex.png').is_file()
+    assert (out / 'gen' / 'config.txt.json').is_file()
+    assert (out / 'gen' / 'scene' / 'ship.obj').is_file()
+    assert (out / 'gen' / 'scene' / 'ship.mtl').is_file()
+    assert (out / 'audio' / 'song' / 'manifest.json').is_file()
+    assert (out / 'audio' / 'meta.bnk.json').is_file()
+    # The raw intermediates (and sample-bank companions) are gone.
+    assert not (out / 'gen' / 'ship_tex.bmp').exists()
+    assert not (out / 'gen' / 'config.txt.bin').exists()
+    assert not (out / 'gen' / 'scene.rnd').exists()
+    assert not (out / 'audio' / 'song.bnk').exists()
+    assert not (out / 'audio' / 'song.nse').exists()
+    assert not (out / 'audio' / 'meta.bnk').exists()
+    # A file whose conversion failed is not treated as a consumed intermediate.
+    assert (out / 'audio' / 'broken.bnk').is_file()
+    # The extracted-from ARK (the source) is never touched.
+    assert archive.is_file()
+
+
+@pytest.mark.asyncio
 async def test_run_converts_disc_audio(make_amp_ark: _Builder, tmp_path: Path) -> None:
     archive = tmp_path / 'MAIN.ARK'
     archive.write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))

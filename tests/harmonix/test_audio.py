@@ -38,12 +38,12 @@ def test_str_to_wav_deinterleaves() -> None:
     assert struct.unpack_from('<I', wav, 24)[0] == 44100
 
 
-def test_convert_writes_wav_and_removes_source(tmp_path: Path) -> None:
+def test_convert_writes_wav_and_keeps_source(tmp_path: Path) -> None:
     source = tmp_path / 'song.str'
     source.write_bytes(bytes(4096))
     out = audio.convert(source)
     assert out == tmp_path / 'song.wav'
-    assert not source.exists()
+    assert source.exists()  # The original is left in place.
     assert out.read_bytes()[:4] == b'RIFF'
 
 
