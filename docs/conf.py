@@ -4,13 +4,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from operator import itemgetter
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any
 import sys
 
 import tomlkit
-
-if TYPE_CHECKING:
-    from sphinx.application import Sphinx
 
 with (Path(__file__).parent.parent / 'pyproject.toml').open(newline='\n', encoding='utf-8') as f:
     project_ = tomlkit.load(f).unwrap()['project']
@@ -159,7 +156,7 @@ def _default_separator(argument: str) -> int | None:
     return None
 
 
-def _elide_long_parameter_defaults(_app: Sphinx, _what: str, _name: str, _obj: object,
+def _elide_long_parameter_defaults(_app: object, _what: str, _name: str, _obj: object,
                                    _options: object, signature: str | None,
                                    return_annotation: str | None) -> tuple[str | None, str | None]:
     """
@@ -171,7 +168,7 @@ def _elide_long_parameter_defaults(_app: Sphinx, _what: str, _name: str, _obj: o
 
     Parameters
     ----------
-    _app : sphinx.application.Sphinx
+    _app : object
         The Sphinx application (unused).
     _what : str
         The kind of object being documented (unused).
@@ -209,13 +206,13 @@ def _elide_long_parameter_defaults(_app: Sphinx, _what: str, _name: str, _obj: o
     return f'({",".join(arguments)})', return_annotation
 
 
-def setup(app: Sphinx) -> None:
+def setup(app: Any) -> None:
     """
     Register documentation build customisations.
 
     Parameters
     ----------
-    app : sphinx.application.Sphinx
-        The application to extend.
+    app : typing.Any
+        The Sphinx application to extend.
     """
     app.connect('autodoc-process-signature', _elide_long_parameter_defaults)
