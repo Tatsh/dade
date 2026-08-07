@@ -6,8 +6,8 @@ import json
 import logging
 import struct
 
-from PIL import Image
 from destin.common.obj import encode_obj
+from destin.common.png import write_rgba
 from destin.common.typing import InvalidFormatError
 
 if TYPE_CHECKING:
@@ -104,7 +104,7 @@ def ps2_icon_decompose(path: Path, out_dir: Path) -> Path | None:  # noqa: PLR09
         rgba[o + 1] = ((pixel >> 5) & 0x1F) << 3
         rgba[o + 2] = ((pixel >> 10) & 0x1F) << 3
         rgba[o + 3] = 255
-    Image.frombytes('RGBA', (_TEXTURE_DIM, _TEXTURE_DIM), bytes(rgba)).save(out_dir / 'texture.png')
+    write_rgba(out_dir / 'texture.png', _TEXTURE_DIM, _TEXTURE_DIM, bytes(rgba))
     vertices, texcoords, normals = [], [], []
     for i in range(nverts):
         off = 0x14 + i * stride

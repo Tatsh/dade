@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 import struct
 import zlib
 
-from destin.common.png import encode_rgb, write_rgb
+from PIL import Image
+from destin.common.png import encode_rgb, write_rgb, write_rgba
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -42,3 +43,22 @@ def test_write_rgb(tmp_path: Path) -> None:
     out = tmp_path / 'a.png'
     write_rgb(out, 2, 1, bytes(6))
     assert out.read_bytes() == encode_rgb(2, 1, bytes(6))
+
+
+def test_write_rgba_matches_pillow(tmp_path: Path) -> None:
+    pixels = bytes(range(2 * 3 * 4))
+    out = tmp_path / 'rgba.png'
+    write_rgba(out, 2, 3, pixels)
+    reference = tmp_path / 'reference.png'
+    Image.frombytes('RGBA', (2, 3), pixels).save(reference)
+    assert out.read_bytes() == reference.read_bytes()
+
+
+def test_write_rgba_round_trips(tmp_path: Path) -> None:
+    pixels = bytes(range(2 * 3 * 4))
+    out = tmp_path / 'rgba.png'
+    write_rgba(out, 2, 3, pixels)
+    with Image.open(out) as image:
+        assert image.mode == 'RGBA'
+        assert image.size == (2, 3)
+        assert image.tobytes() == pixels

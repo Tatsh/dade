@@ -14,7 +14,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
-from PIL import Image
+from destin.common.image import expand5
+from destin.common.png import write_rgba
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -52,8 +53,7 @@ def rgba5551(value: int) -> bytes:
         Four bytes in RGBA order.
     """
     r, g, b = (value >> 11) & 0x1F, (value >> 6) & 0x1F, (value >> 1) & 0x1F
-    return bytes(
-        ((r << 3) | (r >> 2), (g << 3) | (g >> 2), (b << 3) | (b >> 2), 255 if value & 1 else 0))
+    return bytes((expand5(r), expand5(g), expand5(b), 255 if value & 1 else 0))
 
 
 def read_tlut(data: bytes, offset: int, count: int, endian: Endian = '>') -> list[bytes]:
@@ -207,7 +207,7 @@ def write_png(path: Path, width: int, height: int, rgba: bytes) -> None:
     rgba : bytes
         Pixel data, four bytes per pixel.
     """
-    Image.frombytes('RGBA', (width, height), rgba).save(path)
+    write_rgba(path, width, height, rgba)
 
 
 def bmp_to_png(source: Path, destination: Path) -> bool:

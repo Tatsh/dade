@@ -16,7 +16,9 @@ import shutil
 import struct
 
 from PIL import Image
+from destin.common.image import double_ps2_alpha, ps2_clut_swizzle_index
 from destin.common.io import u16, u32
+from destin.common.png import write_rgba
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -45,11 +47,6 @@ _HMX_TYPE = 3  # byte[2] of an HMX bitmap header.
 _BPP_8 = 8
 _BPP_32 = 32
 _MAX_DIM = 4096
-
-
-def _ps2_clut_index(i: int) -> int:
-    # PS2 8bpp CLUT stores palettes with index bits 0x08 and 0x10 swapped.
-    return (i & 0xE7) | ((i & 0x08) << 1) | ((i & 0x10) >> 1)
 
 
 def decode_hmx_bitmap(data: bytes) -> tuple[int, int, bytes] | None:
@@ -82,11 +79,11 @@ def decode_hmx_bitmap(data: bytes) -> tuple[int, int, bytes] | None:
             return None
         pal = [
             bytes((data[off + i * 4], data[off + i * 4 + 1], data[off + i * 4 + 2],
-                   min(255, data[off + i * 4 + 3] * 2))) for i in range(ncol)
+                   double_ps2_alpha(data[off + i * 4 + 3]))) for i in range(ncol)
         ]
         off += ncol * 4
         if bpp == _BPP_8:
-            tab = [pal[_ps2_clut_index(i)] for i in range(256)]
+            tab = [pal[ps2_clut_swizzle_index(i)] for i in range(256)]
             rgba = b''.join([tab[p] for p in data[off:off + w * h]])
         else:
             pair = [pal[b & 0xF] + pal[b >> 4] for b in range(256)]
@@ -96,7 +93,7 @@ def decode_hmx_bitmap(data: bytes) -> tuple[int, int, bytes] | None:
     if len(px) != w * h * 4:
         return None
     for i in range(3, len(px), 4):
-        px[i] = min(255, px[i] * 2)
+        px[i] = double_ps2_alpha(px[i])
     return w, h, bytes(px)
 
 
@@ -168,7 +165,7 @@ def decode_freq_abm(data: bytes) -> tuple[int, int, bytes] | None:
         return None
     rgba = bytearray(width * height * 4)
     if bpp == _BPP_8:
-        tab = [pal[_ps2_clut_index(i)] for i in range(256)]  # PS2 8bpp CLUT is swizzled.
+        tab = [pal[ps2_clut_swizzle_index(i)] for i in range(256)]  # PS2 8bpp CLUT is swizzled.
         for i, idx in enumerate(pixels):
             rgba[i * 4:i * 4 + 4] = tab[idx]
     else:  # 4 bpp: two pixels per byte, low nibble first.
@@ -203,7 +200,7 @@ def convert(path: Path) -> Path | None:
     decoded = hmx or decode_freq_abm(data)
     if decoded is not None:
         width, height, rgba = decoded
-        Image.frombytes('RGBA', (width, height), rgba).save(png)
+        write_rgba(png, width, height, rgba)
         log.debug('Bitmap `%s`: %s %dx%d -> `%s`', path.name, 'HMX' if hmx else 'ABitmap', width,
                   height, png.name)
         path.unlink()

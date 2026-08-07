@@ -5,6 +5,9 @@ The games' own assets are palette-indexed, so the only encoder needed is an 8-bi
 it directly against :py:mod:`zlib` keeps the output byte-identical to the original tools and avoids
 pulling an imaging library into what is otherwise a pure parsing package. Games that already depend
 on an imaging library use that instead; this writer exists for the ones that do not.
+
+The RGBA writer (:py:func:`write_rgba`) instead delegates to :py:mod:`PIL`, matching the games that
+already ship RGBA pixel data through Pillow, so its output stays byte-identical to theirs.
 """
 from __future__ import annotations
 
@@ -13,10 +16,12 @@ import logging
 import struct
 import zlib
 
+from PIL import Image
+
 if TYPE_CHECKING:
     from pathlib import Path
 
-__all__ = ('encode_rgb', 'write_rgb')
+__all__ = ('encode_rgb', 'write_rgb', 'write_rgba')
 
 log = logging.getLogger(__name__)
 
@@ -94,4 +99,23 @@ def write_rgb(path: Path, width: int, height: int, rgb: bytes) -> None:
         Row-major RGB triples, three bytes per pixel.
     """
     path.write_bytes(encode_rgb(width, height, rgb))
+    log.debug('Wrote `%s` (%dx%d).', path, width, height)
+
+
+def write_rgba(path: Path, width: int, height: int, pixels: bytes) -> None:
+    """
+    Write 8-bit RGBA pixel data to ``path`` as a PNG.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Destination file, whose parent must already exist.
+    width : int
+        Image width in pixels.
+    height : int
+        Image height in pixels.
+    pixels : bytes
+        Row-major RGBA quads, four bytes per pixel.
+    """
+    Image.frombytes('RGBA', (width, height), pixels).save(path)
     log.debug('Wrote `%s` (%dx%d).', path, width, height)

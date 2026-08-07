@@ -21,6 +21,7 @@ import io
 import struct
 
 from PIL import Image
+from destin.common.image import expand5, expand6, ps2_clut_swizzle_index
 from destin.common.io import u16
 import numpy as np
 import numpy.typing as npt
@@ -182,7 +183,7 @@ def _color565(c: int) -> tuple[int, int, int]:
     r = (c >> 11) & 0x1F
     g = (c >> 5) & 0x3F
     b = c & 0x1F
-    return (r << 3) | (r >> 2), (g << 2) | (g >> 4), (b << 3) | (b >> 2)
+    return expand5(r), expand6(g), expand5(b)
 
 
 def _decode_dxt1(data: bytes, w: int, h: int) -> npt.NDArray[np.uint8]:
@@ -1139,7 +1140,7 @@ def _csm1_unswizzle(pal: npt.NDArray[np.uint8]) -> npt.NDArray[np.uint8]:
         Palette entries in display order.
     """
     n = len(pal)
-    j = np.array([(i & ~0x18) | ((i & 0x10) >> 1) | ((i & 0x08) << 1) for i in range(n)])
+    j = np.array([ps2_clut_swizzle_index(i) for i in range(n)])
     j = np.where(j < n, j, np.arange(n))
     reordered: npt.NDArray[np.uint8] = pal[j]
     return reordered

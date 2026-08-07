@@ -29,6 +29,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, NamedTuple
 import logging
 
+from destin.common.image import expand5
 from destin.common.io import i32, u16, u32
 from destin.common.ppm import ppm
 
@@ -111,7 +112,7 @@ def bgr555_to_rgb(value: int) -> Rgb:
     red = value & 0x1F
     green = (value >> 5) & 0x1F
     blue = (value >> 10) & 0x1F
-    return ((red << 3) | (red >> 2), (green << 3) | (green >> 2), (blue << 3) | (blue >> 2))
+    return (expand5(red), expand5(green), expand5(blue))
 
 
 def decode_instance(data: bytes, instance: TextureInstance,
