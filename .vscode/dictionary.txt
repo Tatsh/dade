@@ -75,6 +75,7 @@ cookfsinfo
 cooldown
 coveragerc
 coverallsapp
+cstring
 cstrings
 ctypes
 cuda
