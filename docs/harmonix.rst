@@ -22,26 +22,24 @@ Passing an ISO runs these stages. The disc is *mounted* (its whole file system i
 a temporary directory), then every ARK on it is extracted and its assets are converted in a fixed
 order:
 
-.. code-block:: text
+.. graphviz::
 
-   Amplitude.iso  (opened read-only)
-        |
-        |  mount(): parse the ISO 9660 file system, extract every file to a temp directory
-        v
-   temp/  GEN/MAIN.ARK, AUDIO/SONG.STR, ...
-        |
-        |  run_game(): for each *.ark found on the disc
-        v
-   ark.extract()  ->  out/GEN/MAIN/...        loose files (.gz entries gunzipped)
-        |
-        |  then, in a fixed order, over that output:
-        |    1. decompose Milo   (*.rnd  ->  <name>/ folder of objects + manifest.json)
-        |    2. convert assets   (bitmap -> PNG, *.dtb -> JSON, mesh -> OBJ, ...)
-        |    3. link references / materials   (the OBJ and MTL point at the PNGs)
-        |    4. split sample banks   (*.bnk / *.hd  ->  per-sample WAV)
-        |    5. --delete (optional): prune the raw intermediates
-        v
-   disc audio:  AUDIO/*.STR  ->  out/AUDIO/*.wav
+   digraph unpack {
+      node [shape=box];
+      iso     [label="Amplitude.iso (opened read-only)"];
+      mount   [label="temp mount: every ISO file extracted", shape=folder];
+      extract [label="ark.extract -> loose files (.gz gunzipped)"];
+      milo    [label="1. decompose Milo (*.rnd -> folder + manifest.json)"];
+      assets  [label="2. convert assets (bitmap -> PNG, *.dtb -> JSON, mesh -> OBJ)"];
+      link    [label="3. link references / materials"];
+      banks   [label="4. split sample banks (*.bnk / *.hd -> WAV)"];
+      delete  [label="5. --delete (optional): prune intermediates"];
+      audio   [label="disc audio: AUDIO/*.STR -> WAV"];
+      iso -> mount [label="mount()"];
+      mount -> extract [label="run_game(): per *.ark"];
+      extract -> milo -> assets -> link -> banks -> delete;
+      mount -> audio;
+   }
 
 A directory input skips the mount step and is walked in place; a cue/bin input is decoded to an ISO
 image first. The source is never one of the things written to.
@@ -52,16 +50,26 @@ the order matters: Milo scenes are decomposed **before** the asset-conversion pa
 lets the meshes and bitmaps inside a scene be converted. The pipeline follows Amplitude's bounded,
 known container hierarchy:
 
-.. code-block:: text
+.. graphviz::
 
-   ISO file system
-     +-- ARK archive                   (ark.extract)
-     |     +-- Milo .rnd scene         (decompose -> folder)
-     |     |     +-- mesh          -> OBJ + MTL
-     |     |     +-- bitmap        -> PNG
-     |     |     +-- DataArray .dtb -> JSON
-     |     +-- sample bank .bnk/.hd   -> per-sample WAV
-     +-- streaming .STR                -> WAV
+   digraph hierarchy {
+      node [shape=box];
+      iso  [label="ISO file system"];
+      ark  [label="ARK archive"];
+      milo [label="Milo .rnd scene"];
+      mesh [label="mesh -> OBJ + MTL"];
+      bmp  [label="bitmap -> PNG"];
+      dtb  [label="DataArray .dtb -> JSON"];
+      bank [label="sample bank .bnk/.hd -> per-sample WAV"];
+      str  [label="streaming .STR -> WAV"];
+      iso -> ark;
+      iso -> str;
+      ark -> milo;
+      ark -> bank;
+      milo -> mesh;
+      milo -> bmp;
+      milo -> dtb;
+   }
 
 By default the raw intermediates are kept beside their converted form; ``--delete`` prunes them
 after the reference-linking passes have made the outputs self-contained. The extracted source is

@@ -24,10 +24,12 @@ copyright = str(datetime.now(timezone.utc).year)  # ruff:ignore[builtin-variable
 project = name
 release = f'v{version}'
 extensions = [
-    'sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.napoleon', 'sphinx_datatables',
-    'sphinx_immaterial', 'sphinxcontrib.autodoc_pydantic', 'sphinxcontrib.jquery'
+    'sphinx.ext.autodoc', 'sphinx.ext.graphviz', 'sphinx.ext.intersphinx', 'sphinx.ext.napoleon',
+    'sphinx_datatables', 'sphinx_immaterial', 'sphinxcontrib.autodoc_pydantic',
+    'sphinxcontrib.jquery'
 ]
 extensions += ['sphinx_click']
+graphviz_output_format = 'svg'
 datatables_class = 'sphinx-datatable'
 datatables_options = {'paging': False}
 datatables_version = '1.13.4'
