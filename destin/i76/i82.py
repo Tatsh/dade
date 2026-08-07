@@ -16,6 +16,8 @@ import logging
 import re
 import struct
 
+from destin.common.io import read_cstring
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
@@ -78,7 +80,7 @@ def surface_names(mrm: bytes) -> tuple[str, ...]:
     names: list[str] = []
     for index in range(count):
         offset = _SURFACE_TABLE_OFFSET + index * _SURFACE_ENTRY_SIZE
-        name = mrm[offset:offset + _SURFACE_NAME_SIZE].split(b'\0')[0].decode('latin1', 'replace')
+        name = read_cstring(mrm[offset:offset + _SURFACE_NAME_SIZE])
         if name:
             names.append(name)
     return tuple(names)

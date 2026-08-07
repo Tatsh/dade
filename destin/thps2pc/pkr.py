@@ -38,6 +38,8 @@ import logging
 import struct
 import zlib
 
+from destin.common.io import read_cstring
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
@@ -142,10 +144,6 @@ class PkrArchive(NamedTuple):
     """Every file record, in file order."""
 
 
-def _cstr(raw: bytes) -> str:
-    return raw.split(b'\x00', 1)[0].decode('latin1')
-
-
 def _decompress_rle(src: bytes, out_size: int, count_width: int) -> bytes:
     """
     Expand a run-length stream of ``[count][value]`` tokens.
@@ -221,11 +219,11 @@ def parse(data: bytes) -> PkrArchive:
     for i in range(dir_count):
         name, child_offset, child_count = struct.unpack_from(_DIR_FMT, data,
                                                              table_a_start + i * DIR_SIZE)
-        dirs.append(PkrDirEntry(_cstr(name), child_offset, child_count))
+        dirs.append(PkrDirEntry(read_cstring(name), child_offset, child_count))
     files = []
     for i in range(file_count):
         record = struct.unpack_from(_FILE_FMT, data, table_b_start + i * FILE_SIZE)
-        files.append(PkrFileEntry(_cstr(record[0]), *record[1:]))
+        files.append(PkrFileEntry(read_cstring(record[0]), *record[1:]))
     header = PkrHeader(alignment=alignment,
                        dir_count=dir_count,
                        file_count=file_count,

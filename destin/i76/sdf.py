@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 import logging
 import struct
 
+from destin.common.io import read_cstring
 from destin.common.obj import encode_obj as common_encode_obj
 
 from .geo import parse as parse_geo
@@ -63,11 +64,10 @@ def parse_sgeo(data: bytes) -> tuple[SdfPart, ...]:
     parts: list[SdfPart] = []
     for _ in range(count):
         parts.append(
-            SdfPart(data[position:position + 8].split(b'\x00')[0].decode('latin1', 'replace'),
+            SdfPart(read_cstring(data[position:position + 8]),
                     struct.unpack_from('<9f', data, position + 8),
                     struct.unpack_from('<3f', data, position + 44),
-                    data[position + 56:position + 64].split(b'\x00')[0].decode('latin1',
-                                                                               'replace')))
+                    read_cstring(data[position + 56:position + 64])))
         position += _PART_SIZE
     return tuple(parts)
 

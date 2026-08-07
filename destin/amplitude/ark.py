@@ -61,6 +61,8 @@ from typing import TYPE_CHECKING, NamedTuple
 import struct
 import zlib
 
+from destin.common.io import copy_region, read_cstring
+
 from .typing import ARKEntry
 
 if TYPE_CHECKING:
@@ -119,7 +121,7 @@ def _cstr(pool: bytes, off: int) -> str:
     if off < 0 or off >= len(pool):
         msg = f'Name offset {off:#x} out of pool (size {len(pool):#x}).'
         raise ValueError(msg)
-    return pool[off:pool.index(b'\0', off)].decode('latin-1')
+    return read_cstring(pool, off)
 
 
 def parse_directory(data: bytes) -> ARKDirectory:
@@ -245,21 +247,6 @@ def _safe_join(out_dir: Path, rel: str) -> Path:
     return out_dir.joinpath(*parts)
 
 
-def _copy_region(src: BinaryIO, offset: int, size: int, dst: Path) -> int:
-    src.seek(offset)
-    written = 0
-    with dst.open('wb') as out:
-        remaining = size
-        while remaining:
-            chunk = src.read(min(remaining, _CHUNK))
-            if not chunk:
-                break
-            out.write(chunk)
-            written += len(chunk)
-            remaining -= len(chunk)
-    return written
-
-
 def _gunzip_region(src: BinaryIO, offset: int, size: int, dst: Path) -> int:
     src.seek(offset)
     dec = zlib.decompressobj(_GZIP_WBITS)
@@ -345,14 +332,14 @@ def extract(ark: Path,
                     disk_bytes += _gunzip_region(src, entry.offset, entry.size, dst)
                     gunzipped += 1
                     if keep_gz:
-                        _copy_region(src, entry.offset, entry.size, raw_dst)
+                        copy_region(src, entry.offset, entry.size, raw_dst)
                 except zlib.error:  # ".gz" name but not valid gzip: keep it verbatim.
                     gunzip_failed += 1
                     if dst.exists():  # pragma: no branch -- the decoder always creates it first.
                         dst.unlink()
-                    disk_bytes += _copy_region(src, entry.offset, entry.size, raw_dst)
+                    disk_bytes += copy_region(src, entry.offset, entry.size, raw_dst)
             else:
-                disk_bytes += _copy_region(src, entry.offset, entry.size, raw_dst)
+                disk_bytes += copy_region(src, entry.offset, entry.size, raw_dst)
             written += 1
     return ExtractStats(written, skipped, gunzipped, gunzip_failed, raw_bytes, disk_bytes)
 

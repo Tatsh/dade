@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import io
 import struct
 
 from destin.common.io import (
     BytesReader,
     MmapReader,
     Reader,
+    copy_region,
     f32,
     i16,
     i32,
+    read_cstring,
+    read_cstring_at,
     resolve_reader,
     u8,
     u16,
@@ -103,3 +107,51 @@ def test_f32_reads_float() -> None:
 
 def test_scalar_reads_apply_offset() -> None:
     assert u32(b'\xff\xff' + struct.pack('<I', 0x0badf00d), 2) == 0x0badf00d
+
+
+def test_read_cstring_reads_to_terminator() -> None:
+    assert read_cstring(b'\x00name\x00rest', 1) == 'name'
+
+
+def test_read_cstring_without_terminator_reads_to_end() -> None:
+    assert read_cstring(b'tail') == 'tail'
+
+
+def test_read_cstring_honours_encoding() -> None:
+    assert read_cstring(b'caf\xc3\xa9\x00', encoding='utf-8') == 'café'
+
+
+def test_read_cstring_at_advances_past_terminator() -> None:
+    assert read_cstring_at(b'ab\x00cd\x00', 3) == ('cd', 6)
+
+
+def test_read_cstring_at_without_terminator_returns_length() -> None:
+    assert read_cstring_at(b'xyz') == ('xyz', 3)
+
+
+def test_read_cstring_at_honours_encoding() -> None:
+    assert read_cstring_at(b'\xc3\xa9\x00', encoding='utf-8') == ('é', 3)
+
+
+def test_copy_region_copies_slice(tmp_path: Path) -> None:
+    dst = tmp_path / 'out.bin'
+    assert copy_region(io.BytesIO(b'0123456789'), 2, 3, dst) == 3
+    assert dst.read_bytes() == b'234'
+
+
+def test_copy_region_copies_in_chunks(tmp_path: Path) -> None:
+    dst = tmp_path / 'out.bin'
+    assert copy_region(io.BytesIO(b'abcdef'), 0, 6, dst, chunk=2) == 6
+    assert dst.read_bytes() == b'abcdef'
+
+
+def test_copy_region_stops_early_on_short_read(tmp_path: Path) -> None:
+    dst = tmp_path / 'out.bin'
+    assert copy_region(io.BytesIO(b'ab'), 0, 5, dst) == 2
+    assert dst.read_bytes() == b'ab'
+
+
+def test_copy_region_strict_raises_on_short_read(tmp_path: Path) -> None:
+    dst = tmp_path / 'out.bin'
+    with pytest.raises(EOFError, match='short read'):
+        copy_region(io.BytesIO(b'ab'), 0, 5, dst, strict=True)

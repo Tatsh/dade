@@ -11,14 +11,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, NamedTuple
 import struct
 
+from destin.common.io import copy_region
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
-    from typing import BinaryIO
 
 __all__ = ('BigEntry', 'iter_big_payloads', 'parse_toc', 'unpack')
 
-_CHUNK = 1 << 20
 _HEADER = 16
 
 
@@ -78,18 +78,6 @@ def _safe_join(base: Path, rel: str) -> Path:
     return dest
 
 
-def _copy_range(src: BinaryIO, dest: Path, size: int) -> None:
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    remaining = size
-    with dest.open('wb') as out:
-        while remaining:
-            if not (chunk := src.read(min(_CHUNK, remaining))):
-                msg = f'{dest}: short read'
-                raise EOFError(msg)
-            out.write(chunk)
-            remaining -= len(chunk)
-
-
 def unpack(path: Path, out_root: Path) -> tuple[int, int]:
     """
     Extract every entry of a ``BIGF`` archive into ``out_root/<stem>/``.
@@ -123,8 +111,9 @@ def unpack(path: Path, out_root: Path) -> tuple[int, int]:
             if entry.offset + entry.size > real:
                 msg = f'{entry.name}: range {entry.offset}+{entry.size} exceeds file {real}'
                 raise ValueError(msg)
-            f.seek(entry.offset)
-            _copy_range(f, _safe_join(base, entry.name), entry.size)
+            dest = _safe_join(base, entry.name)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            copy_region(f, entry.offset, entry.size, dest, strict=True)
             written += entry.size
     (base / '_manifest.tsv').write_text('name\toffset\tsize\n' +
                                         ''.join(f'{e.name}\t{e.offset}\t{e.size}\n'

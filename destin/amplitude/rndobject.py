@@ -17,7 +17,7 @@ import math
 import re
 import struct
 
-from destin.common.io import f32, u32
+from destin.common.io import f32, read_cstring_at, u32
 
 from .typing import InvalidFormatError
 
@@ -90,14 +90,6 @@ _MOVIE_BODY_OFFSET = 12
 
 def _read_floats(data: bytes, offset: int, count: int) -> list[float]:
     return [float(x) for x in struct.unpack_from(f'<{count}f', data, offset)]
-
-
-def _read_name(data: bytes, offset: int) -> tuple[str, int]:
-    # Read a NUL-terminated name and return it with the offset just past the terminator.
-    end = data.find(b'\x00', offset)
-    if end < 0:
-        return data[offset:].decode('latin-1'), len(data)
-    return data[offset:end].decode('latin-1'), end + 1
 
 
 def _scan_refs(data: bytes) -> list[str]:
@@ -382,7 +374,7 @@ def env_to_json(data: bytes) -> EnvironMeta:
     offset = _ENV_NAMES_OFFSET
     lights: list[str] = []
     for _ in range(light_count):
-        name, offset = _read_name(data, offset)
+        name, offset = read_cstring_at(data, offset)
         lights.append(name)
     meta: EnvironMeta = {'version': _ENV_VERSION, 'lights': lights}
     if len(data) - offset != _ENV_FOG_BLOCK_SIZE:
@@ -435,11 +427,11 @@ def tmov_to_json(data: bytes) -> MovieMeta:
     frames: int | None = None
     tex: str | None = None
     if offset < len(data):
-        movie, offset = _read_name(data, offset)
+        movie, offset = read_cstring_at(data, offset)
     if offset + _HEADER_SIZE <= len(data):
         frames = u32(data, offset)
         offset += _HEADER_SIZE  # The frame count plus a trailing u32.
-        tex, offset = _read_name(data, offset)
+        tex, offset = read_cstring_at(data, offset)
     return {
         'version': _MOVIE_VERSION,
         'fps': fps,

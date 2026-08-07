@@ -18,6 +18,8 @@ from typing import TYPE_CHECKING, Literal
 import logging
 import struct
 
+from destin.common.io import read_cstring
+
 from .lzo import decompress_record
 from .typing import ZfsEntry
 
@@ -131,7 +133,7 @@ def read_directory(data: bytes) -> tuple[ZfsEntry, ...]:
             if len(entries) >= count:
                 break
             offset = block_position + index * _ENTRY_SIZE
-            name = data[offset:offset + 16].split(b'\x00')[0].decode('latin1')
+            name = read_cstring(data[offset:offset + 16])
             data_offset, _, size, _, flags = struct.unpack_from('<5I', data, offset + 16)
             entries.append(ZfsEntry(name, data_offset, size, flags))
     return tuple(entries)

@@ -27,6 +27,8 @@ from __future__ import annotations
 import logging
 import struct
 
+from destin.common.io import read_cstring
+
 from .hashstring import iw_hash_string
 from .typing import ResGroup, Resource
 
@@ -149,7 +151,7 @@ def parse(data: bytes) -> ResGroup:
         payload = data[p:p + size - 4]
         p += size - 4
         if section_hash == _H_MEMBERS:
-            name = payload.split(b'\x00', 1)[0].decode('latin-1')
+            name = read_cstring(payload)
             log.debug('Group name is %s.', name)
         elif section_hash == _H_RESOURCES:
             resources = _parse_resources(payload)

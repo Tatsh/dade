@@ -19,6 +19,8 @@ import logging
 import operator
 import struct
 
+from destin.common.io import read_cstring
+
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
     from pathlib import Path
@@ -690,7 +692,7 @@ def _write_json(source: Path, dest_dir: Path, obj: dict[str, Any]) -> Path:
 
 def _unpack(data: bytes, pos: int, fmt: str, count: int) -> Any:
     if fmt == 'str':
-        return data[pos:pos + count].split(b'\x00', 1)[0].decode('latin-1')
+        return read_cstring(data[pos:pos + count])
     if fmt in _STRUCT_TYPES:
         size, fields = _STRUCT_TYPES[fmt]
         return [
@@ -877,11 +879,8 @@ def _decode_high_score_tables(raw: bytes) -> list[dict[str, Any]]:
         if category_id == -1:
             break
         entries = [{
-            'score':
-                int.from_bytes(record[entry:entry + 4], 'little'),
-            'name':
-                record[entry + 4:entry + _HIGH_SCORE_ENTRY_SIZE].split(b'\x00', 1)
-                [0].decode('latin-1'),
+            'score': int.from_bytes(record[entry:entry + 4], 'little'),
+            'name': read_cstring(record[entry + 4:entry + _HIGH_SCORE_ENTRY_SIZE]),
         } for entry in range(0, _HIGH_SCORE_ENTRY_SIZE *
                              _HIGH_SCORE_ENTRY_COUNT, _HIGH_SCORE_ENTRY_SIZE)]
         tables.append({
@@ -897,7 +896,7 @@ def _decode_mission_slots(raw: bytes) -> list[dict[str, Any]]:
     for i in range(_MISSION_SLOT_COUNT):
         record = raw[i * _MISSION_SLOT_SIZE:(i + 1) * _MISSION_SLOT_SIZE]
         slots.append({
-            'name': record[0:0x35].split(b'\x00', 1)[0].decode('latin-1'),
+            'name': read_cstring(record[0:0x35]),
             'missionSlot': record[0x35],
             'levelValue': record[0x36],
         })
@@ -946,7 +945,7 @@ def cfg_to_json(source: Path, dest_dir: Path) -> Path:
         size = _cfg_block_size(kind, count)
         offsets[name] = (cursor, size)
         if kind == 'str':
-            blocks[name] = data[cursor:cursor + size].split(b'\x00', 1)[0].decode('latin-1')
+            blocks[name] = read_cstring(data[cursor:cursor + size])
         else:
             blocks[name] = _unpack(data, cursor, kind, count)
         cursor += size

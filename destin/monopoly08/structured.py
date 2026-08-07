@@ -31,7 +31,7 @@ import re
 import struct
 
 from PIL import Image
-from destin.common.io import f32, u16, u32
+from destin.common.io import f32, read_cstring, u16, u32
 import numpy as np
 
 if TYPE_CHECKING:
@@ -711,10 +711,6 @@ def convert_anim(path: str | Path, out: str | Path | None = None) -> tuple[Path,
 # =========================================================================== #
 
 
-def _mixr_cstr(b: bytes, o: int) -> str:
-    return b[o:b.index(b'\x00', o)].decode('latin1')
-
-
 def _mixr_parse(b: bytes) -> dict[str, Any]:
     if b[:4] != b'MIXR':
         msg = f'not MIXR ({b[:4]!r})'
@@ -734,7 +730,7 @@ def _mixr_parse(b: bytes) -> dict[str, Any]:
         count = u32(b, off + 12, endian='>')
         for i in range(count):
             eo = off + 16 + i * 8
-            names[u32(b, eo, endian='>')] = _mixr_cstr(b, off + u32(b, eo + 4, endian='>'))
+            names[u32(b, eo, endian='>')] = read_cstring(b, off + u32(b, eo + 4, endian='>'))
 
     def nm(h: int) -> str:
         return names.get(h, f'#{h:08x}')

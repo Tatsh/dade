@@ -8,13 +8,14 @@ import struct
 
 if TYPE_CHECKING:
     from types import TracebackType
+    from typing import BinaryIO
 
     from typing_extensions import Self
 
     from .typing import Endian
 
-__all__ = ('BytesReader', 'MmapReader', 'Reader', 'f32', 'i16', 'i32', 'resolve_reader', 'u8',
-           'u16', 'u32')
+__all__ = ('BytesReader', 'MmapReader', 'Reader', 'copy_region', 'f32', 'i16', 'i32',
+           'read_cstring', 'read_cstring_at', 'resolve_reader', 'u8', 'u16', 'u32')
 
 
 @runtime_checkable
@@ -295,3 +296,112 @@ def f32(data: bytes | bytearray | memoryview, offset: int = 0, *, endian: Endian
         The value at ``offset``.
     """
     return float(struct.unpack_from(f'{endian}f', data, offset)[0])
+
+
+def read_cstring(data: bytes | bytearray, offset: int = 0, *, encoding: str = 'latin-1') -> str:
+    """
+    Decode the NUL-terminated string starting at ``offset``.
+
+    The string runs from ``offset`` to the next NUL byte; if there is no NUL byte, it runs to the
+    end of ``data``.
+
+    Parameters
+    ----------
+    data : bytes | bytearray
+        Buffer to read from.
+    offset : int
+        Byte offset at which the string starts.
+    encoding : str
+        Codec used to decode the bytes.
+
+    Returns
+    -------
+    str
+        The decoded string.
+    """
+    end = data.find(b'\x00', offset)
+    if end < 0:
+        end = len(data)
+    return data[offset:end].decode(encoding)
+
+
+def read_cstring_at(data: bytes | bytearray,
+                    offset: int = 0,
+                    *,
+                    encoding: str = 'latin-1') -> tuple[str, int]:
+    """
+    Decode a NUL-terminated string and report the offset just past its terminator.
+
+    The string runs from ``offset`` to the next NUL byte; if there is no NUL byte, it runs to the
+    end of ``data`` and the returned offset is ``len(data)``.
+
+    Parameters
+    ----------
+    data : bytes | bytearray
+        Buffer to read from.
+    offset : int
+        Byte offset at which the string starts.
+    encoding : str
+        Codec used to decode the bytes.
+
+    Returns
+    -------
+    tuple[str, int]
+        The decoded string and the offset just past the terminating NUL.
+    """
+    end = data.find(b'\x00', offset)
+    if end < 0:
+        return data[offset:].decode(encoding), len(data)
+    return data[offset:end].decode(encoding), end + 1
+
+
+def copy_region(src: BinaryIO,
+                offset: int,
+                size: int,
+                dst: Path,
+                *,
+                chunk: int = 1 << 20,
+                strict: bool = False) -> int:
+    """
+    Copy a byte range from an open binary file into a new file.
+
+    Parameters
+    ----------
+    src : BinaryIO
+        Source file object; it is sought to ``offset`` before copying begins.
+    offset : int
+        Absolute byte offset to start copying from.
+    size : int
+        Number of bytes to copy.
+    dst : pathlib.Path
+        Destination path, overwritten if it already exists.
+    chunk : int
+        Maximum number of bytes to read per iteration.
+    strict : bool
+        When ``True``, raise :py:exc:`EOFError` if the source ends before ``size`` bytes have been
+        copied; when ``False``, stop early and return the number of bytes copied.
+
+    Returns
+    -------
+    int
+        The number of bytes written.
+
+    Raises
+    ------
+    EOFError
+        If ``strict`` is ``True`` and the source ends before ``size`` bytes are copied.
+    """
+    src.seek(offset)
+    remaining = size
+    written = 0
+    with dst.open('wb') as out:
+        while remaining:
+            if not (data := src.read(min(remaining, chunk))):
+                if strict:
+                    msg = f'{dst}: short read'
+                    raise EOFError(msg)
+                break
+            out.write(data)
+            written += len(data)
+            remaining -= len(data)
+    return written
