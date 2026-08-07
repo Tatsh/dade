@@ -73,9 +73,9 @@ html_theme_options = {
             'name': 'Switch to system preference'
         }
     }],
-    'repo_name': 'incoming-extractor',
-    'repo_url': 'https://github.com/Tatsh/incoming-extractor',
-    'site_url': 'https://incoming-extractor.readthedocs.org',
+    'repo_name': 'destin',
+    'repo_url': 'https://github.com/Tatsh/destin',
+    'site_url': 'https://destin2.readthedocs.org',
     'toc_title_is_page_title': True
 }
 intersphinx_mapping = {
