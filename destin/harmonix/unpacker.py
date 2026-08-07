@@ -196,7 +196,7 @@ class Unpacker:
         # block), so the source is streamed without materialising anything and the event loop is
         # never blocked. ``None`` is the end sentinel -- an ARK's bytes are never ``None``.
         ark_bytes = iter_ark_bytes(self.source)
-        while (data := await asyncio.to_thread(next, ark_bytes, None)) is not None:
+        while (data := await asyncio.to_thread(lambda: next(ark_bytes, None))) is not None:
             directory = await asyncio.to_thread(parse_directory, data)
             for entry in directory.entries:
                 end = entry.offset + entry.size
