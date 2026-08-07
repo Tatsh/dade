@@ -27,11 +27,18 @@ The games currently supported are *Incoming* (PC and Dreamcast), *Amplitude* and
 
    formats/index
 
+.. only:: html
+
+   .. toctree::
+      :caption: API reference
+      :maxdepth: 2
+
+      api/index
+
 .. toctree::
    :caption: Reference
    :maxdepth: 2
 
-   api/index
    development
 
 .. only:: html
