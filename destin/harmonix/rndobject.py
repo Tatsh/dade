@@ -16,10 +16,9 @@ import math
 import re
 import struct
 
+from destin.common.exceptions import InvalidFormatError
 from destin.common.io import f32, read_cstring_at, u32
 from destin.common.json import write_json
-
-from .typing import InvalidFormatError
 
 if TYPE_CHECKING:
     from pathlib import Path

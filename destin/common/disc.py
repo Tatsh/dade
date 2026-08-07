@@ -34,7 +34,7 @@ def open_image(source: Path) -> Iso9660Image:
     A ``.cue`` file is read together with its ``.bin`` track and decoded to a plain image; any other
     file is treated as a raw ISO 9660 image and memory-mapped. A file that is neither a cue/bin pair
     nor a valid ISO 9660 image raises
-    :py:class:`~destin.common.typing.InvalidFormatError` from the underlying reader.
+    :py:class:`~destin.common.exceptions.InvalidFormatError` from the underlying reader.
 
     Parameters
     ----------

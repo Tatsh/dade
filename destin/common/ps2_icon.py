@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 import logging
 import struct
 
+from destin.common.exceptions import InvalidFormatError
 from destin.common.json import write_json
 from destin.common.obj import encode_obj
 from destin.common.png import write_rgba
-from destin.common.typing import InvalidFormatError
 
 if TYPE_CHECKING:
     from pathlib import Path

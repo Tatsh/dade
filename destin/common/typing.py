@@ -5,14 +5,10 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Literal, TypeAlias, TypedDict
 
-__all__ = ('ConvertFunction', 'Endian', 'IconSysMeta', 'InvalidFormatError', 'MatchFunction')
+__all__ = ('ConvertFunction', 'Endian', 'IconSysMeta', 'MatchFunction')
 
 Endian: TypeAlias = Literal['<', '>']
 """Struct byte-order prefix: ``'<'`` for little-endian, ``'>'`` for big-endian."""
-
-
-class InvalidFormatError(ValueError):
-    """Raised when a parser is given data that does not match its expected format."""
 
 
 class IconSysMeta(TypedDict):

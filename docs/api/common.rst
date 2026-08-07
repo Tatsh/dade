@@ -34,6 +34,12 @@ from a game package once a second consumer appeared, so a single implementation 
 .. automodule:: destin.common.disc
    :members:
 
+``destin.common.exceptions``
+----------------------------
+
+.. automodule:: destin.common.exceptions
+   :members:
+
 ``destin.common.image``
 -----------------------
 

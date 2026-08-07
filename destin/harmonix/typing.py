@@ -3,16 +3,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeAlias, TypedDict
 
-from destin.common.typing import InvalidFormatError
 from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 __all__ = ('ARKEntry', 'ArenaMeta', 'ArkLayout', 'Asset', 'BankMeta', 'DataArrayNode',
-           'EnvironMeta', 'Geometry', 'IPUMeta', 'InvalidFormatError', 'LightMeta', 'LnmMeta',
-           'MIDIFile', 'MIDITrack', 'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta', 'PoolOutcome',
-           'SampleMeta', 'TnmMeta', 'ViewMeta')
+           'EnvironMeta', 'Geometry', 'IPUMeta', 'LightMeta', 'LnmMeta', 'MIDIFile', 'MIDITrack',
+           'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta', 'PoolOutcome', 'SampleMeta', 'TnmMeta',
+           'ViewMeta')
 
 ArkLayout: TypeAlias = Literal['amplitude', 'frequency']
 """

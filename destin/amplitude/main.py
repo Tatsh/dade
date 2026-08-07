@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import asyncio
 
 from destin.amplitude.unpacker import AmplitudeUnpacker
-from destin.common.typing import InvalidFormatError
+from destin.common.exceptions import InvalidFormatError
 from rich.console import Console
 import bascom
 import click

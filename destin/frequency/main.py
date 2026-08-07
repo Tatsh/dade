@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 import asyncio
 
-from destin.common.typing import InvalidFormatError
+from destin.common.exceptions import InvalidFormatError
 from destin.frequency.unpacker import FrequencyUnpacker
 from rich.console import Console
 import bascom

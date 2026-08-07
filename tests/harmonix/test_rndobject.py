@@ -5,8 +5,8 @@ import json
 import math
 import struct
 
+from destin.common.exceptions import InvalidFormatError
 from destin.harmonix import rndobject
-from destin.harmonix.typing import InvalidFormatError
 import pytest
 
 if TYPE_CHECKING:

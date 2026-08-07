@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from destin.harmonix.typing import Asset, InvalidFormatError
+from destin.common.exceptions import InvalidFormatError
+from destin.harmonix.typing import Asset
 from destin.harmonix.unpacker import Unpacker
 import pytest
 

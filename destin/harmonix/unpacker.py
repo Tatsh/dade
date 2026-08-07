@@ -6,7 +6,7 @@ import asyncio
 import logging
 
 from destin.common.disc import mount, mount_sync, open_image
-from destin.common.typing import InvalidFormatError
+from destin.common.exceptions import InvalidFormatError
 import anyio
 
 from .ark import _FREQ_MAGIC, parse_directory
@@ -169,7 +169,7 @@ class Unpacker:
 
         Raises
         ------
-        destin.common.typing.InvalidFormatError
+        destin.common.exceptions.InvalidFormatError
             If :py:attr:`source` is not a readable disc image, or holds no ARK with this game's
             layout.
         """

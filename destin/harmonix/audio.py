@@ -11,11 +11,10 @@ import array
 import logging
 import struct
 
+from destin.common.exceptions import InvalidFormatError
 from destin.common.json import write_json
 from destin.common.utils import safe_name
 from destin.common.wav import wrap_pcm
-
-from .typing import InvalidFormatError
 
 if TYPE_CHECKING:
     from pathlib import Path

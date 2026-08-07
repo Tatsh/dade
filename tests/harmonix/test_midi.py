@@ -5,8 +5,8 @@ import io
 import json
 import math
 
+from destin.common.exceptions import InvalidFormatError
 from destin.harmonix import midi
-from destin.harmonix.typing import InvalidFormatError
 import mido  # type: ignore[import-untyped]
 import pytest
 

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from destin.common.exceptions import InvalidFormatError
 from destin.common.io import BytesReader
 from destin.common.iso9660 import Iso9660Image
-from destin.common.typing import InvalidFormatError
 import pytest
 
 if TYPE_CHECKING:

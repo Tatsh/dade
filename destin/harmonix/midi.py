@@ -11,10 +11,9 @@ from typing import TYPE_CHECKING
 import io
 import logging
 
+from destin.common.exceptions import InvalidFormatError
 from destin.common.json import write_json
 import mido  # type: ignore[import-untyped]
-
-from .typing import InvalidFormatError
 
 if TYPE_CHECKING:
     from pathlib import Path

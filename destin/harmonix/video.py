@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING
 import logging
 import struct
 
+from destin.common.exceptions import InvalidFormatError
 from destin.common.json import write_json
-
-from .typing import InvalidFormatError
 
 if TYPE_CHECKING:
     from pathlib import Path

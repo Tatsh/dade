@@ -6,7 +6,7 @@ import struct
 
 from PIL import Image
 from destin.common import ps2_icon as icon
-from destin.common.typing import InvalidFormatError
+from destin.common.exceptions import InvalidFormatError
 import pytest
 
 if TYPE_CHECKING:

@@ -12,8 +12,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import re
 
+from destin.common.exceptions import InvalidFormatError
 from destin.common.io import BytesReader, u16, u32
-from destin.common.typing import InvalidFormatError
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -93,7 +93,7 @@ class Iso9660Image:
 
     Raises
     ------
-    destin.common.typing.InvalidFormatError
+    destin.common.exceptions.InvalidFormatError
         If the primary volume descriptor is missing its ``CD001`` identifier, or a directory record
         references an extent outside the image.
     """
@@ -191,7 +191,7 @@ class Iso9660Image:
 
         Raises
         ------
-        destin.common.typing.InvalidFormatError
+        destin.common.exceptions.InvalidFormatError
             If the extent lies outside the image.
         """
         offset = lba * self._block_size

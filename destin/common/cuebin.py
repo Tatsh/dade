@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import re
 
-from destin.common.typing import InvalidFormatError
+from destin.common.exceptions import InvalidFormatError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -46,7 +46,7 @@ def cuebin_to_iso(cue_path: Path) -> bytes:
 
     Raises
     ------
-    destin.common.typing.InvalidFormatError
+    destin.common.exceptions.InvalidFormatError
         If the cue sheet has no ``FILE`` or ``TRACK`` line, or the track uses an unsupported mode.
     """
     bin_name: str | None = None
