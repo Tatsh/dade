@@ -130,18 +130,25 @@ async def _split_banks(root: anyio.Path,
     return outcome.succeeded, json_only
 
 
-async def _convert_disc_str(game_dir: anyio.Path, out: anyio.Path, *, jobs: int,
-                            ignore_failures: bool) -> int:
+async def _convert_disc_str(game_dir: anyio.Path,
+                            out: anyio.Path,
+                            *,
+                            jobs: int,
+                            ignore_failures: bool,
+                            consumed: list[Path] | None = None) -> int:
     # Disc streaming songs live on the filesystem (e.g. Amplitude's AUDIO/*.STR), not inside an ARK.
-    pairs = sorted(
-        [(Path(src), Path((out / src.relative_to(game_dir)).with_suffix('.wav')))
-         async for src in game_dir.rglob('*')
-         if await src.is_file() and src.suffix.lower() == '.str' and out not in src.parents])
+    pairs = sorted([(Path(src), Path((out / src.relative_to(game_dir)).with_suffix('.wav')))
+                    async for src in game_dir.rglob('*')
+                    if await src.is_file() and src.suffix.lower() == '.str'])
     outcome = await workers.run_pool(workers.str_to_wav_file,
                                      pairs,
-                                     jobs=jobs,
                                      ignore_failures=ignore_failures,
+                                     jobs=jobs,
                                      label='convert disc audio')
+    if consumed is not None:
+        for src, dst in pairs:
+            if await anyio.Path(dst).is_file():
+                consumed.append(src)
     return outcome.succeeded
 
 
@@ -249,8 +256,7 @@ def _find_arks(game_dir: Path) -> list[Path]:
     return sorted(p for p in game_dir.rglob('*') if p.is_file() and p.suffix.lower() == '.ark')
 
 
-async def run_game(game_dir: Path,
-                   out: Path,
+async def run_game(work_dir: Path,
                    *,
                    convert: bool = True,
                    gunzip: bool = True,
@@ -261,20 +267,19 @@ async def run_game(game_dir: Path,
                    layout: ArkLayout | None = None,
                    on_status: Callable[[str], None] | None = None) -> dict[str, str]:
     """
-    Unpack a whole game: every ARK under ``game_dir`` plus its on-disc streaming audio.
+    Unpack a whole game in place: every ARK in ``work_dir`` plus its on-disc streaming audio.
 
-    Each ``*.ark`` found anywhere under ``game_dir`` is unpacked (and converted) into ``out``
-    mirroring its location in the game tree (e.g. ``GEN/MAIN.ARK`` -> ``out/GEN/MAIN/``). Disc
-    streaming songs (``*.STR`` outside any ARK, e.g. Amplitude's ``AUDIO/``) are converted to WAV
-    under ``out`` at the same relative path. The ARK layout (Amplitude vs FreQuency) is
-    auto-detected.
+    ``work_dir`` already holds the materialised disc (see
+    :py:func:`destin.common.disc.materialize`). Each ``*.ark`` in it is unpacked beside itself (e.g.
+    ``GEN/MAIN.ARK`` -> ``GEN/MAIN/``) and its assets converted; disc streaming songs (``*.STR``)
+    are converted to WAV in place. The ARK layout (Amplitude vs FreQuency) is auto-detected. With
+    ``delete``, the materialised intermediates -- the ARK archives, the ``.str`` files, and the raw
+    pre-conversion assets -- are removed, leaving only the converted output.
 
     Parameters
     ----------
-    game_dir : pathlib.Path
-        The game's root directory (the disc root).
-    out : pathlib.Path
-        Output directory (created if missing).
+    work_dir : pathlib.Path
+        The directory holding the materialised disc, processed in place.
     convert : bool
         Convert extracted assets to standard formats (otherwise extract raw).
     gunzip : bool
@@ -284,8 +289,8 @@ async def run_game(game_dir: Path,
     ignore_failures : bool
         Log and skip a converter/decompose failure instead of stopping the run.
     delete : bool
-        Delete each converted intermediate file from ``out`` after the reference-linking passes (the
-        extracted source stays untouched). Ignored when ``convert`` is false.
+        Delete the materialised intermediates (the ARK archives, the ``.str`` files, and the raw
+        assets) after conversion. Ignored when ``convert`` is false.
     jobs : int
         Maximum concurrent workers for the CPU-bound conversion phases; ``0`` uses the CPU count.
     layout : destin.harmonix.typing.ArkLayout | None
@@ -297,27 +302,30 @@ async def run_game(game_dir: Path,
     Returns
     -------
     dict[str, str]
-        A human-readable summary keyed by each ARK's path (relative to ``game_dir``), plus a
+        A human-readable summary keyed by each ARK's path (relative to ``work_dir``), plus a
         ``disc_audio`` entry when on-disc ``.STR`` songs are present.
 
     Raises
     ------
     FileNotFoundError
-        If no ARK files are found under ``game_dir``.
+        If no ARK files are found in ``work_dir``.
     """
+    # Snapshot the ARK list before extraction so files produced by unpacking are not re-scanned.
     arks = sorted([
-        Path(p) async for p in anyio.Path(game_dir).rglob('*')
+        Path(p) async for p in anyio.Path(work_dir).rglob('*')
         if await p.is_file() and p.suffix.lower() == '.ark'
     ])
     if not arks:
-        msg = f'No .ark files found under `{game_dir}`.'
+        msg = f'No .ark files found in `{work_dir}`.'
         raise FileNotFoundError(msg)
-    log.info('Found %d ARK(s) under `%s` (jobs=%d).', len(arks), game_dir, jobs)
-    await anyio.Path(out).mkdir(parents=True, exist_ok=True)
+    log.info('Found %d ARK(s) in `%s` (jobs=%d).', len(arks), work_dir, jobs)
     summary: dict[str, str] = {}
+    # Top-level intermediates (the ARK archives and disc ``.str`` files) are removed at the end when
+    # ``delete`` is set; ``run`` already prunes each ARK's own converted intermediates.
+    consumed: list[Path] = []
     for ark_path in arks:
-        rel = ark_path.relative_to(game_dir)
-        dest = out / rel.with_suffix('')
+        rel = ark_path.relative_to(work_dir)
+        dest = work_dir / rel.with_suffix('')
         log.info('Unpacking `%s` -> `%s`.', rel, dest)
         if on_status is not None:
             on_status(f'Unpacking {rel}')
@@ -332,12 +340,19 @@ async def run_game(game_dir: Path,
                           layout=layout,
                           on_status=on_status)
         summary[str(rel)] = '; '.join(f'{k}: {v}' for k, v in steps.items())
+        if delete:
+            consumed.append(ark_path)
     if convert:
         if on_status is not None:
             on_status('Converting disc audio')
-        if n_str := await _convert_disc_str(anyio.Path(game_dir),
-                                            anyio.Path(out),
-                                            jobs=jobs,
-                                            ignore_failures=ignore_failures):
+        if n_str := await _convert_disc_str(anyio.Path(work_dir),
+                                            anyio.Path(work_dir),
+                                            consumed=consumed if delete else None,
+                                            ignore_failures=ignore_failures,
+                                            jobs=jobs):
             summary['disc_audio'] = f'{n_str} disc .str songs converted'
+    if delete and consumed:
+        removed = await asyncio.to_thread(_delete_intermediates, consumed)
+        log.info('Deleted %d disc intermediate(s).', removed)
+        summary['deleted'] = f'{removed} disc files removed'
     return summary

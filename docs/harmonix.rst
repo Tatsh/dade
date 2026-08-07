@@ -18,36 +18,37 @@ is written back to it, and the output directory may not be, or be nested inside,
 Unpacking flow
 --------------
 
-Passing an ISO runs these stages. The disc is *mounted* (its whole file system is materialised into
-a temporary directory), then every ARK on it is extracted and its assets are converted in a fixed
-order:
+Passing an ISO runs these stages. The source is first **materialised** into the output directory --
+an image is extracted into it, a directory is copied into it -- and every ARK there is then unpacked
+and its assets converted in place, in a fixed order:
 
 .. graphviz::
 
    digraph unpack {
       node [shape=box];
       iso     [label="Amplitude.iso (opened read-only)"];
-      mount   [label="temp mount: every ISO file extracted", shape=folder];
+      out     [label="output dir: source extracted / copied in", shape=folder];
       extract [label="ark.extract -> loose files (.gz gunzipped)"];
       milo    [label="1. decompose Milo (*.rnd -> folder + manifest.json)"];
       assets  [label="2. convert assets (bitmap -> PNG, *.dtb -> JSON, mesh -> OBJ)"];
       link    [label="3. link references / materials"];
       banks   [label="4. split sample banks (*.bnk / *.hd -> WAV)"];
-      delete  [label="5. --delete (optional): prune intermediates"];
-      audio   [label="disc audio: AUDIO/*.STR -> WAV"];
-      iso -> mount [label="mount()"];
-      mount -> extract [label="run_game(): per *.ark"];
+      audio   [label="convert disc audio (*.STR -> WAV)"];
+      delete  [label="5. --delete (optional): prune ARK, STR, raw assets"];
+      iso -> out [label="materialize()"];
+      out -> extract [label="run_game(): per *.ark"];
       extract -> milo;
       milo -> assets;
       assets -> link;
       extract -> banks;
+      out -> audio;
       link -> delete;
       banks -> delete;
-      mount -> audio;
+      audio -> delete;
    }
 
-A directory input skips the mount step and is walked in place; a cue/bin input is decoded to an ISO
-image first. The source is never one of the things written to.
+A directory input is copied into the output directory rather than extracted; a cue/bin input is
+decoded to an ISO image first. The source is only ever read, never written to.
 
 This is a fixed, ordered pipeline rather than a general "keep unpacking until no archives remain"
 loop. Each stage opens one known container type and surfaces the inputs the next stage consumes, so
@@ -76,9 +77,9 @@ known container hierarchy:
       milo -> dtb;
    }
 
-By default the raw intermediates are kept beside their converted form; ``--delete`` prunes them
-after the reference-linking passes have made the outputs self-contained. The extracted source is
-never touched.
+By default every materialised file is kept -- the ARK archives, the disc ``.str`` files, and the raw
+assets beside their converted form; ``--delete`` prunes them all once the reference-linking passes
+have made the outputs self-contained. The source disc is never touched.
 
 Using the unpackers from Python
 -------------------------------

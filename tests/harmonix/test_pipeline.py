@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from pathlib import Path
 
+    from pytest_mock import MockerFixture
+
 _Builder: TypeAlias = 'Callable[..., bytes]'
 _MAT_BLOB = struct.pack('<I', len('ship_tex.bmp')) + b'ship_tex.bmp'
 
@@ -135,20 +137,51 @@ async def test_run_converts_disc_audio(make_amp_ark: _Builder, tmp_path: Path) -
 async def test_run_game(make_amp_ark: _Builder, make_hmx_bitmap: _Builder, make_dtb: _Builder,
                         make_milo: _Builder, make_v14_mesh: _Builder, make_samp_bank: _Builder,
                         make_vag: _Builder, tmp_path: Path) -> None:
-    game_dir = tmp_path / 'game'
-    (game_dir / 'GEN').mkdir(parents=True)
-    (game_dir / 'AUDIO').mkdir()
+    work = tmp_path / 'work'
+    (work / 'GEN').mkdir(parents=True)
+    (work / 'AUDIO').mkdir()
     entries = _ark_entries(make_hmx_bitmap, make_dtb, make_milo, make_v14_mesh, make_samp_bank,
                            make_vag)
-    (game_dir / 'GEN' / 'MAIN.ARK').write_bytes(make_amp_ark(entries))
-    (game_dir / 'AUDIO' / 'SONG.STR').write_bytes(bytes(4096))
-    out = tmp_path / 'out'
-    summary = await pipeline.run_game(game_dir, out, jobs=1)
+    (work / 'GEN' / 'MAIN.ARK').write_bytes(make_amp_ark(entries))
+    (work / 'AUDIO' / 'SONG.STR').write_bytes(bytes(4096))
+    summary = await pipeline.run_game(work, jobs=1)
     assert set(summary) == {'GEN/MAIN.ARK', 'disc_audio'}
     assert summary['disc_audio'] == '1 disc .str songs converted'
     assert 'milo: 1 archives decomposed' in summary['GEN/MAIN.ARK']
-    assert (out / 'GEN' / 'MAIN' / 'gen' / 'ship_tex.png').is_file()
-    assert (out / 'AUDIO' / 'SONG.wav').read_bytes()[:4] == b'RIFF'
+    assert (work / 'GEN' / 'MAIN' / 'gen' / 'ship_tex.png').is_file()
+    assert (work / 'AUDIO' / 'SONG.wav').read_bytes()[:4] == b'RIFF'
+    # Without --delete the materialised ARK and STR are kept.
+    assert (work / 'GEN' / 'MAIN.ARK').is_file()
+    assert (work / 'AUDIO' / 'SONG.STR').is_file()
+
+
+@pytest.mark.asyncio
+async def test_run_game_deletes_disc_intermediates(make_amp_ark: _Builder, tmp_path: Path) -> None:
+    work = tmp_path / 'work'
+    (work / 'GEN').mkdir(parents=True)
+    (work / 'AUDIO').mkdir()
+    (work / 'GEN' / 'MAIN.ARK').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
+    (work / 'AUDIO' / 'SONG.STR').write_bytes(bytes(4096))
+    summary = await pipeline.run_game(work, delete=True, jobs=1)
+    assert (work / 'AUDIO' / 'SONG.wav').read_bytes()[:4] == b'RIFF'
+    assert not (work / 'GEN' / 'MAIN.ARK').exists()  # The ARK archive is removed.
+    assert not (work / 'AUDIO' / 'SONG.STR').exists()  # The disc-audio source is removed.
+    assert summary['deleted'].endswith('removed')
+
+
+@pytest.mark.asyncio
+async def test_run_game_keeps_unconverted_str_on_delete(make_amp_ark: _Builder,
+                                                        mocker: MockerFixture,
+                                                        tmp_path: Path) -> None:
+    work = tmp_path / 'work'
+    (work / 'GEN').mkdir(parents=True)
+    (work / 'AUDIO').mkdir()
+    (work / 'GEN' / 'MAIN.ARK').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
+    (work / 'AUDIO' / 'SONG.STR').write_bytes(bytes(4096))
+    mocker.patch('destin.harmonix.workers.str_to_wav_file', side_effect=ValueError('boom'))
+    await pipeline.run_game(work, delete=True, ignore_failures=True, jobs=1)
+    assert not (work / 'GEN' / 'MAIN.ARK').exists()  # The ARK still unpacked and is removed.
+    assert (work / 'AUDIO' / 'SONG.STR').is_file()  # A STR that failed to convert is kept.
 
 
 @pytest.mark.asyncio
@@ -156,15 +189,15 @@ async def test_run_game_reports_status(make_amp_ark: _Builder, make_hmx_bitmap: 
                                        make_dtb: _Builder, make_milo: _Builder,
                                        make_v14_mesh: _Builder, make_samp_bank: _Builder,
                                        make_vag: _Builder, tmp_path: Path) -> None:
-    game_dir = tmp_path / 'game'
-    (game_dir / 'GEN').mkdir(parents=True)
-    (game_dir / 'AUDIO').mkdir()
+    work = tmp_path / 'work'
+    (work / 'GEN').mkdir(parents=True)
+    (work / 'AUDIO').mkdir()
     entries = _ark_entries(make_hmx_bitmap, make_dtb, make_milo, make_v14_mesh, make_samp_bank,
                            make_vag)
-    (game_dir / 'GEN' / 'MAIN.ARK').write_bytes(make_amp_ark(entries))
-    (game_dir / 'AUDIO' / 'SONG.STR').write_bytes(bytes(4096))
+    (work / 'GEN' / 'MAIN.ARK').write_bytes(make_amp_ark(entries))
+    (work / 'AUDIO' / 'SONG.STR').write_bytes(bytes(4096))
     statuses: list[str] = []
-    await pipeline.run_game(game_dir, tmp_path / 'out', jobs=1, on_status=statuses.append)
+    await pipeline.run_game(work, jobs=1, on_status=statuses.append)
     assert 'Unpacking GEN/MAIN.ARK' in statuses
     assert 'Decomposing Milo scenes' in statuses
     assert 'Converting assets' in statuses
@@ -173,26 +206,26 @@ async def test_run_game_reports_status(make_amp_ark: _Builder, make_hmx_bitmap: 
 
 @pytest.mark.asyncio
 async def test_run_game_convert_without_disc_audio(make_amp_ark: _Builder, tmp_path: Path) -> None:
-    game_dir = tmp_path / 'game'
-    (game_dir / 'ARK').mkdir(parents=True)
-    (game_dir / 'ARK' / 'ROOT.ark').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
-    summary = await pipeline.run_game(game_dir, tmp_path / 'out')
+    work = tmp_path / 'work'
+    (work / 'ARK').mkdir(parents=True)
+    (work / 'ARK' / 'ROOT.ark').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
+    summary = await pipeline.run_game(work)
     assert 'disc_audio' not in summary
 
 
 @pytest.mark.asyncio
 async def test_run_game_without_disc_audio(make_amp_ark: _Builder, tmp_path: Path) -> None:
-    game_dir = tmp_path / 'game'
-    (game_dir / 'ARK').mkdir(parents=True)
-    (game_dir / 'ARK' / 'ROOT.ark').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
-    summary = await pipeline.run_game(game_dir, tmp_path / 'out', convert=False)
+    work = tmp_path / 'work'
+    (work / 'ARK').mkdir(parents=True)
+    (work / 'ARK' / 'ROOT.ark').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
+    summary = await pipeline.run_game(work, convert=False)
     assert list(summary) == ['ARK/ROOT.ark']
-    assert (tmp_path / 'out' / 'ARK' / 'ROOT' / 'gen' / 'a.txt').is_file()
+    assert (work / 'ARK' / 'ROOT' / 'gen' / 'a.txt').is_file()
 
 
 @pytest.mark.asyncio
 async def test_run_game_without_arks(tmp_path: Path) -> None:
-    game_dir = tmp_path / 'game'
-    game_dir.mkdir()
+    work = tmp_path / 'work'
+    work.mkdir()
     with pytest.raises(FileNotFoundError, match=r'No \.ark files found'):
-        await pipeline.run_game(game_dir, tmp_path / 'out')
+        await pipeline.run_game(work)
