@@ -21,6 +21,8 @@ from . import ark, audio, bitmap, mesh, workers
 from .typing import InvalidFormatError
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from .typing import ArkLayout
 
 __all__ = ('run', 'run_game')
@@ -103,7 +105,8 @@ async def run(ark_path: Path,
               ignore_failures: bool = False,
               jobs: int = 1,
               disc_audio: Path | None = None,
-              layout: ArkLayout | None = None) -> dict[str, str]:
+              layout: ArkLayout | None = None,
+              on_status: Callable[[str], None] | None = None) -> dict[str, str]:
     """
     Unpack an ARK archive into ``out`` and convert its assets in place.
 
@@ -127,6 +130,8 @@ async def run(ark_path: Path,
         If given, also convert the disc streaming songs in this directory to ``out/disc_audio``.
     layout : destin.harmonix.typing.ArkLayout | None
         Force a specific ARK layout, or ``None`` to auto-detect it from the leading bytes.
+    on_status : collections.abc.Callable[[str], None] | None
+        An optional progress hook called with a short status string at each conversion phase.
 
     Returns
     -------
@@ -143,9 +148,13 @@ async def run(ark_path: Path,
         return steps
     anyio_out = anyio.Path(out)
     log.info('Decomposing Milo (.rnd) scenes...')
+    if on_status is not None:
+        on_status('Decomposing Milo scenes')
     decomposed = await _decompose_milo(anyio_out, jobs=jobs, ignore_failures=ignore_failures)
     steps['milo'] = f'{decomposed} archives decomposed'
     log.info('Converting assets...')
+    if on_status is not None:
+        on_status('Converting assets')
     converted, failed = await _convert_assets(anyio_out, jobs=jobs, ignore_failures=ignore_failures)
     steps['convert'] = f'{converted} converted, {failed} failed'
     log.info('Linking texture references...')
@@ -181,7 +190,8 @@ async def run_game(game_dir: Path,
                    keep_gz: bool = False,
                    ignore_failures: bool = False,
                    jobs: int = 1,
-                   layout: ArkLayout | None = None) -> dict[str, str]:
+                   layout: ArkLayout | None = None,
+                   on_status: Callable[[str], None] | None = None) -> dict[str, str]:
     """
     Unpack a whole game: every ARK under ``game_dir`` plus its on-disc streaming audio.
 
@@ -209,6 +219,9 @@ async def run_game(game_dir: Path,
         Maximum concurrent workers for the CPU-bound conversion phases; ``0`` uses the CPU count.
     layout : destin.harmonix.typing.ArkLayout | None
         Force a specific ARK layout for every archive, or ``None`` to auto-detect each one.
+    on_status : collections.abc.Callable[[str], None] | None
+        An optional progress hook called with a short status string as each ARK and the disc audio
+        are processed (for example ``'Unpacking GEN/MAIN.ARK'``).
 
     Returns
     -------
@@ -235,6 +248,8 @@ async def run_game(game_dir: Path,
         rel = ark_path.relative_to(game_dir)
         dest = out / rel.with_suffix('')
         log.info('Unpacking `%s` -> `%s`.', rel, dest)
+        if on_status is not None:
+            on_status(f'Unpacking {rel}')
         steps = await run(ark_path,
                           dest,
                           convert=convert,
@@ -242,9 +257,15 @@ async def run_game(game_dir: Path,
                           ignore_failures=ignore_failures,
                           jobs=jobs,
                           keep_gz=keep_gz,
-                          layout=layout)
+                          layout=layout,
+                          on_status=on_status)
         summary[str(rel)] = '; '.join(f'{k}: {v}' for k, v in steps.items())
-    if convert and (n_str := await _convert_disc_str(
-            anyio.Path(game_dir), anyio.Path(out), jobs=jobs, ignore_failures=ignore_failures)):
-        summary['disc_audio'] = f'{n_str} disc .str songs converted'
+    if convert:
+        if on_status is not None:
+            on_status('Converting disc audio')
+        if n_str := await _convert_disc_str(anyio.Path(game_dir),
+                                            anyio.Path(out),
+                                            jobs=jobs,
+                                            ignore_failures=ignore_failures):
+            summary['disc_audio'] = f'{n_str} disc .str songs converted'
     return summary

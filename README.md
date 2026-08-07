@@ -45,9 +45,10 @@ Run `destin --help` to list the games, and `destin <game> --help` to list a game
 
 | Sub-command         | Game(s)                                     | Publisher / developer         |
 | ------------------- | ------------------------------------------- | ----------------------------- |
-| `destin amplitude`  | _Amplitude_ and _FreQuency_ (PS2)           | Harmonix                      |
+| `destin amplitude`  | _Amplitude_ (PS2)                           | Harmonix                      |
 | `destin bit192`     | _Tone Sphere_                               | bit192labs                    |
 | `destin bitrock`    | BitRock / InstallBuilder installers         | BitRock / VMware              |
+| `destin frequency`  | _FreQuency_ (PS2)                           | Harmonix                      |
 | `destin i76`        | _Interstate '76_ and _Interstate '82_       | Activision                    |
 | `destin incoming`   | _Incoming_ (PC and Dreamcast)               | Rage Software / Interplay     |
 | `destin marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
@@ -111,12 +112,15 @@ matching `--*-path` option:
 ## Amplitude and FreQuency
 
 ```shell
-destin amplitude unpack GAME_DIR OUT
+destin amplitude unpack DISC -o OUT
+destin frequency unpack DISC -o OUT
 ```
 
-Unpack a PS2 _Amplitude_ or _FreQuency_ (Harmonix) disc directory: every ARK is unpacked mirroring
-its location, disc streaming songs are converted to WAV, and assets are converted in place (bitmaps
-to PNG, DataArray to JSON, Milo scenes to object folders, meshes to OBJ, audio to WAV).
+_Amplitude_ and _FreQuency_ (Harmonix) share one PS2 engine but are separate commands, one per game.
+Point either at its disc directory (`DISC`): every ARK is unpacked mirroring its location, disc
+streaming songs are converted to WAV, and assets are converted in place (bitmaps to PNG, DataArray
+to JSON, Milo scenes to object folders, meshes to OBJ, audio to WAV). The output directory defaults
+to the current directory; set it with `-o`/`--output-dir`.
 
 ## Tone Sphere
 

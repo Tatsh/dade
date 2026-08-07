@@ -102,6 +102,35 @@ async def test_run_game(make_amp_ark: _Builder, make_hmx_bitmap: _Builder, make_
 
 
 @pytest.mark.asyncio
+async def test_run_game_reports_status(make_amp_ark: _Builder, make_hmx_bitmap: _Builder,
+                                       make_dtb: _Builder, make_milo: _Builder,
+                                       make_v14_mesh: _Builder, make_samp_bank: _Builder,
+                                       make_vag: _Builder, tmp_path: Path) -> None:
+    game_dir = tmp_path / 'game'
+    (game_dir / 'GEN').mkdir(parents=True)
+    (game_dir / 'AUDIO').mkdir()
+    entries = _ark_entries(make_hmx_bitmap, make_dtb, make_milo, make_v14_mesh, make_samp_bank,
+                           make_vag)
+    (game_dir / 'GEN' / 'MAIN.ARK').write_bytes(make_amp_ark(entries))
+    (game_dir / 'AUDIO' / 'SONG.STR').write_bytes(bytes(4096))
+    statuses: list[str] = []
+    await pipeline.run_game(game_dir, tmp_path / 'out', jobs=1, on_status=statuses.append)
+    assert 'Unpacking GEN/MAIN.ARK' in statuses
+    assert 'Decomposing Milo scenes' in statuses
+    assert 'Converting assets' in statuses
+    assert 'Converting disc audio' in statuses
+
+
+@pytest.mark.asyncio
+async def test_run_game_convert_without_disc_audio(make_amp_ark: _Builder, tmp_path: Path) -> None:
+    game_dir = tmp_path / 'game'
+    (game_dir / 'ARK').mkdir(parents=True)
+    (game_dir / 'ARK' / 'ROOT.ark').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
+    summary = await pipeline.run_game(game_dir, tmp_path / 'out')
+    assert 'disc_audio' not in summary
+
+
+@pytest.mark.asyncio
 async def test_run_game_without_disc_audio(make_amp_ark: _Builder, tmp_path: Path) -> None:
     game_dir = tmp_path / 'game'
     (game_dir / 'ARK').mkdir(parents=True)

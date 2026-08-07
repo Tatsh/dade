@@ -9,10 +9,10 @@ from typing_extensions import NotRequired
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-__all__ = ('ARKEntry', 'ArenaMeta', 'ArkLayout', 'BankMeta', 'DataArrayNode', 'EnvironMeta',
-           'Geometry', 'IPUMeta', 'InvalidFormatError', 'LightMeta', 'LnmMeta', 'MIDIFile',
-           'MIDITrack', 'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta', 'PoolOutcome', 'SampleMeta',
-           'TnmMeta', 'ViewMeta')
+__all__ = ('ARKEntry', 'ArenaMeta', 'ArkLayout', 'Asset', 'BankMeta', 'DataArrayNode',
+           'EnvironMeta', 'Geometry', 'IPUMeta', 'InvalidFormatError', 'LightMeta', 'LnmMeta',
+           'MIDIFile', 'MIDITrack', 'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta', 'PoolOutcome',
+           'SampleMeta', 'TnmMeta', 'ViewMeta')
 
 ArkLayout: TypeAlias = Literal['amplitude', 'frequency']
 """
@@ -40,6 +40,15 @@ class ARKEntry(NamedTuple):
     """Size of the entry's data in bytes."""
     flags: int
     """Entry flags from the directory record."""
+
+
+class Asset(NamedTuple):
+    """A single carve-out from an ARK archive: an entry's path and its raw, unconverted bytes."""
+
+    name: str
+    """The entry's full ``dir/file`` path within its ARK archive."""
+    data: bytes
+    """The entry's raw bytes exactly as stored in the ARK (never gunzipped or converted)."""
 
 
 class PoolOutcome(NamedTuple):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
+from destin.harmonix.typing import Asset
 from destin.harmonix.unpacker import Unpacker
 import click
 import pytest
@@ -26,18 +27,18 @@ class _FreqUnpacker(Unpacker):
 
 def test_accepts_matching_layout(make_amp_ark: Callable[..., bytes], tmp_path: Path) -> None:
     (tmp_path / 'MAIN.ARK').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
-    assert _AmpUnpacker().accepts(tmp_path)
-    assert not _FreqUnpacker().accepts(tmp_path)
+    assert _AmpUnpacker(tmp_path).accepts()
+    assert not _FreqUnpacker(tmp_path).accepts()
 
 
 def test_accepts_frequency_layout(make_freq_ark: Callable[..., bytes], tmp_path: Path) -> None:
     (tmp_path / 'ROOT.ARK').write_bytes(make_freq_ark((('gen/a.txt', b'AAA'),)))
-    assert _FreqUnpacker().accepts(tmp_path)
-    assert not _AmpUnpacker().accepts(tmp_path)
+    assert _FreqUnpacker(tmp_path).accepts()
+    assert not _AmpUnpacker(tmp_path).accepts()
 
 
 def test_accepts_no_arks(tmp_path: Path) -> None:
-    assert not _AmpUnpacker().accepts(tmp_path)
+    assert not _AmpUnpacker(tmp_path).accepts()
 
 
 @pytest.mark.asyncio
@@ -46,7 +47,7 @@ async def test_unpack_delegates_with_layout(make_amp_ark: Callable[..., bytes],
     (tmp_path / 'MAIN.ARK').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
     run_game = mocker.patch('destin.harmonix.unpacker.run_game', return_value={'MAIN.ARK': 'ok'})
     out = tmp_path / 'out'
-    assert await _AmpUnpacker().unpack(tmp_path, out, jobs=2) == {'MAIN.ARK': 'ok'}
+    assert await _AmpUnpacker(tmp_path).unpack(out, jobs=2) == {'MAIN.ARK': 'ok'}
     assert run_game.call_args.args == (tmp_path, out)
     assert run_game.call_args.kwargs['jobs'] == 2
     assert run_game.call_args.kwargs['layout'] == 'amplitude'
@@ -58,5 +59,39 @@ async def test_unpack_rejects_wrong_game(make_freq_ark: Callable[..., bytes], mo
     (tmp_path / 'ROOT.ARK').write_bytes(make_freq_ark((('gen/a.txt', b'AAA'),)))
     run_game = mocker.patch('destin.harmonix.unpacker.run_game')
     with pytest.raises(click.Abort):
-        await _AmpUnpacker().unpack(tmp_path, tmp_path / 'out')
+        await _AmpUnpacker(tmp_path).unpack(tmp_path / 'out')
     run_game.assert_not_called()
+
+
+def test_iter_yields_carved_assets(make_amp_ark: Callable[..., bytes], tmp_path: Path) -> None:
+    (tmp_path / 'A.ARK').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'), ('b.txt', b'BB'))))
+    (tmp_path / 'B.ARK').write_bytes(make_amp_ark((('c.txt', b'CCC'),)))
+    assert list(_AmpUnpacker(tmp_path)) == [
+        Asset('gen/a.txt', b'AAA'),
+        Asset('b.txt', b'BB'),
+        Asset('c.txt', b'CCC'),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_aiter_yields_carved_assets(make_freq_ark: Callable[..., bytes],
+                                          tmp_path: Path) -> None:
+    (tmp_path / 'ROOT.ARK').write_bytes(make_freq_ark(
+        (('gen/a.txt', b'AAA'), ('gen/b.txt', b'BB'))))
+    assets = [asset async for asset in _FreqUnpacker(tmp_path)]
+    assert assets == [Asset('gen/a.txt', b'AAA'), Asset('gen/b.txt', b'BB')]
+
+
+def test_iter_skips_truncated_entry(make_amp_ark: Callable[..., bytes], tmp_path: Path) -> None:
+    data = make_amp_ark((('a.txt', b'AAAAA'), ('b.txt', b'BBBBB')))
+    (tmp_path / 'MAIN.ARK').write_bytes(data[:-5])  # Drop the last entry's data.
+    assert list(_AmpUnpacker(tmp_path)) == [Asset('a.txt', b'AAAAA')]
+
+
+@pytest.mark.asyncio
+async def test_aiter_skips_truncated_entry(make_freq_ark: Callable[..., bytes],
+                                           tmp_path: Path) -> None:
+    data = make_freq_ark((('a.txt', b'AAAAA'), ('b.txt', b'BBBBB')))
+    (tmp_path / 'ROOT.ARK').write_bytes(data[:-5])  # Drop the last entry's data.
+    assets = [asset async for asset in _FreqUnpacker(tmp_path)]
+    assert assets == [Asset('a.txt', b'AAAAA')]
