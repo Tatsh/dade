@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 import logging
 import logging.handlers
 
-from destin.amplitude import workers
+from destin.harmonix import workers
 from typing_extensions import Self
 import pytest
 
@@ -194,7 +194,7 @@ def test_run_pool_parallel_reinjects_worker_logs(make_hmx_bitmap: Callable[..., 
                                                  tmp_path: Path) -> None:
     for name in ('a', 'b'):
         (tmp_path / f'{name}.bmp').write_bytes(make_hmx_bitmap(4, 4, bpp=8))
-    with caplog.at_level(logging.DEBUG, logger='destin.amplitude.bitmap'):
+    with caplog.at_level(logging.DEBUG, logger='destin.harmonix.bitmap'):
         workers.run_pool(workers.convert_file,
                          sorted(tmp_path.glob('*.bmp')),
                          jobs=2,
@@ -228,7 +228,7 @@ def test_run_pool_parallel_ignores_failures(tmp_path: Path) -> None:
 
 def test_run_pool_initialises_workers(mocker: MockerFixture, tmp_path: Path) -> None:
     # The pool initialiser routes each worker's root logger through the shared queue.
-    mocker.patch('destin.amplitude.workers.ProcessPoolExecutor', _InlineExecutor)
+    mocker.patch('destin.harmonix.workers.ProcessPoolExecutor', _InlineExecutor)
     handlers: list[list[logging.Handler]] = []
 
     def record(item: Path) -> Path:

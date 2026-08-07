@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import json
 import math
 
-from destin.amplitude import dataarray
+from destin.harmonix import dataarray
 import pytest
 
 if TYPE_CHECKING:

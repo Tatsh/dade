@@ -16,9 +16,9 @@ and :doc:`../utilities`.
    :caption: Games
    :maxdepth: 2
 
-   amplitude
    bit192
    bitrock
+   harmonix
    i76
    incoming
    marmalade

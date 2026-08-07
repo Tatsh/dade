@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import struct
 
 from PIL import Image
-from destin.amplitude import bitmap
+from destin.harmonix import bitmap
 import pytest
 
 if TYPE_CHECKING:

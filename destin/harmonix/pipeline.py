@@ -4,7 +4,7 @@ End-to-end ARK unpacking and asset-conversion pipeline.
 Extracts an ARK archive into an output directory, decompresses ``.gz`` entries, decomposes the
 contained Milo (``.rnd``) scenes, converts every recognised asset in place (bitmaps, DataArray,
 meshes, audio, icons, video metadata), and runs the material-linking and sample-bank post-passes.
-The CPU-bound conversion phases run across a process pool (see :py:mod:`destin.amplitude.workers`).
+The CPU-bound conversion phases run across a process pool (see :py:mod:`destin.harmonix.workers`).
 """
 from __future__ import annotations
 

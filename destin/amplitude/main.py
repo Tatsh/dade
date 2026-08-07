@@ -4,14 +4,17 @@ from __future__ import annotations
 from pathlib import Path
 
 from destin.common.workers import default_jobs
+from destin.harmonix.pipeline import run_game
 import bascom
 import click
 
-from .pipeline import run_game
-
 __all__ = ('main',)
 
-debug_option = bascom.debug_option({'destin.amplitude': {}, 'destin.common': {}})
+debug_option = bascom.debug_option({
+    'destin.amplitude': {},
+    'destin.common': {},
+    'destin.harmonix': {}
+})
 """Attach ``-d/--debug`` to a command and route it through :py:func:`bascom.setup_logging`.
 
 :meta hide-value:

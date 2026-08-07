@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 import json
 import struct
 
-from destin.amplitude import movie
-from destin.amplitude.typing import InvalidFormatError
+from destin.harmonix import movie
+from destin.harmonix.typing import InvalidFormatError
 import pytest
 
 if TYPE_CHECKING:

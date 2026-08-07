@@ -6,7 +6,7 @@ import io
 import struct
 import zlib
 
-from destin.amplitude import ark
+from destin.harmonix import ark
 from typing_extensions import override
 import pytest
 

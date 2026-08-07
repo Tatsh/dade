@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import json
 import struct
 
-from destin.amplitude import milo
+from destin.harmonix import milo
 import pytest
 
 if TYPE_CHECKING:

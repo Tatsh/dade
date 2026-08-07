@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
-from destin.amplitude import mesh
+from destin.harmonix import mesh
 import pytest
 
 if TYPE_CHECKING:

@@ -1,4 +1,4 @@
-"""Shared pytest configuration and synthetic asset builders for the ``amplitude`` tests."""
+"""Shared pytest configuration and synthetic asset builders for the ``harmonix`` tests."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -11,7 +11,7 @@ import pytest
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from destin.amplitude.typing import DataArrayNode
+    from destin.harmonix.typing import DataArrayNode
 
 _SENTINEL = b'\xad\xde\xad\xde'
 """The Milo inter-object body terminator.

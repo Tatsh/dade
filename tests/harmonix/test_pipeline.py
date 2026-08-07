@@ -5,7 +5,7 @@ import gzip
 import json
 import struct
 
-from destin.amplitude import pipeline
+from destin.harmonix import pipeline
 import pytest
 
 if TYPE_CHECKING:
