@@ -1,33 +1,41 @@
 destin
 ======
 
-.. include:: badges.rst
+.. only:: html
 
-``destin`` bundles a collection of asset extractors and converters for a set of PC and console
-video games into a single package. Each game is a sub-command of one ``destin`` command, invoked as
-``destin <game> <subcommand>``.
+   .. include:: badges.rst
 
-The games currently supported are *Incoming* (PC and Dreamcast), *Amplitude* and *FreQuency* (PS2),
-*Tone Sphere*, any Marmalade SDK title, BitRock / InstallBuilder installers, *Monopoly* (2008),
-*Extreme-G* and *Extreme-G 2* (N64 and PC), *Interstate '76*, and *Tony Hawk's Pro Skater 2* (PC).
+   ``destin`` bundles a collection of asset extractors and converters for a set of PC and console
+   video games into a single package. Each game is a sub-command of one ``destin`` command, invoked
+   as ``destin <game> <subcommand>``.
+
+   The games currently supported are *Incoming* (PC and Dreamcast), *Amplitude* and *FreQuency*
+   (PS2), *Tone Sphere*, any Marmalade SDK title, BitRock / InstallBuilder installers, *Monopoly*
+   (2008), *Extreme-G* and *Extreme-G 2* (N64 and PC), *Interstate '76*, and *Tony Hawk's Pro
+   Skater 2* (PC).
 
 .. toctree::
-   :caption: User guide
+   :caption: Command reference
    :maxdepth: 2
 
-   installation
    cli
-   usage
-   utilities
-   native-tools
-
-.. toctree::
-   :caption: Asset formats
-   :maxdepth: 2
-
-   formats/index
 
 .. only:: html
+
+   .. toctree::
+      :caption: User guide
+      :maxdepth: 2
+
+      installation
+      usage
+      utilities
+      native-tools
+
+   .. toctree::
+      :caption: Asset formats
+      :maxdepth: 2
+
+      formats/index
 
    .. toctree::
       :caption: API reference
@@ -35,13 +43,11 @@ The games currently supported are *Incoming* (PC and Dreamcast), *Amplitude* and
 
       api/index
 
-.. toctree::
-   :caption: Reference
-   :maxdepth: 2
+   .. toctree::
+      :caption: Reference
+      :maxdepth: 2
 
-   development
-
-.. only:: html
+      development
 
    Indices and tables
    ------------------
