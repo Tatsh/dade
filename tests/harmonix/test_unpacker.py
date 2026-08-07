@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from destin.harmonix.typing import Asset
+from destin.harmonix.typing import Asset, InvalidFormatError
 from destin.harmonix.unpacker import Unpacker
-import click
 import pytest
 
 if TYPE_CHECKING:
@@ -62,7 +61,7 @@ async def test_unpack_rejects_wrong_game(make_freq_ark: Callable[..., bytes], mo
     game.mkdir()
     (game / 'ROOT.ARK').write_bytes(make_freq_ark((('gen/a.txt', b'AAA'),)))
     run_game = mocker.patch('destin.harmonix.unpacker.run_game')
-    with pytest.raises(click.Abort):
+    with pytest.raises(InvalidFormatError):
         await _AmpUnpacker(game).unpack(tmp_path / 'out')
     run_game.assert_not_called()
 
@@ -74,7 +73,7 @@ async def test_unpack_rejects_output_inside_input(make_amp_ark: Callable[..., by
                                                   tmp_path: Path) -> None:
     (tmp_path / 'MAIN.ARK').write_bytes(make_amp_ark((('a.txt', b'AAA'),)))
     run_game = mocker.patch('destin.harmonix.unpacker.run_game')
-    with pytest.raises(click.Abort):
+    with pytest.raises(ValueError, match='cannot be inside the input'):
         await _AmpUnpacker(tmp_path).unpack(tmp_path / subpath)
     run_game.assert_not_called()
 

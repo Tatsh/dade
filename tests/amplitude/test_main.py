@@ -101,3 +101,12 @@ def test_main_rejects_negative_jobs(runner: CliRunner, tmp_path: Path) -> None:
     (tmp_path / 'MAIN.ARK').write_bytes(bytes(16))
     result = runner.invoke(main, (str(tmp_path), '--jobs', '-1'))
     assert result.exit_code == 2
+
+
+def test_main_aborts_on_unaccepted_source(runner: CliRunner, tmp_path: Path) -> None:
+    game = tmp_path / 'game'
+    game.mkdir()
+    (game / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))  # FreQuency layout, not Amplitude.
+    result = runner.invoke(main, (str(game), '-o', str(tmp_path / 'out')))
+    assert result.exit_code == 1
+    assert 'No Amplitude ARK' in result.output

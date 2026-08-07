@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 import asyncio
 
+from destin.common.typing import InvalidFormatError
 from destin.frequency.unpacker import FrequencyUnpacker
 from rich.console import Console
 import bascom
@@ -67,7 +68,7 @@ def main(input_: Path,
          keep_gz: bool = False,
          ignore_failures: bool = False,
          delete: bool = False) -> None:
-    """Unpack a PS2 FreQuency disc (directory, ISO image, or cue/bin) and convert its assets."""
+    """Unpack a PS2 FreQuency disc and convert its assets."""  # noqa: DOC501
     unpacker = FrequencyUnpacker(input_)
 
     async def run(on_status: Callable[[str], None] | None) -> dict[str, str]:
@@ -81,10 +82,13 @@ def main(input_: Path,
                                      on_status=on_status)
 
     # With ``--debug`` the streaming debug log owns the terminal, so no live spinner is started.
-    if click.get_current_context().params.get('debug', False):
-        stats = asyncio.run(run(None))
-    else:
-        with console.status('Unpacking...') as status:
-            stats = asyncio.run(run(status.update))
+    try:
+        if click.get_current_context().params.get('debug', False):
+            stats = asyncio.run(run(None))
+        else:
+            with console.status('Unpacking...') as status:
+                stats = asyncio.run(run(status.update))
+    except (InvalidFormatError, ValueError) as e:
+        raise click.ClickException(str(e)) from e
     for label, summary in stats.items():
         click.echo(f'{label}: {summary}')

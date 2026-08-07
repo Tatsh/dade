@@ -6,8 +6,8 @@ import asyncio
 import logging
 
 from destin.common.disc import mount, mount_sync, open_image
+from destin.common.typing import InvalidFormatError
 import anyio
-import click
 
 from .ark import _FREQ_MAGIC, parse_directory
 from .pipeline import _find_arks, run_game
@@ -137,8 +137,8 @@ class Unpacker:
         Unpack this game's ARKs under :py:attr:`source` into ``out``.
 
         When :py:attr:`source` is a disc image, it is mounted read-only into a temporary directory
-        for the run; a file that is not a readable disc image propagates
-        :py:class:`~destin.common.typing.InvalidFormatError`.
+        for the run. An ``out`` that is, or is nested inside, a source directory is rejected with
+        :py:exc:`ValueError` before any extraction begins.
 
         Parameters
         ----------
@@ -169,16 +169,16 @@ class Unpacker:
 
         Raises
         ------
-        click.Abort
-            If ``out`` is, or is nested inside, a source directory, or if :py:attr:`source` holds no
-            ARK with this game's layout.
+        destin.common.typing.InvalidFormatError
+            If :py:attr:`source` is not a readable disc image, or holds no ARK with this game's
+            layout.
         """
         self._reject_bad_output(out)
         async with mount(self.source) as root:
             if not any(layout == self.ark_layout for layout in _dir_ark_layouts(root)):
                 log.error('No %s ARK archive found under `%s`.', self.game_name, self.source)
                 msg = f'No {self.game_name} ARK archive found under `{self.source}`.'
-                raise click.Abort(msg) from ValueError(msg)
+                raise InvalidFormatError(msg)
             return await run_game(root,
                                   out,
                                   convert=convert,
@@ -215,7 +215,7 @@ class Unpacker:
 
         Raises
         ------
-        click.Abort
+        ValueError
             If :py:attr:`source` is a directory and ``out`` is that directory or lies within it
             (writing outputs into the disc being read).
         """
@@ -226,4 +226,4 @@ class Unpacker:
         if destination == source or source in destination.parents:
             log.error('Output directory `%s` is inside the input `%s`.', out, self.source)
             msg = f'Output directory `{out}` cannot be inside the input `{self.source}`.'
-            raise click.Abort(msg) from ValueError(msg)
+            raise ValueError(msg)
