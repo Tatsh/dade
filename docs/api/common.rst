@@ -22,10 +22,22 @@ from a game package once a second consumer appeared, so a single implementation 
 .. automodule:: destin.common.cookfs
    :members:
 
+``destin.common.cuebin``
+------------------------
+
+.. automodule:: destin.common.cuebin
+   :members:
+
 ``destin.common.image``
 -----------------------
 
 .. automodule:: destin.common.image
+   :members:
+
+``destin.common.iso9660``
+-------------------------
+
+.. automodule:: destin.common.iso9660
    :members:
 
 ``destin.common.io``
