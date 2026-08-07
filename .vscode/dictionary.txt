@@ -79,6 +79,7 @@ cstring
 cstrings
 ctypes
 cuda
+cuebin
 cupy
 darksphere
 dashcam
