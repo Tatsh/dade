@@ -23,16 +23,27 @@ __all__ = ('DLC_OFFSETS', 'SAVE_SIZE', 'SaveFile', 'dlc_token')
 log = logging.getLogger(__name__)
 
 SAVE_SIZE = 0x3CD08
-"""Exact size of ``save.bin`` in bytes."""
+"""Exact size of ``save.bin`` in bytes.
+
+:meta hide-value:
+"""
 _DEVICE_ID_OFFSET = 0x3CA38
 _DEVICE_ID_LIMIT = 0x3CA9C
-"""Offset of the next field after the device id; the id (plus NUL) must fit before it."""
+"""Offset of the next field after the device id; the id (plus NUL) must fit before it.
+
+:meta hide-value:
+"""
 
 UNLOCK_FLAGS_OFFSET = 0x3C088
 """Base of the song unlock-flag array. A song with ``UnlockNum = n`` is unlocked when the byte at
-``UNLOCK_FLAGS_OFFSET + n`` is non-zero (a song with ``UnlockNum = 0`` has no gate)."""
+
+:meta hide-value:
+"""
 UNLOCK_FLAGS_COUNT = 0x400
-"""Length of the unlock-flag array (it ends exactly at the integrity hash at ``0x3c488``)."""
+"""Length of the unlock-flag array (it ends exactly at the integrity hash at ``0x3c488``).
+
+:meta hide-value:
+"""
 
 DLC_OFFSETS = {
     'darksphere': 0x3C520,
@@ -43,7 +54,10 @@ DLC_OFFSETS = {
     'gnl': 0x3CC48,
     'vvv': 0x3CCA8
 }
-"""DLC pack name to the offset of its ownership-token field in ``save.bin``."""
+"""DLC pack name to the offset of its ownership-token field in ``save.bin``.
+
+:meta hide-value:
+"""
 
 
 def dlc_token(device_id: str, dlc_name: str) -> bytes:

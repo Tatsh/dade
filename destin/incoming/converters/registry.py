@@ -31,4 +31,7 @@ RULES: tuple[Rule, ...] = (
     Rule('mlt', suffix_match('.mlt'), mlt_to_json),
     Rule('txt', suffix_match('.txt'), txt_to_utf8),
 )
-"""Conversion rules in priority order; the first matching rule handles a file."""
+"""Conversion rules in priority order; the first matching rule handles a file.
+
+:meta hide-value:
+"""

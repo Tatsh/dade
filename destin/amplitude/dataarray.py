@@ -17,7 +17,10 @@ __all__ = ('EXTENSIONS', 'convert', 'dtb_to_obj')
 log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.txt.bin', '.ui.bin'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 _DTB_VERSION = 2
 

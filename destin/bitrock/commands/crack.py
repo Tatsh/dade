@@ -24,7 +24,10 @@ if TYPE_CHECKING:
 __all__ = ('crack_main',)
 
 _SIGINT_EXIT_CODE = 128 + signal.SIGINT
-"""Conventional exit code for a process terminated by ``SIGINT`` (128 plus the signal number)."""
+"""Conventional exit code for a process terminated by ``SIGINT`` (128 plus the signal number).
+
+:meta hide-value:
+"""
 _CHARSET_PRESETS = {
     'digits': string.digits,
     'lower': string.ascii_lowercase,
@@ -33,9 +36,15 @@ _CHARSET_PRESETS = {
     'alnum': string.ascii_letters + string.digits,
     'printable': string.digits + string.ascii_letters + string.punctuation,
 }
-"""Named character-set presets accepted by ``--charset``."""
+"""Named character-set presets accepted by ``--charset``.
+
+:meta hide-value:
+"""
 RULE_CHOICES = ('none', 'capitalize', 'upper', 'lower', 'leet', 'append_digits', 'append_years')
-"""Word-mangling rule names accepted by ``--rule``."""
+"""Word-mangling rule names accepted by ``--rule``.
+
+:meta hide-value:
+"""
 
 
 def _resolve_charset(charset: str) -> bytes:
@@ -98,7 +107,10 @@ def _build_source(wordlist: Path | None, charset: str, min_length: int, max_leng
 
 
 _YEAR_SECONDS = 31_557_600
-"""Seconds in a Julian year (365.25 days)."""
+"""Seconds in a Julian year (365.25 days).
+
+:meta hide-value:
+"""
 _DURATION_UNITS: tuple[tuple[str, int], ...] = (
     ('Gy', 1_000_000_000 * _YEAR_SECONDS),
     ('My', 1_000_000 * _YEAR_SECONDS),
@@ -109,7 +121,10 @@ _DURATION_UNITS: tuple[tuple[str, int], ...] = (
     ('m', 60),
     ('s', 1),
 )
-"""Duration units from gigayears down to seconds, each in seconds, for the full breakdown."""
+"""Duration units from gigayears down to seconds, each in seconds, for the full breakdown.
+
+:meta hide-value:
+"""
 
 
 def _format_duration(seconds: float) -> str:

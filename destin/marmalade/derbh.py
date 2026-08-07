@@ -44,17 +44,26 @@ __all__ = ('MAGIC', 'is_derbh', 'unpack', 'unpack_to_dir')
 log = logging.getLogger(__name__)
 
 MAGIC = b'DTRZ'
-"""Magic bytes at the start of every Derbh archive."""
+"""Magic bytes at the start of every Derbh archive.
+
+:meta hide-value:
+"""
 _GZIP_MAGIC = b'\x1f\x8b'
 _LZMA_ALONE_MAGIC = 0x5D
 _MAX_TABLE_GAP = 0x1000
-"""Maximum gap (bytes) tolerated between the location table and the data region."""
+"""Maximum gap (bytes) tolerated between the location table and the data region.
+
+:meta hide-value:
+"""
 _METHOD_GZIP = 0x8
 _METHOD_LZMA = 0x200
 _METHOD_STORED = 0x100
 _VALID_METHODS = frozenset((0x8, 0x100, 0x200, 0x300, 0x400))
 _WINDOW_SLACK = 0x20000
-"""Slack added to a file's window; every codec here self-terminates."""
+"""Slack added to a file's window; every codec here self-terminates.
+
+:meta hide-value:
+"""
 _ZLIB_MAGIC = 0x78
 
 

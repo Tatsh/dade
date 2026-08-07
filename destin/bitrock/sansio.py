@@ -39,18 +39,29 @@ if TYPE_CHECKING:
 __all__ = ('BytesReader', 'CookFS', 'decompress_page', 'parse_fs_index')
 
 _PAYLOAD_INFO_KEY = 'installbuilder.payloadinfo'
-"""Metadata key under which InstallBuilder stores the password header."""
+"""Metadata key under which InstallBuilder stores the password header.
+
+:meta hide-value:
+"""
 _CUSTOM_COMPRESSION = b'\xff'
-"""Leading page byte marking a page handled by a custom (here, encrypted) decompressor."""
+"""Leading page byte marking a page handled by a custom (here, encrypted) decompressor.
+
+:meta hide-value:
+"""
 _DECOMPRESS_COMMAND_RE = re.compile(rb'decompresscommand\s+\{[^}]*\b(zip|lzma|lzham)\b')
 """
 Extracts the page compression algorithm from the trailing ``cookfsinfo`` ``decompresscommand``.
 
 The obfuscated decompressor procedure name is deliberately not matched, so a future InstallBuilder
 release that renames it still resolves as long as the algorithm keyword remains a literal argument.
+
+:meta hide-value:
 """
 _BIG_FILE_RE = re.compile(r'^(?P<base>.+)___bitrockBigFile(?P<part>\d+)$')
-"""Matches the sibling entries InstallBuilder creates when a file exceeds the per-entry limit."""
+"""Matches the sibling entries InstallBuilder creates when a file exceeds the per-entry limit.
+
+:meta hide-value:
+"""
 
 
 class CookFS:

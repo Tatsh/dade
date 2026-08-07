@@ -20,7 +20,10 @@ if TYPE_CHECKING:
 __all__ = ('MAX_IV_POOL', 'MAX_PASSWORD', 'kernel_source')
 
 _PACKAGE = 'destin.bitrock.password_cracker'
-"""Package holding :file:`kernel.cl`, resolved by :py:func:`importlib.resources.files`."""
+"""Package holding :file:`kernel.cl`, resolved by :py:func:`importlib.resources.files`.
+
+:meta hide-value:
+"""
 
 MAX_PASSWORD = 64
 """

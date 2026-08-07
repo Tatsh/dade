@@ -27,7 +27,10 @@ __all__ = ('EXTENSIONS', 'convert', 'smf_to_obj')
 log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.mid'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 
 def smf_to_obj(data: bytes) -> MIDIFile:

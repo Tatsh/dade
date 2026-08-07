@@ -35,16 +35,28 @@ __all__ = ('DEFAULT_SEARCH_WINDOW', 'Block', 'decompress_page', 'locate_end_offs
 _SIGNATURE = b'CFS0002'
 _INDEX_MAGIC = b'CFS2.200'
 _SUFFIX_LENGTH = 16
-"""Trailing record: ``idxsize`` (4) + ``numpages`` (4) + cid (1) + signature (7)."""
+"""Trailing record: ``idxsize`` (4) + ``numpages`` (4) + cid (1) + signature (7).
+
+:meta hide-value:
+"""
 _MD5_LENGTH = 16
-"""Length of each page's MD5 digest in the page directory."""
+"""Length of each page's MD5 digest in the page directory.
+
+:meta hide-value:
+"""
 _DIRECTORY_MARKER = -1
-"""``numblocks`` value marking a directory rather than a file."""
+"""``numblocks`` value marking a directory rather than a file.
+
+:meta hide-value:
+"""
 _COMPRESSION_NONE = 0
 _COMPRESSION_ZLIB = 1
 _COMPRESSION_BZ2 = 2
 _BZ2_LENGTH_PREFIX = 4
-"""Bytes cookfs writes before the bz2 stream for the uncompressed size (unused when reading)."""
+"""Bytes cookfs writes before the bz2 stream for the uncompressed size (unused when reading).
+
+:meta hide-value:
+"""
 DEFAULT_SEARCH_WINDOW = 16 << 20
 """
 Bytes read from the end of the source when auto-locating the cookfs signature.
@@ -52,6 +64,8 @@ Bytes read from the end of the source when auto-locating the cookfs signature.
 Some producers append a trailer after the cookfs archive, so the signature is not at the very end
 of the file; the window must be larger than that trailer. Pass an explicit ``end_offset`` to
 :py:func:`locate_end_offset` to skip the scan entirely.
+
+:meta hide-value:
 """
 
 

@@ -24,7 +24,10 @@ _EXECUTABLE_MAGIC_NUMBERS = frozenset({
     b'\xca\xfe\xba\xbe',  # Universal (fat) binary.
     b'\xbe\xba\xfe\xca',  # Universal (fat) binary, byte-swapped.
 })
-"""Four-byte magic numbers: ELF, Mach-O, and macOS universal binaries."""
+"""Four-byte magic numbers: ELF, Mach-O, and macOS universal binaries.
+
+:meta hide-value:
+"""
 _EXECUTABLE_MAGIC_PREFIXES = frozenset({
     b'#!',  # Shebang scripts.
     b'\x01\xdf',  # 32-bit XCOFF: AIX and IBM i (OS/400).
@@ -33,7 +36,10 @@ _EXECUTABLE_MAGIC_PREFIXES = frozenset({
     b'\x02\x10',  # PA-RISC 1.1 SOM: HP-UX.
     b'\x02\x14',  # PA-RISC 2.0 SOM: HP-UX.
 })
-"""Two-byte magic prefixes: shebang scripts and the XCOFF (AIX, OS/400) and SOM (HP-UX) formats."""
+"""Two-byte magic prefixes: shebang scripts and the XCOFF (AIX, OS/400) and SOM (HP-UX) formats.
+
+:meta hide-value:
+"""
 
 
 def _is_executable(contents: bytes) -> bool:

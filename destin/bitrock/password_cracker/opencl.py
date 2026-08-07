@@ -43,17 +43,35 @@ __all__ = ('crack_opencl',)
 log = logging.getLogger(__name__)
 
 _GROUPS_PER_UNIT = 4
-"""Work groups per compute unit in a batch: enough to saturate the device without a long batch."""
+"""Work groups per compute unit in a batch: enough to saturate the device without a long batch.
+
+:meta hide-value:
+"""
 _POLL_SECONDS = 0.1
-"""How often the host wakes to update progress and check for interruption while a batch runs."""
+"""How often the host wakes to update progress and check for interruption while a batch runs.
+
+:meta hide-value:
+"""
 _DEBUG_INTERVAL = 2.0
-"""How often, in seconds, to emit an in-batch progress line at debug level."""
+"""How often, in seconds, to emit an in-batch progress line at debug level.
+
+:meta hide-value:
+"""
 _WARP = 32
-"""Work-group size is rounded down to a multiple of this (the preferred multiple on NVIDIA)."""
+"""Work-group size is rounded down to a multiple of this (the preferred multiple on NVIDIA).
+
+:meta hide-value:
+"""
 _DEFAULT_LOCAL = 128
-"""Work-group size used when the device does not report a usable maximum."""
+"""Work-group size used when the device does not report a usable maximum.
+
+:meta hide-value:
+"""
 _MAX_LOCAL = 256
-"""Upper cap on the work-group size; larger groups do not help this register-heavy kernel."""
+"""Upper cap on the work-group size; larger groups do not help this register-heavy kernel.
+
+:meta hide-value:
+"""
 
 
 def _all_devices() -> list[cl.Device]:

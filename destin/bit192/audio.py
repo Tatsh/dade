@@ -14,9 +14,15 @@ from destin.common.wav import wrap_pcm
 __all__ = ('DEFAULT_CHANNELS', 'DEFAULT_RATE', 'wrap_raw_file', 'wrap_wav')
 
 DEFAULT_RATE = 44100
-"""Tone Sphere's ``s3eSound`` sample rate (Hz)."""
+"""Tone Sphere's ``s3eSound`` sample rate (Hz).
+
+:meta hide-value:
+"""
 DEFAULT_CHANNELS = 2
-"""Tone Sphere's channel count (stereo)."""
+"""Tone Sphere's channel count (stereo).
+
+:meta hide-value:
+"""
 _BITS = 16
 
 

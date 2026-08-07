@@ -53,23 +53,47 @@ __all__ = (
 log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.mus', '.sdt'})
-"""File extensions handled by :py:func:`convert_file`."""
+"""File extensions handled by :py:func:`convert_file`.
+
+:meta hide-value:
+"""
 
 _MUS_MAGIC = 0xCEFB807A
-"""Big-endian magic for the EA ``.mus`` (``TbSound``) container."""
+"""Big-endian magic for the EA ``.mus`` (``TbSound``) container.
+
+:meta hide-value:
+"""
 _SCHL_MAGIC = b'SCHl'
-"""Marker beginning each EA SCHl stream unit."""
+"""Marker beginning each EA SCHl stream unit.
+
+:meta hide-value:
+"""
 _SCEL_MAGIC = b'SCEl'
-"""Marker ending each EA SCHl stream unit."""
+"""Marker ending each EA SCHl stream unit.
+
+:meta hide-value:
+"""
 _ADAT_MAGIC = b'ADAT'
-"""Marker beginning each record of an EAAC ADAT speech bank."""
+"""Marker beginning each record of an EAAC ADAT speech bank.
+
+:meta hide-value:
+"""
 _SUB3_MAGIC = b'SUB3'
-"""Marker beginning a subtitle chunk inside an ADAT record."""
+"""Marker beginning a subtitle chunk inside an ADAT record.
+
+:meta hide-value:
+"""
 
 _SNR_TABLE = 0x3600
-"""Offset of the EAAC SNR header table inside a ``.mus`` container."""
+"""Offset of the EAAC SNR header table inside a ``.mus`` container.
+
+:meta hide-value:
+"""
 _EAAC_EALAYER3_V1 = 5
-"""EAAC codec id for EALayer3 (V1, ``EL31``) used by ``.sdt`` streams."""
+"""EAAC codec id for EALayer3 (V1, ``EL31``) used by ``.sdt`` streams.
+
+:meta hide-value:
+"""
 
 _WAV_HEADER_SIZE = 44
 """Size in bytes of a canonical WAV header; a larger output file carries audio.
@@ -122,7 +146,10 @@ _CLEAN_SILENCE_PCT = 6
 # in ADAT/SUB3 metadata reached 215040+) is not audio; 16384 cleanly separates
 # real audio from junk.
 _MAX_BLOCK_SAMPLES = 16384
-"""Upper bound on per-block sample counts used to reject non-audio while walking."""
+"""Upper bound on per-block sample counts used to reject non-audio while walking.
+
+:meta hide-value:
+"""
 
 # EALayer3 / MPEG common-header tables (from vgmstream
 # ``mpeg_custom_utils_ealayer3.c``).
@@ -132,9 +159,15 @@ _MPEG_SAMPLE_RATES = (
     (22050, 24000, 16000, -1),
     (44100, 48000, 32000, -1),
 )
-"""Sample-rate lookup indexed by ``[version_index][sample_rate_index]``."""
+"""Sample-rate lookup indexed by ``[version_index][sample_rate_index]``.
+
+:meta hide-value:
+"""
 _MPEG_CHANNELS = {0: 2, 1: 2, 2: 2, 3: 1}
-"""Channel count by MPEG channel-mode: stereo/joint/dual = 2, single = 1."""
+"""Channel count by MPEG channel-mode: stereo/joint/dual = 2, single = 1.
+
+:meta hide-value:
+"""
 
 # EA multichannel comes out in order FL FC FR BL BR LFE (vgmstream does NOT
 # remap). Reorder to canonical WAV order and emit a speaker mask so the
@@ -146,10 +179,16 @@ _WAV_LAYOUT = {
     4: ((0, 1, 2, 3), 0x33),  # quad FL FR BL BR (raw EA order, best effort)
     6: ((0, 2, 1, 5, 3, 4), 0x3F),  # EA FL FC FR BL BR LFE -> WAV FL FR FC LFE BL BR
 }
-"""Per-channel-count ``(permutation, speaker_mask)`` for canonical WAV output."""
+"""Per-channel-count ``(permutation, speaker_mask)`` for canonical WAV output.
+
+:meta hide-value:
+"""
 
 _KSDATAFORMAT_SUBTYPE_PCM = bytes.fromhex('0100000000001000800000aa00389b71')
-"""GUID for ``KSDATAFORMAT_SUBTYPE_PCM`` in ``WAVE_FORMAT_EXTENSIBLE`` headers."""
+"""GUID for ``KSDATAFORMAT_SUBTYPE_PCM`` in ``WAVE_FORMAT_EXTENSIBLE`` headers.
+
+:meta hide-value:
+"""
 
 
 class AudioJob(NamedTuple):

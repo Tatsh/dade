@@ -27,7 +27,10 @@ __all__ = ('EXTENSIONS', 'convert', 'mmv_to_json')
 log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.mmv'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 _MMV_MIN_SIZE = 24  # MOVS header: magic plus five u32 fields.
 _MMV_CHUNK_FIELDS = 8  # Bytes read from a sub-chunk past its tag (dimensions or bank count).

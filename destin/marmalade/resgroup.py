@@ -37,10 +37,16 @@ __all__ = ('GROUP_MAGIC', 'KNOWN_CLASSES', 'is_resgroup', 'parse')
 log = logging.getLogger(__name__)
 
 GROUP_MAGIC = 0x3D
-"""First byte of every serialised IwResGroup."""
+"""First byte of every serialised IwResGroup.
+
+:meta hide-value:
+"""
 KNOWN_CLASSES = ('CIwTexture', 'CIwMaterial', 'CIwModel', 'CIwGxFont', 'CIwResGroup', 'CIwResList',
                  'CIwResTemplate')
-"""Resource class names whose IwHashString we recognise; others surface as ``class_<hash>``."""
+"""Resource class names whose IwHashString we recognise; others surface as ``class_<hash>``.
+
+:meta hide-value:
+"""
 _CLASS_BY_HASH = {iw_hash_string(n): n for n in KNOWN_CLASSES}
 _H_MEMBERS = iw_hash_string('ResGroupMembers')
 _H_RESOURCES = iw_hash_string('ResGroupResources')

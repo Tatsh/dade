@@ -19,7 +19,10 @@ __all__ = ('EXTENSIONS', 'convert', 'ipu_to_json')
 log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.ipu'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 _IPU_MIN_SIZE = 16  # 'ipum' magic plus the dimension and frame-count fields.
 

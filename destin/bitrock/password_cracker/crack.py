@@ -44,10 +44,16 @@ Backend = Literal['auto', 'cpu', 'cuda', 'opencl']
 """Backend selector for :py:func:`crack`."""
 
 _CPU_PROGRESS_SECONDS = 0.1
-"""Report progress at most this often, in seconds, on the CPU backend."""
+"""Report progress at most this often, in seconds, on the CPU backend.
+
+:meta hide-value:
+"""
 
 _worker_state: dict[str, PayloadInfo] = {}
-"""Per-process payload header, seeded by :py:func:`_worker_init` in each pool worker."""
+"""Per-process payload header, seeded by :py:func:`_worker_init` in each pool worker.
+
+:meta hide-value:
+"""
 
 
 def _worker_init(info: PayloadInfo) -> None:  # pragma: no cover

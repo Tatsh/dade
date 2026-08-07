@@ -15,7 +15,10 @@ if TYPE_CHECKING:
 __all__ = ('EXTENSIONS', 'convert', 'milo_decompress')
 
 EXTENSIONS = frozenset({'.rnd'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 _MILO_MAGIC = frozenset({0xCABEDEAF, 0xCBBEDEAF, 0xCCBEDEAF, 0xCDBEDEAF})
 _GZIP_MAGIC = 0xCCBEDEAF

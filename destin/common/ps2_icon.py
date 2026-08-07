@@ -20,7 +20,10 @@ __all__ = ('EXTENSIONS', 'convert', 'icon_sys_to_json', 'ps2_icon_decompose')
 log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.ico', '.icn', '.sys'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 _ICON_MAGIC = 0x10000
 _TEXTURE_BYTES = 0x8000  # 128 x 128 RGBA5551.

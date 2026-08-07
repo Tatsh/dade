@@ -79,13 +79,25 @@ class CompressionMethod(IntEnum):
     """Compression methods dispatched by ``k_apfnPkrDecompressors`` at ``0x0054bdb4``."""
 
     STORED = -2
-    """The resource is stored verbatim."""
+    """The resource is stored verbatim.
+
+    :meta hide-value:
+    """
     RLE8 = 0
-    """The resource uses the run-length codec with 8-bit counts."""
+    """The resource uses the run-length codec with 8-bit counts.
+
+    :meta hide-value:
+    """
     RLE16 = 1
-    """The resource uses the run-length codec with 16-bit counts."""
+    """The resource uses the run-length codec with 16-bit counts.
+
+    :meta hide-value:
+    """
     ZLIB = 2
-    """The resource is deflated."""
+    """The resource is deflated.
+
+    :meta hide-value:
+    """
 
 
 class UnsafePathError(Exception):

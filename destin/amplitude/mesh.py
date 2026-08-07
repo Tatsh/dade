@@ -21,7 +21,10 @@ __all__ = ('EXTENSIONS', 'convert', 'link_materials', 'mesh_to_obj')
 log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.mesh'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 _MESH_VERSION = 14
 _VERTEX_STRIDE = 56  # v14 stream vertex: pos@0, weights@12, normal@20, colour@32, uv@48.

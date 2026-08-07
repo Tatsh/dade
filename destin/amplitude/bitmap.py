@@ -29,10 +29,16 @@ __all__ = ('EXTENSIONS', 'convert', 'decode_freq_abm', 'decode_hmx_bitmap', 'lin
 log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.abm', '.bmp', '.bmp_dark'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 _REF_EXTS = ('.bmp', '.tex')
-"""Extensions of the texture-reference proxy objects handled by :py:func:`link_references`."""
+"""Extensions of the texture-reference proxy objects handled by :py:func:`link_references`.
+
+:meta hide-value:
+"""
 _TEX_PROXY_MAX_SIZE = 4096  # Reference proxies are tiny headers; real bitmaps are far larger.
 _TEX_REF_RE = re.compile(rb'([\x20-\x7e]{2,}\.(?:bmp|tex|tga))\x00*$')
 _FREQ_TEX_VERSION = 4  # FreQuency Rnd::Tex descriptor version.

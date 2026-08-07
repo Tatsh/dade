@@ -29,12 +29,21 @@ __all__ = ('EXTENSIONS', 'STR_BLOCK', 'STR_RATE', 'bnk_to_json', 'convert', 'con
 log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.str'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 STR_RATE = 48000
-"""Default sample rate (Hz) for ``.str`` streams (the rate is not stored in the file)."""
+"""Default sample rate (Hz) for ``.str`` streams (the rate is not stored in the file).
+
+:meta hide-value:
+"""
 STR_BLOCK = 512
-"""Default interleave block size in bytes (per channel) for ``.str`` streams."""
+"""Default interleave block size in bytes (per channel) for ``.str`` streams.
+
+:meta hide-value:
+"""
 
 _VAG_COEFFICIENTS = ((0, 0), (60, 0), (115, -52), (98, -55), (122, -60))
 _VAG_FRAME = 16

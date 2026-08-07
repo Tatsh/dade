@@ -22,13 +22,25 @@ Rule = Literal['none', 'capitalize', 'upper', 'lower', 'leet', 'append_digits', 
 """A single word-mangling transform applied by :py:func:`mangle`."""
 
 _LEET = bytes.maketrans(b'aAeEiIoOsStT', b'@43310055771')
-"""Substitution table for the ``leet`` rule."""
+"""Substitution table for the ``leet`` rule.
+
+:meta hide-value:
+"""
 _DEFAULT_RULES: tuple[Rule, ...] = ('none', 'capitalize', 'upper', 'lower')
-"""Rules applied when the caller does not name any."""
+"""Rules applied when the caller does not name any.
+
+:meta hide-value:
+"""
 _APPENDED_DIGITS = tuple(str(n).encode() for n in range(10))
-"""Single digits appended by the ``append_digits`` rule."""
+"""Single digits appended by the ``append_digits`` rule.
+
+:meta hide-value:
+"""
 _APPENDED_YEARS = tuple(str(year).encode() for year in range(1940, 2031))
-"""Years appended by the ``append_years`` rule."""
+"""Years appended by the ``append_years`` rule.
+
+:meta hide-value:
+"""
 
 
 def _apply(word: bytes, rule: Rule) -> Iterator[bytes]:

@@ -33,23 +33,47 @@ __all__ = ('Twofish', 'cbc_decrypt', 'cbc_encrypt', 'decrypt_page', 'derive_key'
            'parse_payload_info', 'verify_password')
 
 _PAYLOAD_INFO_HEADER = struct.Struct('>I16s32s64s32s')
-"""``installbuilder.payloadinfo`` header: times, IV, password key, encrypted key, and IV hash."""
+"""``installbuilder.payloadinfo`` header: times, IV, password key, encrypted key, and IV hash.
+
+:meta hide-value:
+"""
 
 _BLOCK_SIZE = 16
 _ZERO_IV = bytes(_BLOCK_SIZE)
-"""The all-zero IV used by InstallBuilder's two-argument (no-IV) Twofish-CBC calls."""
+"""The all-zero IV used by InstallBuilder's two-argument (no-IV) Twofish-CBC calls.
+
+:meta hide-value:
+"""
 _PAYLOAD_IV_STEP = 64
-"""Iteration step InstallBuilder uses when repeatedly decrypting the payload IV pool."""
+"""Iteration step InstallBuilder uses when repeatedly decrypting the payload IV pool.
+
+:meta hide-value:
+"""
 _ENCRYPTED_PAGE_HEADER = struct.Struct('>IB')
-"""Encrypted page prefix: big-endian CRC32 checksum then a one-byte IV-pool index."""
+"""Encrypted page prefix: big-endian CRC32 checksum then a one-byte IV-pool index.
+
+:meta hide-value:
+"""
 _DECRYPTED_PREFIX = 32
-"""Bytes of random prefix prepended to the plaintext before the length-prefixed payload."""
+"""Bytes of random prefix prepended to the plaintext before the length-prefixed payload.
+
+:meta hide-value:
+"""
 _LENGTH_PREFIX = 4
-"""Length field before the compressed stream, stripped along with the random prefix."""
+"""Length field before the compressed stream, stripped along with the random prefix.
+
+:meta hide-value:
+"""
 _LZHAM_HEADER = 8
-"""LZHAM stream prefix: a 4-byte big-endian uncompressed size then a 4-byte adler32."""
+"""LZHAM stream prefix: a 4-byte big-endian uncompressed size then a 4-byte adler32.
+
+:meta hide-value:
+"""
 _LZHAM_DICT_SIZE_LOG2 = 26
-"""Dictionary size (log2) that InstallBuilder's tcllzham uses when decompressing."""
+"""Dictionary size (log2) that InstallBuilder's tcllzham uses when decompressing.
+
+:meta hide-value:
+"""
 
 
 def derive_key(password: bytes, password_key: bytes, iv: bytes, times: int) -> bytes:

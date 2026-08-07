@@ -37,17 +37,34 @@ log = logging.getLogger(__name__)
 
 _BLOCKS_PER_SM = 4
 """Blocks per SM in a batch: enough to saturate every SM without making a batch run so long that
-the completed-candidate progress counter barely moves."""
+
+:meta hide-value:
+"""
 _POLL_SECONDS = 0.1
-"""How often the host wakes to update progress and check for interruption while a batch runs."""
+"""How often the host wakes to update progress and check for interruption while a batch runs.
+
+:meta hide-value:
+"""
 _DEBUG_INTERVAL = 2.0
-"""How often, in seconds, to emit an in-batch progress line at debug level."""
+"""How often, in seconds, to emit an in-batch progress line at debug level.
+
+:meta hide-value:
+"""
 _WARP = 32
-"""CUDA warp size; the block size is rounded down to a multiple of this."""
+"""CUDA warp size; the block size is rounded down to a multiple of this.
+
+:meta hide-value:
+"""
 _DEFAULT_THREADS = 128
-"""Block size used when the device does not report an occupancy limit."""
+"""Block size used when the device does not report an occupancy limit.
+
+:meta hide-value:
+"""
 _MAX_THREADS = 256
-"""Upper cap on the block size; larger blocks give no benefit for this register-heavy kernel."""
+"""Upper cap on the block size; larger blocks give no benefit for this register-heavy kernel.
+
+:meta hide-value:
+"""
 
 
 def _block_size(kernel: cp.RawKernel) -> int:

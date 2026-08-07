@@ -43,15 +43,27 @@ log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset(
     {'.view', '.tnm', '.mmesh', '.lnm', '.arena', '.mat', '.lit', '.env', '.tmov'})
-"""File extensions handled by :py:func:`convert`."""
+"""File extensions handled by :py:func:`convert`.
+
+:meta hide-value:
+"""
 
 _REF_EXT = ('.mesh', '.tnm', '.view', '.lit', '.lnm', '.mmesh', '.arena', '.mat', '.matAnim',
             '.tex', '.anim', '.char', '.part', '.grp', '.env', '.cam')
-"""Object extensions a NUL-terminated name must end with to count as a reference."""
+"""Object extensions a NUL-terminated name must end with to count as a reference.
+
+:meta hide-value:
+"""
 _REF_RE = re.compile(rb'[ -~]{1,64}\x00')
-"""Matches a printable, NUL-terminated candidate name of up to 64 characters."""
+"""Matches a printable, NUL-terminated candidate name of up to 64 characters.
+
+:meta hide-value:
+"""
 _MAT_TEX_RE = re.compile(rb'\x01\x00\x00\x00([ -~]{1,120}?\.(?:tex|bmp))\x00')
-"""Matches a ``.mat`` texture name preceded by its ``u32`` present-flag of ``1``."""
+"""Matches a ``.mat`` texture name preceded by its ``u32`` present-flag of ``1``.
+
+:meta hide-value:
+"""
 
 _HEADER_SIZE = 8  # Minimum bytes for a scene-graph container (version plus one more field).
 _REF_MIN_LEN = 3  # Shortest plausible reference name.
