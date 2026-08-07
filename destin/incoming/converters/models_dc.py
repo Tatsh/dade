@@ -12,12 +12,12 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, NamedTuple
-import json
 import logging
 import shutil
 import struct
 
 from destin.common.context import input_root
+from destin.common.json import write_json
 from destin.common.obj import encode_obj
 from destin.incoming.textures import find_level_pack, place_pack_textures
 
@@ -228,5 +228,5 @@ def mlbin_to_json(source: Path, dest_dir: Path) -> Path:
     offsets = _read_ml_offsets(source.read_bytes())
     obj = {'count': len(offsets), 'offsets': list(offsets)}
     destination = dest_dir / f'{source.stem}.json'
-    destination.write_text(json.dumps(obj, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    write_json(destination, obj, sort_keys=True)
     return destination

@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import json
 import logging
 import struct
+
+from destin.common.json import write_json
 
 from .typing import InvalidFormatError
 
@@ -75,7 +76,7 @@ def convert(path: Path) -> Path | None:
     except InvalidFormatError:
         return None
     out = path.with_name(f'{path.name}.json')
-    out.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding='utf-8')
+    write_json(out, meta, ensure_ascii=False, trailing_newline=False)
     log.debug('IPU `%s`: %dx%d, %d frames -> `%s`.', path.name, meta['width'], meta['height'],
               meta['frame_count'], out.name)
     return out

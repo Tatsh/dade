@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import json
 import logging
 import struct
 
+from destin.common.json import write_json
 from destin.common.obj import encode_obj
 from destin.common.png import write_rgba
 from destin.common.typing import InvalidFormatError
@@ -147,7 +147,7 @@ def convert(path: Path) -> Path | None:
         except InvalidFormatError:
             return None
         out = path.with_name(f'{path.name}.json')
-        out.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding='utf-8')
+        write_json(out, meta, ensure_ascii=False, trailing_newline=False)
         log.debug('Saved icon.sys metadata for `%s` -> `%s`.', path.name, out.name)
         return out
     out_dir = path.with_suffix('')

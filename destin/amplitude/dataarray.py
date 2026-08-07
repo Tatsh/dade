@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import json
 import logging
 import struct
+
+from destin.common.json import write_json
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -102,7 +103,7 @@ def convert(path: Path) -> Path | None:
     if not clean:
         return None
     out = path.with_suffix('.json')
-    out.write_text(json.dumps(root, ensure_ascii=False, indent=2), encoding='utf-8')
+    write_json(out, root, ensure_ascii=False, trailing_newline=False)
     path.unlink()
     log.debug('DataArray `%s`: %d root elements -> `%s`.', path.name, len(root), out.name)
     return out

@@ -9,8 +9,9 @@ The CPU-bound conversion phases run across a process pool (see :py:mod:`destin.a
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import json
 import logging
+
+from destin.common.json import write_json
 
 from . import ark, audio, bitmap, mesh, workers
 from .typing import InvalidFormatError
@@ -64,8 +65,10 @@ def _split_banks(root: Path, *, jobs: int, ignore_failures: bool) -> tuple[int, 
             bank = audio.bnk_to_json(bnk.read_bytes())
         except InvalidFormatError:
             continue
-        bnk.with_name(f'{bnk.name}.json').write_text(json.dumps(bank, ensure_ascii=False, indent=2),
-                                                     encoding='utf-8')
+        write_json(bnk.with_name(f'{bnk.name}.json'),
+                   bank,
+                   ensure_ascii=False,
+                   trailing_newline=False)
         json_only += 1
     return outcome.succeeded, json_only
 

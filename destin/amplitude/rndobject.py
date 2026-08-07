@@ -11,13 +11,13 @@ the engine's ``RndString`` reader.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import json
 import logging
 import math
 import re
 import struct
 
 from destin.common.io import f32, read_cstring_at, u32
+from destin.common.json import write_json
 
 from .typing import InvalidFormatError
 
@@ -476,6 +476,6 @@ def convert(path: Path) -> Path | None:
     except InvalidFormatError:
         return None
     out = path.with_name(f'{path.name}.json')
-    out.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding='utf-8')
+    write_json(out, meta, ensure_ascii=False, trailing_newline=False)
     log.debug('Rnd object `%s`: version %s -> `%s`.', path.name, meta['version'], out.name)
     return out

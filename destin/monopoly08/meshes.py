@@ -33,12 +33,12 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple, TypedDict
-import json
 import math
 import re
 import struct
 
 from destin.common import io
+from destin.common.json import write_json
 from destin.common.utils import align_up
 
 if TYPE_CHECKING:
@@ -530,7 +530,7 @@ def convert(path: str | Path) -> tuple[Path, Path, int, int]:
     # JSON metadata.
     json_path = stem.with_suffix('.json')
     meta = _parse_meta(b)
-    json_path.write_text(json.dumps(meta, indent=2, sort_keys=True), encoding='utf-8')
+    write_json(json_path, meta, sort_keys=True, trailing_newline=False)
 
     n_verts = sum(len(s['verts']) for s in sm)
     n_tris = sum(len(s['tris']) for s in sm)

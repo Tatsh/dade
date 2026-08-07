@@ -12,9 +12,10 @@ converter used, rather than the flag-derived count the renderers used. See
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, NamedTuple
-import json
 import logging
 import struct
+
+from destin.common.json import write_json
 
 if TYPE_CHECKING:
     from collections.abc import Container, Iterable, Mapping
@@ -191,4 +192,4 @@ def write_manifest(manifest: MeshManifest, dest: Path) -> None:
             'vertexCount': batch['vertex_count']
         } for batch in manifest['batches']]
     }
-    dest.write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    write_json(dest, payload, sort_keys=True)

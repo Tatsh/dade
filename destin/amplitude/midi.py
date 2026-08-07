@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import io
-import json
 import logging
 
+from destin.common.json import write_json
 import mido  # type: ignore[import-untyped]
 
 from .typing import InvalidFormatError
@@ -102,6 +102,6 @@ def convert(path: Path) -> Path | None:
     except InvalidFormatError:
         return None
     out = path.with_name(f'{path.name}.json')
-    out.write_text(json.dumps(obj, ensure_ascii=False, indent=2), encoding='utf-8')
+    write_json(out, obj, ensure_ascii=False, trailing_newline=False)
     log.debug('MIDI `%s`: %d tracks -> `%s`.', path.name, obj['track_count'], out.name)
     return out

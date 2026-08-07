@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import json
 import struct
 import zlib
 
 from destin.common.compress import inflate
+from destin.common.json import write_json
 from destin.common.utils import safe_name
 
 if TYPE_CHECKING:
@@ -180,7 +180,6 @@ def convert(path: Path) -> Path | None:  # noqa: PLR0914
     }
     if note is not None:
         manifest['note'] = note
-    (out_dir / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2),
-                                           encoding='utf-8')
+    write_json(out_dir / 'manifest.json', manifest, ensure_ascii=False, trailing_newline=False)
     path.unlink()
     return out_dir

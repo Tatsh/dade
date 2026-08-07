@@ -14,12 +14,12 @@ covered by a known field
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-import json
 import logging
 import operator
 import struct
 
 from destin.common.io import read_cstring
+from destin.common.json import write_json
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -686,7 +686,7 @@ _LEVEL_SNAPSHOT_SIZE = 0x81a24
 
 def _write_json(source: Path, dest_dir: Path, obj: dict[str, Any]) -> Path:
     destination = dest_dir / f'{source.stem}.json'
-    destination.write_text(json.dumps(obj, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    write_json(destination, obj, sort_keys=True)
     return destination
 
 

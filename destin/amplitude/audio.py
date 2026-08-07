@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import array
-import json
 import logging
 import struct
 
+from destin.common.json import write_json
 from destin.common.utils import safe_name
 from destin.common.wav import wrap_pcm
 
@@ -229,8 +229,7 @@ def split_bank(bnk: Path) -> Path | None:
             'pcm_samples': len(pcm)
         })
     manifest = {'source': bnk.name, 'nse': nse.name, 'sample_count': count, 'samples': samples}
-    (out_dir / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2),
-                                           encoding='utf-8')
+    write_json(out_dir / 'manifest.json', manifest, ensure_ascii=False, trailing_newline=False)
     log.debug('Bank `%s`: %d/%d samples -> `%s/`.', bnk.name, len(samples), count, out_dir.name)
     return out_dir
 
@@ -371,8 +370,7 @@ def split_sd_bank(hd: Path) -> Path | None:
             'pcm_samples': len(pcm)
         })
     manifest = {'source': hd.name, 'bd': bd.name, 'vag_count': len(vags), 'samples': samples}
-    (out_dir / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2),
-                                           encoding='utf-8')
+    write_json(out_dir / 'manifest.json', manifest, ensure_ascii=False, trailing_newline=False)
     log.debug('SCEI bank `%s`: %d/%d VAGs -> `%s/`.', hd.name, len(samples), len(vags),
               out_dir.name)
     return out_dir
@@ -405,8 +403,10 @@ def split_all_banks(root: Path) -> tuple[int, int]:
             bank = bnk_to_json(bnk.read_bytes())
         except InvalidFormatError:
             continue
-        bnk.with_name(f'{bnk.name}.json').write_text(json.dumps(bank, ensure_ascii=False, indent=2),
-                                                     encoding='utf-8')
+        write_json(bnk.with_name(f'{bnk.name}.json'),
+                   bank,
+                   ensure_ascii=False,
+                   trailing_newline=False)
         json_only += 1
     for hd in root.rglob('*.hd'):
         if split_sd_bank(hd):

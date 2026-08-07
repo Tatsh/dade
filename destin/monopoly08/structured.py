@@ -32,6 +32,7 @@ import struct
 
 from PIL import Image
 from destin.common.io import f32, read_cstring, u16, u32
+from destin.common.json import write_json
 import numpy as np
 
 if TYPE_CHECKING:
@@ -612,7 +613,7 @@ def convert_bin(path: str | Path, out: str | Path | None = None) -> tuple[Path, 
     b = path.read_bytes()
     data = _detect(b)(b)
     out = Path(out) if out is not None else path.with_suffix('.json')
-    out.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
+    write_json(out, data, ensure_ascii=False, trailing_newline=False)
     return out, data
 
 
@@ -806,7 +807,7 @@ def convert_mixr(path: str | Path, out: str | Path | None = None) -> tuple[Path,
     path = Path(path)
     data = _mixr_parse(path.read_bytes())
     out = Path(out) if out is not None else path.with_suffix('.json')
-    out.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
+    write_json(out, data, ensure_ascii=False, trailing_newline=False)
     return out, data
 
 
@@ -854,7 +855,7 @@ def convert_pamc(path: str | Path, out: str | Path | None = None) -> tuple[Path,
     path = Path(path)
     data = _pamc_parse(path.read_bytes())
     out = Path(out) if out is not None else path.with_suffix('.json')
-    out.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
+    write_json(out, data, ensure_ascii=False, trailing_newline=False)
     return out, data
 
 
@@ -949,7 +950,7 @@ def convert_vanb(path: str | Path, out: str | Path | None = None) -> tuple[Path,
     path = Path(path)
     data = _vanb_parse(path.read_bytes())
     out = Path(out) if out is not None else path.with_suffix('.json')
-    out.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
+    write_json(out, data, ensure_ascii=False, trailing_newline=False)
     return out, data
 
 
@@ -1023,7 +1024,7 @@ def convert_fntx(path: str | Path,
         side = path.with_suffix('.glyphs.json')
         meta = {k: info[k] for k in ('glyphCount', 'atlasWidth', 'atlasHeight')}
         meta['glyphs'] = info['glyphs']
-        side.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding='utf-8')
+        write_json(side, meta, ensure_ascii=False, trailing_newline=False)
     return out_png, info
 
 

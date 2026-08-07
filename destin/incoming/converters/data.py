@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
-import json
 import logging
 import struct
+
+from destin.common.json import write_json
 
 from ._base import ConversionError, UnsupportedFormatError
 
@@ -25,7 +26,7 @@ _CTL_RECORD = struct.Struct('<4I')
 
 def _write_json(source: Path, dest_dir: Path, obj: dict[str, Any]) -> Path:
     destination = dest_dir / f'{source.stem}.json'
-    destination.write_text(json.dumps(obj, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    write_json(destination, obj, sort_keys=True)
     return destination
 
 

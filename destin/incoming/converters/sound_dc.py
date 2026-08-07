@@ -8,10 +8,11 @@ unit table is decoded to JSON.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import json
 import logging
 import struct
 import wave
+
+from destin.common.json import write_json
 
 from ._base import ConversionError
 
@@ -160,5 +161,5 @@ def mlt_to_json(source: Path, dest_dir: Path) -> Path:
         })
     obj = {'unit_count': count, 'units': units, 'version': version}
     destination = dest_dir / f'{source.stem}.json'
-    destination.write_text(json.dumps(obj, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    write_json(destination, obj, sort_keys=True)
     return destination
