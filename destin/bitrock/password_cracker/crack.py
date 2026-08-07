@@ -260,11 +260,11 @@ def _crack_cpu_parallel(info: PayloadInfo, source: Mask | Iterable[str | bytes],
         while True:
             try:
                 password, matched = results.next(_CPU_PROGRESS_SECONDS)
-            except multiprocessing.TimeoutError:
+            except multiprocessing.TimeoutError:  # pragma: no cover
                 password, matched = None, False
             except StopIteration:
                 break
-            if password is not None:
+            if password is not None:  # pragma: no branch
                 tested += 1
                 latest = password
             now = time.monotonic()
@@ -395,7 +395,7 @@ def _load_cuda() -> _GpuBackend | None:
     return crack_cuda if _has_devices(list_devices) else None  # pragma: no cover
 
 
-def _load_opencl() -> _GpuBackend | None:
+def _load_opencl() -> _GpuBackend | None:  # pragma: no cover
     """
     Import the OpenCL backend if its optional dependency and a usable device are present.
 
