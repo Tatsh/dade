@@ -15,6 +15,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+from destin.common.io import u32
+
 from .vadpcm import decode_vadpcm, find_table_base, read_codebook
 
 if TYPE_CHECKING:
@@ -35,7 +37,7 @@ _EXPECTED_ORDER = 2
 
 
 def _u32(rom: bytes, control: int, offset: int) -> int:
-    return int(struct.unpack_from('>I', rom, control + offset)[0])
+    return u32(rom, control + offset, endian='>')
 
 
 def _read_key_map(rom: bytes, control: int, offset: int) -> tuple[int, int, int, int, int, int]:

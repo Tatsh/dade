@@ -16,6 +16,7 @@ import shutil
 import struct
 
 from PIL import Image
+from destin.common.io import u16, u32
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -46,14 +47,6 @@ _BPP_32 = 32
 _MAX_DIM = 4096
 
 
-def _u16(data: bytes, off: int) -> int:
-    return data[off] | (data[off + 1] << 8)
-
-
-def _u32(data: bytes, off: int) -> int:
-    return int(struct.unpack_from('<I', data, off)[0])
-
-
 def _ps2_clut_index(i: int) -> int:
     # PS2 8bpp CLUT stores palettes with index bits 0x08 and 0x10 swapped.
     return (i & 0xE7) | ((i & 0x08) << 1) | ((i & 0x10) >> 1)
@@ -79,7 +72,7 @@ def decode_hmx_bitmap(data: bytes) -> tuple[int, int, bytes] | None:
     """
     if len(data) < _HMX_MIN_SIZE or data[0] != 0 or data[2] != _HMX_TYPE:
         return None
-    bpp, w, h = data[1], _u16(data, 4), _u16(data, 6)
+    bpp, w, h = data[1], u16(data, 4), u16(data, 6)
     if bpp not in {4, 8, 32} or not w or not h:
         return None
     off = 16
@@ -271,9 +264,9 @@ def parse_freq_tex_reference(data: bytes) -> str | None:
         The referenced bitmap name (e.g. ``'circ_shuttle.bmp'``), or ``None`` if the data is not a
         FreQuency texture descriptor carrying a non-empty name.
     """
-    if len(data) < _FREQ_TEX_NAME_OFFSET + 2 or _u32(data, 0) != _FREQ_TEX_VERSION:
+    if len(data) < _FREQ_TEX_NAME_OFFSET + 2 or u32(data, 0) != _FREQ_TEX_VERSION:
         return None
-    width, height, bpp = _u32(data, 4), _u32(data, 8), _u32(data, 12)
+    width, height, bpp = u32(data, 4), u32(data, 8), u32(data, 12)
     if not (0 < width <= _FREQ_TEX_MAX_DIM and 0 < height <= _FREQ_TEX_MAX_DIM
             and bpp in _FREQ_TEX_BPPS):
         return None

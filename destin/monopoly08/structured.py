@@ -31,6 +31,7 @@ import re
 import struct
 
 from PIL import Image
+from destin.common.io import f32, u16, u32
 import numpy as np
 
 if TYPE_CHECKING:
@@ -135,25 +136,13 @@ _FONTLIST_RE = re.compile(rb'\d+:')
 BinDecoder = Callable[[bytes], dict[str, Any]]
 
 
-def _u32(b: bytes, o: int) -> int:
-    return int(struct.unpack_from('>I', b, o)[0])
-
-
-def _u32le(b: bytes, o: int) -> int:
-    return int(struct.unpack_from('<I', b, o)[0])
-
-
-def _f32(b: bytes, o: int) -> float:
-    return float(struct.unpack_from('>f', b, o)[0])
-
-
 def _hx(v: int) -> str:
     return f'0x{v:08x}'
 
 
 def _floats(b: bytes, start: int, end: int) -> list[float]:
     end -= (end - start) % 4
-    return [round(_f32(b, o), 6) for o in range(start, end, 4)]
+    return [round(f32(b, o, endian='>'), 6) for o in range(start, end, 4)]
 
 
 def _cstrings(b: bytes, minlen: int = 3) -> list[str]:
@@ -183,11 +172,11 @@ def _dec_place(b: bytes) -> dict[str, Any]:
     return {
         'format': 'place',
         '_confidence': 'high',
-        'version': _u32(b, 4),
-        'size': _u32(b, 8),
-        'selfHash': _hx(_u32(b, 0x14)),
-        'dataOffset': _u32(b, 0x18),
-        'refHash': _hx(_u32(b, 0x1C)),
+        'version': u32(b, 4, endian='>'),
+        'size': u32(b, 8, endian='>'),
+        'selfHash': _hx(u32(b, 0x14, endian='>')),
+        'dataOffset': u32(b, 0x18, endian='>'),
+        'refHash': _hx(u32(b, 0x1C, endian='>')),
         'transform3x4': transform,
         'extraFloats': fl[12:],
     }
@@ -214,8 +203,8 @@ def _dec_text(b: bytes) -> dict[str, Any]:
     recs = []
     o = 0
     while o + 16 <= len(b):
-        h = _u32(b, o + 8)
-        ln = _u32(b, o + 12)
+        h = u32(b, o + 8, endian='>')
+        ln = u32(b, o + 12, endian='>')
         o += 16
         if ln == 0 or o + ln > len(b):
             break
@@ -274,7 +263,7 @@ def _dec_namesle(b: bytes) -> dict[str, Any]:
     return {
         'format': 'namesle',
         '_confidence': 'high',
-        'header': [_u32le(b, o) for o in range(0, 16, 4)],
+        'header': [u32(b, o) for o in range(0, 16, 4)],
         'names': _cstrings(b, 3)
     }
 
@@ -298,7 +287,7 @@ def _dec_feng(b: bytes) -> dict[str, Any]:
     return {
         'format': 'feng',
         '_confidence': 'medium',
-        'size': _u32(b, 4),
+        'size': u32(b, 4, endian='>'),
         'chunkTags': sorted({t.decode('latin1')
                              for t in tags}),
         'resources': resources[:200]
@@ -319,11 +308,11 @@ def _dec_stv(b: bytes) -> dict[str, Any]:
     dict[str, Any]
         The decoded JSON-serialisable record.
     """
-    n = _u32(b, 0x0C)
+    n = u32(b, 0x0C, endian='>')
     return {
         'format': 'stv',
         '_confidence': 'medium',
-        'hash': _hx(_u32(b, 8)),
+        'hash': _hx(u32(b, 8, endian='>')),
         'sampleCount': n,
         'floats': _floats(b, 0x10, len(b))
     }
@@ -343,11 +332,11 @@ def _dec_rec0001(b: bytes) -> dict[str, Any]:
     dict[str, Any]
         The decoded JSON-serialisable record.
     """
-    words = [_u32(b, o) for o in range(0, min(len(b), 0x40), 4)]
+    words = [u32(b, o, endian='>') for o in range(0, min(len(b), 0x40), 4)]
     return {
         'format': 'rec',
         '_confidence': 'medium',
-        'version': _hx(_u32(b, 0)),
+        'version': _hx(u32(b, 0, endian='>')),
         'hashes': [_hx(w) for w in words if _MIN_HASH <= w <= _MAX_HASH],
         'headerWords': words
     }
@@ -370,11 +359,11 @@ def _dec_cfg0666(b: bytes) -> dict[str, Any]:
     return {
         'format': 'cfg',
         '_confidence': 'medium',
-        'variant': _hx(_u32(b, 0)),
-        'size': _u32(b, 4),
-        'count': _u32(b, 8),
-        'typeHash': _hx(_u32(b, 0x10)),
-        'headerWords': [_u32(b, o) for o in range(0, min(len(b), 0x30), 4)]
+        'variant': _hx(u32(b, 0, endian='>')),
+        'size': u32(b, 4, endian='>'),
+        'count': u32(b, 8, endian='>'),
+        'typeHash': _hx(u32(b, 0x10, endian='>')),
+        'headerWords': [u32(b, o, endian='>') for o in range(0, min(len(b), 0x30), 4)]
     }
 
 
@@ -395,9 +384,9 @@ def _dec_fx(b: bytes) -> dict[str, Any]:
     return {
         'format': 'fx',
         '_confidence': 'low',
-        'size': _u32(b, 4),
-        'count': _u32(b, 8),
-        'words': [_u32(b, o) for o in range(0, len(b), 4)],
+        'size': u32(b, 4, endian='>'),
+        'count': u32(b, 8, endian='>'),
+        'words': [u32(b, o, endian='>') for o in range(0, len(b), 4)],
         'floats': _floats(b, 0, len(b))
     }
 
@@ -419,8 +408,8 @@ def _dec_bbb(b: bytes) -> dict[str, Any]:
     return {
         'format': 'bbb',
         '_confidence': 'low',
-        'size': _u32(b, 8),
-        'headerWords': [_u32(b, o) for o in range(0, min(len(b), 0x40), 4)],
+        'size': u32(b, 8, endian='>'),
+        'headerWords': [u32(b, o, endian='>') for o in range(0, min(len(b), 0x40), 4)],
         'strings': _cstrings(b, 4)
     }
 
@@ -441,13 +430,13 @@ def _looks_like_toc(b: bytes) -> bool:
     """
     if len(b) < _MIN_TOC_SIZE or b[:2] != b'\x00\x00':
         return False
-    cnt = _u32(b, 0)
+    cnt = u32(b, 0, endian='>')
     if not (1 <= cnt <= _MAX_TOC_ENTRIES) or 8 + cnt * 8 > len(b):
         return False
     prev = -1
     valid = 0
     for i in range(cnt):
-        off = _u32(b, 8 + i * 8 + 4)
+        off = u32(b, 8 + i * 8 + 4, endian='>')
         if off <= prev or off > len(b):
             break
         prev = off
@@ -469,12 +458,12 @@ def _dec_toc(b: bytes) -> dict[str, Any]:
     dict[str, Any]
         The decoded JSON-serialisable record.
     """
-    cnt = _u32(b, 0)
+    cnt = u32(b, 0, endian='>')
     entries = []
     prev = -1
     for i in range(cnt):
-        h = _u32(b, 8 + i * 8)
-        off = _u32(b, 8 + i * 8 + 4)
+        h = u32(b, 8 + i * 8, endian='>')
+        off = u32(b, 8 + i * 8 + 4, endian='>')
         if off <= prev or off > len(b):
             break
         prev = off
@@ -483,7 +472,7 @@ def _dec_toc(b: bytes) -> dict[str, Any]:
         'format': 'toc',
         '_confidence': 'medium',
         'declaredCount': cnt,
-        'word1': _u32(b, 4),
+        'word1': u32(b, 4, endian='>'),
         'decodedEntries': len(entries),
         'entries': entries,
         'note': 'embedded sub-resource payloads not decoded'
@@ -509,9 +498,9 @@ def _dec_script(b: bytes) -> dict[str, Any]:
     return {
         'format': 'script',
         '_confidence': 'low',
-        'headerWord0': _u32(b, 0),
-        'value': _hx(_u32(b, 8)),
-        'codeHash': _hx(_u32(b, 0x0C)),
+        'headerWord0': u32(b, 0, endian='>'),
+        'value': _hx(u32(b, 8, endian='>')),
+        'codeHash': _hx(u32(b, 0x0C, endian='>')),
         'codeSize': len(b) - 0x10,
         'opcodePreview': b[0x10:0x40].hex(),
         'note': 'compiled script/bytecode; opcodes not disassembled'
@@ -536,7 +525,7 @@ def _dec_blob(b: bytes) -> dict[str, Any]:
         'format': 'blob',
         '_confidence': 'low',
         'size': len(b),
-        'headerWords': [_u32(b, o) for o in range(0, min(len(b), 0x20), 4)],
+        'headerWords': [u32(b, o, endian='>') for o in range(0, min(len(b), 0x20), 4)],
         'strings': _cstrings(b, 4)[:40],
         'note': 'container payload not decoded'
     }
@@ -561,7 +550,7 @@ def _dec_unknown(b: bytes) -> dict[str, Any]:
         '_confidence': 'none',
         'magic': b[:4].hex(),
         'size': len(b),
-        'headerWords': [_u32(b, o) for o in range(0, min(len(b), 0x40), 4)],
+        'headerWords': [u32(b, o, endian='>') for o in range(0, min(len(b), 0x40), 4)],
         'headPreview': b[:64].hex(),
         'strings': _cstrings(b, 5)[:20]
     }
@@ -594,9 +583,10 @@ def _detect(b: bytes) -> BinDecoder:
         (lambda d: d[:3] == b'\x00\x01\x00', _dec_rec0001),
         (lambda d: d[:4] == b'\xcc\x03\x00\x00', _dec_namesle),
         (lambda d: bool(_FONTLIST_RE.match(d)) and b'EOF' in d[-8:], _dec_fontlist),
-        (lambda d: (len(d) >= _MIN_SCRIPT_SIZE and _u32(d, 4) == 0 and _u32(d, 0) != 0 and d[0x10]
-                    == _SCRIPT_MARKER), _dec_script),
-        (lambda d: len(d) >= _MIN_BLOB_SIZE and _u32(d, 0) == 0 and _u32(d, 4) == 0, _dec_blob),
+        (lambda d: (len(d) >= _MIN_SCRIPT_SIZE and u32(d, 4, endian='>') == 0 and u32(
+            d, 0, endian='>') != 0 and d[0x10] == _SCRIPT_MARKER), _dec_script),
+        (lambda d: len(d) >= _MIN_BLOB_SIZE and u32(d, 0, endian='>') == 0 and u32(d, 4, endian='>')
+         == 0, _dec_blob),
         (_looks_like_toc, _dec_toc),
     )
     return next((dec for pred, dec in rules if pred(b)), _dec_unknown)
@@ -631,14 +621,6 @@ def convert_bin(path: str | Path, out: str | Path | None = None) -> tuple[Path, 
 # =========================================================================== #
 
 
-def _anim_u32(b: bytes, o: int) -> int:
-    return int(struct.unpack('>I', b[o:o + 4])[0])
-
-
-def _anim_f32(b: bytes, o: int) -> float:
-    return float(struct.unpack('>f', b[o:o + 4])[0])
-
-
 def _anim_round(x: float, nd: int = 6) -> float:
     # Keep JSON tidy: round, and turn -0.0 into 0.0.
     r = round(x, nd)
@@ -649,31 +631,33 @@ def _anim_parse(b: bytes) -> dict[str, Any]:
     if b[:4] != b'ANIM':
         msg = f'not an ANIM file (magic={b[:4]!r})'
         raise ValueError(msg)
-    version = _anim_f32(b, 0x04)
-    duration = _anim_f32(b, 0x0C)
-    channel_count = _anim_u32(b, 0x10)
+    version = f32(b, 0x04, endian='>')
+    duration = f32(b, 0x0C, endian='>')
+    channel_count = u32(b, 0x10, endian='>')
     channels = []
     for i in range(channel_count):
         rec = 0x14 + i * 12
-        name_off = _anim_u32(b, rec)
-        name_hash = _anim_u32(b, rec + 4)
-        kf_off = _anim_u32(b, rec + 8)
+        name_off = u32(b, rec, endian='>')
+        name_hash = u32(b, rec + 4, endian='>')
+        kf_off = u32(b, rec + 8, endian='>')
         name = b[name_off:b.index(b'\x00', name_off)].decode('latin1')
-        count = _anim_u32(b, kf_off)
+        count = u32(b, kf_off, endian='>')
         keys = []
         base = kf_off + 60
         for k in range(count):
             o = base + k * 24
             keys.append({
                 'time':
-                    _anim_round(_anim_f32(b, o)),
+                    _anim_round(f32(b, o, endian='>')),
                 'value':
-                    _anim_round(_anim_f32(b, o + 4)),
-                'inTangent': [_anim_round(_anim_f32(b, o + 8)),
-                              _anim_round(_anim_f32(b, o + 12))],
+                    _anim_round(f32(b, o + 4, endian='>')),
+                'inTangent': [
+                    _anim_round(f32(b, o + 8, endian='>')),
+                    _anim_round(f32(b, o + 12, endian='>'))
+                ],
                 'outTangent': [
-                    _anim_round(_anim_f32(b, o + 16)),
-                    _anim_round(_anim_f32(b, o + 20))
+                    _anim_round(f32(b, o + 16, endian='>')),
+                    _anim_round(f32(b, o + 20, endian='>'))
                 ],
             })
         node, _, prop = name.partition('.')
@@ -727,14 +711,6 @@ def convert_anim(path: str | Path, out: str | Path | None = None) -> tuple[Path,
 # =========================================================================== #
 
 
-def _mixr_u32(b: bytes, o: int) -> int:
-    return int(struct.unpack_from('>I', b, o)[0])
-
-
-def _mixr_f32(b: bytes, o: int) -> float:
-    return float(struct.unpack_from('>f', b, o)[0])
-
-
 def _mixr_cstr(b: bytes, o: int) -> str:
     return b[o:b.index(b'\x00', o)].decode('latin1')
 
@@ -747,7 +723,7 @@ def _mixr_parse(b: bytes) -> dict[str, Any]:
     o = 8
     while o + 8 <= len(b):
         tag = b[o:o + 4].decode('latin1')
-        size = _mixr_u32(b, o + 4)
+        size = u32(b, o + 4, endian='>')
         chunks[tag] = (o, size)
         o += size
 
@@ -755,10 +731,10 @@ def _mixr_parse(b: bytes) -> dict[str, Any]:
     names: dict[int, str] = {}
     if 'STRT' in chunks:
         off, _size = chunks['STRT']
-        count = _mixr_u32(b, off + 12)
+        count = u32(b, off + 12, endian='>')
         for i in range(count):
             eo = off + 16 + i * 8
-            names[_mixr_u32(b, eo)] = _mixr_cstr(b, off + _mixr_u32(b, eo + 4))
+            names[u32(b, eo, endian='>')] = _mixr_cstr(b, off + u32(b, eo + 4, endian='>'))
 
     def nm(h: int) -> str:
         return names.get(h, f'#{h:08x}')
@@ -772,19 +748,19 @@ def _mixr_parse(b: bytes) -> dict[str, Any]:
         o, _ = chunks['INFO']
         c = o + 8
         out['info'] = {
-            'project': nm(_mixr_u32(b, c)),
-            'version': _mixr_u32(b, c + 4),
-            'name2': nm(_mixr_u32(b, c + 8)),
-            'gain': round(_mixr_f32(b, c + 12), 6)
+            'project': nm(u32(b, c, endian='>')),
+            'version': u32(b, c + 4, endian='>'),
+            'name2': nm(u32(b, c + 8, endian='>')),
+            'gain': round(f32(b, c + 12, endian='>'), 6)
         }
 
     # FRDS: [hdr][count] then count*[nodeHash][gain f32][u32] -> the mix levels
     if 'FRDS' in chunks:
         o, _ = chunks['FRDS']
         c = o + 8
-        count = _mixr_u32(b, c + 4)
+        count = u32(b, c + 4, endian='>')
         out['faders'] = {
-            nm(_mixr_u32(b, c + 8 + i * 12)): round(_mixr_f32(b, c + 8 + i * 12 + 4), 6)
+            nm(u32(b, c + 8 + i * 12, endian='>')): round(f32(b, c + 8 + i * 12 + 4, endian='>'), 6)
             for i in range(count)
         }
 
@@ -794,9 +770,9 @@ def _mixr_parse(b: bytes) -> dict[str, Any]:
         c = o + 8
         n = (size - 8) // 12
         out['faderTree'] = [{
-            'node': nm(_mixr_u32(b, c + i * 12)),
-            'a': _mixr_u32(b, c + i * 12 + 4),
-            'b': _mixr_u32(b, c + i * 12 + 8)
+            'node': nm(u32(b, c + i * 12, endian='>')),
+            'a': u32(b, c + i * 12 + 4, endian='>'),
+            'b': u32(b, c + i * 12 + 8, endian='>')
         } for i in range(n)]
 
     # DTRE / PSET: [hdr][count] then count*[hash][u32][u32] index records
@@ -804,11 +780,11 @@ def _mixr_parse(b: bytes) -> dict[str, Any]:
         if tag in chunks:
             o, _ = chunks[tag]
             c = o + 8
-            count = _mixr_u32(b, c + 4)
+            count = u32(b, c + 4, endian='>')
             out[key] = [{
-                'name': nm(_mixr_u32(b, c + 8 + i * 12)),
-                'a': _mixr_u32(b, c + 8 + i * 12 + 4),
-                'b': _mixr_u32(b, c + 8 + i * 12 + 8)
+                'name': nm(u32(b, c + 8 + i * 12, endian='>')),
+                'a': u32(b, c + 8 + i * 12 + 4, endian='>'),
+                'b': u32(b, c + 8 + i * 12 + 8, endian='>')
             } for i in range(count)]
 
     out['_chunks'] = {t: {'offset': o, 'size': s} for t, (o, s) in chunks.items()}
@@ -843,16 +819,12 @@ def convert_mixr(path: str | Path, out: str | Path | None = None) -> tuple[Path,
 # =========================================================================== #
 
 
-def _pamc_u32(b: bytes, o: int) -> int:
-    return int(struct.unpack_from('>I', b, o)[0])
-
-
 def _pamc_parse(b: bytes) -> dict[str, Any]:
     if b[:4] != b'PAMC':
         msg = f'not PAMC ({b[:4]!r})'
         raise ValueError(msg)
-    version = _pamc_u32(b, 4)
-    count = _pamc_u32(b, 8)
+    version = u32(b, 4, endian='>')
+    count = u32(b, 8, endian='>')
     remaps = []
     for i in range(count):
         o = 0x0C + i * 8
@@ -898,10 +870,6 @@ def convert_pamc(path: str | Path, out: str | Path | None = None) -> tuple[Path,
 _VANB_NONE = 0xFFFFFFFF
 
 
-def _vanb_u32(b: bytes, o: int) -> int:
-    return int(struct.unpack_from('>I', b, o)[0])
-
-
 def _vanb_off(v: int) -> int | None:
     return None if v == _VANB_NONE else v
 
@@ -928,26 +896,26 @@ def _vanb_parse(b: bytes) -> dict[str, Any]:
     if b[:4] != b'VANB':
         msg = f'not VANB ({b[:4]!r})'
         raise ValueError(msg)
-    version = _vanb_u32(b, 4)
+    version = u32(b, 4, endian='>')
     nodes = []
     o = 8
     while o + 8 <= len(b):
         node_off = o
-        name_hash = _vanb_u32(b, o)
-        count = _vanb_u32(b, o + 4)
+        name_hash = u32(b, o, endian='>')
+        count = u32(b, o + 4, endian='>')
         o += 8
         entries = []
         for _ in range(count):
-            tag = _vanb_u32(b, o)
-            ref = _vanb_u32(b, o + 4)
+            tag = u32(b, o, endian='>')
+            ref = u32(b, o + 4, endian='>')
             o += 8
             e: dict[str, Any] = {'tag': tag, 'ref': f'0x{ref:08x}'}
             fv = _vanb_as_float(ref)
             if fv is not None:
                 e['refFloat'] = fv
             entries.append(e)
-        child = _vanb_u32(b, o)
-        sibling = _vanb_u32(b, o + 4)
+        child = u32(b, o, endian='>')
+        sibling = u32(b, o + 4, endian='>')
         o += 8
         nodes.append({
             'offset': node_off,
@@ -997,29 +965,25 @@ def convert_vanb(path: str | Path, out: str | Path | None = None) -> tuple[Path,
 _FNTX_ATLAS_WIDTH = 256
 
 
-def _fntx_u16(b: bytes, o: int) -> int:
-    return int(struct.unpack_from('<H', b, o)[0])
-
-
 def _fntx_parse(b: bytes) -> dict[str, Any]:
     if b[:4] != b'FntX':
         msg = f'not a FntX file (magic={b[:4]!r})'
         raise ValueError(msg)
-    table_region = _fntx_u16(b, 0x08)  # glyph-table region, 16-byte units
-    glyph_count = _fntx_u16(b, 0x0A)
+    table_region = u16(b, 0x08)  # glyph-table region, 16-byte units
+    glyph_count = u16(b, 0x0A)
     atlas_off = 0x80 + table_region * 16
     glyphs = []
     for i in range(glyph_count):
         o = 0x80 + i * 16
-        cp = _fntx_u16(b, o)
+        cp = u16(b, o)
         glyphs.append({
             'codepoint': cp,
             'char': chr(cp) if _MIN_PRINTABLE_CP <= cp < _MAX_CODEPOINT else None,
             'width': b[o + 2],
             'height': b[o + 3],
-            'atlasX': _fntx_u16(b, o + 4),
-            'atlasY': _fntx_u16(b, o + 6),
-            'advance': _fntx_u16(b, o + 14),
+            'atlasX': u16(b, o + 4),
+            'atlasY': u16(b, o + 6),
+            'advance': u16(b, o + 14),
         })
     rem = len(b) - atlas_off
     height = rem // _FNTX_ATLAS_WIDTH  # floor drops the sub-256B EAGL64 trailer

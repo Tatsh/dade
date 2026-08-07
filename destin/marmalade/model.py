@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 import logging
 import struct
 
+from destin.common import io
 from destin.common.obj import encode_obj
 
 from .hashstring import iw_hash_string
@@ -104,10 +105,10 @@ def decode_model(body: bytes) -> Model:
         If the required Verts or GLTriList block is missing.
     """
     def u16(o: int) -> int:
-        return int(struct.unpack_from('<H', body, o)[0])
+        return io.u16(body, o)
 
     def i16(o: int) -> int:
-        return int(struct.unpack_from('<h', body, o)[0])
+        return io.i16(body, o)
 
     v_block = _find_block(body, _H_VERTS)
     t_block = _find_block(body, _H_TRIS)

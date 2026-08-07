@@ -40,7 +40,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, NamedTuple
 import logging
-import struct
+
+from destin.common.io import i16, i32, u16, u32
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -182,7 +183,7 @@ class Scene:
         """
         offset = self.chunk_list_offset
         while True:
-            chunk = Chunk(offset, _i32(self.data, offset), _u32(self.data, offset + 4))
+            chunk = Chunk(offset, i32(self.data, offset), u32(self.data, offset + 4))
             yield chunk
             if chunk.id == -1:
                 return
@@ -215,7 +216,7 @@ class Scene:
             raise ValueError(msg)
         offset = sector.faces_offset
         for _ in range(sector.num_faces):
-            word = _u32(self.data, offset)
+            word = u32(self.data, offset)
             length = word >> 18
             if length == 0:
                 return
@@ -234,7 +235,7 @@ class Scene:
                        flags=flags,
                        corners=corners,
                        uvs=uvs,
-                       texture_index=_u32(self.data, offset + 16) if textured else -1)
+                       texture_index=u32(self.data, offset + 16) if textured else -1)
             offset += length * 4
 
     @classmethod
@@ -263,18 +264,18 @@ class Scene:
         if len(data) < _HEADER_SIZE:
             msg = 'File is too small to be a PSX scene.'
             raise ValueError(msg)
-        version = _u32(data, 0)
-        chunk_list_offset = _u32(data, 4)
-        num_mesh_sections = _u32(data, 8)
+        version = u32(data, 0)
+        chunk_list_offset = u32(data, 4)
+        num_mesh_sections = u32(data, 8)
         descriptors = tuple(
             _read_descriptor(data, i, 0x0C + i * _DESCRIPTOR_SIZE)
             for i in range(num_mesh_sections))
         count_offset = 0x0C + num_mesh_sections * _DESCRIPTOR_SIZE
-        num_sectors = _u32(data, count_offset)
+        num_sectors = u32(data, count_offset)
         table = count_offset + 4
         sectors = []
         for i in range(num_sectors):
-            offset = _u32(data, table + i * 4)
+            offset = u32(data, table + i * 4)
             if offset == 0 or offset + _SECTOR_HEADER_SIZE > len(data):
                 continue
             sectors.append(_read_sector(data, i, offset))
@@ -315,9 +316,9 @@ class Scene:
             end = chunk.offset
         base = end + 4
         count_offset = base + len(self.sectors) * 4
-        count = _u32(self.data, count_offset)
+        count = u32(self.data, count_offset)
         start = count_offset + 4
-        return tuple(_u32(self.data, start + i * 4) for i in range(count))
+        return tuple(u32(self.data, start + i * 4) for i in range(count))
 
     def triangles(
             self,
@@ -375,39 +376,31 @@ class Scene:
             Every vertex, real and ghost, in table order.
         """
         base = sector.verts_offset
-        return tuple((_i16(self.data, base + i * _VERTEX_SIZE) + origin[0],
-                      _i16(self.data, base + i * _VERTEX_SIZE + 2) + origin[1],
-                      _i16(self.data, base + i * _VERTEX_SIZE + 4) + origin[2])
+        return tuple((i16(self.data, base + i * _VERTEX_SIZE) + origin[0],
+                      i16(self.data, base + i * _VERTEX_SIZE + 2) + origin[1],
+                      i16(self.data, base + i * _VERTEX_SIZE + 4) + origin[2])
                      for i in range(sector.vertex_count))
-
-
-def _i16(data: bytes, offset: int) -> int:
-    return int(struct.unpack_from('<h', data, offset)[0])
-
-
-def _i32(data: bytes, offset: int) -> int:
-    return int(struct.unpack_from('<i', data, offset)[0])
 
 
 def _read_descriptor(data: bytes, index: int, offset: int) -> Descriptor:
     return Descriptor(index=index,
-                      sequence=_u16(data, offset + 0x16),
-                      position=(_i32(data, offset + 4) >> 12, _i32(data, offset + 8) >> 12,
-                                _i32(data, offset + 0x0C) >> 12),
-                      flags_18=_u16(data, offset + 0x18),
-                      flags_1a=_u16(data, offset + 0x1A),
+                      sequence=u16(data, offset + 0x16),
+                      position=(i32(data, offset + 4) >> 12, i32(data, offset + 8) >> 12,
+                                i32(data, offset + 0x0C) >> 12),
+                      flags_18=u16(data, offset + 0x18),
+                      flags_1a=u16(data, offset + 0x1A),
                       bytes_20=(data[offset + 0x20], data[offset + 0x21], data[offset + 0x22]))
 
 
 def _read_sector(data: bytes, index: int, offset: int) -> Sector:
-    count_a = _u16(data, offset + 2)
-    count_b = _u16(data, offset + 4)
-    num_faces = _u16(data, offset + 6)
+    count_a = u16(data, offset + 2)
+    count_b = u16(data, offset + 4)
+    num_faces = u16(data, offset + 6)
     verts_offset = offset + _SECTOR_HEADER_SIZE
     position = verts_offset + (count_a + count_b) * _VERTEX_SIZE
     faces_offset = position
     for _ in range(num_faces):
-        length = _u32(data, position) >> 18
+        length = u32(data, position) >> 18
         if length == 0:
             break
         position += length * 4
@@ -419,11 +412,3 @@ def _read_sector(data: bytes, index: int, offset: int) -> Sector:
                   verts_offset=verts_offset,
                   faces_offset=faces_offset,
                   faces_end=position)
-
-
-def _u16(data: bytes, offset: int) -> int:
-    return int(struct.unpack_from('<H', data, offset)[0])
-
-
-def _u32(data: bytes, offset: int) -> int:
-    return int(struct.unpack_from('<I', data, offset)[0])

@@ -28,8 +28,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, NamedTuple
 import logging
-import struct
 
+from destin.common.io import i32, u16, u32
 from destin.common.ppm import ppm
 
 if TYPE_CHECKING:
@@ -145,7 +145,7 @@ def decode_instance(data: bytes, instance: TextureInstance,
             index = (packed >> ((pixel & 1) * 4)) & 0xF
         else:
             index = data[instance.pixels_offset + pixel]
-        out += bytes(bgr555_to_rgb(_u16(data, clut_offset + index * 2)))
+        out += bytes(bgr555_to_rgb(u16(data, clut_offset + index * 2)))
     return bytes(out)
 
 
@@ -184,19 +184,19 @@ def parse_lighting(data: bytes) -> LightingTextures:
     LightingTextures
         The checksum table, both palette tables, and the instance table.
     """
-    offset = _u32(data, 4)
-    while _i32(data, offset) != -1:
-        offset = offset + 8 + _u32(data, offset + 4)
+    offset = u32(data, 4)
+    while i32(data, offset) != -1:
+        offset = offset + 8 + u32(data, offset + 4)
     base = offset + 4
-    num_checksums = _u32(data, base)
-    checksums = tuple(_u32(data, base + 4 + i * 4) for i in range(num_checksums))
+    num_checksums = u32(data, base)
+    checksums = tuple(u32(data, base + 4 + i * 4) for i in range(num_checksums))
     position = base + 4 + num_checksums * 4
     cluts_16, position = _read_cluts(data, position, _CLUT16_STRIDE)
     cluts_256, position = _read_cluts(data, position, _CLUT256_STRIDE)
-    num_instances = _u32(data, position)
+    num_instances = u32(data, position)
     position += 4
     instances = tuple(
-        _read_instance(data, _u32(data, position + i * 4), checksums) for i in range(num_instances))
+        _read_instance(data, u32(data, position + i * 4), checksums) for i in range(num_instances))
     log.debug(
         'Parsed lighting file: %d checksums, %d 16-colour and %d 256-colour palettes, '
         '%d instances.', num_checksums, len(cluts_16), len(cluts_256), len(instances))
@@ -227,35 +227,23 @@ def to_ppm(pixels: bytes, width: int, height: int) -> bytes:
     return ppm(pixels, width, height)
 
 
-def _i32(data: bytes, offset: int) -> int:
-    return int(struct.unpack_from('<i', data, offset)[0])
-
-
 def _read_cluts(data: bytes, offset: int, stride: int) -> tuple[dict[int, int], int]:
-    count = _u32(data, offset)
+    count = u32(data, offset)
     offset += 4
     cluts = {}
     for _ in range(count):
-        cluts[_u32(data, offset)] = offset + 4
+        cluts[u32(data, offset)] = offset + 4
         offset += stride
     return cluts, offset
 
 
 def _read_instance(data: bytes, offset: int, checksums: tuple[int, ...]) -> TextureInstance:
-    page = _u32(data, offset + 0x0C)
+    page = u32(data, offset + 0x0C)
     return TextureInstance(checksum=checksums[page] if page < len(checksums) else 0,
-                           clut_id=_u32(data, offset + 8),
-                           height=_u16(data, offset + 0x12),
-                           num_colors=_u32(data, offset + 4),
+                           clut_id=u32(data, offset + 8),
+                           height=u16(data, offset + 0x12),
+                           num_colors=u32(data, offset + 4),
                            offset=offset,
                            page=page,
                            pixels_offset=offset + 0x14,
-                           width=_u16(data, offset + 0x10))
-
-
-def _u16(data: bytes, offset: int) -> int:
-    return int(struct.unpack_from('<H', data, offset)[0])
-
-
-def _u32(data: bytes, offset: int) -> int:
-    return int(struct.unpack_from('<I', data, offset)[0])
+                           width=u16(data, offset + 0x10))

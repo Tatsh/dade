@@ -12,8 +12,8 @@ can then see the main code segment directly.
 from __future__ import annotations
 
 import logging
-import struct
 
+from destin.common.io import u32
 from destin.common.lz import decompress_lzss0
 
 from .archive import decode_entry, parse_archive
@@ -128,7 +128,7 @@ def read_u32(data: bytes, offset: int) -> int:
     int
         The value.
     """
-    return int(struct.unpack_from('>I', data, offset)[0])
+    return u32(data, offset, endian='>')
 
 
 def game_code(rom: bytes) -> bytes:

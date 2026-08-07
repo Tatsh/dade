@@ -17,6 +17,8 @@ import math
 import re
 import struct
 
+from destin.common.io import f32, u32
+
 from .typing import InvalidFormatError
 
 if TYPE_CHECKING:
@@ -84,14 +86,6 @@ _MOVIE_VERSION = 2
 _MOVIE_FLAG_OFFSET = 8
 _MOVIE_FLAG_TIMED = 1
 _MOVIE_BODY_OFFSET = 12
-
-
-def _read_u32(data: bytes, offset: int) -> int:
-    return int(struct.unpack_from('<I', data, offset)[0])
-
-
-def _read_f32(data: bytes, offset: int) -> float:
-    return float(struct.unpack_from('<f', data, offset)[0])
 
 
 def _read_floats(data: bytes, offset: int, count: int) -> list[float]:
@@ -162,7 +156,7 @@ def view_to_json(data: bytes) -> ViewMeta:
     references = _scan_refs(data)
     matrices = _all_matrices(data)
     return {
-        'version': _read_u32(data, 0),
+        'version': u32(data, 0),
         'references': references,
         'mesh': next((ref for ref in references if ref.endswith('.mesh')), None),
         'transform': matrices[0] if matrices else None,
@@ -192,7 +186,7 @@ def tnm_to_json(data: bytes) -> TnmMeta:
         raise InvalidFormatError(_HEADER_TOO_SHORT)
     references = _scan_refs(data)
     return {
-        'version': _read_u32(data, 0),
+        'version': u32(data, 0),
         'references': references,
         'mesh_refs': [ref for ref in references if ref.endswith('.mesh')],
         'tnm_refs': [ref for ref in references if ref.endswith('.tnm')],
@@ -223,7 +217,7 @@ def mmesh_to_json(data: bytes) -> MmeshMeta:
         raise InvalidFormatError(_HEADER_TOO_SHORT)
     references = _scan_refs(data)
     return {
-        'version': _read_u32(data, 0),
+        'version': u32(data, 0),
         'references': references,
         'mesh': next((ref for ref in references if ref.endswith('.mesh')), None),
         'instance_transforms': _all_matrices(data),
@@ -253,7 +247,7 @@ def lnm_to_json(data: bytes) -> LnmMeta:
         raise InvalidFormatError(_HEADER_TOO_SHORT)
     references = _scan_refs(data)
     return {
-        'version': _read_u32(data, 0),
+        'version': u32(data, 0),
         'references': references,
         'lit_refs': [ref for ref in references if ref.endswith('.lit')],
         'transforms': _all_matrices(data),
@@ -283,7 +277,7 @@ def arena_to_json(data: bytes) -> ArenaMeta:
         raise InvalidFormatError(_HEADER_TOO_SHORT)
     references = _scan_refs(data)
     return {
-        'version': _read_u32(data, 0),
+        'version': u32(data, 0),
         'references': references,
         'view_refs': [ref for ref in references if ref.endswith('.view')],
     }
@@ -311,13 +305,13 @@ def mat_to_json(data: bytes) -> MatMeta:
     InvalidFormatError
         If the version is not ``2``, ``3``, or ``7``.
     """
-    if len(data) < _HEADER_SIZE + 4 or _read_u32(data, 0) not in _MAT_VERSIONS:
+    if len(data) < _HEADER_SIZE + 4 or u32(data, 0) not in _MAT_VERSIONS:
         msg = 'Not a `Rnd::Mat` material.'
         raise InvalidFormatError(msg)
     textures = [match.group(1).decode('latin-1') for match in _MAT_TEX_RE.finditer(data)]
     return {
-        'version': _read_u32(data, 0),
-        'blend_mode': _read_u32(data, _MAT_BLEND_OFFSET),
+        'version': u32(data, 0),
+        'blend_mode': u32(data, _MAT_BLEND_OFFSET),
         'textures': textures or None,
     }
 
@@ -341,17 +335,17 @@ def lit_to_json(data: bytes) -> LightMeta:
     InvalidFormatError
         If the data is not 200 bytes or its version is not ``1``.
     """
-    if len(data) != _LIT_SIZE or _read_u32(data, 0) != _LIT_VERSION:
+    if len(data) != _LIT_SIZE or u32(data, 0) != _LIT_VERSION:
         msg = 'Not a `Rnd::Light`.'
         raise InvalidFormatError(msg)
     return {
-        'version': _read_u32(data, 0),
-        'type': _read_u32(data, _LIT_TYPE_OFFSET),
+        'version': u32(data, 0),
+        'type': u32(data, _LIT_TYPE_OFFSET),
         'color': _read_floats(data, _LIT_COLOR_OFFSET, 3),
-        'cone_outer': _read_f32(data, _LIT_CONE_OUTER_OFFSET),
-        'cone_inner': _read_f32(data, _LIT_CONE_INNER_OFFSET),
-        'range': _read_f32(data, _LIT_RANGE_OFFSET),
-        'intensity': _read_f32(data, _LIT_INTENSITY_OFFSET),
+        'cone_outer': f32(data, _LIT_CONE_OUTER_OFFSET),
+        'cone_inner': f32(data, _LIT_CONE_INNER_OFFSET),
+        'range': f32(data, _LIT_RANGE_OFFSET),
+        'intensity': f32(data, _LIT_INTENSITY_OFFSET),
         'local_xfm': _read_floats(data, _LIT_LOCAL_XFM_OFFSET, _MATRIX_FLOATS),
         'world_xfm': _read_floats(data, _LIT_WORLD_XFM_OFFSET, _MATRIX_FLOATS),
     }
@@ -381,10 +375,10 @@ def env_to_json(data: bytes) -> EnvironMeta:
     InvalidFormatError
         If the data is shorter than the header or its version is not ``0``.
     """
-    if len(data) < _ENV_NAMES_OFFSET or _read_u32(data, 0) != _ENV_VERSION:
+    if len(data) < _ENV_NAMES_OFFSET or u32(data, 0) != _ENV_VERSION:
         msg = 'Not a `Rnd::Environ`.'
         raise InvalidFormatError(msg)
-    light_count = _read_u32(data, _ENV_LIGHT_COUNT_OFFSET)
+    light_count = u32(data, _ENV_LIGHT_COUNT_OFFSET)
     offset = _ENV_NAMES_OFFSET
     lights: list[str] = []
     for _ in range(light_count):
@@ -393,11 +387,11 @@ def env_to_json(data: bytes) -> EnvironMeta:
     meta: EnvironMeta = {'version': _ENV_VERSION, 'lights': lights}
     if len(data) - offset != _ENV_FOG_BLOCK_SIZE:
         return meta
-    fog_mode = _read_u32(data, offset + 44)
+    fog_mode = u32(data, offset + 44)
     meta['ambient'] = _read_floats(data, offset, 4)
-    meta['fog_start'] = _read_f32(data, offset + 16)
-    meta['fog_end'] = _read_f32(data, offset + 20)
-    meta['fog_density'] = _read_f32(data, offset + 24)
+    meta['fog_start'] = f32(data, offset + 16)
+    meta['fog_end'] = f32(data, offset + 20)
+    meta['fog_density'] = f32(data, offset + 24)
     meta['fog_color'] = _read_floats(data, offset + 28, 4)
     meta['fog_mode'] = _FOG_MODES[fog_mode] if fog_mode < len(_FOG_MODES) else str(fog_mode)
     return meta
@@ -427,13 +421,13 @@ def tmov_to_json(data: bytes) -> MovieMeta:
     InvalidFormatError
         If the version is not ``2``.
     """
-    if len(data) < _MOVIE_BODY_OFFSET or _read_u32(data, 0) != _MOVIE_VERSION:
+    if len(data) < _MOVIE_BODY_OFFSET or u32(data, 0) != _MOVIE_VERSION:
         msg = 'Not a `Rnd::Movie`.'
         raise InvalidFormatError(msg)
     offset = _MOVIE_BODY_OFFSET
     fps: float | None = None
-    if _read_u32(data, _MOVIE_FLAG_OFFSET) == _MOVIE_FLAG_TIMED:
-        fps = _read_f32(data, offset + 8)  # After the leading u32 and the start f32.
+    if u32(data, _MOVIE_FLAG_OFFSET) == _MOVIE_FLAG_TIMED:
+        fps = f32(data, offset + 8)  # After the leading u32 and the start f32.
         offset += 16
     else:
         offset += 4
@@ -443,7 +437,7 @@ def tmov_to_json(data: bytes) -> MovieMeta:
     if offset < len(data):
         movie, offset = _read_name(data, offset)
     if offset + _HEADER_SIZE <= len(data):
-        frames = _read_u32(data, offset)
+        frames = u32(data, offset)
         offset += _HEADER_SIZE  # The frame count plus a trailing u32.
         tex, offset = _read_name(data, offset)
     return {

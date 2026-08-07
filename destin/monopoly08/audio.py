@@ -35,6 +35,7 @@ import subprocess as sp
 import tempfile
 import wave
 
+from destin.common.io import u32
 import numpy as np
 import numpy.typing as npt
 
@@ -174,10 +175,6 @@ class AudioJob(NamedTuple):
     """Reconstructed 8-byte EAAC ``.snr`` header (EA-XMA ``'mus'`` jobs only)."""
     nsamp: int = 0
     """Declared total sample count (EALayer3 ``'sdt'`` jobs only)."""
-
-
-def _vgmstream_be32(b: bytes, o: int) -> int:
-    return int(struct.unpack_from('>I', b, o)[0])
 
 
 @functools.cache
@@ -372,7 +369,7 @@ def _parse_mus(b: bytes) -> list[tuple[int, bytes, int, int]]:
     ValueError
         If the container magic is wrong.
     """
-    if (magic := _vgmstream_be32(b, 0)) != _MUS_MAGIC:
+    if (magic := u32(b, 0, endian='>')) != _MUS_MAGIC:
         msg = f'bad .mus magic {magic:08x}'
         raise ValueError(msg)
     # Seek table @0x10: [dataOff, field2, snrPtr] until it reaches the SNR table.
@@ -443,12 +440,12 @@ def _walk_stream(b: bytes, start: int) -> tuple[int, int, int, int] | None:
     nsamp = 0
     n = 0
     while o + 8 <= len(b):
-        hdr = _vgmstream_be32(b, o)
+        hdr = u32(b, o, endian='>')
         flag = (hdr >> 24) & 0xFF
         size = hdr & 0xFFFFFF
         if flag not in {0x00, 0x80} or size < _MIN_SNS_BLOCK_SIZE or o + size > len(b):
             return None
-        samp = _vgmstream_be32(b, o + 4)
+        samp = u32(b, o + 4, endian='>')
         if samp > _MAX_BLOCK_SAMPLES:
             return None
         nsamp += samp
@@ -546,15 +543,15 @@ def _parse_sub3(b: bytes, off: int) -> list[tuple[int, str]]:
     """
     if b[off:off + 4] != _SUB3_MAGIC:
         return []
-    count = _vgmstream_be32(b, off + 8)
+    count = u32(b, off + 8, endian='>')
     subs = []
     p = off + 0x0C
     for _ in range(count):
         if p + 0x10 > len(b):
             break
-        w0 = _vgmstream_be32(b, p)
-        w1 = _vgmstream_be32(b, p + 4)
-        clen = _vgmstream_be32(b, p + 0x0C)
+        w0 = u32(b, p, endian='>')
+        w1 = u32(b, p + 4, endian='>')
+        clen = u32(b, p + 0x0C, endian='>')
         if clen > _MAX_SUBTITLE_CHARS or p + 0x10 + clen * 2 > len(b):
             break
         text = b[p + 0x10:p + 0x10 + clen * 2].decode('utf-16-be', 'replace').rstrip('\x00')
@@ -590,7 +587,7 @@ def _parse_adat(b: bytes) -> list[tuple[int, int, int, int, int | None, str | No
         sub_off = adat + 0x10
         subs = _parse_sub3(b, sub_off)
         has_sub3 = b[sub_off:sub_off + 4] == _SUB3_MAGIC
-        p0 = sub_off + 8 + _vgmstream_be32(b, sub_off + 4) if has_sub3 else adat + 0x10
+        p0 = sub_off + 8 + u32(b, sub_off + 4, endian='>') if has_sub3 else adat + 0x10
         idx = 0
         o = p0
         while o < rec_end - 8:
@@ -869,7 +866,7 @@ def _sdt_jobs(source: Path, b: bytes) -> list[AudioJob]:
         streams = [(s, e, ns) for s, e, _nb, ns, _h, _t in recs]
         _write_subtitles(source, [(h, t) for _s, _e, _nb, _ns, h, t in recs])
     else:
-        streams = [(s, e, ns) for s, e, _nb, ns in _find_streams(b, _vgmstream_be32(b, 0))]
+        streams = [(s, e, ns) for s, e, _nb, ns in _find_streams(b, u32(b, 0, endian='>'))]
     jobs = []
     for i, (start, end, ns) in enumerate(streams):
         if _frame_params(b, start)[1] <= 0:

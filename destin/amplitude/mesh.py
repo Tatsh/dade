@@ -7,6 +7,7 @@ import re
 import shutil
 import struct
 
+from destin.common.io import u32
 from destin.common.obj import encode_obj
 from destin.common.utils import safe_name
 
@@ -42,10 +43,6 @@ _MAX_STR_LEN = 128  # Upper bound on a plausible texture-name length.
 _PRINTABLE = range(32, 127)  # Printable ASCII range.
 
 
-def _u32(data: bytes, off: int) -> int:
-    return int(struct.unpack_from('<I', data, off)[0])
-
-
 def _parse_v14_mesh(data: bytes) -> Geometry | None:
     """
     Walk a version-14 RndMesh body to locate its vertex and face vectors.
@@ -63,14 +60,14 @@ def _parse_v14_mesh(data: bytes) -> Geometry | None:
     Geometry | None
         The located geometry, or ``None`` if the body is not a parseable v14 mesh.
     """
-    if len(data) < _MESH_MIN_SIZE or _u32(data, 0) != _MESH_VERSION:
+    if len(data) < _MESH_MIN_SIZE or u32(data, 0) != _MESH_VERSION:
         return None
 
     def rstr(off: int) -> int:
-        return off + 4 + _u32(data, off)
+        return off + 4 + u32(data, off)
 
     def rhl(off: int) -> int:  # Handle list: u32 count + count length-prefixed names.
-        count = _u32(data, off)
+        count = u32(data, off)
         off += 4
         for _ in range(count):
             off = rstr(off)
@@ -78,7 +75,7 @@ def _parse_v14_mesh(data: bytes) -> Geometry | None:
 
     # A struct error anywhere in the variable-length header means this is not a v14 mesh.
     try:  # noqa: PLW0717
-        tver = _u32(data, 4)
+        tver = u32(data, 4)
         off = rhl(4 + 4 + 96)  # version + 24 matrix floats + child handle list.
         if tver > 0:
             off += 16  # Constraint + pivot.
@@ -87,17 +84,17 @@ def _parse_v14_mesh(data: bytes) -> Geometry | None:
         off = rhl(off + 4 + 1)  # RndDrawable: version, flag, handle list.
         off = rhl(off + 4)  # RndCollideable: version, handle list.
         off += 8  # field_0xe0 / field_0xe4.
-        material = data[off + 4:off + 4 + _u32(data, off)].decode('latin-1')
+        material = data[off + 4:off + 4 + u32(data, off)].decode('latin-1')
         off = rstr(rstr(rstr(off)))  # Material name + two more name strings.
         off += 16  # Bounds (four floats).
         off = rstr(off) + 4  # field_0x150 string + field_0x14c.
         off += 1  # field_0x154.
-        vertex_count = _u32(data, off)
+        vertex_count = u32(data, off)
         vertex_start = off + 4
         face_pos = vertex_start + vertex_count * _VERTEX_STRIDE
         if face_pos + 4 > len(data):
             return None
-        face_count = _u32(data, face_pos)
+        face_count = u32(data, face_pos)
     except struct.error:
         return None
     if not (0 < vertex_count <= _MAX_VERTS and 0 <= face_count <= _MAX_FACES):
@@ -143,17 +140,17 @@ def _parse_v10_mesh(data: bytes) -> Geometry | None:
         The located geometry (with no material name), or ``None`` if no v10 geometry is present.
     """
     n = len(data)
-    if n < _MESH_MIN_SIZE or _u32(data, 0) != _V10_VERSION:
+    if n < _MESH_MIN_SIZE or u32(data, 0) != _V10_VERSION:
         return None
     for count_off in range(_MESH_MIN_SIZE, n - _MESH_MIN_SIZE):
-        vertex_count = _u32(data, count_off)
+        vertex_count = u32(data, count_off)
         if not _V10_MIN_VERTS <= vertex_count <= _MAX_VERTS:
             continue
         vertex_start = count_off + 4
         face_pos = vertex_start + vertex_count * _VERTEX_STRIDE
         if face_pos + 4 > n or not _v10_positions_finite(data, vertex_start, vertex_count):
             continue
-        face_count = _u32(data, face_pos)
+        face_count = u32(data, face_pos)
         face_start = face_pos + 4
         if not 0 < face_count <= _MAX_FACES or face_start + face_count * _FACE_STRIDE > n:
             continue

@@ -4,13 +4,17 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 import mmap
+import struct
 
 if TYPE_CHECKING:
     from types import TracebackType
 
     from typing_extensions import Self
 
-__all__ = ('BytesReader', 'MmapReader', 'Reader', 'resolve_reader')
+    from .typing import Endian
+
+__all__ = ('BytesReader', 'MmapReader', 'Reader', 'f32', 'i16', 'i32', 'resolve_reader', 'u8',
+           'u16', 'u32')
 
 
 @runtime_checkable
@@ -167,3 +171,127 @@ def resolve_reader(
             return BytesReader(source), None
         case _:
             return source, None
+
+
+def u8(data: bytes | bytearray | memoryview, offset: int = 0) -> int:
+    """
+    Read an unsigned 8-bit integer.
+
+    Parameters
+    ----------
+    data : bytes | bytearray | memoryview
+        Buffer to read from.
+    offset : int
+        Byte offset of the value.
+
+    Returns
+    -------
+    int
+        The value at ``offset``.
+    """
+    return data[offset]
+
+
+def u16(data: bytes | bytearray | memoryview, offset: int = 0, *, endian: Endian = '<') -> int:
+    """
+    Read an unsigned 16-bit integer.
+
+    Parameters
+    ----------
+    data : bytes | bytearray | memoryview
+        Buffer to read from.
+    offset : int
+        Byte offset of the value.
+    endian : Endian
+        Byte order.
+
+    Returns
+    -------
+    int
+        The value at ``offset``.
+    """
+    return int(struct.unpack_from(f'{endian}H', data, offset)[0])
+
+
+def u32(data: bytes | bytearray | memoryview, offset: int = 0, *, endian: Endian = '<') -> int:
+    """
+    Read an unsigned 32-bit integer.
+
+    Parameters
+    ----------
+    data : bytes | bytearray | memoryview
+        Buffer to read from.
+    offset : int
+        Byte offset of the value.
+    endian : Endian
+        Byte order.
+
+    Returns
+    -------
+    int
+        The value at ``offset``.
+    """
+    return int(struct.unpack_from(f'{endian}I', data, offset)[0])
+
+
+def i16(data: bytes | bytearray | memoryview, offset: int = 0, *, endian: Endian = '<') -> int:
+    """
+    Read a signed 16-bit integer.
+
+    Parameters
+    ----------
+    data : bytes | bytearray | memoryview
+        Buffer to read from.
+    offset : int
+        Byte offset of the value.
+    endian : Endian
+        Byte order.
+
+    Returns
+    -------
+    int
+        The value at ``offset``.
+    """
+    return int(struct.unpack_from(f'{endian}h', data, offset)[0])
+
+
+def i32(data: bytes | bytearray | memoryview, offset: int = 0, *, endian: Endian = '<') -> int:
+    """
+    Read a signed 32-bit integer.
+
+    Parameters
+    ----------
+    data : bytes | bytearray | memoryview
+        Buffer to read from.
+    offset : int
+        Byte offset of the value.
+    endian : Endian
+        Byte order.
+
+    Returns
+    -------
+    int
+        The value at ``offset``.
+    """
+    return int(struct.unpack_from(f'{endian}i', data, offset)[0])
+
+
+def f32(data: bytes | bytearray | memoryview, offset: int = 0, *, endian: Endian = '<') -> float:
+    """
+    Read an IEEE 754 32-bit float.
+
+    Parameters
+    ----------
+    data : bytes | bytearray | memoryview
+        Buffer to read from.
+    offset : int
+        Byte offset of the value.
+    endian : Endian
+        Byte order.
+
+    Returns
+    -------
+    float
+        The value at ``offset``.
+    """
+    return float(struct.unpack_from(f'{endian}f', data, offset)[0])

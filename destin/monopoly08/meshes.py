@@ -38,8 +38,12 @@ import math
 import re
 import struct
 
+from destin.common import io
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from destin.common.typing import Endian
 
 __all__ = ('EXTENSIONS', 'convert')
 
@@ -122,7 +126,7 @@ _PH_MARKER = b'PH'
 """
 
 
-def _endian(b: bytes) -> str:
+def _endian(b: bytes) -> Endian:
     # magic -> byte order. NPM7/PPM7/RPM7 (Xbox360/PS3/Wii) are big-endian; SPM7
     # (PS2) is the same container/geometry little-endian. The `PH` submesh marker
     # (0x50 0x48) is a literal 2-byte tag and is NOT byte-reversed on PS2.
@@ -261,7 +265,7 @@ class _MeshHeader(NamedTuple):
 
     b: bytes
     """Full container buffer the offsets index into."""
-    en: str
+    en: Endian
     """Struct byte-order prefix (``'<'`` PS2, ``'>'`` otherwise)."""
     float_pos: bool
     """Whether positions are stored as float32 (an identity header diagonal)."""
@@ -277,14 +281,6 @@ class _MeshHeader(NamedTuple):
     """Largest bounding-box axis span (at least ``1.0``)."""
 
 
-def _u16(hdr: _MeshHeader, o: int) -> int:
-    return int(struct.unpack_from(hdr.en + 'H', hdr.b, o)[0])
-
-
-def _f32(hdr: _MeshHeader, o: int) -> float:
-    return float(struct.unpack_from(hdr.en + 'f', hdr.b, o)[0])
-
-
 def _mesh_header(b: bytes) -> _MeshHeader:
     # Header transform: 3x4 row-major matrix at 0x20, pivot/translation at 0x50.
     # Quantized (u16) positions dequantize as raw*diag + pivot. Float32 meshes
@@ -293,7 +289,7 @@ def _mesh_header(b: bytes) -> _MeshHeader:
     en = _endian(b)
 
     def f32(o: int) -> float:
-        return float(struct.unpack_from(en + 'f', b, o)[0])
+        return io.f32(b, o, endian=en)
 
     diag = (f32(0x20), f32(0x34), f32(0x48))
     pivot = (f32(0x50), f32(0x54), f32(0x58))
@@ -312,10 +308,11 @@ def _mesh_header(b: bytes) -> _MeshHeader:
 def _decode_pos(hdr: _MeshHeader, o: int) -> tuple[float, ...]:
     # A single vertex position at offset ``o``, float32 or dequantized u16.
     if hdr.float_pos:
-        return (_f32(hdr, o), _f32(hdr, o + 4), _f32(hdr, o + 8))
-    return (_u16(hdr, o) * hdr.qscale[0] + hdr.pivot[0],
-            _u16(hdr, o + 2) * hdr.qscale[1] + hdr.pivot[1],
-            _u16(hdr, o + 4) * hdr.qscale[2] + hdr.pivot[2])
+        return (io.f32(hdr.b, o, endian=hdr.en), io.f32(
+            hdr.b, o + 4, endian=hdr.en), io.f32(hdr.b, o + 8, endian=hdr.en))
+    return (io.u16(hdr.b, o, endian=hdr.en) * hdr.qscale[0] + hdr.pivot[0],
+            io.u16(hdr.b, o + 2, endian=hdr.en) * hdr.qscale[1] + hdr.pivot[1],
+            io.u16(hdr.b, o + 4, endian=hdr.en) * hdr.qscale[2] + hdr.pivot[2])
 
 
 def _in_bbox_frac(hdr: _MeshHeader, vo: int, stride: int, vcount: int) -> float:
@@ -340,7 +337,7 @@ def _strips(hdr: _MeshHeader, idx_off: int, end: int, vcount: int) -> list[tuple
     cur: list[int] = []
     o = idx_off
     while o + 2 <= end:
-        v = _u16(hdr, o)
+        v = io.u16(hdr.b, o, endian=hdr.en)
         o += 2
         if v == _STRIP_RESTART or v >= vcount:
             _flush(cur, tris)
@@ -359,20 +356,20 @@ def _find_geometry(hdr: _MeshHeader, vo: int, nxt: int) -> tuple[int, int, int, 
     # whose vertexCount = (indexStart-vo)/stride most tightly exceeds the max
     # index (the highest vertex is referenced, so max index == vertexCount-1).
     iend = nxt
-    while iend - 2 >= vo and _u16(hdr, iend - 2) == 0:
+    while iend - 2 >= vo and io.u16(hdr.b, iend - 2, endian=hdr.en) == 0:
         iend -= 2  # trim trailing zero padding
     if iend - vo < _MIN_GEOMETRY_BYTES:
         return None
     last_big = vo - 2
     for o in range(vo, iend, 2):
-        v = _u16(hdr, o)
+        v = io.u16(hdr.b, o, endian=hdr.en)
         if v >= _LARGE_U16 and v != _STRIP_RESTART:
             last_big = o
     istart0 = last_big + 2  # index buffer starts at or after this offset
 
     def maxidx(s: int) -> int:
-        return max((_u16(hdr, s + i * 2)
-                    for i in range((iend - s) // 2) if _u16(hdr, s + i * 2) != _STRIP_RESTART),
+        return max((io.u16(hdr.b, s + i * 2, endian=hdr.en) for i in range((iend - s) // 2)
+                    if io.u16(hdr.b, s + i * 2, endian=hdr.en) != _STRIP_RESTART),
                    default=0)
 
     best: tuple[tuple[float, int], int, int, int] | None = None
@@ -423,14 +420,14 @@ def _parse_meta(b: bytes) -> dict[str, object]:
     if magic not in {b'NPM7', b'PPM7', b'RPM7', b'SPM7'}:
         msg = f'not NPM7/PPM7/RPM7/SPM7 ({magic!r})'
         raise ValueError(msg)
-    en = '<' if magic == b'SPM7' else '>'
+    en: Endian = '<' if magic == b'SPM7' else '>'
 
     # rebind the readers to this file's endianness for the rest of _parse_meta()
     def u32(o: int) -> int:
-        return int(struct.unpack_from(en + 'I', b, o)[0])
+        return io.u32(b, o, endian=en)
 
     def f32(o: int) -> float:
-        return float(struct.unpack_from(en + 'f', b, o)[0])
+        return io.f32(b, o, endian=en)
 
     file_size = u32(4)
     matrix_off = u32(8)

@@ -21,6 +21,7 @@ import io
 import struct
 
 from PIL import Image
+from destin.common.io import u16
 import numpy as np
 import numpy.typing as npt
 
@@ -1246,14 +1247,10 @@ _TYPE_NAMES = {
 }
 
 
-def _u16be(b: bytes, o: int) -> int:
-    return int(struct.unpack_from('>H', b, o)[0])
-
-
 def _entry(b: bytes) -> tuple[int, int, int, int, int]:
     t = b[0x30] & 0x7F
-    w, h = _u16be(b, 0x34), _u16be(b, 0x36)
-    nmip = _u16be(b, 0x3E) & 0xF
+    w, h = u16(b, 0x34, endian='>'), u16(b, 0x36, endian='>')
+    nmip = u16(b, 0x3E, endian='>') & 0xF
     att = 0x30 + int.from_bytes(b[0x31:0x34], 'big')  # First attachment offset.
     return t, w, h, nmip, att
 

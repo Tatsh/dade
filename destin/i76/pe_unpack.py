@@ -28,6 +28,8 @@ from __future__ import annotations
 import logging
 import struct
 
+from destin.common.io import u16, u32
+
 from .typing import PeSection
 
 __all__ = ('OVERLAY_MAGIC', 'OVERLAY_OFFSET', 'InvalidImageError', 'decompress_block',
@@ -60,44 +62,6 @@ _SECTION_HEADER_SIZE = 40
 
 class InvalidImageError(ValueError):
     """Raised when a file is not a PE image or carries no recognised overlay."""
-
-
-def _u16(data: bytes, offset: int) -> int:
-    """
-    Read a little-endian unsigned 16-bit integer.
-
-    Parameters
-    ----------
-    data : bytes
-        The buffer to read from.
-    offset : int
-        Byte offset to read at.
-
-    Returns
-    -------
-    int
-        The value read.
-    """
-    return int(struct.unpack_from('<H', data, offset)[0])
-
-
-def _u32(data: bytes, offset: int) -> int:
-    """
-    Read a little-endian unsigned 32-bit integer.
-
-    Parameters
-    ----------
-    data : bytes
-        The buffer to read from.
-    offset : int
-        Byte offset to read at.
-
-    Returns
-    -------
-    int
-        The value read.
-    """
-    return int(struct.unpack_from('<I', data, offset)[0])
 
 
 def _align_up(value: int, alignment: int) -> int:
@@ -135,9 +99,9 @@ def decompress_block(data: bytes, position: int) -> tuple[bytes, int]:
     tuple[bytes, int]
         The block's output and the offset just past the block.
     """
-    out_size = _u32(data, position)
+    out_size = u32(data, position)
     position += 4
-    accumulator = _u32(data, position)
+    accumulator = u32(data, position)
     position += 4
     node_count = accumulator & 0xFF
     mask = 0x80
@@ -146,7 +110,7 @@ def decompress_block(data: bytes, position: int) -> tuple[bytes, int]:
         nonlocal accumulator, mask, position
         mask = (mask * 2) & 0xFFFFFFFF
         if mask == 0:  # Thirty-two bits consumed, so refill.
-            accumulator = _u32(data, position)
+            accumulator = u32(data, position)
             position += 4
             mask = 1
         return 1 if (accumulator & mask) else 0
@@ -196,18 +160,18 @@ def parse_sections(data: bytes) -> tuple[PeSection, ...]:
     InvalidImageError
         If the file carries no PE signature.
     """
-    pe_offset = _u32(data, 0x3C)
+    pe_offset = u32(data, 0x3C)
     if data[pe_offset:pe_offset + 4] != b'PE\0\0':
         msg = 'Not a PE image.'
         raise InvalidImageError(msg)
-    section_offset = pe_offset + 24 + _u16(data, pe_offset + 20)
+    section_offset = pe_offset + 24 + u16(data, pe_offset + 20)
     sections: list[PeSection] = []
-    for index in range(_u16(data, pe_offset + 6)):
+    for index in range(u16(data, pe_offset + 6)):
         header = section_offset + index * _SECTION_HEADER_SIZE
         sections.append(
-            PeSection(data[header:header + 8].rstrip(b'\0').decode('latin1'), _u32(
-                data, header + 8), _u32(data, header + 12), _u32(data, header + 16),
-                      _u32(data, header + 20), _u32(data, header + 36), header))
+            PeSection(data[header:header + 8].rstrip(b'\0').decode('latin1'), u32(data, header + 8),
+                      u32(data, header + 12), u32(data, header + 16), u32(data, header + 20),
+                      u32(data, header + 36), header))
     return tuple(sections)
 
 
@@ -233,13 +197,13 @@ def unpack(data: bytes) -> bytes:
     InvalidImageError
         If the file carries no PE signature or no recognised overlay.
     """
-    pe_offset = _u32(data, 0x3C)
+    pe_offset = u32(data, 0x3C)
     sections = parse_sections(data)
     optional_offset = pe_offset + 24
-    image_base = _u32(data, optional_offset + 28)
-    section_alignment = _u32(data, optional_offset + 32)
-    size_of_image = _u32(data, optional_offset + 56)
-    size_of_headers = _u32(data, optional_offset + 60)
+    image_base = u32(data, optional_offset + 28)
+    section_alignment = u32(data, optional_offset + 32)
+    size_of_image = u32(data, optional_offset + 56)
+    size_of_headers = u32(data, optional_offset + 60)
     log.debug('Image base %#010x with %d sections and image size %#010x.', image_base,
               len(sections), size_of_image)
 
@@ -250,17 +214,17 @@ def unpack(data: bytes) -> bytes:
             raw = data[section.raw_pointer:section.raw_pointer + section.raw_size]
             image[section.virtual_address:section.virtual_address + len(raw)] = raw
 
-    if _u32(data, OVERLAY_OFFSET) != OVERLAY_MAGIC:
+    if u32(data, OVERLAY_OFFSET) != OVERLAY_MAGIC:
         msg = 'Overlay magic mismatch.'
         raise InvalidImageError(msg)
-    packed_count = _u32(data, OVERLAY_OFFSET + 4)
-    entry_point = _u32(data, OVERLAY_OFFSET + 8)
+    packed_count = u32(data, OVERLAY_OFFSET + 4)
+    entry_point = u32(data, OVERLAY_OFFSET + 8)
     log.debug(
         'Overlay lists %d packed sections with entry point %#010x and a %#x-byte '
-        'relocation stream.', packed_count, entry_point, _u32(data, OVERLAY_OFFSET + 12))
+        'relocation stream.', packed_count, entry_point, u32(data, OVERLAY_OFFSET + 12))
 
     position = OVERLAY_OFFSET + 16
-    descriptors = [_u32(data, position + index * 8) for index in range(packed_count)]
+    descriptors = [u32(data, position + index * 8) for index in range(packed_count)]
     position += packed_count * 8
     for section_index in descriptors:
         section = sections[section_index]

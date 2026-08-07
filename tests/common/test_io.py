@@ -1,12 +1,26 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import struct
 
-from destin.common.io import BytesReader, MmapReader, Reader, resolve_reader
+from destin.common.io import (
+    BytesReader,
+    MmapReader,
+    Reader,
+    f32,
+    i16,
+    i32,
+    resolve_reader,
+    u8,
+    u16,
+    u32,
+)
 import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from destin.common.typing import Endian
 
 
 def test_bytes_reader_size_and_read() -> None:
@@ -54,3 +68,38 @@ def test_resolve_reader_passes_through_existing_reader() -> None:
     reader, owned = resolve_reader(existing)
     assert reader is existing
     assert owned is None
+
+
+def test_u8_reads_at_offset() -> None:
+    assert u8(b'\x00\x2a', 1) == 0x2a
+
+
+@pytest.mark.parametrize(('endian', 'raw'), [('<', b'\x2a\x01'), ('>', b'\x01\x2a')])
+def test_u16_respects_endianness(endian: Endian, raw: bytes) -> None:
+    assert u16(raw, endian=endian) == 0x012a
+
+
+@pytest.mark.parametrize(('endian', 'raw'), [('<', b'\x2a\x01\x00\x00'),
+                                             ('>', b'\x00\x00\x01\x2a')])
+def test_u32_respects_endianness(endian: Endian, raw: bytes) -> None:
+    assert u32(raw, endian=endian) == 0x0000012a
+
+
+def test_u16_defaults_to_little_endian() -> None:
+    assert u16(b'\x01\x00') == 1
+
+
+def test_i16_reads_signed() -> None:
+    assert i16(b'\xff\xff') == -1
+
+
+def test_i32_reads_signed() -> None:
+    assert i32(b'\xff\xff\xff\xff') == -1
+
+
+def test_f32_reads_float() -> None:
+    assert f32(struct.pack('<f', 1.5)) == pytest.approx(1.5)
+
+
+def test_scalar_reads_apply_offset() -> None:
+    assert u32(b'\xff\xff' + struct.pack('<I', 0x0badf00d), 2) == 0x0badf00d

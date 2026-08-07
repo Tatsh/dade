@@ -3,9 +3,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
-from typing import TypeAlias, TypedDict
+from typing import Literal, TypeAlias, TypedDict
 
-__all__ = ('ConvertFunction', 'IconSysMeta', 'InvalidFormatError', 'MatchFunction')
+__all__ = ('ConvertFunction', 'Endian', 'IconSysMeta', 'InvalidFormatError', 'MatchFunction')
+
+Endian: TypeAlias = Literal['<', '>']
+"""Struct byte-order prefix: ``'<'`` for little-endian, ``'>'`` for big-endian."""
 
 
 class InvalidFormatError(ValueError):
