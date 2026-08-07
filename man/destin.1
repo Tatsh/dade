@@ -58,7 +58,7 @@ Show the version and exit.
 .UNINDENT
 .SS amplitude
 .sp
-PS2 Amplitude and FreQuency (Harmonix) asset unpacker.
+PS2 Amplitude (Harmonix) asset unpacker.
 .sp
 Usage
 .INDENT 0.0
@@ -71,44 +71,14 @@ destin amplitude [OPTIONS] COMMAND [ARGS]...
 .UNINDENT
 .SS main
 .sp
-Unpack a PS2 game directory (Amplitude or FreQuency) into OUT and convert its assets.
-.sp
-Every ARK found under GAME_DIR is unpacked into OUT mirroring its location (e.g.
-\fBGEN/MAIN.ARK\fP \-> \fBOUT/GEN/MAIN/\fP), and disc streaming songs (\fBAUDIO/*.STR\fP) are
-converted to WAV. The ARK format (Amplitude vs FreQuency) is auto\-detected. Assets are
-converted in place: bitmaps to PNG, DataArray to JSON, Milo scenes to object folders, meshes
-to OBJ, and audio streams/banks to WAV.
-.SS Parameters
-.INDENT 0.0
-.TP
-.B game_dir (pathlib.Path)
-The game\(aqs root directory (the disc root) to scan for ARKs and disc audio.
-.TP
-.B out (pathlib.Path)
-Output directory (created if missing).
-.TP
-.B jobs (int)
-Worker processes for the CPU\-bound conversion phases (defaults to the CPU count).
-.TP
-.B no_convert (bool)
-Extract raw assets without converting them.
-.TP
-.B no_gunzip (bool)
-Extract \fB\&.gz\fP entries verbatim instead of decompressing them in place.
-.TP
-.B keep_gz (bool)
-Keep the original \fB\&.gz\fP entry alongside the decompressed output.
-.TP
-.B ignore_failures (bool)
-Log and skip a conversion failure instead of stopping the run.
-.UNINDENT
+Unpack a PS2 Amplitude disc directory and convert its assets.
 .sp
 Usage
 .INDENT 0.0
 .INDENT 3.5
 .sp
 .EX
-destin amplitude main [OPTIONS] GAME_DIR OUT
+destin amplitude main [OPTIONS] DISC
 .EE
 .UNINDENT
 .UNINDENT
@@ -121,13 +91,13 @@ Enable debug level logging.
 .UNINDENT
 .INDENT 0.0
 .TP
-.B \-j, \-\-jobs <jobs>
-Worker processes for the CPU\-bound conversion phases.
-.INDENT 7.0
-.TP
-.B Default
-\fB\(aqnumber of CPUs\(aq\fP
+.B \-o, \-\-output\-dir <output_dir>
+Output directory (created if missing).
 .UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-jobs <jobs>
+Number of concurrent workers; 0 uses all CPUs.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -153,12 +123,7 @@ Log and skip a conversion failure instead of stopping.
 Arguments
 .INDENT 0.0
 .TP
-.B GAME_DIR
-Required argument
-.UNINDENT
-.INDENT 0.0
-.TP
-.B OUT
+.B DISC
 Required argument
 .UNINDENT
 .SS bitrock
@@ -1566,6 +1531,76 @@ Required argument
 .INDENT 0.0
 .TP
 .B OUT
+Required argument
+.UNINDENT
+.SS frequency
+.sp
+PS2 FreQuency (Harmonix) asset unpacker.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin frequency [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.SS main
+.sp
+Unpack a PS2 FreQuency disc directory and convert its assets.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin frequency main [OPTIONS] DISC
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Output directory (created if missing).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-jobs <jobs>
+Number of concurrent workers; 0 uses all CPUs.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-convert
+Extract assets without converting them.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-gunzip
+Extract .gz entries verbatim instead of decompressing.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-keep\-gz
+Keep the original .gz entry alongside the decompressed output.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-ignore\-failures
+Log and skip a conversion failure instead of stopping.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B DISC
 Required argument
 .UNINDENT
 .SS i76
