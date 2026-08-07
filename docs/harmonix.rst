@@ -37,7 +37,12 @@ order:
       audio   [label="disc audio: AUDIO/*.STR -> WAV"];
       iso -> mount [label="mount()"];
       mount -> extract [label="run_game(): per *.ark"];
-      extract -> milo -> assets -> link -> banks -> delete;
+      extract -> milo;
+      milo -> assets;
+      assets -> link;
+      extract -> banks;
+      link -> delete;
+      banks -> delete;
       mount -> audio;
    }
 
