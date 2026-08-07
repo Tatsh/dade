@@ -228,7 +228,7 @@ async def run(ark_path: Path,
     steps['convert'] = f'{converted} converted, {failed} failed'
     log.info('Linking texture references...')
     referenced = await asyncio.to_thread(bitmap.link_references, out)
-    log.info('Materialised %d texture reference(s).', referenced)
+    log.info('Materialized %d texture reference(s).', referenced)
     steps['references'] = f'{referenced} linked'
     linked = await asyncio.to_thread(mesh.link_materials, out)
     log.info('Linked %d material reference(s).', linked)

@@ -131,7 +131,7 @@ async def test_unpack_iso_end_to_end(make_amp_ark: Callable[..., bytes],
 
 
 @pytest.mark.asyncio
-async def test_unpack_iso_delete_removes_materialised_ark(make_amp_ark: Callable[..., bytes],
+async def test_unpack_iso_delete_removes_materialized_ark(make_amp_ark: Callable[..., bytes],
                                                           make_iso9660: Callable[..., bytes],
                                                           tmp_path: Path) -> None:
     iso = tmp_path / 'game.iso'
