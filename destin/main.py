@@ -14,6 +14,7 @@ from .amplitude.main import main as amplitude_unpack
 from .bit192.main import tonesphere as bit192_group
 from .bitrock.commands.crack import crack_main as bitrock_crack
 from .bitrock.commands.extract import extract_main as bitrock_extract
+from .frequency.main import main as frequency_unpack
 from .i76.main import cli as i76_group
 from .incoming.commands.extract_pvr_pack import extract_pvr_pack as incoming_pvr_pack
 from .incoming.commands.ian2obj import ian2obj as incoming_ian2obj
@@ -30,7 +31,7 @@ _CONTEXT_SETTINGS = {'help_option_names': ('-h', '--help')}
 
 def _amplitude() -> click.Group:
     group = click.Group(name='amplitude',
-                        help='PS2 Amplitude and FreQuency (Harmonix) asset unpacker.',
+                        help='PS2 Amplitude (Harmonix) asset unpacker.',
                         context_settings=_CONTEXT_SETTINGS)
     group.add_command(amplitude_unpack, name='unpack')
     return group
@@ -42,6 +43,14 @@ def _bitrock() -> click.Group:
                         context_settings=_CONTEXT_SETTINGS)
     group.add_command(bitrock_crack, name='crack')
     group.add_command(bitrock_extract, name='extract')
+    return group
+
+
+def _frequency() -> click.Group:
+    group = click.Group(name='frequency',
+                        help='PS2 FreQuency (Harmonix) asset unpacker.',
+                        context_settings=_CONTEXT_SETTINGS)
+    group.add_command(frequency_unpack, name='unpack')
     return group
 
 
@@ -72,6 +81,7 @@ def main() -> None:
 main.add_command(_amplitude())
 main.add_command(bit192_group, name='bit192')
 main.add_command(_bitrock())
+main.add_command(_frequency())
 main.add_command(i76_group, name='i76')
 main.add_command(_incoming())
 main.add_command(marmalade_group, name='marmalade')

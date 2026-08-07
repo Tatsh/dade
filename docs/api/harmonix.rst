@@ -65,6 +65,12 @@ audio pipeline.
 .. automodule:: destin.harmonix.rndobject
    :members:
 
+``destin.harmonix.unpacker``
+-----------------------------
+
+.. automodule:: destin.harmonix.unpacker
+   :members:
+
 ``destin.harmonix.video``
 --------------------------
 

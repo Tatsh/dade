@@ -19,6 +19,8 @@ from .typing import InvalidFormatError
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from .typing import ArkLayout
+
 __all__ = ('run', 'run_game')
 
 log = logging.getLogger(__name__)
@@ -94,7 +96,8 @@ def run(ark_path: Path,
         keep_gz: bool = False,
         ignore_failures: bool = False,
         jobs: int = 1,
-        disc_audio: Path | None = None) -> dict[str, str]:
+        disc_audio: Path | None = None,
+        layout: ArkLayout | None = None) -> dict[str, str]:
     """
     Unpack an ARK archive into ``out`` and convert its assets in place.
 
@@ -116,13 +119,15 @@ def run(ark_path: Path,
         Maximum worker processes for the CPU-bound conversion phases; ``1`` runs sequentially.
     disc_audio : pathlib.Path | None
         If given, also convert the disc streaming songs in this directory to ``out/disc_audio``.
+    layout : destin.harmonix.typing.ArkLayout | None
+        Force a specific ARK layout, or ``None`` to auto-detect it from the leading bytes.
 
     Returns
     -------
     dict[str, str]
         A human-readable summary per pipeline step, keyed by step name.
     """
-    stats = ark.extract(ark_path, out, gunzip=gunzip, keep_gz=keep_gz)
+    stats = ark.extract(ark_path, out, gunzip=gunzip, keep_gz=keep_gz, layout=layout)
     log.info('Extracted %d files (%d skipped, %d gunzipped).', stats.written, stats.skipped,
              stats.gunzipped)
     steps = {
@@ -166,7 +171,8 @@ def run_game(game_dir: Path,
              gunzip: bool = True,
              keep_gz: bool = False,
              ignore_failures: bool = False,
-             jobs: int = 1) -> dict[str, str]:
+             jobs: int = 1,
+             layout: ArkLayout | None = None) -> dict[str, str]:
     """
     Unpack a whole game: every ARK under ``game_dir`` plus its on-disc streaming audio.
 
@@ -192,6 +198,8 @@ def run_game(game_dir: Path,
         Log and skip a converter/decompose failure instead of stopping the run.
     jobs : int
         Maximum worker processes for the CPU-bound conversion phases; ``1`` runs sequentially.
+    layout : destin.harmonix.typing.ArkLayout | None
+        Force a specific ARK layout for every archive, or ``None`` to auto-detect each one.
 
     Returns
     -------
@@ -221,7 +229,8 @@ def run_game(game_dir: Path,
                     gunzip=gunzip,
                     ignore_failures=ignore_failures,
                     jobs=jobs,
-                    keep_gz=keep_gz)
+                    keep_gz=keep_gz,
+                    layout=layout)
         summary[str(rel)] = '; '.join(f'{k}: {v}' for k, v in steps.items())
     if convert and (n_str := _convert_disc_str(
             game_dir, out, jobs=jobs, ignore_failures=ignore_failures)):

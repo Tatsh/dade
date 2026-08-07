@@ -76,6 +76,29 @@ def test_parse_directory_frequency(make_freq_ark: Callable[..., bytes]) -> None:
     assert directory.entries[1].offset == directory.dir_end + 3
 
 
+def test_parse_directory_forces_amplitude_layout(make_amp_ark: Callable[..., bytes]) -> None:
+    # An Amplitude archive has no magic; forcing 'amplitude' parses it just like auto-detect.
+    data = make_amp_ark(_ENTRIES)
+    forced = ark.parse_directory(data, layout='amplitude')
+    assert [entry.path for entry in forced.entries] == ['gen/a.txt', 'b.bin']
+    assert forced == ark.parse_directory(data, layout=None)
+
+
+def test_parse_directory_forces_frequency_layout(make_freq_ark: Callable[..., bytes]) -> None:
+    data = make_freq_ark(_ENTRIES)
+    forced = ark.parse_directory(data, layout='frequency')
+    assert [entry.path for entry in forced.entries] == ['gen/a.txt', 'b.bin']
+    assert forced == ark.parse_directory(data, layout=None)
+
+
+def test_extract_forces_layout(make_amp_ark: Callable[..., bytes], tmp_path: Path) -> None:
+    archive = tmp_path / 'MAIN.ARK'
+    archive.write_bytes(make_amp_ark(_ENTRIES))
+    stats = ark.extract(archive, tmp_path / 'out', layout='amplitude')
+    assert stats.written == 2
+    assert (tmp_path / 'out' / 'gen' / 'a.txt').read_bytes() == b'AAA'
+
+
 def test_parse_directory_amplitude_bad_version() -> None:
     with pytest.raises(ValueError, match='Unsupported ARK version 3'):
         ark.parse_directory(_amp_header(b'', b'', (), version=3))

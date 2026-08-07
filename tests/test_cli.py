@@ -13,6 +13,7 @@ _GAMES = (
     'amplitude',
     'bit192',
     'bitrock',
+    'frequency',
     'i76',
     'incoming',
     'marmalade',
@@ -49,6 +50,7 @@ def test_each_game_group_has_help(runner: CliRunner, game: str) -> None:
 
 @pytest.mark.parametrize(('game', 'subcommand'), [
     ('amplitude', 'unpack'),
+    ('frequency', 'unpack'),
     ('bitrock', 'crack'),
     ('bitrock', 'extract'),
     ('incoming', 'extract'),

@@ -1,4 +1,4 @@
-"""Command-line entry point for the Amplitude game unpacker."""
+"""Command-line entry point for the FreQuency game unpacker."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -12,11 +12,11 @@ import click
 if TYPE_CHECKING:
     from destin.harmonix.typing import ArkLayout
 
-__all__ = ('AmplitudeUnpacker', 'main')
+__all__ = ('FrequencyUnpacker', 'main')
 
 debug_option = bascom.debug_option({
-    'destin.amplitude': {},
     'destin.common': {},
+    'destin.frequency': {},
     'destin.harmonix': {}
 })
 """Attach ``-d/--debug`` to a command and route it through :py:func:`bascom.setup_logging`.
@@ -25,11 +25,11 @@ debug_option = bascom.debug_option({
 """
 
 
-class AmplitudeUnpacker(Unpacker):
-    """Unpacker for the PS2 game Amplitude (its magic-less ``GEN/MAIN.ARK`` layout)."""
+class FrequencyUnpacker(Unpacker):
+    r"""Unpacker for the PS2 game FreQuency (its ``ARK\0`` ``ARK/*.ARK`` layout)."""
 
-    ark_layout: ClassVar[ArkLayout] = 'amplitude'
-    game_name: ClassVar[str] = 'Amplitude'
+    ark_layout: ClassVar[ArkLayout] = 'frequency'
+    game_name: ClassVar[str] = 'FreQuency'
 
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
@@ -60,13 +60,13 @@ def main(game_dir: Path,
          no_gunzip: bool = False,
          keep_gz: bool = False,
          ignore_failures: bool = False) -> None:
-    """
-    Unpack a PS2 Amplitude game directory into OUT and convert its assets.
+    r"""
+    Unpack a PS2 FreQuency game directory into OUT and convert its assets.
 
-    Every Amplitude ARK found under GAME_DIR is unpacked into OUT mirroring its location (e.g.
-    ``GEN/MAIN.ARK`` -> ``OUT/GEN/MAIN/``), and disc streaming songs (``AUDIO/*.STR``) are
-    converted to WAV. Assets are converted in place: bitmaps to PNG, DataArray to JSON, Milo scenes
-    to object folders, meshes to OBJ, and audio streams/banks to WAV.
+    Every FreQuency ARK found under GAME_DIR is unpacked into OUT mirroring its location (e.g.
+    ``ARK/ROOT.ARK`` -> ``OUT/ARK/ROOT/``), and any disc streaming songs (``*.STR``) are converted
+    to WAV. Assets are converted in place: bitmaps to PNG, DataArray to JSON, Milo scenes to object
+    folders, meshes to OBJ, and audio streams/banks to WAV.
 
     Parameters
     ----------
@@ -85,7 +85,7 @@ def main(game_dir: Path,
     ignore_failures : bool
         Log and skip a conversion failure instead of stopping the run.
     """
-    stats = AmplitudeUnpacker().unpack(game_dir,
+    stats = FrequencyUnpacker().unpack(game_dir,
                                        out,
                                        convert=not no_convert,
                                        gunzip=not no_gunzip,

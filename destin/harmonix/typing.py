@@ -1,7 +1,7 @@
 """Shared typing helpers and converter result types for :py:mod:`destin.amplitude`."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeAlias, TypedDict
 
 from destin.common.typing import InvalidFormatError
 from typing_extensions import NotRequired
@@ -9,10 +9,17 @@ from typing_extensions import NotRequired
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-__all__ = ('ARKEntry', 'ArenaMeta', 'BankMeta', 'DataArrayNode', 'EnvironMeta', 'Geometry',
-           'IPUMeta', 'InvalidFormatError', 'LightMeta', 'LnmMeta', 'MIDIFile', 'MIDITrack',
-           'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta', 'PoolOutcome', 'SampleMeta', 'TnmMeta',
-           'ViewMeta')
+__all__ = ('ARKEntry', 'ArenaMeta', 'ArkLayout', 'BankMeta', 'DataArrayNode', 'EnvironMeta',
+           'Geometry', 'IPUMeta', 'InvalidFormatError', 'LightMeta', 'LnmMeta', 'MIDIFile',
+           'MIDITrack', 'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta', 'PoolOutcome', 'SampleMeta',
+           'TnmMeta', 'ViewMeta')
+
+ArkLayout: TypeAlias = Literal['amplitude', 'frequency']
+"""
+The name of a Harmonix v2 ARK layout: the Amplitude (magic-less) or FreQuency (``ARK\\0``) format.
+
+:meta hide-value:
+"""
 
 DataArrayNode: TypeAlias = 'int | float | str | list[DataArrayNode]'
 """

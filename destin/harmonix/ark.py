@@ -71,6 +71,8 @@ if TYPE_CHECKING:
     from pathlib import Path
     from typing import BinaryIO
 
+    from .typing import ArkLayout
+
 __all__ = ('ARKDirectory', 'ExtractStats', 'extract', 'list_entries', 'parse_directory')
 
 _HDR = struct.Struct('<II')
@@ -124,26 +126,35 @@ def _cstr(pool: bytes, off: int) -> str:
     return read_cstring(pool, off)
 
 
-def parse_directory(data: bytes) -> ARKDirectory:
+def parse_directory(data: bytes, *, layout: ArkLayout | None = None) -> ARKDirectory:
     r"""
-    Parse the header and entry table of an ARK archive, auto-detecting its layout.
+    Parse the header and entry table of an ARK archive.
 
-    A leading ``ARK\\0`` magic selects the FreQuency layout; otherwise the Amplitude
-    (magic-less, version-first) layout is assumed.
+    When ``layout`` is ``None`` the layout is auto-detected: a leading ``ARK\\0`` magic selects the
+    FreQuency layout; otherwise the Amplitude (magic-less, version-first) layout is assumed. A
+    non-``None`` ``layout`` forces that parser and skips detection.
 
     Parameters
     ----------
     data : bytes
         At least the leading directory region of the archive.
+    layout : destin.harmonix.typing.ArkLayout | None
+        Force a specific layout, or ``None`` to auto-detect from the leading bytes.
 
     Returns
     -------
     ARKDirectory
         The parsed directory.
     """
-    if data[:4] == _FREQ_MAGIC:
-        return _parse_freq_directory(data)
-    return _parse_amplitude_directory(data)
+    match layout:
+        case 'frequency':
+            return _parse_freq_directory(data)
+        case 'amplitude':
+            return _parse_amplitude_directory(data)
+        case _:
+            if data[:4] == _FREQ_MAGIC:
+                return _parse_freq_directory(data)
+            return _parse_amplitude_directory(data)
 
 
 def _parse_freq_directory(data: bytes) -> ARKDirectory:  # noqa: PLR0914
@@ -278,13 +289,16 @@ def _gunzip_region(src: BinaryIO, offset: int, size: int, dst: Path) -> int:
     return written
 
 
-def _read_directory(src: BinaryIO, ark_size: int) -> ARKDirectory:
+def _read_directory(src: BinaryIO,
+                    ark_size: int,
+                    *,
+                    layout: ArkLayout | None = None) -> ARKDirectory:
     src.seek(0)  # The caller obtains ark_size via seek(0, 2), leaving the position at EOF.
     head = src.read(min(ark_size, 8 << 20))
-    directory = parse_directory(head)
+    directory = parse_directory(head, layout=layout)
     if directory.dir_end > len(head):  # Unlikely: directory larger than 8 MiB.
         src.seek(0)
-        directory = parse_directory(src.read(directory.dir_end))
+        directory = parse_directory(src.read(directory.dir_end), layout=layout)
     return directory
 
 
@@ -292,7 +306,8 @@ def extract(ark: Path,
             out_dir: Path,
             *,
             gunzip: bool = True,
-            keep_gz: bool = False) -> ExtractStats:
+            keep_gz: bool = False,
+            layout: ArkLayout | None = None) -> ExtractStats:
     """
     Extract every entry of an ARK archive into ``out_dir``.
 
@@ -306,6 +321,8 @@ def extract(ark: Path,
         Decompress ``.gz`` entries in place (writing the de-suffixed name).
     keep_gz : bool
         When decompressing a ``.gz`` entry, also keep the original compressed copy.
+    layout : destin.harmonix.typing.ArkLayout | None
+        Force a specific ARK layout, or ``None`` to auto-detect it from the leading bytes.
 
     Returns
     -------
@@ -317,7 +334,7 @@ def extract(ark: Path,
     raw_bytes = disk_bytes = 0
     with ark.open('rb') as src:
         ark_size = src.seek(0, 2)
-        directory = _read_directory(src, ark_size)
+        directory = _read_directory(src, ark_size, layout=layout)
         for entry in directory.entries:
             if entry.offset + entry.size > ark_size:
                 skipped += 1
