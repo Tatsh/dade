@@ -31,7 +31,7 @@ _QUAD = face_record((0, 1, 2, 3),
 @pytest.fixture(autouse=True)
 def _isolate_command_logging(mocker: MockerFixture) -> None:
     """Stop command callbacks from configuring real logging during the test run."""
-    mocker.patch('destin.common.cli.setup_logging')
+    mocker.patch('bascom.cli.setup_logging')
 
 
 @pytest.fixture

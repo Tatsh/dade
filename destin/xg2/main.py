@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 import logging
 
-from bascom import setup_logging
+import bascom
 import click
 
 from .bmc import DEFAULT_SAMPLE_RATE
@@ -34,6 +34,11 @@ log = logging.getLogger(__name__)
 _CONTEXT_SETTINGS = {'help_option_names': ('-h', '--help')}
 _ROM_ARGUMENT = click.Path(exists=True, dir_okay=False, path_type=Path)
 _OUTPUT_ARGUMENT = click.Path(file_okay=False, path_type=Path)
+debug_option = bascom.debug_option({'destin.common': {}, 'destin.xg2': {}})
+"""Attach ``-d/--debug`` to a command and route it through :py:func:`bascom.setup_logging`.
+
+:meta hide-value:
+"""
 
 
 def _read_rom(path: Path, expected: bytes) -> bytes:
@@ -64,8 +69,8 @@ def cli() -> None:
               '--convert',
               is_flag=True,
               help='Also decode textures to PNG and audio to WAV, SoundFont, and MIDI.')
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
-def extract_xg1(rom: Path, out: Path, *, convert: bool = False, debug: bool = False) -> None:
+@debug_option
+def extract_xg1(rom: Path, out: Path, *, convert: bool = False) -> None:
     """
     Extract every Extreme-G (N64) asset from ROM into OUT.
 
@@ -73,7 +78,6 @@ def extract_xg1(rom: Path, out: Path, *, convert: bool = False, debug: bool = Fa
     written. Level sub-blobs and texture banks are LZHUF-compressed, which is not implemented, so
     those are written out as raw compressed slices and noted in OUT/extract.log.
     """
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.xg2': {}})
     counts = run_xg1(_read_rom(rom, XG1_GAME_CODE), out, convert=convert)
     click.echo(f'boot: {counts["boot"]}, mfs: {counts["mfs"]}, '
                f'levels: {counts["levels"]} files in {counts["containers"]} containers, '
@@ -88,7 +92,7 @@ def extract_xg1(rom: Path, out: Path, *, convert: bool = False, debug: bool = Fa
               '--convert',
               is_flag=True,
               help='Also decode audio to WAV, build SoundFonts, and decode textures to PNG.')
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
+@debug_option
 @click.option('-r',
               '--rate',
               type=click.IntRange(min=1),
@@ -103,7 +107,6 @@ def extract_xg2(rom: Path,
                 out: Path,
                 *,
                 convert: bool = False,
-                debug: bool = False,
                 rate: int = DEFAULT_SAMPLE_RATE,
                 fluidsynth_path: Path | None = None) -> None:
     """
@@ -112,7 +115,6 @@ def extract_xg2(rom: Path,
     Level containers are written out raw, as their internal layout has not been reversed. With
     --convert the sequences are also rendered to WAV when FluidSynth is available.
     """
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.xg2': {}})
     counts = run_xg2(_read_rom(rom, XG2_GAME_CODE),
                      out,
                      convert=convert,
@@ -128,8 +130,8 @@ def extract_xg2(rom: Path,
 @cli.command(name='extract-xg2-pc')
 @click.argument('data1', type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.argument('out', type=_OUTPUT_ARGUMENT)
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
-def extract_xg2_pc(data1: Path, out: Path, *, debug: bool = False) -> None:
+@debug_option
+def extract_xg2_pc(data1: Path, out: Path) -> None:
     """
     Extract every Extreme-G XG2 (Windows) asset from DATA1 into OUT.
 
@@ -137,7 +139,6 @@ def extract_xg2_pc(data1: Path, out: Path, *, debug: bool = False) -> None:
     out decompressed with their textures beside them as PNG, loose bitmaps become PNG, and the
     sound effects are copied verbatim.
     """
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.xg2': {}})
     counts = run_pc(data1, out)
     click.echo(f'containers: {counts["containers"]}, raw models: {counts["raw"]}, '
                f'textures: {counts["textures"]}, WAV: {counts["wavs"]}, '
@@ -147,20 +148,19 @@ def extract_xg2_pc(data1: Path, out: Path, *, debug: bool = False) -> None:
 @cli.command(name='unpack-xg1-rom')
 @click.argument('rom', type=_ROM_ARGUMENT)
 @click.argument('out', type=_OUTPUT_ARGUMENT)
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
+@debug_option
 @click.option('-p',
               '--prefix',
               default='extreme-g',
               show_default=True,
               help='Base name for the boot images and the archive directory.')
-def unpack_xg1_rom(rom: Path, out: Path, *, debug: bool = False, prefix: str = 'extreme-g') -> None:
+def unpack_xg1_rom(rom: Path, out: Path, *, prefix: str = 'extreme-g') -> None:
     """
     Write the raw Extreme-G (N64) boot images and mfs files from ROM into OUT.
 
     Alongside the decompressed boot segment and a RAM image, an extended ROM is written with the
     segment placed at the offset it runs from, so a disassembler can see the main code.
     """
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.xg2': {}})
     counts = unpack_xg1(_read_rom(rom, XG1_GAME_CODE), out, prefix)
     click.echo(f'boot images: 3, mfs files: {counts["files"]} ({counts["bytes"]} bytes)')
 
@@ -168,23 +168,18 @@ def unpack_xg1_rom(rom: Path, out: Path, *, debug: bool = False, prefix: str = '
 @cli.command(name='unpack-xg2-rom')
 @click.argument('rom', type=_ROM_ARGUMENT)
 @click.argument('out', type=_OUTPUT_ARGUMENT)
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
+@debug_option
 @click.option('-p',
               '--prefix',
               default='extreme-g-2',
               show_default=True,
               help='Base name for the boot images and the archive directory.')
-def unpack_xg2_rom(rom: Path,
-                   out: Path,
-                   *,
-                   debug: bool = False,
-                   prefix: str = 'extreme-g-2') -> None:
+def unpack_xg2_rom(rom: Path, out: Path, *, prefix: str = 'extreme-g-2') -> None:
     """
     Write the raw Extreme-G XG2 (N64) boot images and mfs entries from ROM into OUT.
 
     Entries using the unimplemented LHUF codec are skipped with a warning.
     """
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.xg2': {}})
     counts = unpack_xg2(_read_rom(rom, XG2_GAME_CODE), out, prefix)
     click.echo(f'boot images: 3, mfs files: {counts["files"]} ({counts["bytes"]} bytes)')
 
@@ -192,7 +187,7 @@ def unpack_xg2_rom(rom: Path,
 @cli.command(name='convert-midi')
 @click.argument('midi', type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.argument('out', type=click.Path(dir_okay=False, path_type=Path))
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
+@debug_option
 @click.option('-m',
               '--mode',
               type=click.Choice(('xg', 'generic')),
@@ -205,12 +200,7 @@ def unpack_xg2_rom(rom: Path,
               default=0,
               show_default=True,
               help='Drum kit selected on the percussion channel.')
-def convert_midi(midi: Path,
-                 out: Path,
-                 *,
-                 debug: bool = False,
-                 mode: str = 'xg',
-                 drum_program: int = 0) -> None:
+def convert_midi(midi: Path, out: Path, *, mode: str = 'xg', drum_program: int = 0) -> None:
     """
     Add XG initialisation to the standard MIDI file MIDI and write it to OUT.
 
@@ -218,7 +208,6 @@ def convert_midi(midi: Path,
     SoundFont to sound right. In generic mode the drum notes are remapped onto General MIDI
     percussion so the result plays recognisably on any device.
     """
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.xg2': {}})
     converted = to_xg(midi.read_bytes(),
                       drum_map=GM_DRUM_MAP if mode == 'generic' else None,
                       drum_program=drum_program)
@@ -229,7 +218,7 @@ def convert_midi(midi: Path,
 @cli.command(name='make-sf2')
 @click.argument('rom', type=_ROM_ARGUMENT)
 @click.argument('out', type=click.Path(dir_okay=False, path_type=Path))
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
+@debug_option
 @click.option('--drum-bank',
               type=str,
               default=None,
@@ -252,7 +241,6 @@ def make_sf2(rom: Path,
              out: Path,
              *,
              melodic_bank: str,
-             debug: bool = False,
              drum_bank: str | None = None,
              drum_key_offset: int = 0,
              name: str = 'ExtremeG') -> None:
@@ -266,7 +254,6 @@ def make_sf2(rom: Path,
     click.Abort
         If an offset is not a valid integer or the melodic bank could not be parsed.
     """
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.xg2': {}})
     try:
         melodic = int(melodic_bank, 0)
         drums = int(drum_bank, 0) if drum_bank is not None else None
@@ -301,7 +288,7 @@ def _write_montage(textures: list[Texture], labels: list[str], out: Path, index_
               default=DEFAULT_COLUMNS,
               show_default=True,
               help='Number of cells per row.')
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
+@debug_option
 @click.option('-i',
               '--index',
               type=click.Path(dir_okay=False, path_type=Path),
@@ -311,7 +298,6 @@ def montage_n64(rom: Path,
                 *,
                 cell: int = DEFAULT_CELL,
                 columns: int = DEFAULT_COLUMNS,
-                debug: bool = False,
                 index: Path | None = None) -> None:
     """
     Tile every Extreme-G XG2 (N64) texture in ROM into one contact sheet at OUT.
@@ -319,7 +305,6 @@ def montage_n64(rom: Path,
     The display-list walker infers dimensions the hardware never stored, so a mis-parse shows up as
     a striped or skewed cell rather than an error. This sheet is how those are spotted.
     """
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.xg2': {}})
     textures: list[Texture] = []
     labels: list[str] = []
     for label, blob in iter_n64_model_blobs(_read_rom(rom, XG2_GAME_CODE)):
@@ -342,7 +327,7 @@ def montage_n64(rom: Path,
               default=DEFAULT_COLUMNS,
               show_default=True,
               help='Number of cells per row.')
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
+@debug_option
 @click.option('-i',
               '--index',
               type=click.Path(dir_okay=False, path_type=Path),
@@ -352,14 +337,12 @@ def montage_pc(data1: Path,
                *,
                cell: int = DEFAULT_CELL,
                columns: int = DEFAULT_COLUMNS,
-               debug: bool = False,
                index: Path | None = None) -> None:
     """
     Tile every Extreme-G XG2 (Windows) texture under DATA1 into one contact sheet at OUT.
 
     Labelling each cell by its source file makes a wrong-stride decode easy to trace back.
     """
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.xg2': {}})
     textures: list[Texture] = []
     labels: list[str] = []
     for label, blob in iter_pc_model_blobs(data1):

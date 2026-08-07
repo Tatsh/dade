@@ -1,11 +1,11 @@
 """Shared helpers for the Interstate '76 commands."""
 from __future__ import annotations
 
-from destin.common.cli import make_debug_option
+import bascom
 
 __all__ = ('debug_option',)
 
-debug_option = make_debug_option(('destin.common', 'destin.i76'))
+debug_option = bascom.debug_option({'destin.common': {}, 'destin.i76': {}})
 """Attach ``-d/--debug`` to a leaf command and route it through :py:func:`bascom.setup_logging`.
 
 :meta hide-value:

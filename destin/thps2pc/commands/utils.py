@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import subprocess as sp
 
-from destin.common.cli import make_debug_option
 from destin.thps2pc.imagemagick import ImageMagickNotFoundError, montage, write_image
 from destin.thps2pc.psx import Scene
+import bascom
 import click
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ __all__ = ('canvas_options', 'convert_path_option', 'debug_option', 'read_scene'
 
 _IMAGE_ERRORS = (ImageMagickNotFoundError, OSError, sp.CalledProcessError)
 
-debug_option = make_debug_option(('destin.common', 'destin.thps2pc'))
+debug_option = bascom.debug_option({'destin.common': {}, 'destin.thps2pc': {}})
 """Attach ``-d/--debug`` to a command and route it through :py:func:`bascom.setup_logging`.
 
 :meta hide-value:

@@ -15,13 +15,8 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 _SETUP_LOGGING_BINDINGS = (
-    'destin.amplitude.main',
+    'bascom.cli',
     'destin.bitrock.commands.crack',
-    'destin.bitrock.commands.extract',
-    'destin.common.cli',
-    'destin.incoming.main',
-    'destin.monopoly08.main',
-    'destin.xg2.main',
 )
 """Modules that import :py:func:`bascom.setup_logging` and are neutralised during tests.
 

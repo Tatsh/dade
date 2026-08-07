@@ -65,6 +65,8 @@ local utils = import 'utils.libjsonnet';
       poetry+: {
         dependencies+: {
           anyio: utils.latestPypiPackageVersionCaret('anyio'),
+          // debug_option (used by every game's CLI) was added in bascom 0.2.0.
+          bascom: '>=0.2.0',
           jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
           mido: utils.latestPypiPackageVersionCaret('mido'),
           // numpy 2.3 dropped Python 3.10 (it requires >=3.11), which the project still supports,
@@ -98,6 +100,11 @@ local utils = import 'utils.libjsonnet';
           addopts: '--import-mode=importlib',
           asyncio_mode: 'strict',
         },
+      },
+      uv+: {
+        // bascom 0.2.0 is newer than the one-week cooldown window, so exempt it and let
+        // debug_option resolve.
+        'exclude-newer-package': { bascom: '2026-08-08' },
       },
     },
   },

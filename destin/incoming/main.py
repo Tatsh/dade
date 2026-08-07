@@ -7,11 +7,11 @@ import logging
 import pathlib
 
 from anyio import Path
-from bascom import setup_logging
 from destin import __version__
 from destin.common.context import using_tool_paths
 from destin.common.utils import pluralize
 from destin.common.workers import default_jobs
+import bascom
 import click
 
 from .dispatch import run_conversions
@@ -21,6 +21,12 @@ from .tools import ToolNotFoundError
 __all__ = ('main',)
 
 log = logging.getLogger(__name__)
+
+debug_option = bascom.debug_option({'destin.common': {}, 'destin.incoming': {}})
+"""Attach ``-d/--debug`` to a command and route it through :py:func:`bascom.setup_logging`.
+
+:meta hide-value:
+"""
 
 
 async def _run(source: pathlib.Path, output: Path, *, jobs: int | None,
@@ -66,7 +72,7 @@ async def _run(source: pathlib.Path, output: Path, *, jobs: int | None,
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
 @click.version_option(__version__)
-@click.option('-d', '--debug', is_flag=True, help='Enable debug output.')
+@debug_option
 @click.option('-j',
               '--jobs',
               type=int,
@@ -90,7 +96,6 @@ async def _run(source: pathlib.Path, output: Path, *, jobs: int | None,
 def main(source: pathlib.Path,
          output: Path,
          *,
-         debug: bool = False,
          jobs: int | None = None,
          gdiextract_path: pathlib.Path | None = None,
          spvr2png_path: pathlib.Path | None = None,
@@ -103,7 +108,6 @@ def main(source: pathlib.Path,
     mirrored into the output directory: recognised assets are converted and every other file is
     copied verbatim. The source is never modified.
     """  # ruff:ignore[docstring-missing-exception]
-    setup_logging(debug=debug, loggers={'destin.common': {}, 'destin.incoming': {}})
     tools = {'gdiextract': gdiextract_path, 'spvr2png': spvr2png_path, 'unshield': unshield_path}
     if asyncio.run(_run(source, output, jobs=jobs, tools=tools)):
         raise click.exceptions.Exit(1)

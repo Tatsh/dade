@@ -4,16 +4,22 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from bascom import setup_logging
 from destin.bitrock.archive import InstallBuilderFile
 from destin.bitrock.exceptions import BitrockError
 from destin.bitrock.unpack import unpack
+import bascom
 import click
 
 if TYPE_CHECKING:
     from destin.bitrock.typing import PageCompression
 
 __all__ = ('extract_main',)
+
+debug_option = bascom.debug_option({'destin.bitrock': {}, 'destin.common': {}})
+"""Attach ``-d/--debug`` to a command and route it through :py:func:`bascom.setup_logging`.
+
+:meta hide-value:
+"""
 
 
 def _members(count: int) -> str:
@@ -75,18 +81,16 @@ def _list_members(archive: Path) -> None:
               is_flag=True,
               help='Show what would be extracted without writing anything.')
 @click.option('-q', '--quiet', is_flag=True, help='Do not print each member as it is extracted.')
-@click.option('-d', '--debug', is_flag=True, help='Enable debug logging.')
+@debug_option
 @click.version_option()
 def extract_main(archive: Path, members: tuple[str, ...], output_dir: Path, password: str | None,
-                 compression: str | None, *, list_: bool, dry_run: bool, quiet: bool,
-                 debug: bool) -> None:
+                 compression: str | None, *, list_: bool, dry_run: bool, quiet: bool) -> None:
     """
     Extract or list the contents of an InstallBuilder installer.
 
     With no MEMBERS, every member is extracted; otherwise only the named members are. Paths are
     those shown by ``--list``. Encrypted installers prompt for a password when one is not given.
     """  # noqa: DOC501
-    setup_logging(debug=debug, loggers={'destin.bitrock': {}, 'destin.common': {}})
     try:
         if list_:
             _list_members(archive)

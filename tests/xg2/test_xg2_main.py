@@ -27,7 +27,7 @@ def _rom(code: bytes = XG2_GAME_CODE) -> bytes:
 
 @pytest.fixture(autouse=True)
 def _quiet_logging(mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.main.setup_logging')
+    mocker.patch('bascom.cli.setup_logging')
 
 
 def test_group_lists_every_command(runner: CliRunner) -> None:

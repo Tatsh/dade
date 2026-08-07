@@ -3,19 +3,25 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from bascom import setup_logging
 from destin.common.workers import default_jobs
+import bascom
 import click
 
 from .pipeline import run_game
 
 __all__ = ('main',)
 
+debug_option = bascom.debug_option({'destin.amplitude': {}, 'destin.common': {}})
+"""Attach ``-d/--debug`` to a command and route it through :py:func:`bascom.setup_logging`.
+
+:meta hide-value:
+"""
+
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
 @click.argument('game_dir', type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.argument('out', type=click.Path(file_okay=False, path_type=Path))
-@click.option('-d', '--debug', is_flag=True, help='Enable debug level logging.')
+@debug_option
 @click.option('-j',
               '--jobs',
               type=click.IntRange(min=1),
@@ -35,7 +41,6 @@ __all__ = ('main',)
 def main(game_dir: Path,
          out: Path,
          *,
-         debug: bool = False,
          jobs: int = 1,
          no_convert: bool = False,
          no_gunzip: bool = False,
@@ -56,8 +61,6 @@ def main(game_dir: Path,
         The game's root directory (the disc root) to scan for ARKs and disc audio.
     out : pathlib.Path
         Output directory (created if missing).
-    debug : bool
-        Enable verbose (DEBUG-level) logging.
     jobs : int
         Worker processes for the CPU-bound conversion phases (defaults to the CPU count).
     no_convert : bool
@@ -69,7 +72,6 @@ def main(game_dir: Path,
     ignore_failures : bool
         Log and skip a conversion failure instead of stopping the run.
     """
-    setup_logging(debug=debug, loggers={'destin.amplitude': {}, 'destin.common': {}})
     stats = run_game(game_dir,
                      out,
                      convert=not no_convert,
