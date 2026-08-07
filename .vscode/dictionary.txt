@@ -178,19 +178,16 @@ hoverxref
 htmlcov
 ibag
 ibpwcrk
-idat
 ideaworks
 idxsize
 iecs
 iend
 ifil
 igen
-ihdr
 ihhh
 ihhi
 ihhiihh
 ihhiii
-iibbbbb
 importability
 inam
 incl
@@ -301,6 +298,7 @@ paletted
 palettised
 pamc
 pamx
+parallelisable
 pathlib
 pavelzw
 payloadinfo
@@ -308,6 +306,8 @@ pbag
 pcobject
 pdta
 phdr
+picklability
+picklable
 pipx
 plainmat
 plainword
@@ -351,6 +351,7 @@ recs
 refpack
 regen
 resgroup
+rgba
 ripgreprc
 rndartt
 rndobject
@@ -366,8 +367,6 @@ sansio
 sbox
 scancode
 scancodes
-scanline
-scanlines
 scei
 scel
 schemafile
@@ -423,6 +422,7 @@ sszl
 statusline
 stcol
 stcycl
+stdlib
 stmask
 strm
 strow

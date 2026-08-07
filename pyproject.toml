@@ -7,7 +7,7 @@ dev = [
   "commitizen>=4.17.0",
   "cz-path>=0.0.7",
   "mypy>=2.3.0",
-  "ruff==0.16.0",
+  "ruff==0.16.1",
   "ty>=0.0.65",
   "yapf>=0.43.0",
 ]
@@ -114,6 +114,7 @@ version_files = [
   "destin/__init__.py",
   "docs/badges.rst",
   "docs/index.rst",
+  "man/destin.1",
   "package.json",
   "sh.tat.destin.yml",
   "snapcraft.yaml",
@@ -264,7 +265,9 @@ max-statements = 100
 [tool.uv]
 default-groups = "all"
 exclude-newer = "1 week"
-exclude-newer-package = { bascom = "2026-08-08" }
+
+[tool.uv.exclude-newer-package]
+bascom = "2026-08-08"
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true
