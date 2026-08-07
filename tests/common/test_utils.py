@@ -1,7 +1,14 @@
 from __future__ import annotations
 
-from destin.common.utils import pluralize, safe_name
+from destin.common.utils import align_up, pluralize, safe_name
 import pytest
+
+
+@pytest.mark.parametrize(('value', 'alignment', 'expected'), [(0, 4, 0), (1, 4, 4), (4, 4, 4),
+                                                              (5, 4, 8), (31, 32, 32), (32, 32, 32),
+                                                              (33, 32, 64), (7, 1, 7)])
+def test_align_up(value: int, alignment: int, expected: int) -> None:
+    assert align_up(value, alignment) == expected
 
 
 @pytest.mark.parametrize(('count', 'noun', 'expected'), [(0, 'file', '0 files'),

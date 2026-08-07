@@ -39,6 +39,7 @@ import re
 import struct
 
 from destin.common import io
+from destin.common.utils import align_up
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -215,7 +216,7 @@ def _parse_spm7(b: bytes) -> list[_Submesh]:
             if vn == _VIF_VN_VECTOR3 and vl == 1 and num > 0:  # V3-16 = positions
                 us = struct.unpack_from(f'<{num * 3}H', b, data)
                 raw.append([(us[i * 3], us[i * 3 + 1], us[i * 3 + 2]) for i in range(num)])
-            o = (data + esz * num + 3) & ~3
+            o = align_up(data + esz * num, 4)
         elif cmd == _VIF_STMASK_CMD:  # STMASK + 1 data word
             o += 8
         elif cmd in {0x30, 0x31}:  # STROW / STCOL + 4 data words

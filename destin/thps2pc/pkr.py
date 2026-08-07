@@ -36,8 +36,8 @@ from enum import IntEnum
 from typing import TYPE_CHECKING, NamedTuple
 import logging
 import struct
-import zlib
 
+from destin.common.compress import inflate
 from destin.common.io import read_cstring
 
 if TYPE_CHECKING:
@@ -289,7 +289,7 @@ def extract_entry(data: bytes, entry: PkrFileEntry) -> bytes:
         case CompressionMethod.RLE16:
             return _decompress_rle(raw, entry.uncompressed_size, 2)
         case CompressionMethod.ZLIB:
-            return zlib.decompress(raw)
+            return inflate(raw, mode='zlib')
         case _:
             msg = f'Unknown compression method {entry.method} for {entry.name!r}.'
             raise NotImplementedError(msg)

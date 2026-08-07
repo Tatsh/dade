@@ -6,6 +6,7 @@ import json
 import struct
 import zlib
 
+from destin.common.compress import inflate
 from destin.common.utils import safe_name
 
 if TYPE_CHECKING:
@@ -20,7 +21,6 @@ _MILO_MAGIC = frozenset({0xCABEDEAF, 0xCBBEDEAF, 0xCCBEDEAF, 0xCDBEDEAF})
 _GZIP_MAGIC = 0xCCBEDEAF
 _UNCOMPRESSED_MAGIC = 0xCABEDEAF
 _SENTINEL = b'\xad\xde\xad\xde'  # 0xADDEADDE: Milo inter-object body terminator.
-_GZIP_WBITS = 16 + zlib.MAX_WBITS
 _MAX_NAME = 256
 _MILO_V6 = 6  # FreQuency's uncompressed Milo directory version (stored as the leading u32).
 _MILO_MIN_SIZE = 16  # Compressed Milo header: magic, dataStart, numBlocks, maxBlockSize.
@@ -61,8 +61,8 @@ def milo_decompress(data: bytes) -> tuple[bytes | None, int]:
         block = data[pos:pos + size]
         pos += size
         try:
-            out += (zlib.decompress(block, _GZIP_WBITS)
-                    if magic == _GZIP_MAGIC else zlib.decompress(block))
+            out += (inflate(block, mode='gzip') if magic == _GZIP_MAGIC else inflate(block,
+                                                                                     mode='zlib'))
         except zlib.error:  # A stored (uncompressed) block.
             out += block
     return bytes(out), n

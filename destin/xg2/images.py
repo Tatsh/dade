@@ -16,6 +16,7 @@ import struct
 
 from destin.common.image import expand5
 from destin.common.png import write_rgba
+from destin.common.utils import align_up
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -241,7 +242,7 @@ def bmp_to_png(source: Path, destination: Path) -> bool:
     ]
     bottom_up = height > 0
     height = abs(height)
-    stride = (width + 3) & ~3  # Bitmap rows are padded to a four-byte boundary.
+    stride = align_up(width, 4)  # Bitmap rows are padded to a four-byte boundary.
     rgba = bytearray(width * height * 4)
     for y in range(height):
         source_y = (height - 1 - y) if bottom_up else y

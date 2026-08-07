@@ -1,13 +1,32 @@
 """Small general-purpose helpers shared by the game submodules."""
 from __future__ import annotations
 
-__all__ = ('pluralize', 'safe_name')
+__all__ = ('align_up', 'pluralize', 'safe_name')
 
 _SAFE_PUNCTUATION = '._-+()'
 """Punctuation :py:func:`safe_name` keeps verbatim.
 
 :meta hide-value:
 """
+
+
+def align_up(value: int, alignment: int) -> int:
+    """
+    Round a value up to a multiple of an alignment.
+
+    Parameters
+    ----------
+    value : int
+        The value to round.
+    alignment : int
+        The alignment, which must be a power of two.
+
+    Returns
+    -------
+    int
+        The rounded value.
+    """
+    return (value + alignment - 1) & ~(alignment - 1)
 
 
 def pluralize(count: int, noun: str) -> str:

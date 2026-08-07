@@ -61,6 +61,7 @@ from typing import TYPE_CHECKING, NamedTuple
 import struct
 import zlib
 
+from destin.common.compress import GZIP_WBITS
 from destin.common.io import copy_region, read_cstring
 
 from .typing import ARKEntry
@@ -75,7 +76,6 @@ __all__ = ('ARKDirectory', 'ExtractStats', 'extract', 'list_entries', 'parse_dir
 _HDR = struct.Struct('<II')
 _REC = struct.Struct('<5I')  # dataOffset, fileBkt, dirBkt, size, flags
 _CHUNK = 1 << 20
-_GZIP_WBITS = 16 + zlib.MAX_WBITS
 _ROOT_BUCKET = 0xFFFFFFFF
 
 _ARK_VERSION = 2
@@ -249,7 +249,7 @@ def _safe_join(out_dir: Path, rel: str) -> Path:
 
 def _gunzip_region(src: BinaryIO, offset: int, size: int, dst: Path) -> int:
     src.seek(offset)
-    dec = zlib.decompressobj(_GZIP_WBITS)
+    dec = zlib.decompressobj(GZIP_WBITS)
     remaining = size
     written = 0
     with dst.open('wb') as out:
@@ -264,7 +264,7 @@ def _gunzip_region(src: BinaryIO, offset: int, size: int, dst: Path) -> int:
                 written += len(data)
             while dec.eof and dec.unused_data:  # Drain concatenated gzip members.
                 leftover = dec.unused_data
-                dec = zlib.decompressobj(_GZIP_WBITS)
+                dec = zlib.decompressobj(GZIP_WBITS)
                 data = dec.decompress(leftover)
                 if data:
                     out.write(data)

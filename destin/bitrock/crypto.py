@@ -18,8 +18,8 @@ from typing import TYPE_CHECKING
 import binascii
 import lzma
 import struct
-import zlib
 
+from destin.common.compress import inflate
 from destin.common.twofish import Twofish, cbc_decrypt, cbc_encrypt
 from typing_extensions import assert_never
 
@@ -160,7 +160,7 @@ def _decompress_payload(data: bytes, algorithm: PageCompression) -> bytes:
     """
     match algorithm:
         case 'zip':
-            return zlib.decompress(data, -zlib.MAX_WBITS)
+            return inflate(data, mode='raw')
         case 'lzma':
             # A standard ``.lzma`` (alone) stream. A stateful decompressor is used so the trailing
             # block padding left by the CBC layer is ignored rather than treated as a short read.

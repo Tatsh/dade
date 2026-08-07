@@ -23,6 +23,7 @@ import struct
 from PIL import Image
 from destin.common.image import expand5, expand6, ps2_clut_swizzle_index
 from destin.common.io import u16
+from destin.common.utils import align_up
 import numpy as np
 import numpy.typing as npt
 
@@ -102,7 +103,7 @@ _GPU_DXN = 0x31  # DXN / ATI2N (3Dc) two-channel normal map, 16 bytes/block.
 
 
 def _tiled_x(offset: int, width: int, texel_pitch: int) -> int:
-    aligned_width = (width + 31) & ~31
+    aligned_width = align_up(width, 32)
     log_bpp = (texel_pitch >> 2) + ((texel_pitch >> 1) >> (texel_pitch >> 2))
     ob = offset << log_bpp
     ot = ((ob & ~4095) >> 3) + ((ob & 1792) >> 2) + (ob & 63)
@@ -115,7 +116,7 @@ def _tiled_x(offset: int, width: int, texel_pitch: int) -> int:
 
 
 def _tiled_y(offset: int, width: int, texel_pitch: int) -> int:
-    aligned_width = (width + 31) & ~31
+    aligned_width = align_up(width, 32)
     log_bpp = (texel_pitch >> 2) + ((texel_pitch >> 1) >> (texel_pitch >> 2))
     ob = offset << log_bpp
     ot = ((ob & ~4095) >> 3) + ((ob & 1792) >> 2) + (ob & 63)
@@ -270,8 +271,8 @@ def _untile_crop(data: bytes, ew: int, eh: int, elem: int) -> bytes:
     bytes
         Cropped linear row-major bytes ``ew`` elements wide.
     """
-    awe = (ew + 31) & ~31
-    ahe = (eh + 31) & ~31
+    awe = align_up(ew, 32)
+    ahe = align_up(eh, 32)
     need = awe * ahe * elem
     tiled = data[:need] if len(data) >= need else data + b'\x00' * (need - len(data))
     aligned = _untile(tiled, awe, ahe, elem)  # Row-major, awe wide.
@@ -1280,11 +1281,7 @@ def _cmpr(data: bytes, w: int, h: int) -> Image.Image:
                                            | ((c & 0x0C) << 2)
                                            | ((c & 0x30) >> 2)
                                            | ((c & 0xC0) >> 6))
-    fl = 0x1 | 0x2 | 0x4 | 0x1000 | 0x80000
-    dds = (struct.pack('<4sIIIIIII', b'DDS ', 124, fl, h, w, len(dxt), 0, 1) + b'\x00' * 44 +
-           struct.pack('<II4sIIIII', 32, 0x4, b'DXT1', 0, 0, 0, 0, 0) +
-           struct.pack('<IIIII', 0x1000, 0, 0, 0, 0) + bytes(dxt))
-    return Image.open(io.BytesIO(dds)).convert('RGBA')
+    return Image.open(io.BytesIO(_make_dds(bytes(dxt), w, h, b'DXT1'))).convert('RGBA')
 
 
 def _untile_ci8(d: npt.NDArray[np.uint8], w: int, h: int) -> npt.NDArray[np.uint8]:

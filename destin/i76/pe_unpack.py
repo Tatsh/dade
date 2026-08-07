@@ -29,6 +29,7 @@ import logging
 import struct
 
 from destin.common.io import u16, u32
+from destin.common.utils import align_up
 
 from .typing import PeSection
 
@@ -62,25 +63,6 @@ _SECTION_HEADER_SIZE = 40
 
 class InvalidImageError(ValueError):
     """Raised when a file is not a PE image or carries no recognised overlay."""
-
-
-def _align_up(value: int, alignment: int) -> int:
-    """
-    Round a value up to a multiple of an alignment.
-
-    Parameters
-    ----------
-    value : int
-        The value to round.
-    alignment : int
-        The alignment, which must be a power of two.
-
-    Returns
-    -------
-    int
-        The rounded value.
-    """
-    return (value + alignment - 1) & ~(alignment - 1)
 
 
 def decompress_block(data: bytes, position: int) -> tuple[bytes, int]:
@@ -239,7 +221,7 @@ def unpack(data: bytes) -> bytes:
     struct.pack_into('<I', image, optional_offset + 16, entry_point)
     out_size = size_of_headers
     for section in sections:
-        aligned = _align_up(max(section.virtual_size, section.raw_size), section_alignment)
+        aligned = align_up(max(section.virtual_size, section.raw_size), section_alignment)
         struct.pack_into('<I', image, section.header_offset + 16, aligned)
         struct.pack_into('<I', image, section.header_offset + 20, section.virtual_address)
         out_size = max(out_size, section.virtual_address + aligned)
