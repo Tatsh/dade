@@ -33,9 +33,7 @@ debug_option = bascom.debug_option({
 
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
-@click.argument('input_',
-                metavar='DISC',
-                type=click.Path(exists=True, file_okay=False, path_type=Path))
+@click.argument('input_', metavar='DISC', type=click.Path(exists=True, path_type=Path))
 @debug_option
 @click.option('-o',
               '--output-dir',
@@ -65,7 +63,7 @@ def main(input_: Path,
          no_gunzip: bool = False,
          keep_gz: bool = False,
          ignore_failures: bool = False) -> None:
-    """Unpack a PS2 FreQuency disc directory and convert its assets."""
+    """Unpack a PS2 FreQuency disc (directory, ISO image, or cue/bin) and convert its assets."""
     unpacker = FrequencyUnpacker(input_)
 
     async def run(on_status: Callable[[str], None] | None) -> dict[str, str]:

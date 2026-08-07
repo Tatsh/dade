@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 from destin.frequency.main import main
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from click.testing import CliRunner
     from pytest_mock import MockerFixture
 
@@ -23,17 +25,35 @@ def test_main_requires_arguments(runner: CliRunner) -> None:
 
 
 def test_main_runs_game(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
-    (tmp_path / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))  # ARK\0 magic: FreQuency layout.
+    game = tmp_path / 'game'
+    game.mkdir()
+    (game / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))  # ARK\0 magic: FreQuency layout.
     run_game = mocker.patch('destin.harmonix.unpacker.run_game',
                             return_value={'ARK/ROOT.ARK': 'ok'})
     out = tmp_path / 'out'
-    result = runner.invoke(main, (str(tmp_path), '-o', str(out), '--jobs', '3'))
+    result = runner.invoke(main, (str(game), '-o', str(out), '--jobs', '3'))
     assert result.exit_code == 0
     assert 'ARK/ROOT.ARK: ok' in result.output
-    assert run_game.call_args.args == (tmp_path, out)
+    assert run_game.call_args.args == (game, out)
     assert run_game.call_args.kwargs['jobs'] == 3
     assert run_game.call_args.kwargs['layout'] == 'frequency'
     assert run_game.call_args.kwargs['on_status'] is not None
+
+
+def test_main_accepts_cuebin(make_cuebin: Callable[..., Path], make_iso9660: Callable[..., bytes],
+                             mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
+    # A FreQuency ARK\0-magic archive placed on a cue/bin disc (the CD release).
+    cue = make_cuebin(make_iso9660(ark_data=b'ARK\x00' + bytes(12)))
+    seen: dict[str, bytes] = {}
+
+    def capture(game_dir: Path, _out: Path, **_kwargs: object) -> dict[str, str]:
+        seen['ark'] = (game_dir / 'GEN' / 'MAIN.ARK').read_bytes()
+        return {'GEN/MAIN.ARK': 'ok'}
+
+    mocker.patch('destin.harmonix.unpacker.run_game', side_effect=capture)
+    result = runner.invoke(main, (str(cue), '-o', str(tmp_path / 'out')))
+    assert result.exit_code == 0
+    assert seen['ark'] == b'ARK\x00' + bytes(12)
 
 
 def test_main_default_output_dir(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:

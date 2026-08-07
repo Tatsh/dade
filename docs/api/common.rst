@@ -28,6 +28,12 @@ from a game package once a second consumer appeared, so a single implementation 
 .. automodule:: destin.common.cuebin
    :members:
 
+``destin.common.disc``
+----------------------
+
+.. automodule:: destin.common.disc
+   :members:
+
 ``destin.common.image``
 -----------------------
 

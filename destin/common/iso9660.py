@@ -152,22 +152,26 @@ class Iso9660Image:
         for path in sorted(self._files):
             yield path, self._files[path][1]
 
-    def read_file(self, path: str) -> bytes:
+    def read_file(self, path: str, length: int | None = None) -> bytes:
         """
-        Read the whole contents of a file.
+        Read the contents of a file, or a leading prefix of it.
 
         Parameters
         ----------
         path : str
             POSIX-style, case-insensitive path such as ``GEN/MAIN.ARK``.
+        length : int | None
+            Read at most this many leading bytes (clamped to the file size); ``None`` reads the
+            whole file. A prefix read avoids pulling a large file out of the image just to inspect
+            its header.
 
         Returns
         -------
         bytes
-            The file contents.
+            The file contents, or its first ``length`` bytes.
         """
         lba, size = self._files[_normalize(path)]
-        return self._read_extent(lba, size)
+        return self._read_extent(lba, size if length is None else min(length, size))
 
     def _read_extent(self, lba: int, size: int) -> bytes:
         """

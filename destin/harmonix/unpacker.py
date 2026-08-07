@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, ClassVar
 import asyncio
 import logging
 
+from destin.common.disc import mount, mount_sync, open_image
 import anyio
 import click
 
@@ -15,6 +16,8 @@ from .typing import Asset
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator
     from pathlib import Path
+
+    from destin.common.iso9660 import Iso9660Image
 
     from .typing import ArkLayout
 
@@ -30,9 +33,25 @@ def _carve(data: bytes) -> Iterator[Asset]:
             yield Asset(entry.path, data[entry.offset:end])
 
 
+def _dir_ark_layouts(root: Path) -> Iterator[ArkLayout]:
+    for ark_path in _find_arks(root):
+        with ark_path.open('rb') as src:
+            yield 'frequency' if src.read(4) == _FREQ_MAGIC else 'amplitude'
+
+
+def _image_ark_layouts(image: Iso9660Image) -> Iterator[ArkLayout]:
+    for path, _ in image.iter_files():
+        if path.upper().endswith('.ARK'):
+            yield 'frequency' if image.read_file(path, 4) == _FREQ_MAGIC else 'amplitude'
+
+
 class Unpacker:
     """
-    Template base for a single Harmonix game's ARK unpacker, bound to a source directory.
+    Template base for a single Harmonix game's ARK unpacker, bound to a source disc.
+
+    The source may be an already-extracted directory, a raw PS2 ISO image, or the ``.cue`` of a
+    cue/bin pair (the CD release); a disc image is mounted read-only into a temporary directory for
+    the duration of a walk (see :py:func:`destin.common.disc.mount`).
 
     A concrete subclass sets :py:attr:`game_name` and :py:attr:`ark_layout`; the base supplies
     :py:meth:`accepts` (which detects whether :py:attr:`source` holds this game's ARKs) and
@@ -51,15 +70,16 @@ class Unpacker:
     """The human-readable game name (for example ``'Amplitude'``)."""
     def __init__(self, source: Path) -> None:
         """
-        Bind the unpacker to a source directory.
+        Bind the unpacker to a source disc.
 
         Parameters
         ----------
         source : pathlib.Path
-            The game's root directory (the disc root) to scan for ARKs and disc audio.
+            The game's disc: an already-extracted root directory, a PS2 ISO image, or the ``.cue``
+            of a cue/bin pair.
         """
         self.source = source
-        """The game's root directory bound to this unpacker."""
+        """The game's disc source bound to this unpacker."""
 
     def __aiter__(self) -> AsyncIterator[Asset]:
         """
@@ -81,27 +101,27 @@ class Unpacker:
         destin.harmonix.typing.Asset
             Each ARK entry's path and raw bytes, in deterministic order.
         """
-        for ark_path in _find_arks(self.source):
-            yield from _carve(ark_path.read_bytes())
+        with mount_sync(self.source) as root:
+            for ark_path in _find_arks(root):
+                yield from _carve(ark_path.read_bytes())
 
     def accepts(self) -> bool:
         r"""
         Report whether :py:attr:`source` holds at least one ARK with this game's layout.
 
-        Every ``*.ark`` found under :py:attr:`source` is peeked (its leading four bytes); a
-        ``ARK\0`` magic marks the FreQuency layout and anything else marks the Amplitude layout.
+        Every ``*.ark`` on the disc is peeked (its leading four bytes); a ``ARK\0`` magic marks the
+        FreQuency layout and anything else marks the Amplitude layout. A disc image is peeked in
+        place (its ARK headers are read directly), so no extraction happens.
 
         Returns
         -------
         bool
             ``True`` if some ARK under :py:attr:`source` matches :py:attr:`ark_layout`.
         """
-        for ark_path in _find_arks(self.source):
-            with ark_path.open('rb') as src:
-                layout: ArkLayout = 'frequency' if src.read(4) == _FREQ_MAGIC else 'amplitude'
-            if layout == self.ark_layout:
-                return True
-        return False
+        if self.source.is_dir():
+            return any(layout == self.ark_layout for layout in _dir_ark_layouts(self.source))
+        return any(
+            layout == self.ark_layout for layout in _image_ark_layouts(open_image(self.source)))
 
     async def unpack(self,
                      out: Path,
@@ -114,6 +134,10 @@ class Unpacker:
                      on_status: Callable[[str], None] | None = None) -> dict[str, str]:
         """
         Unpack this game's ARKs under :py:attr:`source` into ``out``.
+
+        When :py:attr:`source` is a disc image, it is mounted read-only into a temporary directory
+        for the run; a file that is not a readable disc image propagates
+        :py:class:`~destin.common.typing.InvalidFormatError`.
 
         Parameters
         ----------
@@ -143,27 +167,59 @@ class Unpacker:
         Raises
         ------
         click.Abort
-            If :py:attr:`source` holds no ARK with this game's layout.
+            If ``out`` is, or is nested inside, a source directory, or if :py:attr:`source` holds no
+            ARK with this game's layout.
         """
-        if not self.accepts():
-            log.error('No %s ARK archive found under `%s`.', self.game_name, self.source)
-            msg = f'No {self.game_name} ARK archive found under `{self.source}`.'
-            raise click.Abort(msg) from ValueError(msg)
-        return await run_game(self.source,
-                              out,
-                              convert=convert,
-                              gunzip=gunzip,
-                              ignore_failures=ignore_failures,
-                              jobs=jobs,
-                              keep_gz=keep_gz,
-                              layout=self.ark_layout,
-                              on_status=on_status)
+        self._reject_bad_output(out)
+        async with mount(self.source) as root:
+            if not any(layout == self.ark_layout for layout in _dir_ark_layouts(root)):
+                log.error('No %s ARK archive found under `%s`.', self.game_name, self.source)
+                msg = f'No {self.game_name} ARK archive found under `{self.source}`.'
+                raise click.Abort(msg) from ValueError(msg)
+            return await run_game(root,
+                                  out,
+                                  convert=convert,
+                                  gunzip=gunzip,
+                                  ignore_failures=ignore_failures,
+                                  jobs=jobs,
+                                  keep_gz=keep_gz,
+                                  layout=self.ark_layout,
+                                  on_status=on_status)
 
     async def _aiter(self) -> AsyncIterator[Asset]:
-        for ark_path in _find_arks(self.source):
-            data = await anyio.Path(ark_path).read_bytes()
-            directory = await asyncio.to_thread(parse_directory, data)
-            for entry in directory.entries:
-                end = entry.offset + entry.size
-                if end <= len(data):  # Skip any record whose data runs past the archive.
-                    yield Asset(entry.path, data[entry.offset:end])
+        # The mount must live inside this generator because ``__aiter__`` is synchronous and cannot
+        # await it. Consuming the iterator with ``async for`` closes the generator and unwinds the
+        # mount, so the temporary directory is always cleaned up (ASYNC119 flags only the
+        # closed-on-garbage-collection edge, which this API does not expose).
+        async with mount(self.source) as root:
+            for ark_path in _find_arks(root):
+                data = await anyio.Path(ark_path).read_bytes()
+                directory = await asyncio.to_thread(parse_directory, data)
+                for entry in directory.entries:
+                    end = entry.offset + entry.size
+                    if end <= len(data):  # Skip any record whose data runs past the archive.
+                        yield Asset(entry.path, data[entry.offset:end])  # noqa: ASYNC119
+
+    def _reject_bad_output(self, out: Path) -> None:
+        """
+        Reject an output directory that is, or is nested inside, a source directory.
+
+        Parameters
+        ----------
+        out : pathlib.Path
+            The requested output directory.
+
+        Raises
+        ------
+        click.Abort
+            If :py:attr:`source` is a directory and ``out`` is that directory or lies within it
+            (writing outputs into the disc being read).
+        """
+        if not self.source.is_dir():
+            return
+        source = self.source.resolve()
+        destination = out.resolve()
+        if destination == source or source in destination.parents:
+            log.error('Output directory `%s` is inside the input `%s`.', out, self.source)
+            msg = f'Output directory `{out}` cannot be inside the input `{self.source}`.'
+            raise click.Abort(msg) from ValueError(msg)
