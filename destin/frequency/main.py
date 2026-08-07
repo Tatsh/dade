@@ -2,17 +2,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+import asyncio
 
 from destin.common.workers import default_jobs
-from destin.harmonix.unpacker import Unpacker
+from destin.frequency.unpacker import FrequencyUnpacker
 import bascom
 import click
 
-if TYPE_CHECKING:
-    from destin.harmonix.typing import ArkLayout
-
-__all__ = ('FrequencyUnpacker', 'main')
+__all__ = ('main',)
 
 debug_option = bascom.debug_option({
     'destin.common': {},
@@ -23,13 +20,6 @@ debug_option = bascom.debug_option({
 
 :meta hide-value:
 """
-
-
-class FrequencyUnpacker(Unpacker):
-    r"""Unpacker for the PS2 game FreQuency (its ``ARK\0`` ``ARK/*.ARK`` layout)."""
-
-    ark_layout: ClassVar[ArkLayout] = 'frequency'
-    game_name: ClassVar[str] = 'FreQuency'
 
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
@@ -85,12 +75,12 @@ def main(game_dir: Path,
     ignore_failures : bool
         Log and skip a conversion failure instead of stopping the run.
     """
-    stats = FrequencyUnpacker().unpack(game_dir,
-                                       out,
-                                       convert=not no_convert,
-                                       gunzip=not no_gunzip,
-                                       ignore_failures=ignore_failures,
-                                       jobs=jobs,
-                                       keep_gz=keep_gz)
+    stats = asyncio.run(FrequencyUnpacker().unpack(game_dir,
+                                                   out,
+                                                   convert=not no_convert,
+                                                   gunzip=not no_gunzip,
+                                                   ignore_failures=ignore_failures,
+                                                   jobs=jobs,
+                                                   keep_gz=keep_gz))
     for label, summary in stats.items():
         click.echo(f'{label}: {summary}')

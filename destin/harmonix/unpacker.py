@@ -57,15 +57,15 @@ class Unpacker:
                 return True
         return False
 
-    def unpack(self,
-               game_dir: Path,
-               out: Path,
-               *,
-               convert: bool = True,
-               gunzip: bool = True,
-               keep_gz: bool = False,
-               ignore_failures: bool = False,
-               jobs: int = 1) -> dict[str, str]:
+    async def unpack(self,
+                     game_dir: Path,
+                     out: Path,
+                     *,
+                     convert: bool = True,
+                     gunzip: bool = True,
+                     keep_gz: bool = False,
+                     ignore_failures: bool = False,
+                     jobs: int = 0) -> dict[str, str]:
         """
         Unpack this game's ARKs under ``game_dir`` into ``out``.
 
@@ -84,7 +84,8 @@ class Unpacker:
         ignore_failures : bool
             Log and skip a converter/decompose failure instead of stopping the run.
         jobs : int
-            Maximum worker processes for the CPU-bound conversion phases; ``1`` runs sequentially.
+            Maximum concurrent workers for the CPU-bound conversion phases; ``0`` uses the CPU
+            count.
 
         Returns
         -------
@@ -101,11 +102,11 @@ class Unpacker:
             log.error('No %s ARK archive found under `%s`.', self.game_name, game_dir)
             msg = f'No {self.game_name} ARK archive found under `{game_dir}`.'
             raise click.Abort(msg) from ValueError(msg)
-        return run_game(game_dir,
-                        out,
-                        convert=convert,
-                        gunzip=gunzip,
-                        ignore_failures=ignore_failures,
-                        jobs=jobs,
-                        keep_gz=keep_gz,
-                        layout=self.ark_layout)
+        return await run_game(game_dir,
+                              out,
+                              convert=convert,
+                              gunzip=gunzip,
+                              ignore_failures=ignore_failures,
+                              jobs=jobs,
+                              keep_gz=keep_gz,
+                              layout=self.ark_layout)

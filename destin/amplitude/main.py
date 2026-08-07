@@ -2,17 +2,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+import asyncio
 
+from destin.amplitude.unpacker import AmplitudeUnpacker
 from destin.common.workers import default_jobs
-from destin.harmonix.unpacker import Unpacker
 import bascom
 import click
 
-if TYPE_CHECKING:
-    from destin.harmonix.typing import ArkLayout
-
-__all__ = ('AmplitudeUnpacker', 'main')
+__all__ = ('main',)
 
 debug_option = bascom.debug_option({
     'destin.amplitude': {},
@@ -23,13 +20,6 @@ debug_option = bascom.debug_option({
 
 :meta hide-value:
 """
-
-
-class AmplitudeUnpacker(Unpacker):
-    """Unpacker for the PS2 game Amplitude (its magic-less ``GEN/MAIN.ARK`` layout)."""
-
-    ark_layout: ClassVar[ArkLayout] = 'amplitude'
-    game_name: ClassVar[str] = 'Amplitude'
 
 
 @click.command(context_settings={'help_option_names': ('-h', '--help')})
@@ -85,12 +75,12 @@ def main(game_dir: Path,
     ignore_failures : bool
         Log and skip a conversion failure instead of stopping the run.
     """
-    stats = AmplitudeUnpacker().unpack(game_dir,
-                                       out,
-                                       convert=not no_convert,
-                                       gunzip=not no_gunzip,
-                                       ignore_failures=ignore_failures,
-                                       jobs=jobs,
-                                       keep_gz=keep_gz)
+    stats = asyncio.run(AmplitudeUnpacker().unpack(game_dir,
+                                                   out,
+                                                   convert=not no_convert,
+                                                   gunzip=not no_gunzip,
+                                                   ignore_failures=ignore_failures,
+                                                   jobs=jobs,
+                                                   keep_gz=keep_gz))
     for label, summary in stats.items():
         click.echo(f'{label}: {summary}')

@@ -40,21 +40,23 @@ def test_accepts_no_arks(tmp_path: Path) -> None:
     assert not _AmpUnpacker().accepts(tmp_path)
 
 
-def test_unpack_delegates_with_layout(make_amp_ark: Callable[..., bytes], mocker: MockerFixture,
-                                      tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_unpack_delegates_with_layout(make_amp_ark: Callable[..., bytes],
+                                            mocker: MockerFixture, tmp_path: Path) -> None:
     (tmp_path / 'MAIN.ARK').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
     run_game = mocker.patch('destin.harmonix.unpacker.run_game', return_value={'MAIN.ARK': 'ok'})
     out = tmp_path / 'out'
-    assert _AmpUnpacker().unpack(tmp_path, out, jobs=2) == {'MAIN.ARK': 'ok'}
+    assert await _AmpUnpacker().unpack(tmp_path, out, jobs=2) == {'MAIN.ARK': 'ok'}
     assert run_game.call_args.args == (tmp_path, out)
     assert run_game.call_args.kwargs['jobs'] == 2
     assert run_game.call_args.kwargs['layout'] == 'amplitude'
 
 
-def test_unpack_rejects_wrong_game(make_freq_ark: Callable[..., bytes], mocker: MockerFixture,
-                                   tmp_path: Path) -> None:
+@pytest.mark.asyncio
+async def test_unpack_rejects_wrong_game(make_freq_ark: Callable[..., bytes], mocker: MockerFixture,
+                                         tmp_path: Path) -> None:
     (tmp_path / 'ROOT.ARK').write_bytes(make_freq_ark((('gen/a.txt', b'AAA'),)))
     run_game = mocker.patch('destin.harmonix.unpacker.run_game')
     with pytest.raises(click.Abort):
-        _AmpUnpacker().unpack(tmp_path, tmp_path / 'out')
+        await _AmpUnpacker().unpack(tmp_path, tmp_path / 'out')
     run_game.assert_not_called()
