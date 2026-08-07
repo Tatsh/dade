@@ -31,6 +31,34 @@ local utils = import 'utils.libjsonnet';
   want_flatpak: true,
   publishing+: { flathub: 'sh.tat.destin' },
   local top = self,
+  python_deps+: {
+    main+: {
+      anyio: utils.latestPypiPackageVersionCaret('anyio'),
+      // debug_option (used by every game's CLI) was added in bascom 0.2.0.
+      bascom: '>=0.2.0',
+      jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
+      mido: utils.latestPypiPackageVersionCaret('mido'),
+      // numpy 2.3 dropped Python 3.10 (it requires >=3.11), which the project still supports, so
+      // cap at the last 2.2.x release. Windows on ARM64 is the exception: numpy ships win_arm64
+      // wheels only from 2.3, so there (Python is always >=3.11) require >=2.3 to install from a
+      // wheel rather than build from source.
+      numpy: [
+        {
+          markers: "platform_machine != 'ARM64' or sys_platform != 'win32' or python_version < '3.11'",
+          version: '<=2.2.6',
+        },
+        {
+          markers: "platform_machine == 'ARM64' and sys_platform == 'win32' and python_version >= '3.11'",
+          version: '>=2.3',
+        },
+      ],
+      pillow: utils.latestPypiPackageVersionCaret('pillow'),
+      rich: utils.latestPypiPackageVersionCaret('rich'),
+    },
+    tests+: {
+      'pytest-asyncio': utils.latestPypiPackageVersionCaret('pytest-asyncio'),
+    },
+  },
   pyproject+: {
     project+: {
       'optional-dependencies'+: {
@@ -60,39 +88,6 @@ local utils = import 'utils.libjsonnet';
             '%s/*/__main__.py' % top.primary_module,
             '%s/*/typing.py' % top.primary_module,
           ],
-        },
-      },
-      poetry+: {
-        dependencies+: {
-          anyio: utils.latestPypiPackageVersionCaret('anyio'),
-          // debug_option (used by every game's CLI) was added in bascom 0.2.0.
-          bascom: '>=0.2.0',
-          jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
-          mido: utils.latestPypiPackageVersionCaret('mido'),
-          // numpy 2.3 dropped Python 3.10 (it requires >=3.11), which the project still supports,
-          // so cap at the last 2.2.x release rather than the floating caret the helper would
-          // produce. Windows on ARM64 is the exception: numpy ships win_arm64 wheels only from 2.3,
-          // so on that platform (where Python is always >=3.11) require >=2.3 so numpy installs
-          // from a wheel rather than failing to build from source.
-          numpy: [
-            {
-              markers: "platform_machine != 'ARM64' or sys_platform != 'win32' or python_version < '3.11'",
-              version: '<=2.2.6',
-            },
-            {
-              markers: "platform_machine == 'ARM64' and sys_platform == 'win32' and python_version >= '3.11'",
-              version: '>=2.3',
-            },
-          ],
-          pillow: utils.latestPypiPackageVersionCaret('pillow'),
-          rich: utils.latestPypiPackageVersionCaret('rich'),
-        },
-        group+: {
-          tests+: {
-            dependencies+: {
-              'pytest-asyncio': utils.latestPypiPackageVersionCaret('pytest-asyncio'),
-            },
-          },
         },
       },
       pytest+: {
