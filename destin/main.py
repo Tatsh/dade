@@ -3,7 +3,8 @@ Unified command-line interface for the ``destin`` game asset extractors.
 
 Every supported game is mounted as a sub-group of the top-level ``destin`` command, so each tool is
 invoked as ``destin <game> <subcommand>`` (for example ``destin incoming extract`` or
-``destin bitrock crack``).
+``destin bitrock crack``). Converters for formats that belong to no single game are grouped under
+``destin misc``.
 """
 from __future__ import annotations
 
@@ -20,7 +21,9 @@ from .incoming.commands.extract_pvr_pack import extract_pvr_pack as incoming_pvr
 from .incoming.commands.ian2obj import ian2obj as incoming_ian2obj
 from .incoming.main import main as incoming_extract
 from .marmalade.main import marm as marmalade_group
+from .misc.main import misc as misc_group
 from .monopoly08.main import main as monopoly_extract
+from .rhythmin.main import rhythmin as rhythmin_group
 from .thps2pc.main import cli as thps2pc_group
 from .xg2.main import cli as xg2_group
 
@@ -85,6 +88,8 @@ main.add_command(_frequency())
 main.add_command(i76_group, name='i76')
 main.add_command(_incoming())
 main.add_command(marmalade_group, name='marmalade')
+main.add_command(misc_group, name='misc')
 main.add_command(_monopoly08())
+main.add_command(rhythmin_group, name='rhythmin')
 main.add_command(thps2pc_group, name='thps2pc')
 main.add_command(xg2_group, name='xg2')

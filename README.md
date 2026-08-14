@@ -52,7 +52,9 @@ Run `destin --help` to list the games, and `destin <game> --help` to list a game
 | `destin i76`        | _Interstate '76_ and _Interstate '82_       | Activision                    |
 | `destin incoming`   | _Incoming_ (PC and Dreamcast)               | Rage Software / Interplay     |
 | `destin marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
+| `destin misc`       | Formats belonging to no single game         | —                             |
 | `destin monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
+| `destin rhythmin`   | _pop'n rhythmin_ (iOS)                      | Konami                        |
 | `destin thps2pc`    | _Tony Hawk's Pro Skater 2_ (PC)             | Neversoft / Activision        |
 | `destin xg2`        | _Extreme-G_ and _Extreme-G 2_ (N64 and PC)  | Probe Entertainment / Acclaim |
 
@@ -163,6 +165,47 @@ destin monopoly08 extract ROOT
 
 Unpack and convert an extracted _Monopoly_ (2008, Electronic Arts) disc for Xbox 360, PS3, PS2, or
 Wii. The platform is auto-detected and every output is written next to its source inside `ROOT`.
+
+## pop'n rhythmin
+
+```shell
+destin rhythmin dump-chara chara001.chr
+destin rhythmin dump-idx music_select.idx
+destin rhythmin dump-map map_042.map
+destin rhythmin dump-sheet 000000007.orb n
+destin rhythmin extract-dialogue pools.inc --binary PopnRhythmin
+```
+
+Decrypt and decode the data files of the Konami iOS rhythm game _pop'n rhythmin_. Every encrypted
+file uses `BFCodec`, which is Blowfish with one deviation in its F function; the key is derived
+from a constant in the binary, so nothing needs to be supplied. Each `dump-*` subcommand writes
+JSON to standard output:
+
+- `dump-chara` — downloaded `chara_%03d.chr` character data.
+- `dump-idx` — AEP `.idx` animation indexes, with sprite records, layer chains, and decoded
+  position and colour channels. `--names`, `--layer NAME`, and `--find NAME` narrow the output.
+- `dump-map` — sugoroku `map_%03d.map` boards. `--ascii` prints a text board and `--image OUT.png`
+  renders a pictorial one.
+- `dump-sheet` — note charts from a `.orb` or `.acv` song package, given the difficulty suffix
+  (`es`, `n`, `h`, or `ex`). `--summary` drops the per-record list, `--raw` writes the decrypted
+  bytes, and `--image OUT.png` renders a DDR-style strip chart.
+- `extract-dialogue` — the sugoroku board dialogue pools inside a 32-bit app binary, as either the
+  compiled-in C header or the runtime binary asset. The dialogue is copyrighted game content and is
+  not shipped here; without `--binary` the tables are written out empty.
+
+## Miscellaneous
+
+```shell
+destin misc coredata MODEL
+destin misc strings STRINGS
+```
+
+Converters for platform-level formats that belong to no single game. `coredata` deserialises a
+compiled Core Data model — a `.cdm` mapping model or a `.mom` managed object model — to JSON,
+optionally dumping the raw keyed archive (`--archive`) or emitting the SQLite script the migration
+amounts to (`--sql`, with `--mom` supplying the destination model's column types). `strings` reads
+an Xcode `.strings` localisation table in either the compiled binary plist form or the old-style
+text form and writes it as JSON.
 
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 

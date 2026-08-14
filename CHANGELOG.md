@@ -17,6 +17,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   SDK), `monopoly08` (Monopoly 2008), `thps2pc` (Tony Hawk's Pro Skater 2 PC), and `xg2` (Extreme-G
   and Extreme-G 2).
 - A single multi-command entry point, invoked as `destin <game> <subcommand>`.
+- `destin rhythmin` group for the Konami iOS game _pop'n rhythmin_: the `BFCodec` cipher (Blowfish
+  with one deviation in its F function), `dump-chara` for downloaded character data, `dump-idx` for
+  AEP animation indexes, `dump-map` for sugoroku boards (JSON, a text board, or a rendered PNG),
+  `dump-sheet` for note charts from `.orb` and `.acv` song packages (JSON or a DDR-style strip
+  image), and `extract-dialogue` for the board dialogue pools inside an app binary.
+- `destin misc` group for formats that belong to no single game: `coredata` deserialises a compiled
+  Core Data mapping (`.cdm`) or managed object (`.mom`) model to JSON, dumps the raw keyed archive,
+  or emits the effective SQLite migration script; `strings` reads an Xcode `.strings` table in
+  either the compiled or the old-style text form.
 - `ian2obj` and `extract-pvr-pack` command-line utilities, now `destin incoming ian2obj` and
   `destin incoming extract-pvr-pack`.
 - `ian2obj` converts Dreamcast `*_M.BIN` model packs in addition to PC `.ian` meshes.

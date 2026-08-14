@@ -10,6 +10,7 @@ and :doc:`../utilities`.
    :maxdepth: 2
 
    common
+   misc
    testing
 
 .. toctree::
@@ -23,5 +24,6 @@ and :doc:`../utilities`.
    incoming
    marmalade
    monopoly08
+   rhythmin
    thps2pc
    xg2

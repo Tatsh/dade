@@ -8,6 +8,7 @@ addopts
 adpcm
 agrp
 aica
+aiter
 aladpcm
 albank
 alcseq
@@ -31,7 +32,10 @@ autouse
 backslashreplace
 bascom
 bbhhh
+beatmaps
+beginswith
 behavior
+bfcodec
 bgra
 bidx
 bigf
@@ -48,13 +52,16 @@ bspan
 bsum
 byteswap
 cabdata
+calcsize
 cand
 caplog
 capsys
 cdda
 cdir
 cdrommsf
+chara
 checkerboard
+cigam
 circ
 ciwmodel
 clen
@@ -73,6 +80,7 @@ conftest
 cookfs
 cookfsinfo
 cooldown
+coredata
 coveragerc
 coverallsapp
 cstring
@@ -100,6 +108,9 @@ dequantisation
 dequantise
 dequantized
 derbh
+deserialise
+deserialised
+deserialises
 destdir
 deswizzle
 deswizzled
@@ -130,6 +141,7 @@ esbenp
 esbonio
 excinfo
 extern
+falsepredicate
 fcomment
 fdirs
 fextra
@@ -141,6 +153,7 @@ flathub
 fluidsynth
 fmtword
 fntx
+fontconfig
 fontlist
 fourcc
 foxundermoon
@@ -174,6 +187,7 @@ heightfield
 hhhi
 hhhiii
 hhiihh
+hhiiiii
 hier
 hostbuf
 hoverxref
@@ -204,6 +218,7 @@ isng
 isodump
 isort
 istart
+iterdir
 itertools
 iwgxfontbrowser
 jinja
@@ -216,8 +231,10 @@ keysounded
 kocjan
 ksdataformat
 kwargs
+lanczos
 lastexitcode
 launchable
+ldrsb
 lextudio
 lhuf
 libaudio
@@ -248,6 +265,7 @@ mktemp
 mlbin
 mmesh
 modindex
+momv
 monkeypatch
 mousedown
 mousemove
@@ -264,6 +282,7 @@ mypy
 namedtuples
 namesle
 nblocks
+ncmds
 ncol
 nege
 neversoft
@@ -279,9 +298,12 @@ norecursedirs
 noseparator
 notarytool
 notcfs
+notjson
 notscei
 nrec
 nsamp
+nsfr
+nsmoc
 nsym
 nullglob
 numblocks
@@ -314,12 +336,15 @@ pipx
 plainmat
 plainword
 plistlib
+plists
 pmod
 pocl
 pointsize
+popn
 preapproved
 pred
 prga
+primarykey
 proc
 prodvers
 prov
@@ -354,6 +379,7 @@ refpack
 regen
 resgroup
 rgba
+rhythmin
 ripgreprc
 rndartt
 rndobject
@@ -396,6 +422,7 @@ shpx
 siga
 signtool
 sixsec
+sjis
 skhan
 skuk
 skybox
@@ -429,11 +456,16 @@ stmask
 strm
 strow
 strt
+subentities
 submesh
 submeshes
 submesh's
+subpredicate
+subpredicates
 substreams
+sugoroku
 sunandmoon
+superentity
 swizzles
 syft
 sysex
@@ -448,6 +480,7 @@ texels
 texname
 texoff
 texsize
+textlength
 thps
 timecents
 tlut
@@ -458,11 +491,13 @@ tojson
 tomlkit
 tomllib
 tomlq
+tomosuke's
 tonesphere
 tonumber
 tostring
 tris
 truecolour
+truepredicate
 tryfirst
 ttcf
 tver
@@ -470,9 +505,11 @@ ubyte
 udvare
 umax
 umin
+unarchiver
 unbitrock
 uncalibratable
 uncomp
+uncompiled
 undraft
 undrafted
 unframeable
@@ -509,7 +546,9 @@ wrld
 wrlds
 wxyz
 xapk
+xcdatamodel
 xclash
+xcmappingmodel
 xcoff
 xcrun
 xfirst
@@ -526,4 +565,7 @@ zfsf
 zizmor
 zoinkity
 zonv
+zplays
+zrating
 zstr
+ztitle

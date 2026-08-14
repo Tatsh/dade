@@ -17,7 +17,9 @@ _GAMES = (
     'i76',
     'incoming',
     'marmalade',
+    'misc',
     'monopoly08',
+    'rhythmin',
     'thps2pc',
     'xg2',
 )

@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DESTIN" "1" "Aug 07, 2026" "0.0.0" "destin"
+.TH "DESTIN" "1" "Aug 14, 2026" "0.0.0" "destin"
 .SH NAME
 destin \- destin v0.0.0
 .SH COMMAND REFERENCE
@@ -2386,6 +2386,116 @@ Required argument
 .B OUTDIR
 Required argument
 .UNINDENT
+.SS misc
+.sp
+Convert platform\-level artefacts that are not tied to any one game.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin misc [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-version
+Show the version and exit.
+.UNINDENT
+.SS coredata
+.sp
+Convert the compiled Core Data model MODEL to JSON on standard output.
+.sp
+A \fB\&.cdm\fP is a compiled mapping model and a \fB\&.mom\fP a compiled managed object model; both are
+keyed archives, and each is dispatched on the class at its root. The \fB\&.omo\fP beside a
+current\-version \fB\&.mom\fP is deliberately unsupported: it is Core Data\(aqs undocumented load\-time
+cache of that same model and carries nothing the \fB\&.mom\fP lacks.
+.SS Raises
+.INDENT 0.0
+.TP
+.B click.Abort
+If MODEL is not a model this understands, or \-\-sql is asked for on something that is not a
+mapping model.
+.UNINDENT
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin misc coredata [OPTIONS] MODEL
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-archive
+Dump the raw keyed\-archive object graph rather than the model it encodes.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-mom <mom>
+Take column types and entity ordinals from this compiled destination model.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-sql
+Emit the effective SQLite script instead of JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B MODEL
+Required argument
+.UNINDENT
+.SS strings
+.sp
+Convert the localisation table STRINGS to JSON on standard output.
+.sp
+Both forms are read: the flat binary plist a compiled table ships as, and the old\-style text
+form an uncompiled one keeps.
+.SS Raises
+.INDENT 0.0
+.TP
+.B click.Abort
+If STRINGS is neither form of table.
+.UNINDENT
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin misc strings [OPTIONS] STRINGS
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B STRINGS
+Required argument
+.UNINDENT
 .SS monopoly08
 .sp
 Monopoly 2008 (EA) multi\-platform asset unpacker.
@@ -2449,6 +2559,311 @@ Arguments
 .INDENT 0.0
 .TP
 .B ROOT
+Required argument
+.UNINDENT
+.SS rhythmin
+.sp
+Decrypt and decode data files from the Konami game pop\(aqn rhythmin.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin rhythmin [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-version
+Show the version and exit.
+.UNINDENT
+.SS dump\-chara
+.sp
+Decrypt the character\-data file CHR and write it to standard output as JSON.
+.SS Raises
+.INDENT 0.0
+.TP
+.B click.Abort
+If CHR is not an encrypted payload, or its plaintext is not the JSON it should be, which
+usually means it belongs to another game or another key.
+.UNINDENT
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin rhythmin dump\-chara [OPTIONS] CHR
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-raw
+Write the decrypted bytes verbatim instead of JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B CHR
+Required argument
+.UNINDENT
+.SS dump\-idx
+.sp
+Decode the animation index IDX and write it to standard output as JSON.
+.SS Raises
+.INDENT 0.0
+.TP
+.B click.Abort
+If IDX is not an animation index, or \-\-layer names a layer it does not hold.
+.UNINDENT
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin rhythmin dump\-idx [OPTIONS] IDX
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-find <NAME>
+Emit only where NAME appears, and the group entries that refer to it.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-layer <NAME>
+Emit only layer NAME\(aqs frame\-entry chain, with its channels decoded.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-names
+Emit only the header and the three name blocks.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B IDX
+Required argument
+.UNINDENT
+.SS dump\-map
+.sp
+Parse the sugoroku board MAP and write it to standard output as JSON.
+.sp
+The board holds one square per record, with its coordinates, kind, message text, and the
+identifiers of the squares it links to, plus the deduplicated edge list the game builds from
+those links.
+.SS Raises
+.INDENT 0.0
+.TP
+.B click.Abort
+If MAP is not a board file.
+.UNINDENT
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin rhythmin dump\-map [OPTIONS] MAP
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-ascii
+Print a text board instead of JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-image <image>
+Render the board as a PNG at this path instead of printing JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-scale <scale>
+Geometry multiplier applied to every distance in \-\-image.
+.INDENT 7.0
+.TP
+.B Default
+\fB2.0\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B MAP
+Required argument
+.UNINDENT
+.SS dump\-sheet
+.sp
+Decode the SUFFIX chart of song package PACKAGE and write it to standard output as JSON.
+.sp
+PACKAGE is a \fB\&.orb\fP or \fB\&.acv\fP; the two carry completely different chart formats, and which
+one this is is detected from the decrypted payload. SUFFIX names the difficulty, so the entry
+read is \fBsheet_<SUFFIX>\fP\&.
+.SS Raises
+.INDENT 0.0
+.TP
+.B click.Abort
+If PACKAGE is not a song package, holds no chart of that difficulty, or the chart cannot be
+decrypted or laid out.
+.UNINDENT
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin rhythmin dump\-sheet [OPTIONS] PACKAGE SUFFIX
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-buttons <buttons>
+Directory holding the login_popn01..05@2x.png sprites to draw taps with.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-direction <direction>
+Reading direction of each column; auto is bottom\-up for arcade charts.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqauto\(aq\fP
+.TP
+.B Options
+auto | bottom\-up | top\-down
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-image <image>
+Render the chart as a strip image at this path instead of printing JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-lanes <lanes>
+Columns to bucket a standard chart into, osu!mania style.
+.INDENT 7.0
+.TP
+.B Default
+\fB7\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-raw
+Write the decrypted chart bytes verbatim.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-summary
+Leave the per\-record list out of the JSON.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B PACKAGE
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B SUFFIX
+Required argument
+.UNINDENT
+.SS extract\-dialogue
+.sp
+Write the sugoroku board dialogue pools from an app binary to OUTPUT.
+.sp
+The dialogue is copyrighted game content and is not shipped with this package; point \-\-binary
+at a copy of the app you own. Without it the tables are written out empty, which is what a
+build does when no binary is available.
+.SS Raises
+.INDENT 0.0
+.TP
+.B click.Abort
+If \-\-binary is not a 32\-bit Mach\-O holding the pools at the addresses this expects.
+.UNINDENT
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin rhythmin extract\-dialogue [OPTIONS] OUTPUT
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-b, \-\-binary <binary>
+App binary to read the pools out of; without it the tables are written empty.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-f, \-\-format <output_format>
+Write the compiled\-in C header or the runtime binary asset.
+.INDENT 7.0
+.TP
+.B Default
+\fB\(aqc\(aq\fP
+.TP
+.B Options
+binary | c
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B OUTPUT
 Required argument
 .UNINDENT
 .SS tonesphere
