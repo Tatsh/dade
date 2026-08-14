@@ -2460,6 +2460,71 @@ Arguments
 .B MODEL
 Required argument
 .UNINDENT
+.SS sc\-info
+.sp
+Read the SC_Info directory of a purchased application bundle.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin misc sc\-info [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.SS dump
+.sp
+Describe the SC_Info content at PATH.
+.sp
+PATH may be the SC_Info directory itself, the \fB\&.app\fP bundle holding it, or a directory
+holding that bundle, so pointing at an unpacked \fBPayload\fP works.
+.sp
+Nothing here is decrypted and none of it is a key: the report covers the purchase record, the
+embedded Apple FairPlay certificates, and the length, digest, and entropy of the key material.
+.sp
+The App Store link needs a storefront, which is read from an iTunesMetadata.plist beside the
+bundle when there is one. Without that, pass \-\-region.
+.SS Raises
+.INDENT 0.0
+.TP
+.B click.Abort
+If there is no SC_Info directory at or below PATH.
+.UNINDENT
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+destin misc sc\-info dump [OPTIONS] PATH
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-json
+Print JSON instead of a readable report.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-region <CC>
+Country code to build the App Store link with, such as jp, when the bundle has no iTunesMetadata.plist beside it to read the storefront from.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B PATH
+Required argument
+.UNINDENT
 .SS strings
 .sp
 Convert the localisation table STRINGS to JSON on standard output.

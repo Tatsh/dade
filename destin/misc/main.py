@@ -4,6 +4,7 @@ from __future__ import annotations
 import click
 
 from .commands.coredata import coredata
+from .commands.sc_info import sc_info
 from .commands.strings import strings
 
 __all__ = ('main', 'misc')
@@ -16,6 +17,7 @@ def misc() -> None:
 
 
 misc.add_command(coredata)
+misc.add_command(sc_info)
 misc.add_command(strings)
 
 

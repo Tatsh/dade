@@ -36,6 +36,8 @@ local utils = import 'utils.libjsonnet';
       anyio: utils.latestPypiPackageVersionCaret('anyio'),
       // debug_option (used by every game's CLI) was added in bascom 0.2.0.
       bascom: '>=0.2.0',
+      // Parses the Apple FairPlay certificate embedded in an SC_Info supplement file.
+      cryptography: utils.latestPypiPackageVersionCaret('cryptography'),
       jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
       mido: utils.latestPypiPackageVersionCaret('mido'),
       // numpy 2.3 dropped Python 3.10 (it requires >=3.11), which the project still supports, so
@@ -108,6 +110,7 @@ local utils = import 'utils.libjsonnet';
       intersphinx_mapping+: {
         PIL: ['https://pillow.readthedocs.io/en/stable/', null],
         click: ['https://click.palletsprojects.com/en/stable/', null],
+        cryptography: ['https://cryptography.io/en/stable/', null],
         numpy: ['https://numpy.org/doc/stable/', null],
       },
     },

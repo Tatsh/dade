@@ -1,10 +1,17 @@
 """Shared pytest configuration for the ``destin.misc`` suite."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 import plistlib
+import struct
 
 from click.testing import CliRunner
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
+from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.x509.oid import NameOID
 import pytest
 
 if TYPE_CHECKING:
@@ -434,3 +441,208 @@ def text_strings(tmp_path: Path) -> Path:
         '"odd\\ key" = "kept";\n',
         encoding='utf-8')
     return path
+
+
+def _atom(kind: bytes, body: bytes) -> bytes:
+    """
+    Build one QuickTime-style atom.
+
+    Parameters
+    ----------
+    kind : bytes
+        The four-byte type.
+    body : bytes
+        The payload.
+
+    Returns
+    -------
+    bytes
+        The atom, header included.
+    """
+    return struct.pack('>I4s', len(body) + 8, kind) + body
+
+
+def _self_signed(key: Any, common_name: str) -> bytes:
+    """
+    Build a self-signed certificate for the tests.
+
+    Parameters
+    ----------
+    key : Any
+        The private key to sign with and publish.
+    common_name : str
+        The subject and issuer common name.
+
+    Returns
+    -------
+    bytes
+        The certificate, DER-encoded.
+    """
+    name = x509.Name([
+        x509.NameAttribute(NameOID.COUNTRY_NAME, 'US'),
+        x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'Example Inc.'),
+        x509.NameAttribute(NameOID.COMMON_NAME, common_name),
+    ])
+    builder = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(
+        key.public_key()).serial_number(CERTIFICATE_SERIAL).not_valid_before(
+            datetime(2020, 1, 1, tzinfo=timezone.utc)).not_valid_after(
+                datetime(2030, 1, 1, tzinfo=timezone.utc)).add_extension(x509.BasicConstraints(
+                    ca=False, path_length=None),
+                                                                         critical=True))
+    return builder.sign(key, hashes.SHA256()).public_bytes(Encoding.DER)
+
+
+CERTIFICATE_SERIAL = 0x1234567890ABCDEF
+"""Serial number the test certificates carry."""
+SC_INFO_ACCOUNT_ID = 0x765AF8F2
+"""Apple account identifier the sample purchase record carries."""
+SC_INFO_ACCOUNT_NAME = 'Example Buyer'
+"""Account name the sample purchase record carries."""
+SC_INFO_PURCHASED = 3789925910
+"""Purchase time the sample record carries, in seconds since 1904-01-01 UTC."""
+SC_INFO_IV = bytes(range(16))
+"""Initialisation vector the sample purchase record carries."""
+SC_INFO_IDENTIFIER = bytes(range(20))
+"""The 20-byte identifier the sample supplements share."""
+SUPP_RECORD_COUNT = 3
+"""How many 32-byte records the sample ``.supp`` carries."""
+
+
+@pytest.fixture(scope='session')
+def ec_certificate_der() -> bytes:
+    """
+    Build a self-signed elliptic-curve certificate once for the whole suite.
+
+    Returns
+    -------
+    bytes
+        The certificate, DER-encoded.
+    """
+    return _self_signed(ec.generate_private_key(ec.SECP256R1()), 'Example EC Leaf')
+
+
+@pytest.fixture(scope='session')
+def rsa_certificate_der() -> bytes:
+    """
+    Build a self-signed RSA certificate once for the whole suite.
+
+    Returns
+    -------
+    bytes
+        The certificate, DER-encoded.
+    """
+    return _self_signed(rsa.generate_private_key(public_exponent=65537, key_size=2048),
+                        'Example RSA Leaf')
+
+
+@pytest.fixture
+def sinf_bytes() -> bytes:
+    """
+    Build a purchase record carrying every atom the reader surfaces.
+
+    Returns
+    -------
+    bytes
+        The ``.sinf`` contents.
+    """
+    rights = b''.join((
+        b'veID' + bytes.fromhex('000036f3'),
+        b'plat' + bytes.fromhex('00000005'),
+        b'aver' + bytes.fromhex('01010100'),
+        b'tran' + struct.pack('>I', SC_INFO_PURCHASED - 1),
+        b'song' + bytes.fromhex('1c244a91'),
+        b'tool' + b'P609',
+        b'mode' + bytes.fromhex('00002000'),
+    )) + bytes.fromhex('8a34795bffffffee')
+    schi = b''.join((
+        _atom(b'user', struct.pack('>I', SC_INFO_ACCOUNT_ID)),
+        _atom(b'crdt', struct.pack('>I', SC_INFO_PURCHASED)),
+        _atom(b'asdt', struct.pack('>I', 0)),
+        _atom(b'key ', struct.pack('>I', 6)),
+        _atom(b'iviv', SC_INFO_IV),
+        _atom(b'righ', rights),
+        _atom(b'name',
+              SC_INFO_ACCOUNT_NAME.encode().ljust(256, b'\0')),
+        _atom(b'priv',
+              bytes(range(256)) * 2),
+    ))
+    return _atom(
+        b'sinf', b''.join((
+            _atom(b'frma', b'game'),
+            _atom(b'schm', b'\0\0\0\0itun\0\0\0\0'),
+            _atom(b'schi', schi),
+            _atom(b'sign', bytes(128)),
+        )))
+
+
+@pytest.fixture
+def supf_bytes(ec_certificate_der: bytes) -> bytes:
+    """
+    Build a ``.supf`` supplement in the real length-prefixed layout.
+
+    Returns
+    -------
+    bytes
+        The ``.supf`` contents.
+    """
+    body = (struct.pack('>4I', 1, 64, 0x0100000C, 0) + SC_INFO_IDENTIFIER + struct.pack('>I', 1) +
+            bytes(range(32)))
+    assert len(body) == 72
+    return (b'\x03507' + struct.pack('>I', len(body)) + body +
+            struct.pack('>I', len(ec_certificate_der)) + ec_certificate_der +
+            struct.pack('>I', 128) + bytes(range(128)))
+
+
+@pytest.fixture
+def supp_bytes(rsa_certificate_der: bytes) -> bytes:
+    """
+    Build a ``.supp`` supplement holding a counted record table and its own certificate.
+
+    Returns
+    -------
+    bytes
+        The ``.supp`` contents.
+    """
+    records = b''.join(bytes([index]) * 32 for index in range(SUPP_RECORD_COUNT))
+    return (b'\x01507' + SC_INFO_IDENTIFIER + struct.pack('>I', SUPP_RECORD_COUNT) + records +
+            struct.pack('>I', len(rsa_certificate_der)) + rsa_certificate_der + bytes(128))
+
+
+@pytest.fixture
+def supx_bytes() -> bytes:
+    """
+    Build a ``.supx`` supplement holding two tagged entries.
+
+    Returns
+    -------
+    bytes
+        The ``.supx`` contents.
+    """
+    body = (struct.pack('>II', 1, 16) + bytes(range(16)) + struct.pack('>II', 2, 16) +
+            bytes(range(16, 32)) + struct.pack('>II', 0, 0))
+    return struct.pack('>II', 1, len(body)) + body + b'\xcc' * 8
+
+
+@pytest.fixture
+def sc_info_dir(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes: bytes,
+                supx_bytes: bytes) -> Path:
+    """
+    Write a complete ``SC_Info`` directory inside a bundle inside a payload directory.
+
+    Returns
+    -------
+    pathlib.Path
+        The ``Payload`` directory holding the bundle, so the search is exercised too.
+    """
+    directory = tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
+    directory.mkdir(parents=True)
+    (directory / 'Manifest.plist').write_bytes(
+        plistlib.dumps({
+            'SinfPaths': ['SC_Info/Example.sinf'],
+            'SinfReplicationPaths': ['SC_Info/Example.sinf'],
+        }))
+    (directory / 'Example.sinf').write_bytes(sinf_bytes)
+    (directory / 'Example.supf').write_bytes(supf_bytes)
+    (directory / 'Example.supp').write_bytes(supp_bytes)
+    (directory / 'Example.supx').write_bytes(supx_bytes)
+    return tmp_path / 'Payload'

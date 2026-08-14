@@ -26,6 +26,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Core Data mapping (`.cdm`) or managed object (`.mom`) model to JSON, dumps the raw keyed archive,
   or emits the effective SQLite migration script; `strings` reads an Xcode `.strings` table in
   either the compiled or the old-style text form.
+- `destin misc sc-info dump`, which describes the `SC_Info` FairPlay bookkeeping in a purchased
+  application bundle: the store item ID and App Store link, the manifest, the `.sinf` purchase
+  record and its atom tree, the `.supf` and `.supp` supplements broken into their length-prefixed
+  parts, the two Apple FairPlay certificates they embed with every extension broken out, the
+  `.supx` tagged entries, and cross-checks between the parts. It accepts the `SC_Info` directory,
+  the bundle, the `Payload` directory, or a directory holding `Payload`. `--json` prints the same
+  information as JSON, and `--region` supplies the storefront when no `iTunesMetadata.plist` sits
+  beside the bundle. It decrypts nothing and prints no key material.
 - `ian2obj` and `extract-pvr-pack` command-line utilities, now `destin incoming ian2obj` and
   `destin incoming extract-pvr-pack`.
 - `ian2obj` converts Dreamcast `*_M.BIN` model packs in addition to PC `.ian` meshes.

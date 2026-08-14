@@ -25,6 +25,7 @@ appinfo
 argb
 arow
 ascontiguousarray
+asdt
 asyncio
 autodoc
 automodule
@@ -83,6 +84,7 @@ cooldown
 coredata
 coveragerc
 coverallsapp
+crdt
 cstring
 cstrings
 ctypes
@@ -160,6 +162,7 @@ foxundermoon
 frag
 frds
 frec
+frma
 fromarray
 frombuffer
 frombytes
@@ -220,6 +223,8 @@ isort
 istart
 iterdir
 itertools
+itun
+iviv
 iwgxfontbrowser
 jinja
 jsonnet
@@ -345,6 +350,7 @@ preapproved
 pred
 prga
 primarykey
+priv
 proc
 prodvers
 prov
@@ -370,6 +376,7 @@ pytestmark
 pythonhosted
 qscale
 qseq
+quicktime
 rawptr
 rawsize
 rb'decompresscommand
@@ -380,6 +387,7 @@ regen
 resgroup
 rgba
 rhythmin
+righ
 ripgreprc
 rndartt
 rndobject
@@ -398,12 +406,15 @@ scancodes
 scei
 scel
 schemafile
+schi
 schl
+schm
 sdae
 sdfc
 sdfsgeo
 sdist
 sdta
+secp
 segs
 setattr
 settile
@@ -421,6 +432,7 @@ shps
 shpx
 siga
 signtool
+sinf
 sixsec
 sjis
 skhan
@@ -453,6 +465,8 @@ stcol
 stcycl
 stdlib
 stmask
+storefront
+storefronts
 strm
 strow
 strt
@@ -466,6 +480,9 @@ substreams
 sugoroku
 sunandmoon
 superentity
+supf
+supp
+supx
 swizzles
 syft
 sysex
@@ -495,6 +512,7 @@ tomosuke's
 tonesphere
 tonumber
 tostring
+tran
 tris
 truecolour
 truepredicate

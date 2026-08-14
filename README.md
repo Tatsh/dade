@@ -197,15 +197,39 @@ JSON to standard output:
 
 ```shell
 destin misc coredata MODEL
+destin misc sc-info dump PATH
 destin misc strings STRINGS
 ```
 
-Converters for platform-level formats that belong to no single game. `coredata` deserialises a
-compiled Core Data model — a `.cdm` mapping model or a `.mom` managed object model — to JSON,
-optionally dumping the raw keyed archive (`--archive`) or emitting the SQLite script the migration
-amounts to (`--sql`, with `--mom` supplying the destination model's column types). `strings` reads
-an Xcode `.strings` localisation table in either the compiled binary plist form or the old-style
-text form and writes it as JSON.
+Converters and readers for platform-level formats that belong to no single game. `coredata`
+deserialises a compiled Core Data model — a `.cdm` mapping model or a `.mom` managed object model —
+to JSON, optionally dumping the raw keyed archive (`--archive`) or emitting the SQLite script the
+migration amounts to (`--sql`, with `--mom` supplying the destination model's column types).
+`strings` reads an Xcode `.strings` localisation table in either the compiled binary plist form or
+the old-style text form and writes it as JSON.
+
+`sc-info dump` describes the `SC_Info` directory an App Store download carries beside its encrypted
+executable:
+
+- the store item ID and, given a storefront, the App Store link;
+- the `Manifest.plist`;
+- the `.sinf` purchase record — buying account, purchase and transaction times, initialisation
+  vector, the `righ` tag block, and the atom tree with every leaf's value decoded;
+- the `.supf` and `.supp` supplements, each broken into its length-prefixed parts, including the
+  two different Apple FairPlay certificates they embed (subject, issuer, validity, key, and every
+  extension broken out field by field);
+- the `.supx` tagged entries, and cross-checks between the parts.
+
+`PATH` may be the `SC_Info` directory, the `.app` bundle holding it, the `Payload` directory
+holding that, or a directory holding `Payload`; a `Payload` with more than one bundle in it is an
+error. `--json` prints the same information as JSON.
+
+The App Store link needs a storefront, since a store item is only reachable in the store it was
+sold in. That comes from an `iTunesMetadata.plist` beside the bundle when there is one; otherwise
+pass `--region`, as in `--region jp`.
+
+Nothing is decrypted. The only things left whole are the signatures, the key blobs, and the
+encrypted `priv` body, which are reported with their length, digest, and bytes.
 
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 

@@ -81,6 +81,7 @@ html_theme_options = {
 intersphinx_mapping = {
     'PIL': ('https://pillow.readthedocs.io/en/stable/', None),
     'click': ('https://click.palletsprojects.com/en/stable/', None),
+    'cryptography': ('https://cryptography.io/en/stable/', None),
     'python': ('https://docs.python.org/3', None)
 }
 
