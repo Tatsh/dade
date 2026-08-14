@@ -13,8 +13,9 @@ the material it prints is a key.
   four-character tags, and the encrypted ``priv`` blob, with a signature over the lot in ``sign``.
 - ``<App>.supf`` is a run of length-prefixed blocks: a four-byte magic, a 72-byte body carrying an
   identifier and a 32-byte key blob, a DER-encoded Apple FairPlay certificate, and a signature.
-- ``<App>.supp`` mirrors it, with the same identifier, a counted table of 32-byte records, a second
-  and different Apple FairPlay certificate, and a signature.
+- ``<App>.supp`` mirrors it, with the same identifier, a counted table of 32-byte records whose
+  last entry is the ``.supf`` key blob, a second and different Apple FairPlay certificate, and a
+  signature.
 - ``<App>.supx`` is a length-prefixed run of tagged entries closed by a zero terminator.
 
 The ``.sinf`` is the only one of these with a published shape; the three supplements are described
@@ -447,7 +448,13 @@ class Supp(NamedTuple):
     identifier: bytes
     """The 20-byte identifier the ``.supf`` carries too."""
     records: tuple[bytes, ...]
-    """The 32-byte records. Key material, so there is nothing inside them to read."""
+    """The 32-byte records, of which the last is the ``.supf`` key blob.
+
+    Each is 256 bits of key material with nothing inside it to read: across both sample bundles no
+    record repeats, none is shared between the two, and none is derivable from another or from
+    anything else in the directory. Only their count varies, 17 against 8, which would fit one per
+    entitled item with the app's own key last, though nothing in the files settles that.
+    """
     certificate: CertificateSummary | None
     """The embedded certificate's summary, which is a different one from the ``.supf``'s."""
     certificate_der: bytes | None
