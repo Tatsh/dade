@@ -8,7 +8,7 @@ import logging
 from destin.misc.sc_info import read_sc_info, render_text, sc_info_to_json
 import click
 
-from .utils import READABLE_DIR, debug_option
+from .utils import READABLE_PATH, debug_option
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -24,7 +24,7 @@ def sc_info() -> None:
 
 
 @sc_info.command()
-@click.argument('path', metavar='PATH', type=READABLE_DIR)
+@click.argument('path', metavar='PATH', type=READABLE_PATH)
 @click.option('--json', 'as_json', is_flag=True, help='Print JSON instead of a readable report.')
 @click.option('--region',
               metavar='CC',
@@ -35,8 +35,9 @@ def dump(path: Path, region: str | None, *, as_json: bool) -> None:
     """
     Describe the SC_Info content at PATH.
 
-    PATH may be the SC_Info directory itself, the ``.app`` bundle holding it, or a directory
-    holding that bundle, so pointing at an unpacked ``Payload`` works.
+    PATH may be an ``.ipa``, which is read without being unpacked, or the SC_Info directory
+    itself, the ``.app`` bundle holding it, the ``Payload`` directory holding that, or a directory
+    holding ``Payload``.
 
     Nothing here is decrypted and none of it is a key: the report covers the purchase record, the
     embedded Apple FairPlay certificates, and the length, digest, and entropy of the key material.

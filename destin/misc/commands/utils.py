@@ -6,7 +6,7 @@ from pathlib import Path
 import bascom
 import click
 
-__all__ = ('READABLE_DIR', 'READABLE_FILE', 'debug_option')
+__all__ = ('READABLE_DIR', 'READABLE_FILE', 'READABLE_PATH', 'debug_option')
 
 debug_option = bascom.debug_option({'destin.misc': {}})
 """Attach ``-d/--debug`` to a leaf command and route it through :py:func:`bascom.setup_logging`.
@@ -20,6 +20,11 @@ READABLE_FILE = click.Path(dir_okay=False, exists=True, path_type=Path)
 """
 READABLE_DIR = click.Path(exists=True, file_okay=False, path_type=Path)
 """Click type for an argument naming a directory that must already exist.
+
+:meta hide-value:
+"""
+READABLE_PATH = click.Path(exists=True, path_type=Path)
+"""Click type for an argument naming an existing file or directory.
 
 :meta hide-value:
 """

@@ -2,8 +2,9 @@
 Reading of the ``SC_Info`` directory Apple puts inside a purchased ``.app`` bundle.
 
 An App Store download carries its FairPlay bookkeeping in ``Payload/<App>.app/SC_Info``, beside the
-encrypted executable. This reads that directory and describes it; it decrypts nothing, and none of
-the material it prints is a key.
+encrypted executable. This reads that directory and describes it, either from an unpacked tree or
+from inside an ``.ipa`` without unpacking it; it decrypts nothing, and none of the material it
+prints is a key.
 
 - ``Manifest.plist`` lists the supporting files, normally under ``SinfPaths`` and
   ``SinfReplicationPaths``.
@@ -40,6 +41,7 @@ import plistlib
 import re
 import string
 import struct
+import zipfile
 
 from .certificate import (
     CertificateSummary,
@@ -360,6 +362,27 @@ class Right(NamedTuple):
         if self.tag in _VERSION_RIGHTS:
             return '.'.join(str(byte) for byte in self.raw)
         return str(self.value)
+
+    @property
+    def decoded(self) -> Any:
+        """
+        The value in its natural type.
+
+        A timestamp tag comes back as an ISO 8601 string, a text tag as the text, a version tag as
+        a dotted quad, and anything else as the unsigned integer.
+
+        Returns
+        -------
+        Any
+            The decoded value.
+        """
+        if self.tag in _DATE_RIGHTS:
+            return _quicktime_time(self.value).isoformat()
+        if self.tag in _TEXT_RIGHTS and all(byte in _PRINTABLE for byte in self.raw):
+            return self.raw.decode('latin1')
+        if self.tag in _VERSION_RIGHTS:
+            return '.'.join(str(byte) for byte in self.raw)
+        return self.value
 
     @property
     def value(self) -> int:
@@ -1031,9 +1054,9 @@ def _locate(path: Path) -> Path:
     raise ValueError(msg)
 
 
-def _find_metadata(directory: Path) -> dict[str, Any] | None:
+def _find_metadata_path(directory: Path) -> Path | None:
     """
-    Read the ``iTunesMetadata.plist`` sitting beside the bundle, if there is one.
+    Locate the ``iTunesMetadata.plist`` sitting beside the bundle, if there is one.
 
     In an unpacked ``.ipa`` the file sits next to ``Payload``, two levels above the ``.app``, so
     the search walks up from the ``SC_Info`` directory rather than looking in one fixed place.
@@ -1045,72 +1068,80 @@ def _find_metadata(directory: Path) -> dict[str, Any] | None:
 
     Returns
     -------
-    dict[str, Any] | None
-        The parsed plist, or ``None`` when there is none or it does not parse.
+    pathlib.Path | None
+        The file, or ``None`` when there is none.
     """
-    for parent in [directory, *directory.parents][:_METADATA_SEARCH_DEPTH]:
-        candidate = parent / _METADATA_NAME
-        if not candidate.is_file():
-            continue
-        try:
-            loaded = plistlib.loads(candidate.read_bytes())
-        except (OSError, plistlib.InvalidFileException):
-            return None
-        return loaded if isinstance(loaded, dict) else None
-    return None
+    return next((candidate for parent in [directory, *directory.parents][:_METADATA_SEARCH_DEPTH]
+                 if (candidate := parent / _METADATA_NAME).is_file()), None)
 
 
-def read_sc_info(path: Path, region: str | None = None) -> ScInfo:
+def _build(path: Path, contents: dict[str, bytes], metadata: bytes | None,
+           region: str | None) -> ScInfo:
     """
-    Read an ``SC_Info`` directory.
+    Assemble the reading of one ``SC_Info`` directory from its files' bytes.
+
+    The bytes come from a directory or from inside an ``.ipa``, and everything after that is the
+    same, so both routes end here.
 
     Parameters
     ----------
     path : pathlib.Path
-        The ``SC_Info`` directory, the ``.app`` bundle holding it, the ``Payload`` directory
-        holding that, or a directory holding ``Payload``.
+        Where the directory is, for the report to name.
+    contents : dict[str, bytes]
+        File name to contents, for the files in the ``SC_Info`` directory.
+    metadata : bytes | None
+        The ``iTunesMetadata.plist`` beside the bundle, when there is one.
     region : str | None
-        A country code to build the App Store link with, for a bundle with no
-        ``iTunesMetadata.plist`` beside it to read the storefront from.
+        A country code supplied by the caller.
 
     Returns
     -------
     ScInfo
         Everything that could be read. A file that is absent, and a file that is present but
         unreadable, both leave their field ``None``, so a partial directory still describes itself.
-
-    Notes
-    -----
-    A path with no ``SC_Info`` directory at or below it raises the :py:class:`ValueError` the
-    lookup raises.
     """
-    directory = _locate(path)
-    files = tuple((entry.name, entry.stat().st_size, hashlib.sha256(entry.read_bytes()).hexdigest())
-                  for entry in sorted(directory.iterdir()) if entry.is_file())
-    manifest = None
-    if (plist := directory / 'Manifest.plist').is_file():
-        try:
-            loaded = plistlib.loads(plist.read_bytes())
-        except plistlib.InvalidFileException:
-            loaded = None
-        manifest = loaded if isinstance(loaded, dict) else None
-    return ScInfo(directory, manifest, _read_one(directory, '*.sinf', parse_sinf),
-                  _read_one(directory, '*.supf', parse_supf),
-                  _read_one(directory, '*.supp', parse_supp),
-                  _read_one(directory, '*.supx', parse_supx), files, _find_metadata(directory),
-                  region)
+    files = tuple((name, len(data), hashlib.sha256(data).hexdigest())
+                  for name, data in sorted(contents.items()))
+    return ScInfo(path, _load_plist(contents.get('Manifest.plist')),
+                  _parse_one(contents, '.sinf', parse_sinf),
+                  _parse_one(contents, '.supf', parse_supf),
+                  _parse_one(contents, '.supp', parse_supp),
+                  _parse_one(contents, '.supx', parse_supx), files, _load_plist(metadata), region)
 
 
-def _read_one(directory: Path, pattern: str, parse: Callable[[bytes], Any]) -> Any:
+def _load_plist(data: bytes | None) -> dict[str, Any] | None:
     """
-    Read and parse the single file matching a pattern, if there is one.
+    Parse a property list, tolerating one that is absent or unreadable.
 
     Parameters
     ----------
-    directory : pathlib.Path
-        The directory to look in.
-    pattern : str
-        The glob to match.
+    data : bytes | None
+        The plist's bytes, or ``None``.
+
+    Returns
+    -------
+    dict[str, Any] | None
+        The parsed mapping, or ``None`` when there is none or its root is not a mapping.
+    """
+    if data is None:
+        return None
+    try:
+        loaded = plistlib.loads(data)
+    except plistlib.InvalidFileException:
+        return None
+    return loaded if isinstance(loaded, dict) else None
+
+
+def _parse_one(contents: dict[str, bytes], suffix: str, parse: Callable[[bytes], Any]) -> Any:
+    """
+    Parse the single file carrying a suffix, if there is one.
+
+    Parameters
+    ----------
+    contents : dict[str, bytes]
+        File name to contents.
+    suffix : str
+        The suffix to match, such as ``.sinf``.
     parse : Callable[[bytes], Any]
         The parser to hand the bytes to. The return type follows the parser, which is why this is
         annotated loosely; each call site knows what it asked for.
@@ -1120,13 +1151,115 @@ def _read_one(directory: Path, pattern: str, parse: Callable[[bytes], Any]) -> A
     Any
         The parsed file, or ``None`` when it is absent or does not parse.
     """
-    found = sorted(directory.glob(pattern))
+    found = sorted(name for name in contents if name.endswith(suffix))
     if not found:
         return None
     try:
-        return parse(found[0].read_bytes())
-    except (OSError, ValueError):
+        return parse(contents[found[0]])
+    except ValueError:
         return None
+
+
+def _directory_contents(directory: Path) -> dict[str, bytes]:
+    """
+    Read every file in a directory.
+
+    Parameters
+    ----------
+    directory : pathlib.Path
+        The directory to read.
+
+    Returns
+    -------
+    dict[str, bytes]
+        File name to contents, skipping anything that cannot be read.
+    """
+    contents: dict[str, bytes] = {}
+    for entry in sorted(directory.iterdir()):
+        if not entry.is_file():
+            continue
+        try:
+            contents[entry.name] = entry.read_bytes()
+        except OSError:
+            continue
+    return contents
+
+
+def _ipa_contents(archive: zipfile.ZipFile,
+                  path: Path) -> tuple[Path, dict[str, bytes], bytes | None]:
+    """
+    Read one bundle's ``SC_Info`` out of an ``.ipa`` without unpacking it.
+
+    Parameters
+    ----------
+    archive : zipfile.ZipFile
+        The opened archive.
+    path : pathlib.Path
+        The archive's own path, for the report to name.
+
+    Returns
+    -------
+    tuple[pathlib.Path, dict[str, bytes], bytes | None]
+        Where the directory sits inside the archive, its files, and the metadata beside the bundle.
+
+    Raises
+    ------
+    ValueError
+        If the archive holds no ``SC_Info`` directory, or holds more than one bundle.
+    """
+    marker = f'/{_SC_INFO_NAME}/'
+    bundles = sorted({name.rsplit(marker, 1)[0] for name in archive.namelist() if marker in name})
+    if not bundles:
+        msg = f'No {_SC_INFO_NAME} directory in {path}.'
+        raise ValueError(msg)
+    if len(bundles) > 1:
+        msg = f'{path} holds {len(bundles)} bundles, not one: {", ".join(bundles)}.'
+        raise ValueError(msg)
+    prefix = f'{bundles[0]}{marker}'
+    contents = {
+        name[len(prefix):]: archive.read(name)
+        for name in archive.namelist() if name.startswith(prefix) and not name.endswith('/')
+    }
+    metadata = next((archive.read(name)
+                     for name in archive.namelist() if name.rsplit('/', 1)[-1] == _METADATA_NAME),
+                    None)
+    return path / prefix.rstrip('/'), contents, metadata
+
+
+def read_sc_info(path: Path, region: str | None = None) -> ScInfo:
+    """
+    Read an ``SC_Info`` directory, from a directory tree or from inside an ``.ipa``.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        An ``.ipa``, or the ``SC_Info`` directory, the ``.app`` bundle holding it, the ``Payload``
+        directory holding that, or a directory holding ``Payload``.
+    region : str | None
+        A country code to build the App Store link with, for a bundle with no
+        ``iTunesMetadata.plist`` beside it to read the storefront from.
+
+    Returns
+    -------
+    ScInfo
+        Everything that could be read.
+
+    Raises
+    ------
+    ValueError
+        If no ``SC_Info`` directory can be reached from there, or more than one bundle is present.
+    """
+    if path.is_file():
+        if not zipfile.is_zipfile(path):
+            msg = f'{path} is a file but not an .ipa; name an .ipa or an unpacked directory.'
+            raise ValueError(msg)
+        with zipfile.ZipFile(path) as archive:
+            inside, contents, metadata = _ipa_contents(archive, path)
+        return _build(inside, contents, metadata, region)
+    directory = _locate(path)
+    found = _find_metadata_path(directory)
+    return _build(directory, _directory_contents(directory),
+                  found.read_bytes() if found is not None else None, region)
 
 
 def _digest(data: bytes) -> str:
@@ -1474,22 +1607,18 @@ def _right_to_json(right: Right) -> dict[str, Any]:
     Returns
     -------
     dict[str, Any]
-        The tag, its description where there is one, the value, and a readable rendering of
-        the value where that says more than the integer does.
+        The tag, its description where there is one, and the value in its natural type.
     """
     rendered: dict[str, Any] = {'tag': right.tag}
     if right.description is not None:
         rendered['description'] = right.description
-    rendered['uint32'] = right.value
-    # Only worth giving where it says something the integer does not, such as a date or a string.
-    if right.rendered != str(right.value):
-        rendered['rendered'] = right.rendered
+    rendered['value'] = right.decoded
     return rendered
 
 
-def _decoded_atom_body(atom: Atom) -> dict[str, Any] | None:
+def _atom_value(atom: Atom) -> Any:
     """
-    Break down the atoms whose payload is neither plain text nor one unsigned integer.
+    Decode a leaf atom's payload into its natural type.
 
     Parameters
     ----------
@@ -1498,15 +1627,17 @@ def _decoded_atom_body(atom: Atom) -> dict[str, Any] | None:
 
     Returns
     -------
-    dict[str, Any] | None
-        The decoded fields, or ``None`` for an atom with nothing to break down.
+    Any
+        A mapping for the atoms with named fields, a list of integers for the initialisation
+        vector, an ISO 8601 string for a timestamp, the text or the unsigned integer where it is
+        one of those, and the hexadecimal bytes when it is none of them.
     """
     if atom.kind == 'righ':
         rights, trailer = _parse_rights(atom.body)
-        decoded: dict[str, Any] = {'rights': [_right_to_json(right) for right in rights]}
+        value: dict[str, Any] = {'rights': [_right_to_json(right) for right in rights]}
         if trailer:
-            decoded['trailer'] = trailer.hex()
-        return decoded
+            value['trailer'] = trailer.hex()
+        return value
     if atom.kind == 'schm' and len(atom.body) >= _SCHEME_TYPE.stop:
         return {
             'version': int.from_bytes(atom.body[:4], 'big'),
@@ -1514,17 +1645,21 @@ def _decoded_atom_body(atom: Atom) -> dict[str, Any] | None:
             'schemeVersion': int.from_bytes(atom.body[_SCHEME_TYPE.stop:], 'big'),
         }
     if atom.kind == 'iviv':
-        return {'bytes': list(atom.body)}
-    return None
+        return list(atom.body)
+    if (as_text := _atom_text(atom.body)) is not None:
+        return as_text
+    if len(atom.body) == _TAG_SIZE:
+        number = int.from_bytes(atom.body, 'big')
+        return _quicktime_time(number).isoformat() if atom.kind in _DATE_ATOMS else number
+    return atom.body.hex()
 
 
 def _atom_to_json(atom: Atom) -> dict[str, Any]:
     """
     Render one atom as JSON-ready values.
 
-    A container carries its children. A leaf carries its payload read as text or as an unsigned
-    integer where it is one of those, and the raw bytes only where it is neither, since the hex
-    would otherwise just repeat the decoded value.
+    A container carries its children; a leaf carries one ``value`` in whatever type the payload
+    turns out to be, so a reader never has to know which key to look under.
 
     Offsets and sizes are left to :func:`render_text`, whose tree is the structural map; here they
     would only restate where the walk already put each atom.
@@ -1544,21 +1679,8 @@ def _atom_to_json(atom: Atom) -> dict[str, Any]:
         rendered['description'] = atom.description
     if atom.children:
         rendered['children'] = [_atom_to_json(child) for child in atom.children]
-        return rendered
-    if (decoded := _decoded_atom_body(atom)) is not None:
-        rendered.update(decoded)
-    elif (as_text := _atom_text(atom.body)) is not None:
-        rendered['text'] = as_text
-    elif len(atom.body) == _TAG_SIZE:
-        number = int.from_bytes(atom.body, 'big')
-        rendered['uint32'] = number
-        if atom.kind in _DATE_ATOMS:
-            rendered['iso8601'] = _quicktime_time(number).isoformat()
     else:
-        # Nothing was decoded, so the bytes themselves are all there is to give, and their count
-        # is worth stating beside them.
-        rendered['bodySize'] = len(atom.body)
-        rendered['body'] = atom.body.hex()
+        rendered['value'] = _atom_value(atom)
     return rendered
 
 

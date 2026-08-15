@@ -30,10 +30,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   application bundle: the store item ID and App Store link, the manifest, the `.sinf` purchase
   record and its atom tree, the `.supf` and `.supp` supplements broken into their length-prefixed
   parts, the two Apple FairPlay certificates they embed with every extension broken out, the
-  `.supx` tagged entries, and cross-checks between the parts. It accepts the `SC_Info` directory,
-  the bundle, the `Payload` directory, or a directory holding `Payload`. `--json` prints the same
-  information as JSON, and `--region` supplies the storefront when no `iTunesMetadata.plist` sits
-  beside the bundle. It decrypts nothing and prints no key material.
+  `.supx` tagged entries, and cross-checks between the parts. It accepts an `.ipa`, read in place
+  without being unpacked, or the `SC_Info` directory, the bundle, the `Payload` directory, or a
+  directory holding `Payload`. `--json` prints the same information as JSON, and `--region`
+  supplies the storefront when no `iTunesMetadata.plist` sits beside the bundle. It decrypts
+  nothing and prints no key material.
 - `ian2obj` and `extract-pvr-pack` command-line utilities, now `destin incoming ian2obj` and
   `destin incoming extract-pvr-pack`.
 - `ian2obj` converts Dreamcast `*_M.BIN` model packs in addition to PC `.ian` meshes.

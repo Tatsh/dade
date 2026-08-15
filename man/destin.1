@@ -27,7 +27,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DESTIN" "1" "Aug 14, 2026" "0.0.0" "destin"
+.TH "DESTIN" "1" "Aug 15, 2026" "0.0.0" "destin"
 .SH NAME
 destin \- destin v0.0.0
 .SH COMMAND REFERENCE
@@ -2477,8 +2477,9 @@ destin misc sc\-info [OPTIONS] COMMAND [ARGS]...
 .sp
 Describe the SC_Info content at PATH.
 .sp
-PATH may be the SC_Info directory itself, the \fB\&.app\fP bundle holding it, or a directory
-holding that bundle, so pointing at an unpacked \fBPayload\fP works.
+PATH may be an \fB\&.ipa\fP, which is read without being unpacked, or the SC_Info directory
+itself, the \fB\&.app\fP bundle holding it, the \fBPayload\fP directory holding that, or a directory
+holding \fBPayload\fP\&.
 .sp
 Nothing here is decrypted and none of it is a key: the report covers the purchase record, the
 embedded Apple FairPlay certificates, and the length, digest, and entropy of the key material.

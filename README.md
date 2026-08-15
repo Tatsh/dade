@@ -220,9 +220,10 @@ executable:
   extension broken out field by field);
 - the `.supx` tagged entries, and cross-checks between the parts.
 
-`PATH` may be the `SC_Info` directory, the `.app` bundle holding it, the `Payload` directory
-holding that, or a directory holding `Payload`; a `Payload` with more than one bundle in it is an
-error. `--json` prints the same information as JSON.
+`PATH` may be an `.ipa`, which is read in place without being unpacked, or the `SC_Info`
+directory, the `.app` bundle holding it, the `Payload` directory holding that, or a directory
+holding `Payload`. More than one bundle is an error either way. `--json` prints the same
+information as JSON.
 
 The App Store link needs a storefront, since a store item is only reachable in the store it was
 sold in. That comes from an `iTunesMetadata.plist` beside the bundle when there is one; otherwise

@@ -53,10 +53,6 @@ def test_dump_aborts_without_an_sc_info_directory(runner: CliRunner, tmp_path: P
     assert 'No SC_Info directory' in result.output
 
 
-def test_dump_rejects_a_file(runner: CliRunner, compiled_strings: Path) -> None:
-    assert runner.invoke(sc_info, ('dump', str(compiled_strings))).exit_code == 2
-
-
 def test_dump_on_an_empty_directory(runner: CliRunner, tmp_path: Path) -> None:
     (tmp_path / 'SC_Info').mkdir()
     result = runner.invoke(sc_info, ('dump', str(tmp_path)))
@@ -79,3 +75,17 @@ def test_dump_without_a_region_says_why_there_is_no_url(runner: CliRunner,
     assert result.exit_code == 0
     assert 'App Store URL: unknown' in result.output
     assert 'Store item ID: 472140433' in result.output
+
+
+def test_dump_accepts_an_ipa(runner: CliRunner, sc_info_ipa: Path) -> None:
+    result = runner.invoke(sc_info, ('dump', str(sc_info_ipa), '--json'))
+    assert result.exit_code == 0
+    rendered = json.loads(result.output)
+    assert rendered['region'] == 'jp'
+    assert rendered['supp']['records']
+
+
+def test_dump_rejects_a_file_that_is_not_an_ipa(runner: CliRunner, text_strings: Path) -> None:
+    result = runner.invoke(sc_info, ('dump', str(text_strings)))
+    assert result.exit_code == 1
+    assert 'is a file but not an .ipa' in result.output

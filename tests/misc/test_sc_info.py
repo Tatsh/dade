@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import plistlib
 import struct
+import zipfile
 
 from destin.misc.sc_info import (
     find_atom,
@@ -24,6 +25,7 @@ from .conftest import (
     SC_INFO_ACCOUNT_NAME,
     SC_INFO_IDENTIFIER,
     SC_INFO_IV,
+    SC_INFO_MANIFEST,
     SC_INFO_PURCHASED,
     SUPP_RECORD_COUNT,
 )
@@ -442,10 +444,10 @@ def test_a_supplied_region_wins_over_the_storefront(tmp_path: Path, sinf_bytes: 
 def test_atom_json_breaks_down_rights(sc_info_dir: Path) -> None:
     atoms = sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['atoms']
     righ = next(a for a in atoms[0]['children'][2]['children'] if a['type'] == 'righ')
-    assert 'body' not in righ
-    assert [right['tag'] for right in righ['rights']][:3] == ['veID', 'plat', 'aver']
-    assert righ['rights'][1]['description'] == 'Platform'
-    assert righ['trailer'] == '8a34795bffffffee'
+    rights = righ['value']['rights']
+    assert [right['tag'] for right in rights][:3] == ['veID', 'plat', 'aver']
+    assert rights[1]['description'] == 'Platform'
+    assert righ['value']['trailer'] == '8a34795bffffffee'
 
 
 def test_atom_json_breaks_down_the_scheme(sc_info_dir: Path) -> None:
@@ -454,28 +456,96 @@ def test_atom_json_breaks_down_the_scheme(sc_info_dir: Path) -> None:
     assert schm == {
         'type': 'schm',
         'description': 'Scheme',
-        'version': 0,
-        'schemeType': 'itun',
-        'schemeVersion': 0,
+        'value': {
+            'version': 0,
+            'schemeType': 'itun',
+            'schemeVersion': 0
+        },
     }
 
 
 def test_atom_json_gives_the_iv_as_integers(sc_info_dir: Path) -> None:
     atoms = sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['atoms']
     iviv = next(a for a in atoms[0]['children'][2]['children'] if a['type'] == 'iviv')
-    assert iviv['bytes'] == list(SC_INFO_IV)
-    assert 'body' not in iviv
+    assert iviv['value'] == list(SC_INFO_IV)
 
 
-def test_atom_json_omits_layout_for_decoded_leaves(sc_info_dir: Path) -> None:
+def test_atom_json_puts_every_leaf_value_under_one_key(sc_info_dir: Path) -> None:
     atoms = sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['atoms']
-    user = next(a for a in atoms[0]['children'][2]['children'] if a['type'] == 'user')
-    # Once the value is decoded the raw bytes and the layout would only repeat it.
-    assert user == {'type': 'user', 'description': 'Apple account ID', 'uint32': SC_INFO_ACCOUNT_ID}
+    schi = atoms[0]['children'][2]['children']
+    # Whatever the type, a reader looks under `value` and never has to pick a key.
+    assert next(a for a in schi if a['type'] == 'user')['value'] == SC_INFO_ACCOUNT_ID
+    assert next(a for a in schi if a['type'] == 'name')['value'] == SC_INFO_ACCOUNT_NAME
+    assert next(a for a in schi if a['type'] == 'crdt')['value'] == '2024-02-04T21:11:50+00:00'
+    assert all(set(a) <= {'type', 'description', 'value', 'children'} for a in schi)
 
 
-def test_atom_json_keeps_the_bytes_where_nothing_is_decoded(sc_info_dir: Path) -> None:
+def test_atom_json_gives_the_bytes_where_nothing_else_is_decoded(sc_info_dir: Path) -> None:
     atoms = sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['atoms']
     priv = next(a for a in atoms[0]['children'][2]['children'] if a['type'] == 'priv')
-    assert priv['bodySize'] == 512
-    assert len(priv['body']) == 512 * 2
+    assert len(priv['value']) == 512 * 2
+
+
+def test_read_sc_info_from_an_ipa(sc_info_ipa: Path) -> None:
+    info = read_sc_info(sc_info_ipa)
+    assert info.sinf is not None
+    assert info.supf is not None
+    assert info.supp is not None
+    assert info.supx is not None
+    assert [name for name, _, _ in info.files] == [
+        'Example.sinf', 'Example.supf', 'Example.supp', 'Example.supx', 'Manifest.plist'
+    ]
+    assert info.manifest == SC_INFO_MANIFEST
+    # The path names where the directory sits inside the archive.
+    assert str(info.path).endswith('Example.ipa/Payload/Example.app/SC_Info')
+
+
+def test_an_ipa_gives_the_same_reading_as_the_unpacked_tree(sc_info_ipa: Path,
+                                                            sc_info_dir: Path) -> None:
+    from_ipa = sc_info_to_json(read_sc_info(sc_info_ipa))
+    from_tree = sc_info_to_json(read_sc_info(sc_info_dir))
+    # Only the location and what the metadata supplies differ between the two.
+    for key in ('sinf', 'supf', 'supp', 'supx', 'crossReferences'):
+        assert from_ipa[key] == from_tree[key]
+    assert [f['sha256'] for f in from_ipa['files']] == [f['sha256'] for f in from_tree['files']]
+
+
+def test_an_ipa_carries_its_own_metadata(sc_info_ipa: Path) -> None:
+    info = read_sc_info(sc_info_ipa)
+    assert info.storefront == 143462
+    assert info.region == 'jp'
+    assert info.app_store_url == 'https://apps.apple.com/jp/app/id472140433'
+
+
+def test_an_ipa_with_no_sc_info_is_rejected(tmp_path: Path) -> None:
+    path = tmp_path / 'Empty.ipa'
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('Payload/Example.app/Info.plist', b'')
+    with pytest.raises(ValueError, match='No SC_Info directory in'):
+        read_sc_info(path)
+
+
+def test_an_ipa_with_two_bundles_is_rejected(tmp_path: Path, sinf_bytes: bytes) -> None:
+    path = tmp_path / 'Two.ipa'
+    with zipfile.ZipFile(path, 'w') as archive:
+        for bundle in ('One', 'Two'):
+            archive.writestr(f'Payload/{bundle}.app/SC_Info/{bundle}.sinf', sinf_bytes)
+    with pytest.raises(ValueError, match='holds 2 bundles, not one'):
+        read_sc_info(path)
+
+
+def test_a_file_that_is_not_an_ipa_is_rejected(tmp_path: Path) -> None:
+    path = tmp_path / 'notes.txt'
+    path.write_text('not an archive')
+    with pytest.raises(ValueError, match=r'is a file but not an \.ipa'):
+        read_sc_info(path)
+
+
+def test_rights_json_puts_every_value_under_one_key(sc_info_dir: Path) -> None:
+    rights = {r['tag']: r for r in sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['rights']}
+    # Each tag's value comes back in its own natural type, always under `value`.
+    assert rights['plat']['value'] == 5
+    assert rights['aver']['value'] == '1.1.1.0'
+    assert rights['tran']['value'] == '2024-02-04T21:11:49+00:00'
+    assert rights['tool']['value'] == 'P609'
+    assert all(set(right) <= {'tag', 'description', 'value'} for right in rights.values())

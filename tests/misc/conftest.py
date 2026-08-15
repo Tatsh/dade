@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 import plistlib
 import struct
+import zipfile
 
 from click.testing import CliRunner
 from cryptography import x509
@@ -506,6 +507,11 @@ SC_INFO_IDENTIFIER = bytes(range(20))
 """The 20-byte identifier the sample supplements share."""
 SUPP_RECORD_COUNT = 3
 """How many 32-byte records the sample ``.supp`` carries."""
+SC_INFO_MANIFEST = {
+    'SinfPaths': ['SC_Info/Example.sinf'],
+    'SinfReplicationPaths': ['SC_Info/Example.sinf'],
+}
+"""The manifest both the unpacked and the archived sample bundles carry."""
 
 
 @pytest.fixture(scope='session')
@@ -636,13 +642,32 @@ def sc_info_dir(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes
     """
     directory = tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
     directory.mkdir(parents=True)
-    (directory / 'Manifest.plist').write_bytes(
-        plistlib.dumps({
-            'SinfPaths': ['SC_Info/Example.sinf'],
-            'SinfReplicationPaths': ['SC_Info/Example.sinf'],
-        }))
+    (directory / 'Manifest.plist').write_bytes(plistlib.dumps(SC_INFO_MANIFEST))
     (directory / 'Example.sinf').write_bytes(sinf_bytes)
     (directory / 'Example.supf').write_bytes(supf_bytes)
     (directory / 'Example.supp').write_bytes(supp_bytes)
     (directory / 'Example.supx').write_bytes(supx_bytes)
     return tmp_path / 'Payload'
+
+
+@pytest.fixture
+def sc_info_ipa(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes: bytes,
+                supx_bytes: bytes) -> Path:
+    """
+    Write an ``.ipa`` holding one bundle and its metadata, without unpacking anything.
+
+    Returns
+    -------
+    pathlib.Path
+        The written ``.ipa``.
+    """
+    path = tmp_path / 'Example.ipa'
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('iTunesMetadata.plist', plistlib.dumps({'s': 143462}))
+        archive.writestr('Payload/Example.app/Info.plist', plistlib.dumps({'CFBundleName': 'X'}))
+        for name, data in (('Example.sinf', sinf_bytes), ('Example.supf', supf_bytes),
+                           ('Example.supp', supp_bytes), ('Example.supx', supx_bytes)):
+            archive.writestr(f'Payload/Example.app/SC_Info/{name}', data)
+        archive.writestr('Payload/Example.app/SC_Info/Manifest.plist',
+                         plistlib.dumps(SC_INFO_MANIFEST))
+    return path
