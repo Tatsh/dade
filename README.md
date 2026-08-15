@@ -214,7 +214,8 @@ executable:
 - the store item ID and, given a storefront, the App Store link;
 - the `Manifest.plist`;
 - the `.sinf` purchase record — buying account, purchase and transaction times, initialisation
-  vector, the `righ` tag block, and the atom tree with every leaf's value decoded;
+  vector, the `righ` tag block with all eight tags named (the store item, the vendor, the tool that
+  built it, and the rest), and the atom tree with every leaf's value decoded;
 - the `.supf` and `.supp` supplements, each broken into its length-prefixed parts, including the
   two different Apple FairPlay certificates they embed (subject, issuer, validity, key, and every
   extension broken out field by field);

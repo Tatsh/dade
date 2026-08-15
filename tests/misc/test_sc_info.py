@@ -7,6 +7,7 @@ import struct
 import zipfile
 
 from destin.misc.sc_info import (
+    Right,
     find_atom,
     iter_atoms,
     parse_atoms,
@@ -81,14 +82,25 @@ def test_sinf_purchase_time_uses_the_quicktime_epoch(sinf_bytes: bytes) -> None:
 
 def test_sinf_rights(sinf_bytes: bytes) -> None:
     rights = {right.tag: right for right in parse_sinf(sinf_bytes).rights}
-    assert set(rights) == {'veID', 'plat', 'aver', 'tran', 'song', 'tool', 'mode'}
+    assert set(rights) == {'veID', 'plat', 'aver', 'tran', 'song', 'tool', 'medi', 'mode'}
     assert rights['plat'].value == 5
     assert rights['aver'].rendered == '1.1.1.0'
     assert rights['tool'].rendered == "'P609'"
     assert rights['tran'].rendered == '2024-02-04T21:11:49+00:00'
     assert rights['song'].rendered == '472140433'
-    assert rights['veID'].description is None
     assert rights['plat'].description == 'Platform'
+
+
+def test_sinf_rights_are_all_described(sinf_bytes: bytes) -> None:
+    # Every tag a righ block carries has a description; the corpus turned up no others.
+    rights = {right.tag: right for right in parse_sinf(sinf_bytes).rights}
+    assert all(right.description for right in rights.values())
+    assert rights['veID'].description == 'Vendor ID'
+    assert rights['aver'].description == 'Version restrictions'
+
+
+def test_an_unknown_rights_tag_has_no_description() -> None:
+    assert Right('zzzz', b'\x00\x00\x00\x01').description is None
 
 
 def test_sinf_rights_trailer_is_reported_not_parsed(sinf_bytes: bytes) -> None:

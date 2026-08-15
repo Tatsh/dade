@@ -25,15 +25,19 @@ whole file with nothing left over, in every bundle, which is what the layouts ab
 
 What genuinely cannot be broken down further is the cryptographic material itself: the RSA
 signatures, the ``.supf`` key blob, the ``.supp`` records, the ``.supx`` entry values, and the body
-of ``priv``, which is ciphertext. Two things are reported without being named: the four header
-words opening a ``.supf`` body, and the eight bytes trailing ``righ``, which are byte for byte
-identical across every bundle seen.
+of ``priv``, which is ciphertext. What the two supplements count, on the other hand, is now known:
+both size a table against the executable's encrypted region, one 32-byte entry per 4096-byte page.
 
 An ``.ipa`` holds more than the application: an app extension under ``PlugIns`` and a watch app
-under ``Watch`` are bundles in their own right, each with its own ``SC_Info``. The application is
-the one bundle at ``Payload/<name>.app`` and nothing else is, so that is the one read; the rest are
-listed but left alone. The application's own ``Manifest.plist`` corroborates this, since its
-``SinfReplicationPaths`` names the sub-bundles' records by path and its own without one.
+under ``Watch`` are bundles in their own right, each with its own ``SC_Info``, and every one of
+them is read. The application is the one bundle at ``Payload/<name>.app`` and nothing else is,
+which is how it is told apart. The application's own ``Manifest.plist`` corroborates this, since
+its ``SinfReplicationPaths`` names the sub-bundles' records by path and its own without one.
+
+Much of what is asserted here was measured against the 1,935 purchased applications of a private
+archive, covering 3,401 bundles, and checked against each one's ``iTunesMetadata.plist``. Where a
+claim rests on that corpus the docstring says what was counted, so that a later sample can
+contradict it.
 
 Times are seconds since the QuickTime epoch of 1904-01-01 UTC, which is the only one of the usual
 candidates that puts the sample bundles' purchase dates in the plausible past.
@@ -288,19 +292,44 @@ ATOM_DESCRIPTIONS: Mapping[str, str] = {
 :meta hide-value:
 """
 RIGHTS_TAGS: Mapping[str, str] = {
-    'aver': 'Application version',
+    'aver': 'Version restrictions',
+    'medi': 'Media',
+    'mode': 'Mode',
     'plat': 'Platform',
     'song': 'Store item ID',
     'tool': 'Tool version',
     'tran': 'Transaction',
+    'veID': 'Vendor ID',
 }
 """Rights tag to a readable description.
 
-Only the tags two independently purchased bundles agree on the meaning of are described. The rest
-are real tags whose meaning is not established here, and are reported without a gloss.
+A ``righ`` block carries these eight tags, always in the order ``veID plat aver tran song tool
+medi mode``, and then sixteen zero bytes.
 
-``plat`` is 5 in both sample bundles, which are both iOS applications, so 5 plausibly means iOS.
-Two samples of the same platform cannot establish that, so the value is reported as it stands.
+Two of them are certain, having been checked against the ``iTunesMetadata.plist`` of 1,935
+purchased applications covering 3,385 bundles, agreeing in every one:
+
+- ``song`` is ``itemId``, the store item, over 187 distinct values.
+- ``veID`` is ``vendorId``, the seller, over 138 distinct values.
+
+``tran`` is a timestamp rather than an opaque transaction number: from tool ``P512`` onward a
+``crdt`` atom sits beside it, and the two agree to the second in 1,878 of 2,021 bundles and differ
+by exactly one second in the rest.
+
+``aver`` is not the application version. It never varies: every one of those 3,385 bundles carries
+``0x01010100``, across 187 applications and hundreds of releases. That is the value the metadata
+calls ``versionRestrictions``, which is likewise constant, so the two agree everywhere without that
+proving anything. ``medi`` (always ``0x00000080``) and ``mode`` (always zero, as is the metadata's
+``drmVersionNumber``) are constant for the same reason and named only by convention.
+
+``plat`` is not the platform. Every application in the corpus is an iOS application, yet ``plat``
+is 2 in 2,115 bundles, 5 in 1,213, and 0 in 57. It is a property of the download rather than of the
+binary, being the same for every bundle of a download in 1,923 of 1,924 of them, and it tracks the
+era of the store client: ``plat`` 2 accompanies the iOS 7 and 8 SDKs and ``plat`` 5 the iOS 9 ones.
+It is not the device, which is mixed across all three values, nor the architecture, since 1,354
+``plat`` 2 bundles and 1,029 ``plat`` 5 bundles alike carry arm64.
+
+``tool`` is text: ``P454`` through ``P516`` in this corpus.
 
 :meta hide-value:
 """
@@ -452,11 +481,20 @@ class Sinf(NamedTuple):
     account_name: str | None
     """The buying Apple account's name, as it was at purchase time."""
     purchased: datetime | None
-    """When the purchase was recorded."""
+    """When the purchase was recorded.
+
+    This is the ``crdt`` atom, which only newer records carry: it appears from tool ``P512``
+    onward and never before, in all 3,385 bundles of the corpus. Where it is absent the same
+    instant is still in the ``righ`` block's ``tran``, which it agrees with to the second.
+    """
     asset_type: int | None
     """The ``asdt`` value."""
     key_index: int | None
-    """The ``key`` value, which selects a key rather than being one."""
+    """The ``key`` value, which selects a key rather than being one.
+
+    It follows the tool generation rather than the title: 2 for tools ``P454`` to ``P501``, 21 for
+    ``P502`` to ``P509``, and 29 for ``P510`` to ``P516``.
+    """
     initialisation_vector: bytes | None
     """The ``iviv`` block."""
     rights: tuple[Right, ...]
@@ -479,9 +517,15 @@ class Supf(NamedTuple):
     version: int
     """The leading byte, 3 in every sample seen."""
     tag: str
-    """The three printable bytes after it, such as ``507``."""
+    """The three printable bytes after it, which run from ``309`` to ``325`` in the corpus."""
     header_words: tuple[int, ...]
-    """The four ``uint32`` opening the body, whose meaning is not established here."""
+    """The four ``uint32`` opening the body.
+
+    The second is the size in bytes of a table of 32-byte entries covering the encrypted region:
+    ``32 * (ceil(cryptsize / 4096) + 1)``, exactly, in all 2,562 bundles of the corpus that carry a
+    ``.supf``. The other three barely move: the first is 2 (2,443 bundles), 3 (78), or 1 (25); the
+    third is 12 and the fourth 9 in all but a handful.
+    """
     identifier: bytes
     """The 20-byte identifier the ``.supp`` repeats."""
     key_blob: bytes
@@ -514,12 +558,18 @@ class Supp(NamedTuple):
     records: tuple[bytes, ...]
     """The 32-byte records, of which the last is the ``.supf`` key blob.
 
-    Each is 256 bits of key material with nothing inside it to read: across every sample bundle no
-    record repeats, none is shared between bundles, and none is derivable from another or from
-    anything else in the directory. Only the count varies, and widely: 8 and 17 for two long-dead
-    games, 562 for a free utility that has shipped hundreds of releases. That rules out one per
-    purchased item, since the utility sells nothing, and fits something that accrues over a title's
-    life such as one per release or per download. Nothing in the files settles it.
+    There is one record per 4096-byte page of the bundle's executable, counting from the start of
+    the file through the end of the encrypted region its Mach-O header declares. That is,
+    ``len(records) == ceil((cryptoff + cryptsize) / 4096)`` for a single-architecture executable,
+    and for a fat one the same measured to the end of the last slice's encrypted region. Checked
+    against 1,935 purchased applications: exact for all 647 single-architecture executables and for
+    2,109 of the 2,226 fat ones, the exceptions all being executables carrying an appended slice
+    their fat header does not declare.
+
+    So the count is a function of how big the encrypted code is, not of anything about the
+    purchase, and it runs from 8 to 26,000 across the corpus. Each record is still 256 bits with
+    nothing inside it to read: no record repeats, none is shared between bundles, and none is
+    derivable from another or from anything else in the directory.
     """
     certificate: CertificateSummary | None
     """The embedded certificate's summary, which is a different one from the ``.supf``'s."""

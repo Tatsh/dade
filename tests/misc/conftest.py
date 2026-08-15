@@ -558,6 +558,7 @@ def sinf_bytes() -> bytes:
         b'tran' + struct.pack('>I', SC_INFO_PURCHASED - 1),
         b'song' + bytes.fromhex('1c244a91'),
         b'tool' + b'P609',
+        b'medi' + bytes.fromhex('00000080'),
         b'mode' + bytes.fromhex('00002000'),
     )) + bytes.fromhex('8a34795bffffffee')
     schi = b''.join((
