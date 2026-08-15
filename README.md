@@ -222,15 +222,22 @@ executable:
 
 `PATH` may be an `.ipa`, which is read in place without being unpacked, or the `SC_Info`
 directory, the `.app` bundle holding it, the `Payload` directory holding that, or a directory
-holding `Payload`. More than one bundle is an error either way. `--json` prints the same
-information as JSON.
+holding `Payload`. `--json` prints the same information as JSON, one entry per bundle.
 
-The App Store link needs a storefront, since a store item is only reachable in the store it was
-sold in. That comes from an `iTunesMetadata.plist` beside the bundle when there is one; otherwise
-pass `--region`, as in `--region jp`.
+A download often holds more than the application: an app extension under `PlugIns` and a watch app
+under `Watch` each carry an `SC_Info` of their own, and every one of them is read. Narrow that with
+`--main-bundle`, which keeps only the application (`Payload/<name>.app`, the only bundle at that
+depth), or `--bundle NAME`, which takes a bundle named in full or by its last component such as
+`NotificationService.appex`. Naming the `SC_Info` directory or one bundle directly reads that one.
+
+The App Store link is regional wherever the storefront can be established, since a store item is
+only reachable in the store it was sold in. That comes from an `iTunesMetadata.plist` beside the
+bundle when there is one; otherwise pass `--region`, as in `--region jp`. Without either, the link
+is written without a region, which the store resolves by the reader's own storefront.
 
 Nothing is decrypted. The only things left whole are the signatures, the key blobs, and the
-encrypted `priv` body, which are reported with their length, digest, and bytes.
+encrypted `priv` body, which are reported with their length, digest, and bytes. The report lists
+the first ten `.supp` records and counts the rest; `--json` always carries all of them.
 
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 

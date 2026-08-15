@@ -2481,16 +2481,20 @@ PATH may be an \fB\&.ipa\fP, which is read without being unpacked, or the SC_Inf
 itself, the \fB\&.app\fP bundle holding it, the \fBPayload\fP directory holding that, or a directory
 holding \fBPayload\fP\&.
 .sp
-Nothing here is decrypted and none of it is a key: the report covers the purchase record, the
-embedded Apple FairPlay certificates, and the length, digest, and entropy of the key material.
+A download holds more than the application: an app extension under PlugIns and a watch app
+under Watch each carry an SC_Info of their own, and every one of them is read. Narrow that with
+\-\-main\-bundle or \-\-bundle. Naming the SC_Info directory or one bundle directly reads that one.
 .sp
-The App Store link needs a storefront, which is read from an iTunesMetadata.plist beside the
-bundle when there is one. Without that, pass \-\-region.
+Nothing here is decrypted and none of it is a key: the report covers the purchase record, the
+embedded Apple FairPlay certificates, and the length and digest of the key material.
+.sp
+The App Store link is regional where a storefront can be read from an iTunesMetadata.plist
+beside the bundle, and falls back to the region\-less form otherwise. Pass \-\-region to give one.
 .SS Raises
 .INDENT 0.0
 .TP
 .B click.Abort
-If there is no SC_Info directory at or below PATH.
+If there is no SC_Info directory at or below PATH, or nothing matches \-\-bundle.
 .UNINDENT
 .sp
 Usage
@@ -2506,8 +2510,18 @@ destin misc sc\-info dump [OPTIONS] PATH
 Options
 .INDENT 0.0
 .TP
+.B \-\-bundle <NAME>
+Read only this bundle, named in full or by its last component, such as NotificationService.appex.
+.UNINDENT
+.INDENT 0.0
+.TP
 .B \-\-json
 Print JSON instead of a readable report.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-main\-bundle
+Read only the application, leaving its extensions and watch app alone.
 .UNINDENT
 .INDENT 0.0
 .TP

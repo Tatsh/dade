@@ -20,6 +20,7 @@ anyio
 apfn
 apkm
 appdir
+appex
 appimage
 appinfo
 argb

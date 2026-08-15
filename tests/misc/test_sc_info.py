@@ -14,6 +14,7 @@ from destin.misc.sc_info import (
     parse_supf,
     parse_supp,
     parse_supx,
+    read_bundles,
     read_sc_info,
     render_text,
     sc_info_to_json,
@@ -318,12 +319,11 @@ def test_store_item_id_comes_from_the_song_tag(sc_info_dir: Path) -> None:
     assert sc_info_to_json(info)['storeItemId'] == 472140433
 
 
-def test_no_app_store_url_without_a_region(sc_info_dir: Path) -> None:
-    # A store item is region-scoped, so there is no valid region-less link to give.
+def test_the_url_falls_back_to_the_region_less_form(sc_info_dir: Path) -> None:
+    # Without a storefront the region-less link is given, which Apple resolves for the reader.
     info = read_sc_info(sc_info_dir)
-    assert info.app_store_url is None
-    assert sc_info_to_json(info)['appStoreURL'] is None
-    assert 'App Store URL: unknown' in render_text(info)
+    assert info.app_store_url == 'https://apps.apple.com/app/id472140433'
+    assert sc_info_to_json(info)['appStoreURL'] == 'https://apps.apple.com/app/id472140433'
 
 
 def test_no_store_item_id_without_the_tag(tmp_path: Path, sinf_bytes: bytes) -> None:
@@ -364,23 +364,25 @@ def test_locate_accepts_every_level(tmp_path: Path, sinf_bytes: bytes, depth: st
     assert read_sc_info(start).path == tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
 
 
-def test_locate_rejects_two_bundles(tmp_path: Path, sinf_bytes: bytes) -> None:
+def test_two_applications_are_both_read(tmp_path: Path, sinf_bytes: bytes) -> None:
     _write_bundle(tmp_path, sinf_bytes, metadata=None)
-    (tmp_path / 'Payload' / 'Other.app' / 'SC_Info').mkdir(parents=True)
-    with pytest.raises(ValueError, match='holds 2 bundles, not one'):
-        read_sc_info(tmp_path)
+    other = tmp_path / 'Payload' / 'Other.app' / 'SC_Info'
+    other.mkdir(parents=True)
+    (other / 'Other.sinf').write_bytes(sinf_bytes)
+    assert [info.bundle
+            for info in read_bundles(tmp_path)] == ['Payload/Example.app', 'Payload/Other.app']
 
 
-def test_locate_rejects_an_empty_payload(tmp_path: Path) -> None:
+def test_an_empty_payload_is_rejected(tmp_path: Path) -> None:
     (tmp_path / 'Payload').mkdir()
-    with pytest.raises(ValueError, match=r'No \.app bundle'):
-        read_sc_info(tmp_path)
+    with pytest.raises(ValueError, match='No SC_Info directory below'):
+        read_bundles(tmp_path)
 
 
-def test_locate_rejects_a_bundle_without_sc_info(tmp_path: Path) -> None:
+def test_a_bundle_without_sc_info_is_rejected(tmp_path: Path) -> None:
     (tmp_path / 'Payload' / 'Example.app').mkdir(parents=True)
-    with pytest.raises(ValueError, match='No SC_Info directory in'):
-        read_sc_info(tmp_path)
+    with pytest.raises(ValueError, match='No SC_Info directory below'):
+        read_bundles(tmp_path)
 
 
 def test_storefront_gives_the_region_and_a_regional_url(tmp_path: Path, sinf_bytes: bytes) -> None:
@@ -399,13 +401,14 @@ def test_storefront_falls_back_to_the_cohort_string(tmp_path: Path, sinf_bytes: 
     assert info.region == 'us'
 
 
-def test_an_unlisted_storefront_gives_no_url(tmp_path: Path, sinf_bytes: bytes) -> None:
+def test_an_unlisted_storefront_gives_the_region_less_url(tmp_path: Path,
+                                                          sinf_bytes: bytes) -> None:
     _write_bundle(tmp_path, sinf_bytes, metadata={'s': 999999})
     info = read_sc_info(tmp_path)
     assert info.storefront == 999999
-    # The storefront is known but not one that maps to a country code, so there is no link.
+    # The storefront is known but maps to no country code, so the link cannot be regional.
     assert info.region is None
-    assert info.app_store_url is None
+    assert info.app_store_url == 'https://apps.apple.com/app/id472140433'
     assert 'Storefront: 999999 (unknown region)' in render_text(info)
 
 
@@ -525,13 +528,48 @@ def test_an_ipa_with_no_sc_info_is_rejected(tmp_path: Path) -> None:
         read_sc_info(path)
 
 
-def test_an_ipa_with_two_bundles_is_rejected(tmp_path: Path, sinf_bytes: bytes) -> None:
-    path = tmp_path / 'Two.ipa'
+def test_an_ipa_reads_every_bundle_application_first(tmp_path: Path, sinf_bytes: bytes) -> None:
+    path = tmp_path / 'Nested.ipa'
     with zipfile.ZipFile(path, 'w') as archive:
-        for bundle in ('One', 'Two'):
-            archive.writestr(f'Payload/{bundle}.app/SC_Info/{bundle}.sinf', sinf_bytes)
-    with pytest.raises(ValueError, match='holds 2 bundles, not one'):
-        read_sc_info(path)
+        archive.writestr('Payload/Example.app/PlugIns/Widget.appex/SC_Info/Widget.sinf', sinf_bytes)
+        archive.writestr('Payload/Example.app/SC_Info/Example.sinf', sinf_bytes)
+    infos = read_bundles(path)
+    # The application comes first however the archive orders its entries.
+    assert [(info.bundle, info.is_main) for info in infos] == [
+        ('Payload/Example.app', True),
+        ('Payload/Example.app/PlugIns/Widget.appex', False),
+    ]
+
+
+def test_main_bundle_keeps_only_the_application(tmp_path: Path, sinf_bytes: bytes) -> None:
+    path = tmp_path / 'Nested.ipa'
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('Payload/Example.app/SC_Info/Example.sinf', sinf_bytes)
+        archive.writestr('Payload/Example.app/PlugIns/Widget.appex/SC_Info/Widget.sinf', sinf_bytes)
+    assert [info.bundle for info in read_bundles(path, main_only=True)] == ['Payload/Example.app']
+
+
+def test_bundle_selects_one_by_its_last_component(tmp_path: Path, sinf_bytes: bytes) -> None:
+    path = tmp_path / 'Nested.ipa'
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('Payload/Example.app/SC_Info/Example.sinf', sinf_bytes)
+        archive.writestr('Payload/Example.app/PlugIns/Widget.appex/SC_Info/Widget.sinf', sinf_bytes)
+    chosen = read_bundles(path, bundle='Widget.appex')
+    assert [info.bundle for info in chosen] == ['Payload/Example.app/PlugIns/Widget.appex']
+    assert chosen[0].is_main is False
+
+
+def test_an_unknown_bundle_is_rejected(sc_info_ipa: Path) -> None:
+    with pytest.raises(ValueError, match="No bundle named 'Nope' in"):
+        read_bundles(sc_info_ipa, bundle='Nope')
+
+
+def test_main_bundle_with_no_application_is_rejected(tmp_path: Path, sinf_bytes: bytes) -> None:
+    path = tmp_path / 'OnlyExtension.ipa'
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('Payload/Example.app/PlugIns/Widget.appex/SC_Info/Widget.sinf', sinf_bytes)
+    with pytest.raises(ValueError, match='so there is no application to read'):
+        read_bundles(path, main_only=True)
 
 
 def test_a_file_that_is_not_an_ipa_is_rejected(tmp_path: Path) -> None:
@@ -539,6 +577,30 @@ def test_a_file_that_is_not_an_ipa_is_rejected(tmp_path: Path) -> None:
     path.write_text('not an archive')
     with pytest.raises(ValueError, match=r'is a file but not an \.ipa'):
         read_sc_info(path)
+
+
+def test_the_report_caps_the_record_listing(tmp_path: Path, sinf_bytes: bytes,
+                                            rsa_certificate_der: bytes) -> None:
+    count = 25
+    records = b''.join(bytes([index]) * 32 for index in range(count))
+    supp = (b'\x01507' + SC_INFO_IDENTIFIER + struct.pack('>I', count) + records +
+            struct.pack('>I', len(rsa_certificate_der)) + rsa_certificate_der + bytes(128))
+    directory = tmp_path / 'SC_Info'
+    directory.mkdir()
+    (directory / 'Example.sinf').write_bytes(sinf_bytes)
+    (directory / 'Example.supp').write_bytes(supp)
+    info = read_sc_info(tmp_path)
+    report = render_text(info)
+    assert report.count('    [') == 10
+    assert '...    (15 remaining)' in report
+    # Nothing is dropped from the JSON, only from the report.
+    assert len(sc_info_to_json(info)['supp']['records']) == count
+
+
+def test_the_report_lists_every_record_when_there_are_few(sc_info_dir: Path) -> None:
+    report = render_text(read_sc_info(sc_info_dir))
+    assert report.count('    [') == SUPP_RECORD_COUNT
+    assert 'remaining)' not in report
 
 
 def test_rights_json_puts_every_value_under_one_key(sc_info_dir: Path) -> None:

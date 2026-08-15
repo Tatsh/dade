@@ -671,3 +671,26 @@ def sc_info_ipa(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes
         archive.writestr('Payload/Example.app/SC_Info/Manifest.plist',
                          plistlib.dumps(SC_INFO_MANIFEST))
     return path
+
+
+@pytest.fixture
+def nested_ipa(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes: bytes) -> Path:
+    """
+    Write an ``.ipa`` holding an application and an app extension beside it.
+
+    The extension is written first, so that anything relying on the application coming first has
+    to sort for it rather than take the archive's own order.
+
+    Returns
+    -------
+    pathlib.Path
+        The written ``.ipa``.
+    """
+    path = tmp_path / 'Nested.ipa'
+    with zipfile.ZipFile(path, 'w') as archive:
+        for name, data in (('Widget.sinf', sinf_bytes), ('Widget.supf', supf_bytes)):
+            archive.writestr(f'Payload/Example.app/PlugIns/Widget.appex/SC_Info/{name}', data)
+        for name, data in (('Example.sinf', sinf_bytes), ('Example.supf', supf_bytes),
+                           ('Example.supp', supp_bytes)):
+            archive.writestr(f'Payload/Example.app/SC_Info/{name}', data)
+    return path
