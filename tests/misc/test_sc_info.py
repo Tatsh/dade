@@ -254,25 +254,26 @@ def test_render_text_indents_nested_atoms(sc_info_dir: Path) -> None:
 
 def test_sc_info_to_json(sc_info_dir: Path) -> None:
     rendered = sc_info_to_json(read_sc_info(sc_info_dir))
-    assert rendered['sinf']['accountName'] == SC_INFO_ACCOUNT_NAME
-    assert rendered['sinf']['purchased'] == '2024-02-04T21:11:50+00:00'
-    assert rendered['sinf']['initialisationVector'] == SC_INFO_IV.hex()
-    assert rendered['sinf']['rightsTrailer'] == '8a34795bffffffee'
-    assert rendered['supf']['identifier'] == SC_INFO_IDENTIFIER.hex()
-    assert rendered['supf']['headerWords'] == [1, 64, 0x0100000C, 0]
-    assert len(rendered['supp']['records']) == SUPP_RECORD_COUNT
-    assert rendered['supp']['records'][1] == (bytes([1]) * 32).hex()
-    assert [entry['tag'] for entry in rendered['supx']['entries']] == [1, 2]
-    assert rendered['sinf']['atoms'][0]['children'][2]['children'][0]['type'] == 'user'
+    assert rendered['records'][0]['sinf']['accountName'] == SC_INFO_ACCOUNT_NAME
+    assert rendered['records'][0]['sinf']['purchased'] == '2024-02-04T21:11:50+00:00'
+    assert rendered['records'][0]['sinf']['initialisationVector'] == SC_INFO_IV.hex()
+    assert rendered['records'][0]['sinf']['rightsTrailer'] == '8a34795bffffffee'
+    assert rendered['records'][0]['supf']['identifier'] == SC_INFO_IDENTIFIER.hex()
+    assert rendered['records'][0]['supf']['headerWords'] == [1, 64, 0x0100000C, 0]
+    assert len(rendered['records'][0]['supp']['records']) == SUPP_RECORD_COUNT
+    assert rendered['records'][0]['supp']['records'][1] == (bytes([1]) * 32).hex()
+    assert [entry['tag'] for entry in rendered['records'][0]['supx']['entries']] == [1, 2]
+    assert rendered['records'][0]['sinf']['atoms'][0]['children'][2]['children'][0][
+        'type'] == 'user'
 
 
 def test_sc_info_to_json_keeps_blobs_in_full(sc_info_dir: Path) -> None:
     rendered = sc_info_to_json(read_sc_info(sc_info_dir))
-    private = rendered['sinf']['private']
+    private = rendered['records'][0]['sinf']['private']
     assert private['length'] == 512
     assert private['blocks'] == 32
     assert len(private['ciphertext']) == 512 * 2
-    assert len(rendered['sinf']['signature']) == 128 * 2
+    assert len(rendered['records'][0]['sinf']['signature']) == 128 * 2
 
 
 def test_purchase_time_covers_the_whole_uint32_range(sinf_bytes: bytes) -> None:
@@ -457,7 +458,7 @@ def test_a_supplied_region_wins_over_the_storefront(tmp_path: Path, sinf_bytes: 
 
 
 def test_atom_json_breaks_down_rights(sc_info_dir: Path) -> None:
-    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['atoms']
+    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['records'][0]['sinf']['atoms']
     righ = next(a for a in atoms[0]['children'][2]['children'] if a['type'] == 'righ')
     rights = righ['value']['rights']
     assert [right['tag'] for right in rights][:3] == ['veID', 'plat', 'aver']
@@ -466,7 +467,7 @@ def test_atom_json_breaks_down_rights(sc_info_dir: Path) -> None:
 
 
 def test_atom_json_breaks_down_the_scheme(sc_info_dir: Path) -> None:
-    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['atoms']
+    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['records'][0]['sinf']['atoms']
     schm = next(a for a in atoms[0]['children'] if a['type'] == 'schm')
     assert schm == {
         'type': 'schm',
@@ -480,13 +481,13 @@ def test_atom_json_breaks_down_the_scheme(sc_info_dir: Path) -> None:
 
 
 def test_atom_json_gives_the_iv_as_integers(sc_info_dir: Path) -> None:
-    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['atoms']
+    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['records'][0]['sinf']['atoms']
     iviv = next(a for a in atoms[0]['children'][2]['children'] if a['type'] == 'iviv')
     assert iviv['value'] == list(SC_INFO_IV)
 
 
 def test_atom_json_puts_every_leaf_value_under_one_key(sc_info_dir: Path) -> None:
-    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['atoms']
+    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['records'][0]['sinf']['atoms']
     schi = atoms[0]['children'][2]['children']
     # Whatever the type, a reader looks under `value` and never has to pick a key.
     assert next(a for a in schi if a['type'] == 'user')['value'] == SC_INFO_ACCOUNT_ID
@@ -496,7 +497,7 @@ def test_atom_json_puts_every_leaf_value_under_one_key(sc_info_dir: Path) -> Non
 
 
 def test_atom_json_gives_the_bytes_where_nothing_else_is_decoded(sc_info_dir: Path) -> None:
-    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['atoms']
+    atoms = sc_info_to_json(read_sc_info(sc_info_dir))['records'][0]['sinf']['atoms']
     priv = next(a for a in atoms[0]['children'][2]['children'] if a['type'] == 'priv')
     assert len(priv['value']) == 512 * 2
 
@@ -520,8 +521,8 @@ def test_an_ipa_gives_the_same_reading_as_the_unpacked_tree(sc_info_ipa: Path,
     from_ipa = sc_info_to_json(read_sc_info(sc_info_ipa))
     from_tree = sc_info_to_json(read_sc_info(sc_info_dir))
     # Only the location and what the metadata supplies differ between the two.
-    for key in ('sinf', 'supf', 'supp', 'supx', 'crossReferences'):
-        assert from_ipa[key] == from_tree[key]
+    assert from_ipa['records'] == from_tree['records']
+    assert from_ipa['crossReferences'] == from_tree['crossReferences']
     assert [f['sha256'] for f in from_ipa['files']] == [f['sha256'] for f in from_tree['files']]
 
 
@@ -606,7 +607,7 @@ def test_the_report_caps_the_record_listing(tmp_path: Path, sinf_bytes: bytes,
     assert report.count('    [') == 10
     assert '...    (15 remaining)' in report
     # Nothing is dropped from the JSON, only from the report.
-    assert len(sc_info_to_json(info)['supp']['records']) == count
+    assert len(sc_info_to_json(info)['records'][0]['supp']['records']) == count
 
 
 def test_the_report_lists_every_record_when_there_are_few(sc_info_dir: Path) -> None:
@@ -616,10 +617,97 @@ def test_the_report_lists_every_record_when_there_are_few(sc_info_dir: Path) -> 
 
 
 def test_rights_json_puts_every_value_under_one_key(sc_info_dir: Path) -> None:
-    rights = {r['tag']: r for r in sc_info_to_json(read_sc_info(sc_info_dir))['sinf']['rights']}
+    rights = {
+        r['tag']: r
+        for r in sc_info_to_json(read_sc_info(sc_info_dir))['records'][0]['sinf']['rights']
+    }
     # Each tag's value comes back in its own natural type, always under `value`.
     assert rights['plat']['value'] == 5
     assert rights['aver']['value'] == '1.1.1.0'
     assert rights['tran']['value'] == '2024-02-04T21:11:49+00:00'
     assert rights['tool']['value'] == 'P609'
     assert all(set(right) <= {'tag', 'description', 'value'} for right in rights.values())
+
+
+def test_every_record_in_the_directory_is_read(sc_info_dir_with_two_records: Path) -> None:
+    records = read_sc_info(sc_info_dir_with_two_records).records
+    assert [record.name for record in records] == ['Example', 'AExample_armv7']
+    assert [record.is_main for record in records] == [True, False]
+
+
+def test_the_manifest_names_the_main_record(sc_info_dir_with_two_records: Path) -> None:
+    # 'AExample_armv7' sorts first, so only SinfPaths can pick 'Example' out.
+    main = read_sc_info(sc_info_dir_with_two_records).main_record
+    assert main is not None
+    assert main.name == 'Example'
+
+
+def test_a_record_without_a_supf_still_reads(sc_info_dir_with_two_records: Path) -> None:
+    beside = read_sc_info(sc_info_dir_with_two_records).records[1]
+    assert beside.supf is None
+    assert beside.sinf is not None
+    assert beside.supp is not None
+
+
+def test_the_bundle_reads_through_to_its_main_record(sc_info_dir_with_two_records: Path) -> None:
+    info = read_sc_info(sc_info_dir_with_two_records)
+    main = info.main_record
+    assert main is not None
+    assert info.sinf is main.sinf
+    assert info.supf is main.supf
+    assert info.supp is main.supp
+
+
+def test_the_bundle_stem_names_the_main_record_without_a_manifest(tmp_path: Path,
+                                                                  sinf_bytes: bytes) -> None:
+    directory = tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
+    directory.mkdir(parents=True)
+    (directory / 'Example.sinf').write_bytes(sinf_bytes)
+    (directory / 'AOther.sinf').write_bytes(sinf_bytes)
+    main = read_sc_info(tmp_path / 'Payload').main_record
+    assert main is not None
+    assert main.name == 'Example'
+
+
+def test_the_first_record_wins_when_nothing_names_one(tmp_path: Path, sinf_bytes: bytes) -> None:
+    directory = tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
+    directory.mkdir(parents=True)
+    (directory / 'Beta.sinf').write_bytes(sinf_bytes)
+    (directory / 'Alpha.sinf').write_bytes(sinf_bytes)
+    main = read_sc_info(tmp_path / 'Payload').main_record
+    assert main is not None
+    assert main.name == 'Alpha'
+
+
+def test_a_supplement_without_a_sinf_still_makes_a_record(tmp_path: Path,
+                                                          supp_bytes: bytes) -> None:
+    # 16 of the measured directories carry supplements with no .sinf beside them.
+    directory = tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
+    directory.mkdir(parents=True)
+    (directory / 'Example.supp').write_bytes(supp_bytes)
+    records = read_sc_info(tmp_path / 'Payload').records
+    assert [(record.name, record.sinf is None) for record in records] == [('Example', True)]
+
+
+def test_a_directory_with_no_records_at_all(tmp_path: Path) -> None:
+    (tmp_path / 'Payload' / 'Example.app' / 'SC_Info').mkdir(parents=True)
+    info = read_sc_info(tmp_path / 'Payload')
+    assert info.records == ()
+    assert info.main_record is None
+    assert info.sinf is None
+
+
+def test_record_json_carries_every_record(sc_info_dir_with_two_records: Path) -> None:
+    rendered = sc_info_to_json(read_sc_info(sc_info_dir_with_two_records))
+    assert [(r['name'], r['isMain']) for r in rendered['records']] == [('Example', True),
+                                                                       ('AExample_armv7', False)]
+    assert rendered['records'][1]['supf'] is None
+    assert rendered['records'][0]['crossReferences']['identifiersMatch'] is True
+    # The record with no .supf has nothing to check the .supp against.
+    assert rendered['records'][1]['crossReferences'] == {}
+
+
+def test_the_report_names_every_record(sc_info_dir_with_two_records: Path) -> None:
+    report = render_text(read_sc_info(sc_info_dir_with_two_records))
+    assert 'Record: Example\n' in report
+    assert 'Record: AExample_armv7 (not the main record)' in report

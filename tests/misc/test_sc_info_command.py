@@ -41,8 +41,8 @@ def test_dump_json(runner: CliRunner, sc_info_dir: Path) -> None:
     assert len(rendered) == 1
     assert rendered[0]['bundle'] == 'Payload/Example.app'
     assert rendered[0]['isMain'] is True
-    assert rendered[0]['sinf']['accountName'] == 'Example Buyer'
-    assert rendered[0]['supf']['certificate']['publicKey']['algorithm'] == 'EC'
+    assert rendered[0]['records'][0]['sinf']['accountName'] == 'Example Buyer'
+    assert rendered[0]['records'][0]['supf']['certificate']['publicKey']['algorithm'] == 'EC'
     assert rendered[0]['manifest']['SinfPaths'] == ['SC_Info/Example.sinf']
 
 
@@ -86,7 +86,7 @@ def test_dump_accepts_an_ipa(runner: CliRunner, sc_info_ipa: Path) -> None:
     assert result.exit_code == 0
     rendered = json.loads(result.output)[0]
     assert rendered['region'] == 'jp'
-    assert rendered['supp']['records']
+    assert rendered['records'][0]['supp']['records']
 
 
 def test_dump_rejects_a_file_that_is_not_an_ipa(runner: CliRunner, text_strings: Path) -> None:

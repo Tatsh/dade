@@ -19,6 +19,10 @@ prints is a key.
   signature.
 - ``<App>.supx`` is a length-prefixed run of tagged entries closed by a zero terminator.
 
+Those four share a stem and make one record, and a directory can hold more than one: a set for
+another architecture, or one left behind by a renamed executable. Every set is read, the one the
+bundle's executable uses first.
+
 The ``.sinf`` is the only one of these with a published shape; the three supplements are described
 from what independently obtained bundles agree on. Every length prefix in them accounts for the
 whole file with nothing left over, in every bundle, which is what the layouts above rest on.
@@ -73,7 +77,8 @@ __all__ = (
     'STOREFRONTS',
     'Atom',
     'Right',
-    'ScInfo',
+    'SCInfo',
+    'SCRecord',
     'Sinf',
     'Supf',
     'Supp',
@@ -365,6 +370,9 @@ _APP_SUFFIX = '.app'
 _APPLICATION_DEPTH = 1
 _SUB_BUNDLE_DIRECTORIES = ('PlugIns', 'Watch')
 _MAX_LISTED_RECORDS = 10
+_SINF_SUFFIX = '.sinf'
+_RECORD_SUFFIXES = (_SINF_SUFFIX, '.supf', '.supp', '.supx')
+_MANIFEST_SINF_PATHS = 'SinfPaths'
 _TAG_TEXT_SIZE = 3
 _SCHEME_TYPE = slice(4, 8)
 
@@ -531,7 +539,16 @@ class Supf(NamedTuple):
     key_blob: bytes
     """The 32-byte block closing the body. Key material, so there is nothing inside it to read."""
     certificate: CertificateSummary | None
-    """The embedded certificate's summary, when one could be read."""
+    """The embedded certificate's summary, when one could be read.
+
+    It will almost always be expired, and that is normal rather than a sign of a damaged file.
+    Every one of the 5,962 certificates in the corpus, in both supplements alike, carries the same
+    validity window of 2008-07-08 to 2013-07-07, and they come from a pool of only twelve serials
+    of the form ``3333AF080708AF0001AF0000NN`` whose subject is an ``AP.<serial>`` under Apple
+    FairPlay. 5,929 of them were already past ``notAfter`` on the day the application was bought,
+    so whatever consumes these does not check their expiry. The serial carries the issue date
+    itself, ``080708`` for 2008-07-08, agreeing with ``notBefore``.
+    """
     certificate_der: bytes | None
     """The embedded certificate, DER-encoded."""
     certificate_offset: int | None
@@ -559,12 +576,15 @@ class Supp(NamedTuple):
     """The 32-byte records, of which the last is the ``.supf`` key blob.
 
     There is one record per 4096-byte page of the bundle's executable, counting from the start of
-    the file through the end of the encrypted region its Mach-O header declares. That is,
-    ``len(records) == ceil((cryptoff + cryptsize) / 4096)`` for a single-architecture executable,
-    and for a fat one the same measured to the end of the last slice's encrypted region. Checked
-    against 1,935 purchased applications: exact for all 647 single-architecture executables and for
-    2,109 of the 2,226 fat ones, the exceptions all being executables carrying an appended slice
-    their fat header does not declare.
+    the file through the end of the last encrypted region in it:
+    ``len(records) == ceil((offset + cryptoff + cryptsize) / 4096)``, taking the last Mach-O's
+    ``LC_ENCRYPTION_INFO`` and where in the file it begins. Exact in every one of the 3,401 bundles
+    measured, with no exceptions.
+
+    Finding that last Mach-O means scanning the file's page boundaries for the magic rather than
+    trusting the fat header, which can under-declare: 117 of those executables carry an appended
+    slice their fat header does not list, and every one of them satisfies the rule once it is found
+    by scanning.
 
     So the count is a function of how big the encrypted code is, not of anything about the
     purchase, and it runs from 8 to 26,000 across the corpus. Each record is still 256 bits with
@@ -572,7 +592,10 @@ class Supp(NamedTuple):
     derivable from another or from anything else in the directory.
     """
     certificate: CertificateSummary | None
-    """The embedded certificate's summary, which is a different one from the ``.supf``'s."""
+    """The embedded certificate's summary, which is a different one from the ``.supf``'s.
+
+    Expect it to be expired: see :py:class:`Supf` for what the corpus says about these.
+    """
     certificate_der: bytes | None
     """The embedded certificate, DER-encoded."""
     certificate_offset: int | None
@@ -603,21 +626,49 @@ class Supx(NamedTuple):
     """Everything after the declared body."""
 
 
-class ScInfo(NamedTuple):
+class SCRecord(NamedTuple):
+    """
+    One executable's protection files inside an ``SC_Info`` directory.
+
+    A directory usually holds one set, named after the bundle's executable, but it can hold more:
+    62 of the 3,401 bundles measured hold two. One shape is an architecture-specific set beside the
+    main one, as ``BofA_armv7.sinf`` and ``BofA_armv7.supp`` sit beside ``BofA.sinf``; the other is
+    a set left behind by a renamed executable, as ``Chase.sinf`` sits beside ``Chase iPad.sinf``.
+    Every set is read, in the same way that every bundle of a download is.
+
+    The files of a set share a stem, and not every set is complete: of the sets in those 62
+    directories, 38 carry a ``.supf`` and a ``.supp``, 33 only a ``.supp``, and 53 neither.
+    """
+
+    name: str
+    """The stem the set's files share, which is the executable's name."""
+    sinf: Sinf | None
+    """The parsed ``.sinf``, when the set has one."""
+    supf: Supf | None
+    """The parsed ``.supf``, when the set has one."""
+    supp: Supp | None
+    """The parsed ``.supp``, when the set has one."""
+    supx: Supx | None
+    """The parsed ``.supx``, when the set has one."""
+    is_main: bool
+    """
+    Whether this is the set the bundle's own executable uses.
+
+    The ``Manifest.plist`` settles it where there is one, since its ``SinfPaths`` names that one
+    record and no other. Failing that the set named after the bundle wins, and failing that the
+    first in name order.
+    """
+
+
+class SCInfo(NamedTuple):
     """Everything read out of one ``SC_Info`` directory."""
 
     path: Path
     """The directory itself."""
     manifest: dict[str, Any] | None
     """The parsed ``Manifest.plist``, when there is one."""
-    sinf: Sinf | None
-    """The parsed ``.sinf``, when there is one."""
-    supf: Supf | None
-    """The parsed ``.supf``, when there is one."""
-    supp: Supp | None
-    """The parsed ``.supp``, when there is one."""
-    supx: Supx | None
-    """The parsed ``.supx``, when there is one."""
+    records: tuple[SCRecord, ...]
+    """Every set of protection files in the directory, the main one first."""
     files: tuple[tuple[str, int, str], ...]
     """Every file in the directory as its name, size, and SHA-256, in name order."""
     metadata: dict[str, Any] | None
@@ -628,6 +679,67 @@ class ScInfo(NamedTuple):
     """Which bundle this is, as its path inside the container, such as ``Payload/Example.app``."""
     is_main: bool
     """Whether this is the application rather than an extension or watch app beside it."""
+    @property
+    def main_record(self) -> SCRecord | None:
+        """
+        The set of protection files the bundle's own executable uses.
+
+        Returns
+        -------
+        SCRecord | None
+            The set, or ``None`` when the directory holds none at all.
+        """
+        return next((record for record in self.records if record.is_main),
+                    self.records[0] if self.records else None)
+
+    @property
+    def sinf(self) -> Sinf | None:
+        """
+        The main record's ``.sinf``.
+
+        Returns
+        -------
+        Sinf | None
+            The purchase record, or ``None`` when there is none to read.
+        """
+        return None if (record := self.main_record) is None else record.sinf
+
+    @property
+    def supf(self) -> Supf | None:
+        """
+        The main record's ``.supf``.
+
+        Returns
+        -------
+        Supf | None
+            The supplement, or ``None`` when there is none to read.
+        """
+        return None if (record := self.main_record) is None else record.supf
+
+    @property
+    def supp(self) -> Supp | None:
+        """
+        The main record's ``.supp``.
+
+        Returns
+        -------
+        Supp | None
+            The supplement, or ``None`` when there is none to read.
+        """
+        return None if (record := self.main_record) is None else record.supp
+
+    @property
+    def supx(self) -> Supx | None:
+        """
+        The main record's ``.supx``.
+
+        Returns
+        -------
+        Supx | None
+            The supplement, or ``None`` when there is none to read.
+        """
+        return None if (record := self.main_record) is None else record.supx
+
     @property
     def app_store_url(self) -> str | None:
         """
@@ -1175,7 +1287,7 @@ def _find_metadata_path(directory: Path) -> Path | None:
 
 
 def _build(path: Path, contents: dict[str, bytes], metadata: bytes | None, region: str | None,
-           bundle: str, *, is_main: bool) -> ScInfo:
+           bundle: str, *, is_main: bool) -> SCInfo:
     """
     Assemble the reading of one ``SC_Info`` directory from its files' bytes.
 
@@ -1199,18 +1311,81 @@ def _build(path: Path, contents: dict[str, bytes], metadata: bytes | None, regio
 
     Returns
     -------
-    ScInfo
+    SCInfo
         Everything that could be read. A file that is absent, and a file that is present but
         unreadable, both leave their field ``None``, so a partial directory still describes itself.
     """
     files = tuple((name, len(data), hashlib.sha256(data).hexdigest())
                   for name, data in sorted(contents.items()))
-    return ScInfo(path, _load_plist(contents.get('Manifest.plist')),
-                  _parse_one(contents, '.sinf', parse_sinf),
-                  _parse_one(contents, '.supf', parse_supf),
-                  _parse_one(contents, '.supp', parse_supp),
-                  _parse_one(contents, '.supx', parse_supx), files, _load_plist(metadata), region,
-                  bundle, is_main)
+    manifest = _load_plist(contents.get('Manifest.plist'))
+    return SCInfo(path, manifest, _records(contents, manifest, bundle), files,
+                  _load_plist(metadata), region, bundle, is_main)
+
+
+def _main_record_name(names: Sequence[str], manifest: Mapping[str, Any] | None, bundle: str) -> str:
+    """
+    Pick the set of protection files the bundle's own executable uses.
+
+    Parameters
+    ----------
+    names : Sequence[str]
+        Every set's stem, in name order.
+    manifest : Mapping[str, Any] | None
+        The parsed ``Manifest.plist``, when there is one.
+    bundle : str
+        The bundle's path inside the container, whose last component names the application.
+
+    Returns
+    -------
+    str
+        The stem of the main set. The ``Manifest.plist`` settles it where there is one, since its
+        ``SinfPaths`` names that record and no other; failing that the set named after the bundle
+        wins, and failing that the first in name order.
+    """
+    for path in (manifest or {}).get(_MANIFEST_SINF_PATHS, ()):
+        if (isinstance(path, str) and (stem := path.rsplit('/', 1)[-1]).endswith(_SINF_SUFFIX)
+                and (found := stem[:-len(_SINF_SUFFIX)]) in names):
+            return found
+    if (stem := bundle.rsplit('/', 1)[-1].rsplit('.', 1)[0]) in names:
+        return stem
+    return names[0]
+
+
+def _records(contents: dict[str, bytes], manifest: Mapping[str, Any] | None,
+             bundle: str) -> tuple[SCRecord, ...]:
+    """
+    Group the directory's files into one set per executable.
+
+    Parameters
+    ----------
+    contents : dict[str, bytes]
+        File name to contents, for the files in the ``SC_Info`` directory.
+    manifest : Mapping[str, Any] | None
+        The parsed ``Manifest.plist``, when there is one.
+    bundle : str
+        The bundle's path inside the container.
+
+    Returns
+    -------
+    tuple[SCRecord, ...]
+        One entry per stem, the main one first and the rest in name order. A set need not be
+        complete: 16 of the 3,401 directories measured carry supplements with no ``.sinf`` beside
+        them, so a stem seen on any of the four suffixes makes a set.
+    """
+    names = sorted({
+        name[:-len(suffix)]
+        for name in contents
+        for suffix in _RECORD_SUFFIXES if name.endswith(suffix)
+    })
+    if not names:
+        return ()
+    main = _main_record_name(names, manifest, bundle)
+    return tuple(
+        SCRecord(name, _parse_file(contents.get(f'{name}{_SINF_SUFFIX}'), parse_sinf),
+                 _parse_file(contents.get(f'{name}.supf'), parse_supf),
+                 _parse_file(contents.get(f'{name}.supp'), parse_supp),
+                 _parse_file(contents.get(f'{name}.supx'), parse_supx), name == main)
+        for name in sorted(names, key=lambda name: (name != main, name)))
 
 
 def _load_plist(data: bytes | None) -> dict[str, Any] | None:
@@ -1236,16 +1411,14 @@ def _load_plist(data: bytes | None) -> dict[str, Any] | None:
     return loaded if isinstance(loaded, dict) else None
 
 
-def _parse_one(contents: dict[str, bytes], suffix: str, parse: Callable[[bytes], Any]) -> Any:
+def _parse_file(data: bytes | None, parse: Callable[[bytes], Any]) -> Any:
     """
-    Parse the single file carrying a suffix, if there is one.
+    Parse one file, tolerating one that is absent or unreadable.
 
     Parameters
     ----------
-    contents : dict[str, bytes]
-        File name to contents.
-    suffix : str
-        The suffix to match, such as ``.sinf``.
+    data : bytes | None
+        The file's bytes, or ``None`` when the set does not carry that file.
     parse : Callable[[bytes], Any]
         The parser to hand the bytes to. The return type follows the parser, which is why this is
         annotated loosely; each call site knows what it asked for.
@@ -1255,11 +1428,10 @@ def _parse_one(contents: dict[str, bytes], suffix: str, parse: Callable[[bytes],
     Any
         The parsed file, or ``None`` when it is absent or does not parse.
     """
-    found = sorted(name for name in contents if name.endswith(suffix))
-    if not found:
+    if data is None:
         return None
     try:
-        return parse(contents[found[0]])
+        return parse(data)
     except ValueError:
         return None
 
@@ -1464,7 +1636,7 @@ def read_bundles(path: Path,
                  region: str | None = None,
                  bundle: str | None = None,
                  *,
-                 main_only: bool = False) -> tuple[ScInfo, ...]:
+                 main_only: bool = False) -> tuple[SCInfo, ...]:
     """
     Read every bundle's ``SC_Info``, from a directory tree or from inside an ``.ipa``.
 
@@ -1488,7 +1660,7 @@ def read_bundles(path: Path,
 
     Returns
     -------
-    tuple[ScInfo, ...]
+    tuple[SCInfo, ...]
         One reading per bundle, the application first.
 
     Raises
@@ -1543,7 +1715,7 @@ def read_bundles(path: Path,
                is_main=is_main_bundle(name)) for name in chosen_names)
 
 
-def read_sc_info(path: Path, region: str | None = None) -> ScInfo:
+def read_sc_info(path: Path, region: str | None = None) -> SCInfo:
     """
     Read one bundle's ``SC_Info``, the application's where there is a choice.
 
@@ -1557,7 +1729,7 @@ def read_sc_info(path: Path, region: str | None = None) -> ScInfo:
 
     Returns
     -------
-    ScInfo
+    SCInfo
         The reading.
 
     Notes
@@ -1717,16 +1889,19 @@ def _atom_lines(atoms: Sequence[Atom], depth: int = 0) -> list[str]:
     return lines
 
 
-def _cross_references(info: ScInfo) -> list[tuple[str, str, bool]]:
+def _cross_references(info: SCInfo) -> list[tuple[str, str, bool]]:
     """
     Check the relationships the parts of a bundle have with each other.
+
+    These cover the main record, since that is the one the bundle's executable uses; every record's
+    own checks travel with it in :py:func:`sc_info_to_json` and the report.
 
     Both sample bundles agree on all of these, so a mismatch means the files do not belong
     together.
 
     Parameters
     ----------
-    info : ScInfo
+    info : SCInfo
         The directory to check.
 
     Returns
@@ -1735,13 +1910,8 @@ def _cross_references(info: ScInfo) -> list[tuple[str, str, bool]]:
         A key, a description, and the result, for each relationship both sides are present for.
     """
     references: list[tuple[str, str, bool]] = []
-    if info.supf is not None and info.supp is not None:
-        references += [
-            ('identifiersMatch', '.supf and .supp identifiers match',
-             info.supf.identifier == info.supp.identifier),
-            ('keyBlobIsLastRecord', '.supf key blob is the last .supp record',
-             bool(info.supp.records) and info.supp.records[-1] == info.supf.key_blob),
-        ]
+    if (main := info.main_record) is not None:
+        references += _record_references(main)
     if info.metadata_item_id is not None and info.record_item_id is not None:
         references.append(
             ('metadataItemIdMatchesRecord', 'metadata item ID matches the purchase record',
@@ -1749,13 +1919,37 @@ def _cross_references(info: ScInfo) -> list[tuple[str, str, bool]]:
     return references
 
 
-def _header_lines(info: ScInfo) -> list[str]:
+def _record_references(record: SCRecord) -> list[tuple[str, str, bool]]:
+    """
+    Check the relationships one set of protection files has within itself.
+
+    Parameters
+    ----------
+    record : SCRecord
+        The set to check.
+
+    Returns
+    -------
+    list[tuple[str, str, bool]]
+        A key, a description, and the result, for each relationship both sides are present for.
+    """
+    if record.supf is None or record.supp is None:
+        return []
+    return [
+        ('identifiersMatch', '.supf and .supp identifiers match',
+         record.supf.identifier == record.supp.identifier),
+        ('keyBlobIsLastRecord', '.supf key blob is the last .supp record', bool(record.supp.records)
+         and record.supp.records[-1] == record.supf.key_blob),
+    ]
+
+
+def _header_lines(info: SCInfo) -> list[str]:
     """
     Render the report's opening lines.
 
     Parameters
     ----------
-    info : ScInfo
+    info : SCInfo
         The directory to render.
 
     Returns
@@ -1776,13 +1970,81 @@ def _header_lines(info: ScInfo) -> list[str]:
     return lines
 
 
-def render_text(info: ScInfo) -> str:
+def _record_lines(record: SCRecord) -> list[str]:
+    """
+    Render one set of protection files.
+
+    Parameters
+    ----------
+    record : SCRecord
+        The set to render.
+
+    Returns
+    -------
+    list[str]
+        A heading naming the executable the set protects, then each file it carries.
+    """
+    lines = ['', f'Record: {record.name}' + ('' if record.is_main else ' (not the main record)')]
+    if record.sinf is not None:
+        lines += ['', 'Purchase record (.sinf)']
+        lines += _sinf_lines(record.sinf)
+    if (supf := record.supf) is not None:
+        lines += ['', 'Supplement (.supf)']
+        pairs = [
+            ('Version', str(supf.version)),
+            ('Tag', supf.tag),
+            ('Header words', ', '.join(f'{word:#x}' for word in supf.header_words)),
+            ('Identifier', supf.identifier.hex()),
+            ('Key blob', _digest(supf.key_blob)),
+        ]
+        if supf.certificate_der is not None and supf.certificate_offset is not None:
+            pairs.append(('Certificate', (f'{len(supf.certificate_der)} bytes at '
+                                          f'{supf.certificate_offset:#06x}')))
+        if supf.signature:
+            pairs.append(('Signature', _digest(supf.signature)))
+        if supf.trailer:
+            pairs.append(('Trailer', _digest(supf.trailer)))
+        lines += _lines(pairs)
+        if (certificate := supf.certificate) is not None:
+            lines.append('  Certificate')
+            lines += certificate_lines(certificate)
+    if (supp := record.supp) is not None:
+        lines += ['', 'Supplement (.supp)']
+        pairs = [('Version', str(supp.version)), ('Tag', supp.tag),
+                 ('Identifier', supp.identifier.hex()),
+                 ('Records', f'{len(supp.records)} of {_SUPP_RECORD_SIZE} bytes')]
+        if supp.certificate_der is not None and supp.certificate_offset is not None:
+            pairs.append(('Certificate', (f'{len(supp.certificate_der)} bytes at '
+                                          f'{supp.certificate_offset:#06x}')))
+        if supp.signature:
+            pairs.append(('Signature', _digest(supp.signature)))
+        lines += _lines(pairs)
+        # A widely released title carries hundreds of these, which would bury the rest of the
+        # report; the JSON still carries every one.
+        for index, blob in enumerate(supp.records[:_MAX_LISTED_RECORDS]):
+            lines.append(f'    [{index:3d}]  {blob.hex()}')
+        if (remaining := len(supp.records) - _MAX_LISTED_RECORDS) > 0:
+            lines.append(f'    ...    ({remaining} remaining)')
+        if (certificate := supp.certificate) is not None:
+            lines.append('  Certificate')
+            lines += certificate_lines(certificate)
+    if (supx := record.supx) is not None:
+        lines += ['', 'Supplement (.supx)']
+        lines += _lines([('Version', str(supx.version)), ('Body length', str(supx.length))])
+        for entry in supx.entries:
+            lines.append(f'    tag {entry.tag}  {len(entry.value)} bytes  {entry.value.hex()}')
+        if supx.trailer:
+            lines += _lines([('Trailer', supx.trailer.hex())])
+    return lines
+
+
+def render_text(info: SCInfo) -> str:
     """
     Render an ``SC_Info`` directory as a human-readable report.
 
     Parameters
     ----------
-    info : ScInfo
+    info : SCInfo
         The directory to render.
 
     Returns
@@ -1797,57 +2059,8 @@ def render_text(info: ScInfo) -> str:
         lines += ['', 'Manifest.plist']
         lines += _lines([(key, ', '.join(value) if isinstance(value, list) else str(value))
                          for key, value in sorted(info.manifest.items())])
-    if info.sinf is not None:
-        lines += ['', 'Purchase record (.sinf)']
-        lines += _sinf_lines(info.sinf)
-    if info.supf is not None:
-        lines += ['', 'Supplement (.supf)']
-        pairs = [
-            ('Version', str(info.supf.version)),
-            ('Tag', info.supf.tag),
-            ('Header words', ', '.join(f'{word:#x}' for word in info.supf.header_words)),
-            ('Identifier', info.supf.identifier.hex()),
-            ('Key blob', _digest(info.supf.key_blob)),
-        ]
-        if info.supf.certificate_der is not None and info.supf.certificate_offset is not None:
-            pairs.append(('Certificate', (f'{len(info.supf.certificate_der)} bytes at '
-                                          f'{info.supf.certificate_offset:#06x}')))
-        if info.supf.signature:
-            pairs.append(('Signature', _digest(info.supf.signature)))
-        if info.supf.trailer:
-            pairs.append(('Trailer', _digest(info.supf.trailer)))
-        lines += _lines(pairs)
-        if (certificate := info.supf.certificate) is not None:
-            lines.append('  Certificate')
-            lines += certificate_lines(certificate)
-    if info.supp is not None:
-        lines += ['', 'Supplement (.supp)']
-        pairs = [('Version', str(info.supp.version)), ('Tag', info.supp.tag),
-                 ('Identifier', info.supp.identifier.hex()),
-                 ('Records', f'{len(info.supp.records)} of {_SUPP_RECORD_SIZE} bytes')]
-        if info.supp.certificate_der is not None and info.supp.certificate_offset is not None:
-            pairs.append(('Certificate', (f'{len(info.supp.certificate_der)} bytes at '
-                                          f'{info.supp.certificate_offset:#06x}')))
-        if info.supp.signature:
-            pairs.append(('Signature', _digest(info.supp.signature)))
-        lines += _lines(pairs)
-        # A widely released title carries hundreds of these, which would bury the rest of the
-        # report; the JSON still carries every one.
-        for index, record in enumerate(info.supp.records[:_MAX_LISTED_RECORDS]):
-            lines.append(f'    [{index:3d}]  {record.hex()}')
-        if (remaining := len(info.supp.records) - _MAX_LISTED_RECORDS) > 0:
-            lines.append(f'    ...    ({remaining} remaining)')
-        if (certificate := info.supp.certificate) is not None:
-            lines.append('  Certificate')
-            lines += certificate_lines(certificate)
-    if info.supx is not None:
-        lines += ['', 'Supplement (.supx)']
-        lines += _lines([('Version', str(info.supx.version)),
-                         ('Body length', str(info.supx.length))])
-        for entry in info.supx.entries:
-            lines.append(f'    tag {entry.tag}  {len(entry.value)} bytes  {entry.value.hex()}')
-        if info.supx.trailer:
-            lines += _lines([('Trailer', info.supx.trailer.hex())])
+    for record in info.records:
+        lines += _record_lines(record)
     if references := _cross_references(info):
         lines += ['', 'Cross-references']
         lines += _lines(
@@ -1993,7 +2206,7 @@ def _atom_to_json(atom: Atom) -> dict[str, Any]:
     return rendered
 
 
-def sc_info_to_json(info: ScInfo) -> dict[str, Any]:
+def sc_info_to_json(info: SCInfo) -> dict[str, Any]:
     """
     Render an ``SC_Info`` directory as JSON-ready values.
 
@@ -2001,7 +2214,7 @@ def sc_info_to_json(info: ScInfo) -> dict[str, Any]:
 
     Parameters
     ----------
-    info : ScInfo
+    info : SCInfo
         The directory to render.
 
     Returns
@@ -2023,12 +2236,36 @@ def sc_info_to_json(info: ScInfo) -> dict[str, Any]:
             'sha256': digest
         } for name, size, digest in info.files],
         'manifest': info.manifest,
+        'records': [_record_to_json(record) for record in info.records],
+    }
+    rendered['crossReferences'] = {key: held for key, _, held in _cross_references(info)}
+    return rendered
+
+
+def _record_to_json(record: SCRecord) -> dict[str, Any]:
+    """
+    Render one set of protection files as JSON-ready values.
+
+    Parameters
+    ----------
+    record : SCRecord
+        The set to render.
+
+    Returns
+    -------
+    dict[str, Any]
+        The set's name, whether it is the main one, each file it carries, and the checks between
+        them. A file the set does not carry comes back as ``None``.
+    """
+    rendered: dict[str, Any] = {
+        'name': record.name,
+        'isMain': record.is_main,
         'sinf': None,
         'supf': None,
         'supp': None,
         'supx': None,
     }
-    if (sinf := info.sinf) is not None:
+    if (sinf := record.sinf) is not None:
         rendered['sinf'] = {
             'originalFormat':
                 sinf.original_format,
@@ -2055,7 +2292,7 @@ def sc_info_to_json(info: ScInfo) -> dict[str, Any]:
                 sinf.signature.hex() if sinf.signature is not None else None,
             'atoms': [_atom_to_json(atom) for atom in sinf.atoms],
         }
-    if (supf := info.supf) is not None:
+    if (supf := record.supf) is not None:
         rendered['supf'] = {
             'version':
                 supf.version,
@@ -2076,7 +2313,7 @@ def sc_info_to_json(info: ScInfo) -> dict[str, Any]:
             'trailer':
                 supf.trailer.hex(),
         }
-    if (supp := info.supp) is not None:
+    if (supp := record.supp) is not None:
         rendered['supp'] = {
             'version':
                 supp.version,
@@ -2094,12 +2331,7 @@ def sc_info_to_json(info: ScInfo) -> dict[str, Any]:
             'signature':
                 supp.signature.hex(),
         }
-    rendered['crossReferences'] = {
-        'identifiersMatch': None,
-        'keyBlobIsLastRecord': None,
-    }
-    rendered['crossReferences'] = {key: held for key, _, held in _cross_references(info)}
-    if (supx := info.supx) is not None:
+    if (supx := record.supx) is not None:
         rendered['supx'] = {
             'version': supx.version,
             'length': supx.length,
@@ -2109,4 +2341,5 @@ def sc_info_to_json(info: ScInfo) -> dict[str, Any]:
             } for entry in supx.entries],
             'trailer': supx.trailer.hex(),
         }
+    rendered['crossReferences'] = {key: held for key, _, held in _record_references(record)}
     return rendered

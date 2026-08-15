@@ -652,6 +652,32 @@ def sc_info_dir(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes
 
 
 @pytest.fixture
+def sc_info_dir_with_two_records(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes,
+                                 supp_bytes: bytes) -> Path:
+    """
+    Write an ``SC_Info`` directory holding two sets of protection files.
+
+    The second set is named for another architecture and carries no ``.supf``, which is the shape
+    a real download takes when one is left beside the main record.
+
+    Returns
+    -------
+    pathlib.Path
+        The ``Payload`` directory holding the bundle.
+    """
+    directory = tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
+    directory.mkdir(parents=True)
+    (directory / 'Manifest.plist').write_bytes(plistlib.dumps(SC_INFO_MANIFEST))
+    (directory / 'Example.sinf').write_bytes(sinf_bytes)
+    (directory / 'Example.supf').write_bytes(supf_bytes)
+    (directory / 'Example.supp').write_bytes(supp_bytes)
+    # Sorts before 'Example', so name order alone would pick the wrong record.
+    (directory / 'AExample_armv7.sinf').write_bytes(sinf_bytes)
+    (directory / 'AExample_armv7.supp').write_bytes(supp_bytes)
+    return tmp_path / 'Payload'
+
+
+@pytest.fixture
 def sc_info_ipa(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes: bytes,
                 supx_bytes: bytes) -> Path:
     """

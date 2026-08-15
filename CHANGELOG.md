@@ -34,9 +34,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   without being unpacked, or the `SC_Info` directory, the bundle, the `Payload` directory, or a
   directory holding `Payload`. Every bundle in the download is read, including the app extensions
   under `PlugIns` and the watch app under `Watch`; `--main-bundle` keeps only the application and
-  `--bundle NAME` keeps one named bundle. `--json` prints the same information as JSON, one entry
-  per bundle, and `--region` supplies the storefront when no `iTunesMetadata.plist` sits beside the
-  bundle. It decrypts nothing and prints no key material.
+  `--bundle NAME` keeps one named bundle. Every set of protection files in an `SC_Info` is read,
+  not only the first, since a directory can hold one set per executable. `--json` prints the same
+  information as JSON, one entry per bundle, and `--region` supplies the storefront when no
+  `iTunesMetadata.plist` sits beside the bundle. It decrypts nothing and prints no key material.
 - `ian2obj` and `extract-pvr-pack` command-line utilities, now `destin incoming ian2obj` and
   `destin incoming extract-pvr-pack`.
 - `ian2obj` converts Dreamcast `*_M.BIN` model packs in addition to PC `.ian` meshes.

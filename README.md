@@ -225,6 +225,12 @@ executable:
 directory, the `.app` bundle holding it, the `Payload` directory holding that, or a directory
 holding `Payload`. `--json` prints the same information as JSON, one entry per bundle.
 
+An `SC_Info` can hold more than one set of these files, one per executable, and every set is read.
+The extra set is either architecture-specific (`BofA_armv7.sinf` beside `BofA.sinf`) or left behind
+by a renamed executable, and it need not be complete — a set often has a `.supp` but no `.supf`.
+The set the bundle's own executable uses is named by the manifest's `SinfPaths`, and it is reported
+first.
+
 A download often holds more than the application: an app extension under `PlugIns` and a watch app
 under `Watch` each carry an `SC_Info` of their own, and every one of them is read. Narrow that with
 `--main-bundle`, which keeps only the application (`Payload/<name>.app`, the only bundle at that
