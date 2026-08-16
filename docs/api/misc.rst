@@ -2,8 +2,8 @@ Miscellaneous
 =============
 
 Converters and readers for platform-level artefacts that are not tied to any one game: compiled
-Core Data models, Xcode ``.strings`` localisation tables, and the ``SC_Info`` FairPlay bookkeeping
-inside a purchased application bundle.
+Core Data models, Xcode ``.strings`` localisation tables, the ``SC_Info`` FairPlay bookkeeping
+inside a purchased application bundle, and the properties of a Mach-O executable.
 
 ``destin.misc.certificate``
 ---------------------------
@@ -15,6 +15,12 @@ inside a purchased application bundle.
 ------------------------
 
 .. automodule:: destin.misc.coredata
+   :members:
+
+``destin.misc.macho``
+---------------------
+
+.. automodule:: destin.misc.macho
    :members:
 
 ``destin.misc.sc_info``

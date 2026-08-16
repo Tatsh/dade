@@ -16,6 +16,7 @@ from cryptography.x509.oid import NameOID
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
     from pathlib import Path
 
 
@@ -721,3 +722,243 @@ def nested_ipa(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes:
                            ('Example.supp', supp_bytes)):
             archive.writestr(f'Payload/Example.app/SC_Info/{name}', data)
     return path
+
+
+class MachOBuilder:
+    """
+    Assemble a little-endian Mach-O image for the tests.
+
+    Load commands are appended in order and the header is written last, once their total size is
+    known, which is the order the linker itself has to work in.
+    """
+    def __init__(self,
+                 *,
+                 wide: bool = True,
+                 cpu_type: int = 0x0100_000C,
+                 cpu_subtype: int = 0,
+                 file_type: int = 2,
+                 flags: int = 0x0020_0085) -> None:
+        self.commands: list[bytes] = []
+        self.cpu_subtype = cpu_subtype
+        self.cpu_type = cpu_type
+        self.file_type = file_type
+        self.flags = flags
+        self.wide = wide
+
+    def add(self, command: int, body: bytes) -> None:
+        """
+        Append one load command, padded to a four-byte boundary.
+
+        Parameters
+        ----------
+        command : int
+            The ``LC_*`` value.
+        body : bytes
+            The command's payload, excluding the eight-byte command header.
+        """
+        size = (len(body) + 8 + 3) & ~3
+        self.commands.append(struct.pack('<II', command, size) + body.ljust(size - 8, b'\0'))
+
+    def add_raw(self, blob: bytes) -> None:
+        """
+        Append an already-assembled load command, header included and unpadded.
+
+        Parameters
+        ----------
+        blob : bytes
+            The whole command.
+        """
+        self.commands.append(blob)
+
+    def add_segment(self, name: str, sections: Sequence[str] = ()) -> None:
+        """
+        Append an ``LC_SEGMENT`` or ``LC_SEGMENT_64`` naming zero or more sections.
+
+        Parameters
+        ----------
+        name : str
+            The segment name.
+        sections : collections.abc.Sequence[str]
+            The section names within the segment.
+        """
+        padded = name.encode().ljust(16, b'\0')
+        if self.wide:
+            body = padded + struct.pack('<QQQQiiII', 0x1000, 0x2000, 0x3000, 0x4000, 7, 5,
+                                        len(sections), 0)
+            for section in sections:
+                body += (section.encode().ljust(16, b'\0') + padded +
+                         struct.pack('<QQIIIIIIII', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+            self.add(0x19, body)
+            return
+        body = padded + struct.pack('<IIIIiiII', 0x1000, 0x2000, 0x3000, 0x4000, 7, 5,
+                                    len(sections), 0)
+        for section in sections:
+            body += (section.encode().ljust(16, b'\0') + padded +
+                     struct.pack('<IIIIIIIII', 0, 0, 0, 0, 0, 0, 0, 0, 0))
+        self.add(0x1, body)
+
+    def add_string_command(self, command: int, text: str) -> None:
+        """
+        Append a load command whose only payload is an offset-addressed C string.
+
+        Parameters
+        ----------
+        command : int
+            The ``LC_*`` value.
+        text : str
+            The string to store.
+        """
+        self.add(command, struct.pack('<I', 12) + text.encode() + b'\0')
+
+    def build(self) -> bytes:
+        """
+        Assemble the whole image.
+
+        Returns
+        -------
+        bytes
+            The Mach-O image.
+        """
+        body = b''.join(self.commands)
+        if self.wide:
+            header = struct.pack('<IIIIIIII', 0xFEED_FACF, self.cpu_type, self.cpu_subtype,
+                                 self.file_type, len(self.commands), len(body), self.flags, 0)
+        else:
+            header = struct.pack('<IIIIIII', 0xFEED_FACE, self.cpu_type, self.cpu_subtype,
+                                 self.file_type, len(self.commands), len(body), self.flags)
+        return header + body
+
+
+def _entitlements_signature(plist: bytes) -> bytes:
+    """Wrap an entitlements plist in the code-signature super-blob that carries it."""
+    blob = struct.pack('>II', 0xFADE_7171, len(plist) + 8) + plist
+    # One requirements blob ahead of the entitlements, so the reader has to skip a foreign one.
+    other = struct.pack('>II', 0xFADE_0C00, 8)
+    start = 12 + 8 * 2
+    header = struct.pack('>III', 0xFADE_0CC0, start + len(other) + len(blob), 2)
+    index = struct.pack('>II', 2, start) + struct.pack('>II', 5, start + len(other))
+    return header + index + other + blob
+
+
+@pytest.fixture
+def macho_arm64(tmp_path: Path) -> Path:
+    """
+    Write a thin 64-bit ``arm64`` image exercising every load command the reader names.
+
+    Returns
+    -------
+    pathlib.Path
+        The written image.
+    """
+    builder = MachOBuilder()
+    builder.add_segment('__PAGEZERO')
+    builder.add_segment('__TEXT', ('__text', '__cstring'))
+    builder.add_string_command(0xC, '/usr/lib/libSystem.B.dylib')
+    builder.add_string_command(0x18 | 0x8000_0000,
+                               '/System/Library/Frameworks/WebKit.framework/WebKit')
+    builder.add_string_command(0x1C | 0x8000_0000, '@executable_path/Frameworks')
+    builder.add(0x1B, bytes(range(16)))
+    builder.add(0x2A, struct.pack('<Q', (1 << 40) | (2 << 30) | (3 << 20)))
+    builder.add(0x32, struct.pack('<III', 2, 0x0009_0000, 0x000A_0300))
+    builder.add(0x2C, struct.pack('<IIII', 0x4000, 0x1000, 1, 0))
+    signature = _entitlements_signature(
+        plistlib.dumps({'application-identifier': 'ABCDE12345.com.example.app'}))
+    # The signature is appended after every load command, so its offset is only known once the
+    # command that points at it is itself in place. A placeholder sizes the image, then the real
+    # offset replaces it.
+    builder.add(0x1D, struct.pack('<II', 0, len(signature)))
+    offset = len(builder.build())
+    builder.commands[-1] = struct.pack('<IIII', 0x1D, 16, offset, len(signature))
+    path = tmp_path / 'Example'
+    path.write_bytes(builder.build() + signature)
+    return path
+
+
+@pytest.fixture
+def macho_armv7(tmp_path: Path) -> Path:
+    """
+    Write a thin 32-bit ``armv7`` image using the older minimum-OS command.
+
+    Returns
+    -------
+    pathlib.Path
+        The written image.
+    """
+    builder = MachOBuilder(wide=False, cpu_type=12, cpu_subtype=9)
+    builder.add_segment('__TEXT', ('__text',))
+    builder.add(0x25, struct.pack('<II', 0x0006_0000, 0x0007_0100))
+    path = tmp_path / 'Legacy'
+    path.write_bytes(builder.build())
+    return path
+
+
+@pytest.fixture
+def macho_universal(tmp_path: Path, macho_arm64: Path, macho_armv7: Path) -> Path:
+    """
+    Write a universal image holding the 32-bit and 64-bit slices side by side.
+
+    Returns
+    -------
+    pathlib.Path
+        The written image.
+    """
+    slices = (macho_armv7.read_bytes(), macho_arm64.read_bytes())
+    header = struct.pack('>II', 0xCAFE_BABE, len(slices))
+    offset = (len(header) + 20 * len(slices) + 0xFFF) & ~0xFFF
+    entries, body, cursor = b'', b'', offset
+    for index, data in enumerate(slices):
+        entries += struct.pack('>iiIII', 12 if index == 0 else 0x0100_000C, 0, cursor, len(data),
+                               12)
+        body += data
+        cursor += len(data)
+    path = tmp_path / 'Fat'
+    path.write_bytes(header + entries + b'\0' * (offset - len(header) - len(entries)) + body)
+    return path
+
+
+@pytest.fixture
+def macho_builder() -> type[MachOBuilder]:
+    """
+    Hand the tests the Mach-O assembler itself, for images no fixture covers.
+
+    Returns
+    -------
+    type[MachOBuilder]
+        The builder class.
+    """
+    return MachOBuilder
+
+
+@pytest.fixture
+def make_signature() -> Callable[[bytes], bytes]:
+    """
+    Build a code-signature super-blob carrying an entitlements plist.
+
+    Returns
+    -------
+    collections.abc.Callable[[bytes], bytes]
+        A callable taking the plist bytes and returning the whole signature.
+    """
+    return _entitlements_signature
+
+
+@pytest.fixture
+def make_signed_macho(tmp_path: Path) -> Callable[[bytes], Path]:
+    """
+    Write a minimal image whose code signature is the bytes given.
+
+    Returns
+    -------
+    collections.abc.Callable[[bytes], pathlib.Path]
+        A callable taking the signature bytes and returning the written image.
+    """
+    def build(signature: bytes) -> Path:
+        builder = MachOBuilder()
+        builder.add(0x1D, struct.pack('<II', 0, len(signature)))
+        offset = len(builder.build())
+        builder.commands[-1] = struct.pack('<IIII', 0x1D, 16, offset, len(signature))
+        path = tmp_path / 'Signed'
+        path.write_bytes(builder.build() + signature)
+        return path
+
+    return build
