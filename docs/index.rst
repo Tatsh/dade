@@ -10,9 +10,9 @@ destin
    as ``destin <game> <subcommand>``.
 
    The games currently supported are *Incoming* (PC and Dreamcast), *Amplitude* and *FreQuency*
-   (PS2), *Tone Sphere*, any Marmalade SDK title, BitRock / InstallBuilder installers, *Monopoly*
-   (2008), *Extreme-G* and *Extreme-G 2* (N64 and PC), *Interstate '76*, and *Tony Hawk's Pro
-   Skater 2* (PC).
+   (PS2), *Tone Sphere*, *jubeat plus* and *pop'n rhythmin* (iOS), any Marmalade SDK title,
+   BitRock / InstallBuilder installers, *Monopoly* (2008), *Extreme-G* and *Extreme-G 2* (N64 and
+   PC), *Interstate '76*, and *Tony Hawk's Pro Skater 2* (PC).
 
 .. toctree::
    :caption: Command reference

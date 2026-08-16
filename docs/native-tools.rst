@@ -15,12 +15,18 @@ skipped and the affected files are copied verbatim.
    * - `7z <https://www.7-zip.org/>`_
      - Extracting ``DATA1.CAB`` from a PC ISO, when ``isodump`` is not found.
      -
+   * - `ffmpeg <https://ffmpeg.org/>`_
+     - Rewrapping *jubeat plus* ``.caf`` sound effects as WAV.
+     - ``--ffmpeg-path``
    * - `gdiextract <https://github.com/MachXNU/gdiextract>`_
      - Extracting the ISO 9660 file system from a Dreamcast GDI.
      - ``--gdiextract-path``
    * - `isodump <https://sourceforge.net/projects/cdrtools/>`_
      - Extracting ``DATA1.CAB`` from a PC ISO.
      -
+   * - `pngdefry <https://github.com/bpteague/pngdefry>`_
+     - Rewriting Apple-optimised (``CgBI``) PNGs as ordinary ones.
+     - ``--pngdefry-path``
    * - `spvr2png <https://github.com/nextgeniuspro/spvr2png>`_
      - Converting Sega Dreamcast PVR images to PNG.
      - ``--spvr2png-path``

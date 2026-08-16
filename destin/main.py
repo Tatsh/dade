@@ -20,6 +20,7 @@ from .i76.main import cli as i76_group
 from .incoming.commands.extract_pvr_pack import extract_pvr_pack as incoming_pvr_pack
 from .incoming.commands.ian2obj import ian2obj as incoming_ian2obj
 from .incoming.main import main as incoming_extract
+from .jubeatplus.main import jubeatplus as jubeatplus_group
 from .marmalade.main import marm as marmalade_group
 from .misc.main import misc as misc_group
 from .monopoly08.main import main as monopoly_extract
@@ -87,6 +88,7 @@ main.add_command(_bitrock())
 main.add_command(_frequency())
 main.add_command(i76_group, name='i76')
 main.add_command(_incoming())
+main.add_command(jubeatplus_group, name='jubeatplus')
 main.add_command(marmalade_group, name='marmalade')
 main.add_command(misc_group, name='misc')
 main.add_command(_monopoly08())

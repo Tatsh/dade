@@ -22,6 +22,7 @@ and :doc:`../utilities`.
    harmonix
    i76
    incoming
+   jubeatplus
    marmalade
    monopoly08
    rhythmin

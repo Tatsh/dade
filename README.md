@@ -51,6 +51,7 @@ Run `destin --help` to list the games, and `destin <game> --help` to list a game
 | `destin frequency`  | _FreQuency_ (PS2)                           | Harmonix                      |
 | `destin i76`        | _Interstate '76_ and _Interstate '82_       | Activision                    |
 | `destin incoming`   | _Incoming_ (PC and Dreamcast)               | Rage Software / Interplay     |
+| `destin jubeatplus` | _jubeat plus_ (iOS)                         | Konami                        |
 | `destin marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
 | `destin misc`       | Formats belonging to no single game         | —                             |
 | `destin monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
@@ -166,6 +167,44 @@ destin monopoly08 extract ROOT
 Unpack and convert an extracted _Monopoly_ (2008, Electronic Arts) disc for Xbox 360, PS3, PS2, or
 Wii. The platform is auto-detected and every output is written next to its source inside `ROOT`.
 
+## jubeat plus
+
+```shell
+destin jubeatplus unpack Jubeat.ipa -o out/
+```
+
+Convert a whole _jubeat plus_ (`jp.konami.jubeatplus`) download to formats that open outside iOS.
+`SOURCE` may be an `.ipa`, the `.app` bundle, the `Payload` directory, or a directory holding
+`Payload`; it is only read, and the converted bundle is written under `-o`/`--output-dir` into a
+directory named after it.
+
+Every encrypted asset uses the same Blowfish variant as `destin rhythmin`, differing only in the
+key. There are seven, each the MD5 of a passphrase the binary assembles on the stack so it never
+appears whole in the executable; two of them carry the shipped assets.
+
+| Input                           | Output              | Notes                                                                                                                            |
+| ------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `.png`                          | `.png`              | Apple-optimised (`CgBI`); rewritten by `pngdefry`.                                                                               |
+| `.tex`                          | `.png`              | Enciphered, a four-byte header, then an Apple-optimised PNG.                                                                     |
+| `.caf`                          | `.wav`              | Rewrapped by `ffmpeg`; the samples are copied, not re-encoded.                                                                   |
+| `.jbt`                          | a directory         | One tune: metadata, artwork, title plates, three charts, and two audio streams, all enciphered, with an MD5 of the ZIP after it. |
+| `.zip`                          | a directory         | Marker, hold-marker, and share images; enciphered entries with the header, plain ones left alone.                                |
+| `seq_bas`, `seq_adv`, `seq_ext` | `.json`             | Note charts: header, music bar, and every event with its panel, hold length, tempo, and time.                                    |
+| `.plist`, `.xcent`              | `.json`             | Data values are reported as hex; the two that are enciphered URLs are decoded as well.                                           |
+| `.strings`                      | `.json`             | Read by the `destin misc strings` parser.                                                                                        |
+| `.mom`, `.cdm`                  | `.json`             | Read by the `destin misc coredata` parser.                                                                                       |
+| `SC_Info`                       | `SC_Info.json`      | Read by the `destin misc sc-info` parser, and written only when the directory still holds records.                               |
+| the executable                  | `<name>.macho.json` | Read by the `destin misc macho` reader.                                                                                          |
+
+Every other file is copied unchanged, so the output is a complete bundle rather than a selection.
+Nothing is decrypted beyond the game's own asset cipher: an App Store executable stays enciphered,
+and its `LC_ENCRYPTION_INFO` command says so.
+
+`pngdefry` and `ffmpeg` must be on `PATH` or given with `--pngdefry-path` and `--ffmpeg-path`. Pass
+`--no-png` or `--no-audio` to skip either conversion and copy those files instead, `-j`/`--jobs` to
+set the number of concurrent conversion jobs (defaults to the CPU count), and `--debug` for verbose
+logging.
+
 ## pop'n rhythmin
 
 ```shell
@@ -197,6 +236,7 @@ JSON to standard output:
 
 ```shell
 destin misc coredata MODEL
+destin misc macho dump BINARY
 destin misc sc-info dump PATH
 destin misc strings STRINGS
 ```
@@ -207,6 +247,13 @@ to JSON, optionally dumping the raw keyed archive (`--archive`) or emitting the 
 migration amounts to (`--sql`, with `--mom` supplying the destination model's column types).
 `strings` reads an Xcode `.strings` localisation table in either the compiled binary plist form or
 the old-style text form and writes it as JSON.
+
+`macho dump` writes the properties of a Mach-O executable as JSON: the header and its flags, the
+segments and their sections, the libraries it links (weakly or otherwise), its UUID and source
+version, the minimum OS it declares, the entitlements inside its code signature, and, for an image
+bought from the App Store, the `LC_ENCRYPTION_INFO` command that says its text is still enciphered.
+`BINARY` may be an application's executable, a framework, or a dynamic library, thin or universal;
+every architecture slice is read. Nothing is decrypted and no code is disassembled.
 
 `sc-info dump` describes the `SC_Info` directory an App Store download carries beside its encrypted
 executable:

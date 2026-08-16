@@ -16,6 +16,7 @@ _GAMES = (
     'frequency',
     'i76',
     'incoming',
+    'jubeatplus',
     'marmalade',
     'misc',
     'monopoly08',

@@ -17,6 +17,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   SDK), `monopoly08` (Monopoly 2008), `thps2pc` (Tony Hawk's Pro Skater 2 PC), and `xg2` (Extreme-G
   and Extreme-G 2).
 - A single multi-command entry point, invoked as `destin <game> <subcommand>`.
+- `destin jubeatplus` group for the Konami iOS game _jubeat plus_: `unpack` converts a whole
+  download to formats that open outside iOS. It accepts an `.ipa`, the `.app` bundle, the `Payload`
+  directory, or a directory holding `Payload`, never writes to the source, and mirrors the bundle
+  into the output directory. Apple-optimised (`CgBI`) PNGs are rewritten by `pngdefry`; enciphered
+  `.tex` textures are deciphered and rewritten the same way; `.caf` sound effects are rewrapped as
+  WAV by `ffmpeg`; `.jbt` tune packages and the marker and share-image ZIPs are unpacked into
+  directories named after themselves, with every entry deciphered and decoded; note charts become
+  JSON with every event's panel, hold length, tempo, and time; and property lists, localisation
+  tables, Core Data models, the `SC_Info` bookkeeping, and the executable's properties all become
+  JSON. Every other file is copied unchanged. The assets use the same `BFCodec` cipher as
+  _pop'n rhythmin_, under seven keys of their own. `--no-png` and `--no-audio` skip the two
+  conversions that need a helper tool, and `-j`/`--jobs` sets the pool size.
 - `destin rhythmin` group for the Konami iOS game _pop'n rhythmin_: the `BFCodec` cipher (Blowfish
   with one deviation in its F function), `dump-chara` for downloaded character data, `dump-idx` for
   AEP animation indexes, `dump-map` for sugoroku boards (JSON, a text board, or a rendered PNG),
@@ -26,6 +38,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Core Data mapping (`.cdm`) or managed object (`.mom`) model to JSON, dumps the raw keyed archive,
   or emits the effective SQLite migration script; `strings` reads an Xcode `.strings` table in
   either the compiled or the old-style text form.
+- `destin misc macho dump`, which writes the properties of a Mach-O image as JSON: the header and
+  its flags, the segments and their sections, the libraries it links against, its UUID and source
+  version, the minimum OS it declares, the entitlements inside its code signature, and, for an
+  image bought from the App Store, the `LC_ENCRYPTION_INFO` command that says its text is still
+  enciphered. It accepts an application's executable, a framework, or a dynamic library, thin or
+  universal, and reads every architecture slice. It decrypts nothing and disassembles no code.
 - `destin misc sc-info dump`, which describes the `SC_Info` FairPlay bookkeeping in a purchased
   application bundle: the store item ID and App Store link, the manifest, the `.sinf` purchase
   record and its atom tree, the `.supf` and `.supp` supplements broken into their length-prefixed
@@ -43,9 +61,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `ian2obj` converts Dreamcast `*_M.BIN` model packs in addition to PC `.ian` meshes.
 - `-j`/`--jobs` option to run Incoming file conversions concurrently, defaulting to the CPU count.
 - Shared format code used by more than one game lives in a single `destin.common` package: WAV, PNG,
-  and PPM writers, an LZSS decompressor, a Twofish cipher, a CookFS reader, memory-mapped and
-  byte-range readers, native-tool location, a converter registry, worker-pool helpers, per-run
-  context, and text and filename utilities.
+  and PPM writers, an LZSS decompressor, a Twofish cipher, the `BFCodec` Blowfish variant shared by
+  _pop'n rhythmin_ and _jubeat plus_, a CookFS reader, memory-mapped and byte-range readers,
+  native-tool location, a converter registry, worker-pool helpers, per-run context, and text and
+  filename utilities.
 
 ### Changed
 
