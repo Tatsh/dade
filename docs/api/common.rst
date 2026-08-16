@@ -4,6 +4,12 @@ Common
 Shared format readers, writers, and helpers used by more than one game submodule. Each was lifted
 from a game package once a second consumer appeared, so a single implementation is maintained.
 
+``destin.common.bfcodec``
+-------------------------
+
+.. automodule:: destin.common.bfcodec
+   :members:
+
 ``destin.common.compress``
 --------------------------
 
