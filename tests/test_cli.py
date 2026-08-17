@@ -13,6 +13,7 @@ _GAMES = (
     'amplitude',
     'bit192',
     'bitrock',
+    'ddrsplus',
     'frequency',
     'i76',
     'incoming',

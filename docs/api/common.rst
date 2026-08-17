@@ -112,6 +112,18 @@ from a game package once a second consumer appeared, so a single implementation 
 .. automodule:: destin.common.smf
    :members:
 
+``destin.common.ssq``
+---------------------
+
+.. automodule:: destin.common.ssq
+   :members:
+
+``destin.common.stepmania``
+---------------------------
+
+.. automodule:: destin.common.stepmania
+   :members:
+
 ``destin.common.text``
 ----------------------
 

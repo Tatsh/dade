@@ -19,6 +19,7 @@ and :doc:`../utilities`.
 
    bit192
    bitrock
+   ddrsplus
    harmonix
    i76
    incoming

@@ -28,6 +28,7 @@ appl
 argb
 armv
 arow
+artisttranslit
 ascontiguousarray
 asdt
 asyncio
@@ -53,6 +54,7 @@ bitrock
 bmax
 bmin
 bootram
+bpms
 bpps
 bsky
 bspan
@@ -66,6 +68,7 @@ capsys
 cdda
 cdir
 cdrommsf
+cdtitle
 chara
 checkerboard
 chunksize
@@ -106,7 +109,10 @@ dataarray
 dataclasses
 datatable
 datatables
+dbfs
 dblclick
+ddrs
+ddrsplus
 deadbeefdeadbeef
 deathmatch
 debugpy
@@ -263,6 +269,7 @@ jubeatmissiondata
 jubeatplus
 jubeatskmpledata
 junkjunk
+kdei
 kext
 keybind
 keybinds
@@ -449,6 +456,8 @@ rrggbb
 rstcheck
 rstr
 samp
+samplelength
+samplestart
 sanm
 sansio
 sbox
@@ -483,6 +492,9 @@ shps
 shpx
 siga
 signtool
+simfile
+simfile's
+simfiles
 sinf
 sixsec
 sjis
@@ -516,6 +528,7 @@ statusline
 stcol
 stcycl
 stdlib
+stepmania
 stmask
 storefront
 storefronts
@@ -530,6 +543,7 @@ submesh's
 subpredicate
 subpredicates
 substreams
+subtitletranslit
 sugoroku
 sunandmoon
 superentity
@@ -554,6 +568,7 @@ texsize
 textlength
 thps
 timecents
+titletranslit
 tlut
 tmov
 tobytes
@@ -644,3 +659,4 @@ zplays
 zrating
 zstr
 ztitle
+Яire
