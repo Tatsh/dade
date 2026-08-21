@@ -460,6 +460,7 @@ samplelength
 samplestart
 sanm
 sansio
+sbclaude
 sbox
 scancode
 scancodes
