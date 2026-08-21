@@ -5,12 +5,19 @@ from typing import TYPE_CHECKING
 import json
 
 from destin.misc.commands.macho import macho
-from destin.misc.main import misc
+from destin.misc.main import main, misc
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from click.testing import CliRunner
+    from pytest_mock import MockerFixture
+
+
+def test_the_group_entry_point(mocker: MockerFixture) -> None:
+    group = mocker.patch('destin.misc.main.misc')
+    main()
+    group.assert_called_once_with()
 
 
 def test_group_is_mounted_under_misc(runner: CliRunner) -> None:

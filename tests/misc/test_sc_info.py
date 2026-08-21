@@ -1,13 +1,22 @@
 """Tests for :py:mod:`destin.misc.sc_info`."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 import plistlib
 import struct
 import zipfile
 
 from destin.misc.sc_info import (
+    Atom,
     Right,
+    SCInfo,
+    SCRecord,
+    Sinf,
+    Supf,
+    Supp,
+    Supx,
+    SupxEntry,
     find_atom,
     iter_atoms,
     parse_atoms,
@@ -33,7 +42,7 @@ from .conftest import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from pytest_mock import MockerFixture
 
 
 def test_parse_atoms_nests() -> None:
@@ -711,3 +720,139 @@ def test_the_report_names_every_record(sc_info_dir_with_two_records: Path) -> No
     report = render_text(read_sc_info(sc_info_dir_with_two_records))
     assert 'Record: Example\n' in report
     assert 'Record: AExample_armv7 (not the main record)' in report
+
+
+def test_parse_atoms_stops_at_a_non_printable_type() -> None:
+    assert parse_atoms(struct.pack('>I', 8) + b'\x00\x01\x02\x03') == ()
+
+
+def _supf_bytes(certificate_length: int, der: bytes) -> bytes:
+    return b'\x03309' + struct.pack('>I', 72) + bytes(72) + struct.pack('>I',
+                                                                        certificate_length) + der
+
+
+def test_parse_supf_without_a_certificate_or_signature() -> None:
+    supf = parse_supf(_supf_bytes(0, b''))
+    assert supf.certificate is None
+    assert supf.certificate_der is None
+    assert supf.signature == b''
+
+
+def test_parse_supf_with_an_unreadable_certificate() -> None:
+    supf = parse_supf(_supf_bytes(4, b'junk'))
+    assert supf.certificate is None
+    assert supf.certificate_der is None
+
+
+def _supp_bytes(certificate_length: int | None, der: bytes) -> bytes:
+    data = b'\x01309' + bytes(20) + struct.pack('>I', 0)
+    if certificate_length is not None:
+        data += struct.pack('>I', certificate_length) + der
+    return data
+
+
+def test_parse_supp_without_a_certificate() -> None:
+    assert parse_supp(_supp_bytes(0, b'')).certificate is None
+
+
+def test_parse_supp_with_an_unreadable_certificate() -> None:
+    assert parse_supp(_supp_bytes(4, b'junk')).certificate is None
+
+
+def test_parse_supx_with_an_empty_body() -> None:
+    assert parse_supx(struct.pack('>II', 1, 0)).entries == ()
+
+
+def test_parse_supx_stops_at_an_oversized_entry() -> None:
+    data = struct.pack('>II', 1, 8) + struct.pack('>II', 1, 100)
+    assert parse_supx(data).entries == ()
+
+
+def _leaf(kind: str, body: bytes) -> Atom:
+    return Atom(kind, 0, 8 + len(body), body, ())
+
+
+def _minimal_info(tmp_path: Path) -> SCInfo:
+    minimal_sinf = Sinf(
+        (_leaf('righ', b'plat\x00\x00\x00\x05'), _leaf('zzzz', b'\x00\x00\x00\x01')), None, None,
+        None, None, None, None, None, None, (), b'', None, None)
+    rights_sinf = Sinf((), 'game', 'itun', 1, 'A', None, 0, 6, b'\x00' * 16,
+                       (Right('plat', b'\x00\x00\x00\x05'),), b'', b'\x00' * 32, b'\x01')
+    supf = Supf(3, '309', (2, 64, 12, 9), b'\x00' * 20, b'\x00' * 32, None, None, None, b'',
+                b'\x01')
+    supp = Supp(1, '309', b'\x00' * 20, (b'\x00' * 32,), None, None, None, b'')
+    supx = Supx(1, 0, (SupxEntry(1, b'\x02'),), b'')
+    return SCInfo(tmp_path,
+                  None, (SCRecord('A', minimal_sinf, None, None, None, is_main=True),
+                         SCRecord('B', rights_sinf, None, None, None, is_main=False),
+                         SCRecord('C', None, supf, supp, supx, is_main=False)), (),
+                  None,
+                  None,
+                  'Payload/X.app',
+                  is_main=True)
+
+
+def test_render_text_covers_minimal_records(tmp_path: Path) -> None:
+    text = render_text(_minimal_info(tmp_path))
+    assert 'Record: A' in text
+    assert 'Supplement (.supf)' in text
+    assert 'Supplement (.supp)' in text
+    assert 'Supplement (.supx)' in text
+
+
+def test_json_covers_minimal_records(tmp_path: Path) -> None:
+    rendered = sc_info_to_json(_minimal_info(tmp_path))
+    assert rendered['records'][0]['sinf'] is not None
+    assert rendered['records'][0]['sinf']['private'] is None
+    assert rendered['records'][2]['sinf'] is None
+
+
+def test_storefront_is_absent_without_a_readable_value(tmp_path: Path) -> None:
+    info = SCInfo(tmp_path, None, (), (), {'other': 1}, None, 'Payload/X.app', is_main=True)
+    assert info.storefront is None
+
+
+def test_read_bundles_skips_a_bundle_named_file(tmp_path: Path, sinf_bytes: bytes) -> None:
+    real = tmp_path / 'Payload' / 'Real.app' / 'SC_Info'
+    real.mkdir(parents=True)
+    (real / 'Real.sinf').write_bytes(sinf_bytes)
+    (tmp_path / 'Payload' / 'Fake.app').write_bytes(b'not a bundle')
+    infos = read_bundles(tmp_path)
+    assert any(info.bundle.endswith('Real.app') for info in infos)
+
+
+def test_directory_contents_skips_a_subdirectory(tmp_path: Path, sinf_bytes: bytes) -> None:
+    directory = tmp_path / 'Example.app' / 'SC_Info'
+    directory.mkdir(parents=True)
+    (directory / 'Example.sinf').write_bytes(sinf_bytes)
+    (directory / 'nested').mkdir()
+    info = read_sc_info(tmp_path / 'Example.app')
+    assert 'nested' not in {name for name, _, _ in info.files}
+
+
+def test_directory_contents_skips_an_unreadable_file(tmp_path: Path, sinf_bytes: bytes,
+                                                     mocker: MockerFixture) -> None:
+    directory = tmp_path / 'Example.app' / 'SC_Info'
+    directory.mkdir(parents=True)
+    (directory / 'Example.sinf').write_bytes(sinf_bytes)
+    (directory / 'blocked.dat').write_bytes(b'secret')
+    real_read = Path.read_bytes
+
+    def read(self: Path) -> bytes:
+        if self.name == 'blocked.dat':
+            raise OSError
+        return real_read(self)
+
+    mocker.patch.object(Path, 'read_bytes', read)
+    info = read_sc_info(directory)
+    assert 'blocked.dat' not in {name for name, _, _ in info.files}
+
+
+def test_main_record_name_skips_a_non_matching_sinf_path(tmp_path: Path, sinf_bytes: bytes) -> None:
+    directory = tmp_path / 'Example.app' / 'SC_Info'
+    directory.mkdir(parents=True)
+    (directory / 'Example.sinf').write_bytes(sinf_bytes)
+    (directory / 'Manifest.plist').write_bytes(plistlib.dumps({'SinfPaths': ['Nope.sinf']}))
+    main = read_sc_info(tmp_path / 'Example.app').main_record
+    assert main is not None
+    assert main.name == 'Example'

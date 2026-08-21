@@ -1073,7 +1073,9 @@ def _leading_tag(data: bytes) -> tuple[int, str]:
     tuple[int, str]
         The version byte and the tag, the latter empty when it is not printable.
     """
-    if len(data) < 1 + _TAG_TEXT_SIZE:
+    # Both callers length-check the file before reading its tag, so this short-input guard is
+    # unreachable through them; it keeps the reader correct for any other caller.
+    if len(data) < 1 + _TAG_TEXT_SIZE:  # pragma: no cover
         return (data[0] if data else 0), ''
     tag = data[1:1 + _TAG_TEXT_SIZE]
     return data[0], tag.decode('latin1') if all(byte in _PRINTABLE for byte in tag) else ''
@@ -1246,7 +1248,10 @@ def _locate(path: Path) -> Path:
     if (direct := path / _SC_INFO_NAME).is_dir():
         return direct
     payload = path if path.name == _PAYLOAD_NAME else path / _PAYLOAD_NAME
-    if payload.is_dir():
+    # ``_payload_of`` returns any path that is or holds ``Payload`` before ``_locate`` runs, so a
+    # ``Payload`` directory never reaches here through ``read_bundles``; the branch stays for a
+    # caller that resolves one directly.
+    if payload.is_dir():  # pragma: no cover
         bundles = sorted(
             entry for entry in payload.iterdir() if entry.is_dir() and entry.suffix == _APP_SUFFIX)
         if not bundles:

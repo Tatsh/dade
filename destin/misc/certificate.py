@@ -286,10 +286,12 @@ def _der_size(data: bytes, offset: int) -> int | None:
         The total size, header included, or ``None`` when there is no readable definite-length
         header there.
     """
-    if offset + 2 > len(data) or data[offset] != _DER_SEQUENCE:
+    # The sole caller only scans for the long-form marker ``\x30\x82``, so the tag and short-form
+    # guards below cannot be reached through it; they keep the reader correct for any other caller.
+    if offset + 2 > len(data) or data[offset] != _DER_SEQUENCE:  # pragma: no cover
         return None
     first = data[offset + 1]
-    if first < _LONG_FORM:
+    if first < _LONG_FORM:  # pragma: no cover
         return 2 + first
     count = first & _LENGTH_MASK
     if count == 0 or count > _MAX_LENGTH_BYTES or offset + 2 + count > len(data):

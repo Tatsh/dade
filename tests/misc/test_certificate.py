@@ -1,6 +1,14 @@
 """Tests for :py:mod:`destin.misc.certificate`."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING
+
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed448, ed25519, x25519
+from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 from destin.misc.certificate import (
     certificate_lines,
     certificate_to_json,
@@ -10,6 +18,31 @@ from destin.misc.certificate import (
 import pytest
 
 from .conftest import CERTIFICATE_SERIAL
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from cryptography.hazmat.primitives.asymmetric.types import (
+        CertificateIssuerPrivateKeyTypes,
+        CertificatePublicKeyTypes,
+    )
+
+_NAME = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'Test')])
+_BEFORE = datetime(2020, 1, 1, tzinfo=timezone.utc)
+_AFTER = datetime(2030, 1, 1, tzinfo=timezone.utc)
+
+
+def _cert(
+    public_key: CertificatePublicKeyTypes,
+    sign_key: CertificateIssuerPrivateKeyTypes,
+    algorithm: hashes.SHA256 | None,
+    extensions: Sequence[tuple[x509.ExtensionType, bool]] = ()
+) -> bytes:
+    builder = (x509.CertificateBuilder().subject_name(_NAME).issuer_name(_NAME).public_key(
+        public_key).serial_number(1).not_valid_before(_BEFORE).not_valid_after(_AFTER))
+    for extension, critical in extensions:
+        builder = builder.add_extension(extension, critical=critical)
+    return builder.sign(sign_key, algorithm).public_bytes(Encoding.DER)
 
 
 def test_load_rsa_certificate(rsa_certificate_der: bytes) -> None:
@@ -135,3 +168,81 @@ def test_find_certificates_ignores_a_false_start() -> None:
 
 def test_find_certificates_in_an_empty_buffer() -> None:
     assert find_certificates(b'') == ()
+
+
+def test_find_certificates_ignores_a_truncated_length() -> None:
+    # A long-form marker with too few length bytes has no readable size, so it is skipped.
+    assert find_certificates(b'\x30\x82\x00') == ()
+
+
+def test_dsa_public_key() -> None:
+    key = dsa.generate_private_key(key_size=2048)
+    summary = load_certificate(_cert(key.public_key(), key, hashes.SHA256()))
+    assert summary.public_key.algorithm == 'DSA'
+    assert summary.public_key.detail is None
+    assert str(summary.public_key) == f'DSA, {summary.public_key.size} bits'
+
+
+def test_ed25519_public_key_has_no_size_or_detail() -> None:
+    key = ed25519.Ed25519PrivateKey.generate()
+    summary = load_certificate(_cert(key.public_key(), key, None))
+    assert summary.public_key.algorithm == 'Ed25519'
+    assert summary.public_key.size is None
+    assert str(summary.public_key) == 'Ed25519'
+
+
+def test_ed448_public_key() -> None:
+    key = ed448.Ed448PrivateKey.generate()
+    assert load_certificate(_cert(key.public_key(), key, None)).public_key.algorithm == 'Ed448'
+
+
+def test_an_unrecognised_public_key_falls_back_to_its_class_name() -> None:
+    signer = ed25519.Ed25519PrivateKey.generate()
+    key = x25519.X25519PrivateKey.generate()
+    info = load_certificate(_cert(key.public_key(), signer, None)).public_key
+    assert info.algorithm not in {'RSA', 'EC', 'DSA', 'Ed25519', 'Ed448'}
+    assert info.size is None
+
+
+def test_every_extension_type_is_broken_into_fields() -> None:
+    key = ec.generate_private_key(ec.SECP256R1())
+    extensions: list[tuple[x509.ExtensionType, bool]] = [
+        (x509.KeyUsage(digital_signature=False,
+                       content_commitment=False,
+                       key_encipherment=False,
+                       data_encipherment=False,
+                       key_agreement=True,
+                       key_cert_sign=False,
+                       crl_sign=False,
+                       encipher_only=True,
+                       decipher_only=False), False),
+        (x509.SubjectKeyIdentifier(b'\x01' * 20), False),
+        (x509.AuthorityKeyIdentifier(key_identifier=b'\x02' * 20,
+                                     authority_cert_issuer=None,
+                                     authority_cert_serial_number=None), False),
+        (x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), False),
+        (x509.SubjectAlternativeName([x509.DNSName('example.com')]), False),
+    ]
+    summary = load_certificate(_cert(key.public_key(), key, hashes.SHA256(), extensions))
+    keys = {name for extension in summary.extensions for name, _ in extension.fields}
+    assert {'keyAgreement', 'encipherOnly', 'digest', 'keyIdentifier', 'usages', 'names'} <= keys
+
+
+def test_an_unhandled_extension_keeps_its_one_line_summary() -> None:
+    key = ec.generate_private_key(ec.SECP256R1())
+    policy = x509.CertificatePolicies(
+        [x509.PolicyInformation(x509.ObjectIdentifier('1.2.3.4'), None)])
+    summary = load_certificate(_cert(key.public_key(), key, hashes.SHA256(), [(policy, False)]))
+    extension = summary.extensions[0]
+    assert extension.fields == ()
+    rendered = certificate_to_json(summary)['extensions'][0]
+    assert 'summary' in rendered
+    assert 'fields' not in rendered
+    lines = certificate_lines(summary, '')
+    assert any(line.strip() == extension.summary for line in lines)
+
+
+def test_certificate_lines_without_extensions() -> None:
+    key = ec.generate_private_key(ec.SECP256R1())
+    lines = certificate_lines(load_certificate(_cert(key.public_key(), key, hashes.SHA256())), '')
+    assert 'Extensions' not in lines
