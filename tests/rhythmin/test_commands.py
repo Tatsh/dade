@@ -9,13 +9,14 @@ from destin.rhythmin.commands.dump_idx import dump_idx
 from destin.rhythmin.commands.dump_map import dump_map
 from destin.rhythmin.commands.dump_sheet import dump_sheet
 from destin.rhythmin.commands.extract_dialogue import extract_dialogue
-from destin.rhythmin.main import rhythmin
+from destin.rhythmin.main import main, rhythmin
 import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from click.testing import CliRunner
+    from pytest_mock import MockerFixture
 
 
 def test_group_lists_every_command(runner: CliRunner) -> None:
@@ -213,3 +214,9 @@ def test_extract_dialogue_aborts_on_a_64_bit_binary(runner: CliRunner, tmp_path:
     result = runner.invoke(extract_dialogue, (str(tmp_path / 'out.inc'), '-b', str(binary)))
     assert result.exit_code == 1
     assert 'Not a 32-bit Mach-O image' in result.output
+
+
+def test_the_group_entry_point(mocker: MockerFixture) -> None:
+    group = mocker.patch('destin.rhythmin.main.rhythmin')
+    main()
+    group.assert_called_once_with()

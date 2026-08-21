@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import struct
+import zipfile
 
 from PIL import Image
+from destin.rhythmin.bfcodec import encipher
 from destin.rhythmin.sheet import (
     arcade_strip,
     arcade_to_json,
@@ -18,7 +21,17 @@ from destin.rhythmin.sheet import (
 import pytest
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
+
+
+def _record(tick: int,
+            end: int,
+            record_type: int,
+            value: int,
+            positions: Sequence[int] = (0, 0, 0, 0, 0, 0)) -> bytes:
+    return (struct.pack('<II', tick, end) + bytes([record_type, 0, 0, 0]) +
+            struct.pack('<H', value) + bytes(positions))
 
 
 def test_read_sheet_standard(orb_package: Path) -> None:
@@ -179,3 +192,86 @@ def test_render_strip_image_rejects_missing_sprites(arcade_chart_bytes: bytes,
                            tmp_path / 'chart.png',
                            buttons_dir=tmp_path,
                            source='test')
+
+
+def test_detect_format_uses_the_extension_to_break_a_tie() -> None:
+    # A 24-byte payload with the arcade magic satisfies both format checks.
+    payload = bytes(4) + b'E' + bytes(19)
+    assert detect_format(payload, '.acv') == 'arcade'
+    assert detect_format(payload, '.orb') == 'standard'
+
+
+def test_read_sheet_without_info(tmp_path: Path, standard_chart_bytes: bytes) -> None:
+    path = tmp_path / 'no_info.orb'
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('sheet_n', encipher(standard_chart_bytes))
+    assert read_sheet(path, 'n').info is None
+
+
+def test_read_sheet_with_unreadable_info(tmp_path: Path, standard_chart_bytes: bytes) -> None:
+    path = tmp_path / 'bad_info.orb'
+    with zipfile.ZipFile(path, 'w') as archive:
+        archive.writestr('sheet_n', encipher(standard_chart_bytes))
+        archive.writestr('info', encipher(b'not a plist'))
+    assert read_sheet(path, 'n').info is None
+
+
+def test_standard_summary_without_tempo_has_no_bpm_range() -> None:
+    chart_bytes = struct.pack('<f', 1.0) + _record(0, 0, 4, 0) + _record(1000, 1000, 3, 0)
+    assert standard_to_json(parse_standard(chart_bytes))['summary']['bpmRange'] is None
+
+
+def test_standard_strip_skips_a_zero_bpm_tempo() -> None:
+    chart_bytes = (struct.pack('<f', 1.0) + _record(0, 0, 2, 240) + _record(500, 0, 2, 0) +
+                   _record(0, 0, 0, 1, (0, 0, 0, 50, 0, 0)) + _record(2000, 2000, 3, 0))
+    assert standard_strip(parse_standard(chart_bytes)).measure_ticks
+
+
+def test_standard_strip_ignores_an_unknown_record() -> None:
+    chart_bytes = (struct.pack('<f', 1.0) + _record(0, 0, 2, 240) + _record(0, 0, 5, 0) +
+                   _record(0, 0, 4, 0) + _record(1000, 1000, 4, 0))
+    assert standard_strip(parse_standard(chart_bytes)).measure_ticks == (0, 1000)
+
+
+def test_render_strip_image_with_button_sprites(arcade_chart_bytes: bytes, tmp_path: Path) -> None:
+    buttons = tmp_path / 'buttons'
+    buttons.mkdir()
+    for number in range(1, 6):
+        Image.new('RGBA', (20, 20),
+                  (255, 0, 0, 255)).save(buttons / f'login_popn{number:02d}@2x.png')
+    path = tmp_path / 'chart.png'
+    render_strip_image(arcade_strip(parse_arcade(arcade_chart_bytes)),
+                       path,
+                       buttons_dir=buttons,
+                       source='test')
+    assert path.is_file()
+
+
+def test_render_places_a_tick_before_the_first_measure(arcade_chart_bytes: bytes,
+                                                       tmp_path: Path) -> None:
+    strip = arcade_strip(parse_arcade(arcade_chart_bytes))._replace(measure_ticks=(500, 1000))
+    path = tmp_path / 'chart.png'
+    render_strip_image(strip, path, source='test')
+    assert path.is_file()
+
+
+def test_render_skips_notes_outside_the_lane_count(arcade_chart_bytes: bytes,
+                                                   tmp_path: Path) -> None:
+    strip = arcade_strip(parse_arcade(arcade_chart_bytes))._replace(lane_count=1)
+    path = tmp_path / 'chart.png'
+    render_strip_image(strip, path, source='test')
+    assert path.is_file()
+
+
+def test_render_reports_no_bpm_without_tempos(arcade_chart_bytes: bytes, tmp_path: Path) -> None:
+    strip = arcade_strip(parse_arcade(arcade_chart_bytes))._replace(tempos=())
+    path = tmp_path / 'chart.png'
+    render_strip_image(strip, path, source='test', title='No Tempo')
+    assert path.is_file()
+
+
+def test_render_reports_a_bpm_range(arcade_chart_bytes: bytes, tmp_path: Path) -> None:
+    strip = arcade_strip(parse_arcade(arcade_chart_bytes))._replace(tempos=((0, 120), (500, 240)))
+    path = tmp_path / 'chart.png'
+    render_strip_image(strip, path, source='test', title='Range')
+    assert path.is_file()

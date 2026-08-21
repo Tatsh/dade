@@ -31,6 +31,12 @@ def test_a_triplet_is_matched_within_tolerance() -> None:
     assert quantize_measures(events, 4, _MEASURE).count('\n') == 11
 
 
+def test_an_offset_no_candidate_fits_falls_back_to_the_finest_grid() -> None:
+    # A note at tick 11 sits within tolerance of no candidate row grid, so the finest, 192, is
+    # used.
+    assert quantize_measures({11: {0: '1'}}, 4, _MEASURE).count('\n') == 191
+
+
 def test_columns_past_the_panel_count_are_dropped() -> None:
     assert quantize_measures({0: {7: '1'}}, 4, _MEASURE).splitlines()[0] == '0000'
 

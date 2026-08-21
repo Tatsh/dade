@@ -16,6 +16,8 @@ import pytest
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from pytest_mock import MockerFixture
+
 
 def test_header_fields(treasure_map_bytes: bytes) -> None:
     board = parse_treasure_map(treasure_map_bytes, 'map_042.map')
@@ -80,6 +82,15 @@ def test_render_image(treasure_map_bytes: bytes, tmp_path: Path) -> None:
     assert path.is_file()
     with Image.open(path) as image:
         assert image.size == (width, height)
+
+
+def test_render_image_with_an_empty_legend(treasure_map_bytes: bytes, tmp_path: Path,
+                                           mocker: MockerFixture) -> None:
+    # With no glyphs the legend wraps to nothing, so the trailing-line append is skipped.
+    mocker.patch('destin.rhythmin.treasure_map.GRID_GLYPHS', {})
+    path = tmp_path / 'board.png'
+    render_image(parse_treasure_map(treasure_map_bytes, 'map_042.map'), path)
+    assert path.is_file()
 
 
 def test_read_treasure_map(treasure_map_file: Path) -> None:

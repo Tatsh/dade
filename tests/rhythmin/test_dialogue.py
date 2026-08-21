@@ -60,6 +60,32 @@ def test_extract_pools_rejects_a_pointer_outside_the_file(macho_image: bytes) ->
         extract_pools(macho_image, (PoolSpec('kTooLong', MACHO_TABLE_ADDRESS, 64),))
 
 
+def test_extract_pools_stops_reading_commands_at_a_zero_length_one(macho_image: bytes) -> None:
+    data = bytearray(macho_image)
+    # Claim a second load command; the zero padding after the segment reads as a zero-length one.
+    struct.pack_into('<I', data, 16, 2)
+    assert extract_pools(bytes(data), (_SPEC,))[0].strings == MACHO_STRINGS
+
+
+def _image_with_unterminated_string() -> bytes:
+    vm_base = 0x4000
+    table_offset = 128
+    tail = b'abcdef'  # No NUL, so the string runs off the end of the file.
+    file_size = table_offset + 4 + len(tail)
+    segment = struct.pack('<II16sIIIIIIII', 0x1, 56, b'__TEXT', vm_base, file_size, 0, file_size, 7,
+                          5, 0, 0)
+    image = bytearray(struct.pack('<IIIIIII', 0xFEEDFACE, 12, 9, 2, 1, len(segment), 0) + segment)
+    image += b'\0' * (table_offset - len(image))
+    image += struct.pack('<I', vm_base + table_offset + 4)
+    image += tail
+    return bytes(image)
+
+
+def test_extract_pools_rejects_a_string_that_is_not_terminated() -> None:
+    with pytest.raises(ValueError, match='not NUL-terminated'):
+        extract_pools(_image_with_unterminated_string(), (PoolSpec('kUnterminated', 0x4080, 1),))
+
+
 def test_empty_pools() -> None:
     pools = empty_pools()
     assert [pool.name for pool in pools] == [spec.name for spec in POOLS]

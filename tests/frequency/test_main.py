@@ -94,3 +94,15 @@ def test_main_rejects_negative_jobs(runner: CliRunner, tmp_path: Path) -> None:
     (tmp_path / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))
     result = runner.invoke(main, (str(tmp_path), '--jobs', '-1'))
     assert result.exit_code == 2
+
+
+def test_main_reports_an_unpack_failure(runner: CliRunner, mocker: MockerFixture,
+                                        tmp_path: Path) -> None:
+    game = tmp_path / 'game'
+    game.mkdir()
+    (game / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))
+    mocker.patch('destin.harmonix.unpacker.materialize')
+    mocker.patch('destin.harmonix.unpacker.run_game', side_effect=ValueError('bad disc'))
+    result = runner.invoke(main, (str(game), '-o', str(tmp_path / 'out')))
+    assert result.exit_code == 1
+    assert 'bad disc' in result.output

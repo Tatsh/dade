@@ -139,3 +139,76 @@ def test_rejects_a_name_block_with_no_terminating_byte() -> None:
 def test_rejects_a_name_block_with_no_terminating_empty_string() -> None:
     with pytest.raises(ValueError, match='runs past the end of the file'):
         _ = _index_with_frame_names(b'name\0').frame_names
+
+
+def test_a_name_block_ending_on_the_alignment_needs_no_padding() -> None:
+    # The block starts at file offset 28, so 'ab' plus its two terminators ends at 32, a multiple
+    # of eight, and the alignment step adds nothing.
+    assert _index_with_frame_names(b'ab\0\0').frame_names == ('ab',)
+
+
+def test_sprite_records_stop_when_the_file_ends() -> None:
+    # There is a frame name but no room for its sprite record after the block.
+    assert _index_with_frame_names(b'ab\0\0').sprite_records == ()
+
+
+def _block(names: tuple[str, ...], start: int) -> bytes:
+    block = b''.join(name.encode('latin1') + b'\0' for name in names) + b'\0'
+    return block + b'\0' * (-(start + len(block)) % 8)
+
+
+def _entry(entry_type: int) -> bytes:
+    return struct.pack('<10h', entry_type, 0, 0, 0, 0, 0, 0, 0, 0, 0) + struct.pack(
+        '<4i', 0, 0, 0, 0)
+
+
+def _index(layer_names: tuple[str, ...],
+           ordinals: tuple[int, ...],
+           entries: bytes = b'') -> AepIndex:
+    out = bytearray(b'\0' * 28)
+    user_off = len(out) - 4
+    out += _block(('U',), len(out))
+    frame_off = len(out) - 4
+    out += _block(('F',), len(out)) + struct.pack('<4h', 0, 0, 0, 0)
+    layer_off = len(out) - 4
+    out += _block(layer_names, len(out))
+    out += struct.pack(f'<{len(ordinals)}h', *ordinals)
+    if remainder := len(layer_names) % 4:
+        out += b'\0' * ((4 - remainder) * 2)
+    out += entries
+    struct.pack_into('<hhiiiii', out, 4, 7, 0, frame_off, 0, 0, layer_off, user_off)
+    return AepIndex(bytes(out))
+
+
+def test_frame_entries_offset_needs_no_padding_for_a_full_group() -> None:
+    # Four layer names fill an ordinal group exactly, so no padding is added and the entry array
+    # begins at the end of the file.
+    index = _index(('A', 'B', 'C', 'D'), (0, 0, 0, 0))
+    assert index.layer_names == ('A', 'B', 'C', 'D')
+    assert index.frame_entries == ()
+
+
+def test_layer_chain_stops_at_a_foreign_entry() -> None:
+    # Type 1 is neither a terminator nor a chain member, so the walk stops at once.
+    assert _index(('X',), (0,), _entry(1)).layer_chain('X') == ()
+
+
+def test_layer_chain_stops_at_the_end_of_the_file() -> None:
+    index = _index(('X',), (0,), _entry(0) + _entry(0))
+    assert len(index.layer_chain('X')) == 2
+
+
+def _index_with_channel(keys: bytes) -> AepIndex:
+    data = bytearray(b'\0' * 28)
+    struct.pack_into('<hhiiiii', data, 4, 7, 0, 24, 0, 0, 24, 24)
+    return AepIndex(bytes(data) + keys)
+
+
+def test_position_channel_stops_at_the_end_of_the_file() -> None:
+    keys = struct.pack('<4h', 0, 10, 20, 0) + struct.pack('<4h', 1, 30, 40, 0)
+    assert len(_index_with_channel(keys).position_channel(24)) == 2
+
+
+def test_position_channel_stops_at_the_key_limit() -> None:
+    keys = struct.pack('<4h', 0, 0, 0, 0) * 4096
+    assert len(_index_with_channel(keys).position_channel(24)) == 4096
