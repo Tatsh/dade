@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
+    from pytest_mock import MockerFixture
+
 
 def test_every_section_is_written_out(make_gen: Callable[..., bytes], tmp_path: Path) -> None:
     extract_gen(make_gen(), 'song', tmp_path)
@@ -95,3 +97,28 @@ def test_the_result_lists_every_file_written(make_gen: Callable[..., bytes],
                                              tmp_path: Path) -> None:
     result = extract_gen(make_gen(), 'song', tmp_path)
     assert set(result.paths) == set(tmp_path.iterdir())
+
+
+def test_the_gap_is_measured_when_ffmpeg_is_supplied(make_gen: Callable[..., bytes], tmp_path: Path,
+                                                     mocker: MockerFixture) -> None:
+    mocker.patch('destin.ddrsplus.extract.estimate_gap', return_value=1.234)
+    result = extract_gen(make_gen(), 'song', tmp_path, ffmpeg=tmp_path / 'ffmpeg')
+    assert result.gap == pytest.approx(1.234)
+    assert '#OFFSET:-1.234;' in (tmp_path / 'song.sm').read_text()
+
+
+def test_missing_optional_sections_are_skipped(make_gen: Callable[..., bytes],
+                                               tmp_path: Path) -> None:
+    extract_gen(make_gen(sections={2: b'', 7: b''}), 'song', tmp_path)
+    assert not (tmp_path / 'song.2.png').exists()
+    assert not (tmp_path / 'song.7.json').exists()
+    # The banner reference in the simfile falls back to empty.
+    assert '#BANNER:;' in (tmp_path / 'song.sm').read_text()
+
+
+def test_a_chart_section_with_no_charts_is_skipped(make_gen: Callable[..., bytes],
+                                                   make_ssq: Callable[..., bytes],
+                                                   tmp_path: Path) -> None:
+    extract_gen(make_gen(sections={3: make_ssq(parameters=())}), 'song', tmp_path)
+    assert not (tmp_path / 'song.sm').exists()
+    assert (tmp_path / 'song.shake.sm').is_file()

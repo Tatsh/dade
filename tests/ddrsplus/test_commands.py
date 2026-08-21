@@ -3,13 +3,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.ddrsplus.main import ddrsplus
+from destin.common.tools import ToolNotFoundError
+from destin.ddrsplus.main import ddrsplus, main
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
     from click.testing import CliRunner
+    from pytest_mock import MockerFixture
 
 
 def test_extract_gen_writes_a_directory_per_input(make_gen: Callable[..., bytes], runner: CliRunner,
@@ -61,3 +63,30 @@ def test_extract_gen_aborts_on_a_bad_container(runner: CliRunner, tmp_path: Path
 def test_extract_gen_needs_an_existing_file(runner: CliRunner, tmp_path: Path) -> None:
     result = runner.invoke(ddrsplus, ('extract-gen', str(tmp_path / 'missing.gen')))
     assert result.exit_code != 0
+
+
+def test_extract_gen_locates_ffmpeg_when_neither_flag_is_given(make_gen: Callable[..., bytes],
+                                                               runner: CliRunner, tmp_path: Path,
+                                                               mocker: MockerFixture) -> None:
+    source = tmp_path / '259.gen'
+    source.write_bytes(make_gen())
+    mocker.patch('destin.ddrsplus.commands.extract_gen.locate_tool',
+                 return_value=tmp_path / 'ffmpeg')
+    result = runner.invoke(ddrsplus, ('extract-gen', str(source)))
+    assert result.exit_code == 0
+
+
+def test_extract_gen_warns_when_ffmpeg_cannot_be_found(make_gen: Callable[..., bytes],
+                                                       runner: CliRunner, tmp_path: Path,
+                                                       mocker: MockerFixture) -> None:
+    source = tmp_path / '259.gen'
+    source.write_bytes(make_gen())
+    mocker.patch('destin.ddrsplus.commands.extract_gen.locate_tool', side_effect=ToolNotFoundError)
+    result = runner.invoke(ddrsplus, ('extract-gen', str(source)))
+    assert result.exit_code == 0
+
+
+def test_the_group_entry_point(mocker: MockerFixture) -> None:
+    group = mocker.patch('destin.ddrsplus.main.ddrsplus')
+    main()
+    group.assert_called_once_with()

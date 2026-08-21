@@ -83,3 +83,55 @@ def test_a_texture_with_no_colour_masks_is_rejected(make_pvr: Callable[..., byte
     struct.pack_into('<III', data, 28, 0, 0, 0)
     with pytest.raises(InvalidFormatError, match='colour bit masks'):
         read_header(bytes(data))
+
+
+_PVR_TAG = 0x21525650
+
+
+def _pvr(*,
+         width: int = 1,
+         height: int = 1,
+         flags: int = 0x8010,
+         data_size: int | None = None,
+         bit_count: int = 16,
+         masks: tuple[int, int, int, int] = (0xF000, 0x0F00, 0x00F0, 0x000F),
+         header_size: int = 52,
+         body: bytes | None = None) -> bytes:
+    size = width * height * bit_count // 8 if data_size is None else data_size
+    header = struct.pack('<13I', header_size, height, width, 0, flags, size, bit_count, *masks,
+                         _PVR_TAG, 1)
+    return header + (bytes(width * height * bit_count // 8) if body is None else body)
+
+
+def test_an_unexpected_header_size_is_rejected() -> None:
+    with pytest.raises(InvalidFormatError, match='header size'):
+        read_header(_pvr(header_size=100))
+
+
+def test_a_pixel_that_is_not_a_whole_byte_count_is_rejected() -> None:
+    with pytest.raises(InvalidFormatError, match='whole byte count'):
+        read_header(_pvr(bit_count=15))
+
+
+def test_a_body_shorter_than_the_declared_size_is_rejected() -> None:
+    with pytest.raises(InvalidFormatError, match='pixel bytes but only'):
+        read_header(_pvr(width=2, height=1, bit_count=16, body=b'\x00\x00'))
+
+
+def test_a_texture_without_alpha_fills_the_channel() -> None:
+    # Flags without the alpha bit make the alpha reader return full scale.
+    texture = decode_pvr(_pvr(flags=0x0010))
+    assert texture.pixels[3] == 0xFF
+
+
+def test_eight_bit_channels_are_read_directly() -> None:
+    pixel = struct.pack('<I', 0x11223344)
+    texture = decode_pvr(
+        _pvr(bit_count=32, masks=(0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000), body=pixel))
+    assert texture.pixels == bytes((0x44, 0x33, 0x22, 0x11))
+
+
+def test_sub_nibble_channels_are_scaled_by_multiplication() -> None:
+    # A three-bit red channel of all ones scales to 7 * (255 // 7) = 252.
+    texture = decode_pvr(_pvr(bit_count=8, masks=(0x07, 0x38, 0xC0, 0x00), body=b'\x07'))
+    assert texture.pixels[0] == 252

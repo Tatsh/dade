@@ -124,6 +124,8 @@ def _flux(samples: array.array[int], sample_rate: int) -> tuple[list[float], flo
         math.sqrt(sum(value * value for value in samples[index * hop:(index + 1) * hop]) / hop)
         for index in range(len(samples) // hop)
     ]
+    if not energy:
+        return [], hop / sample_rate
     return ([0.0] +
             [max(0.0, energy[index] - energy[index - 1])
              for index in range(1, len(energy))], hop / sample_rate)

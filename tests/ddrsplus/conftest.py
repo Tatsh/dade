@@ -13,6 +13,7 @@ import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from pathlib import Path
 
 MUSIC_ID = 259
 """Music id the sample container carries."""
@@ -195,3 +196,27 @@ def make_gen(make_chart_table: Callable[..., bytes], make_metadata: Callable[...
         return bytes(directory) + b''.join(stored[index] for index in sorted(stored))
 
     return build
+
+
+@pytest.fixture
+def fake_ffmpeg(tmp_path: Path) -> Path:
+    """
+    Stand in for ``ffmpeg`` when decoding audio, writing signed 16-bit mono PCM to standard output.
+
+    The stream is a tenth of a second at 44100 Hz: silence for the first half, then a loud tone,
+    so :py:func:`~destin.ddrsplus.gap.first_audible` lands near its midpoint.
+
+    Returns
+    -------
+    pathlib.Path
+        The executable script.
+    """
+    path = tmp_path / 'ffmpeg-pcm'
+    path.write_text('#!/usr/bin/env python3\n'
+                    'import struct\n'
+                    'import sys\n'
+                    'quiet = struct.pack("<2205h", *([0] * 2205))\n'
+                    'loud = struct.pack("<2205h", *([15000, -15000] * 1102 + [15000]))\n'
+                    'sys.stdout.buffer.write(quiet + loud)\n')
+    path.chmod(0o755)
+    return path
