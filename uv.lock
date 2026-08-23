@@ -17,9 +17,6 @@ resolution-markers = [
 exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "P1W"
 
-[options.exclude-newer-package]
-bascom = "2026-08-09T00:00:00Z"
-
 [[package]]
 name = "aiosqlite"
 version = "0.22.1"
@@ -918,9 +915,9 @@ provides-extras = ["cuda", "lzham", "opencl"]
 dev = [
     { name = "commitizen", specifier = ">=4.17.0" },
     { name = "cz-path", specifier = ">=0.0.7" },
-    { name = "mypy", specifier = ">=2.3.0" },
+    { name = "mypy", specifier = ">=2.3.1" },
     { name = "ruff", specifier = "==0.16.3" },
-    { name = "ty", specifier = ">=0.0.69" },
+    { name = "ty", specifier = ">=0.0.72" },
     { name = "yapf", specifier = ">=0.43.0" },
 ]
 docs = [

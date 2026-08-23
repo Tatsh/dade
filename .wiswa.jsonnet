@@ -34,9 +34,7 @@ local utils = import 'utils.libjsonnet';
   python_deps+: {
     main+: {
       anyio: utils.latestPypiPackageVersionCaret('anyio'),
-      // debug_option (used by every game's CLI) was added in bascom 0.2.0.
       bascom: '>=0.2.0',
-      // Parses the Apple FairPlay certificate embedded in an SC_Info supplement file.
       cryptography: utils.latestPypiPackageVersionCaret('cryptography'),
       jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
       mido: utils.latestPypiPackageVersionCaret('mido'),
@@ -98,10 +96,16 @@ local utils = import 'utils.libjsonnet';
           asyncio_mode: 'strict',
         },
       },
-      uv+: {
-        // bascom 0.2.0 is newer than the one-week cooldown window, so exempt it and let
-        // debug_option resolve.
-        'exclude-newer-package': { bascom: '2026-08-08' },
+    },
+  },
+  pyinstaller+: {
+    vcpkg: {
+      enabled: true,
+      targets: {
+        'windows-11-arm': {
+          triplet: 'arm64-windows',
+          packages: ['openssl'],
+        },
       },
     },
   },
@@ -113,6 +117,11 @@ local utils = import 'utils.libjsonnet';
         cryptography: ['https://cryptography.io/en/stable/', null],
         numpy: ['https://numpy.org/doc/stable/', null],
       },
+    },
+  },
+  readthedocs+: {
+    build+: {
+      apt_packages: ['graphviz'],
     },
   },
   shared_ignore+: ['*.cl'],

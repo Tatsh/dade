@@ -6,9 +6,9 @@ requires = ["hatchling"]
 dev = [
   "commitizen>=4.17.0",
   "cz-path>=0.0.7",
-  "mypy>=2.3.0",
+  "mypy>=2.3.1",
   "ruff==0.16.3",
-  "ty>=0.0.69",
+  "ty>=0.0.72",
   "yapf>=0.43.0",
 ]
 docs = [
@@ -173,7 +173,7 @@ warn_unreachable = true
 [tool.pyright]
 deprecateTypingAliases = true
 enableExperimentalFeatures = true
-exclude = [".venv", "**/node_modules", "**/__pycache__", "**/.*"]
+exclude = [".sbclaude-venv", ".venv", "**/node_modules", "**/__pycache__", "**/.*"]
 include = ["./destin", "./tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.10"
@@ -239,8 +239,9 @@ multiline-quotes = "double"
 case-sensitive = true
 combine-as-imports = true
 from-first = true
+known-first-party = ["destin"]
 required-imports = ["from __future__ import annotations"]
-section-order = ["future", "standard-library", "third-party", "local-folder"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 20
@@ -266,9 +267,6 @@ max-statements = 100
 [tool.uv]
 default-groups = "all"
 exclude-newer = "1 week"
-
-[tool.uv.exclude-newer-package]
-bascom = "2026-08-08"
 
 [tool.yapf]
 align_closing_bracket_with_visual_indent = true
@@ -317,4 +315,4 @@ split_penalty_logical_operator = 300
 use_tabs = false
 
 [tool.yapfignore]
-ignore_patterns = [".venv", ".wiswa-ci", "node_modules"]
+ignore_patterns = [".sbclaude-venv", ".venv", ".wiswa-ci", "node_modules"]

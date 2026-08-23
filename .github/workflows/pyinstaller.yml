@@ -22,6 +22,41 @@ jobs:
         uses: 'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97'
         with:
           python-version: '3.13'
+      - if: matrix.os == 'windows-11-arm' && github.ref_type != 'tag'
+        name: 'Cache vcpkg installed packages'
+        uses: 'actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
+        with:
+          key: vcpkg-arm64-windows-openssl-${{ hashFiles('.github/workflows/pyinstaller.yml') }}
+          path: '~/vcpkg/installed'
+      - if: matrix.os == 'windows-11-arm'
+        name: 'Set up vcpkg'
+        run: |
+          $cachedInstalled = $null
+          if (Test-Path "$env:USERPROFILE\vcpkg\installed") {
+            $cachedInstalled = "$env:TEMP\vcpkg-installed"
+            Move-Item "$env:USERPROFILE\vcpkg\installed" $cachedInstalled
+            Remove-Item -Recurse -Force "$env:USERPROFILE\vcpkg"
+          }
+          git clone --depth 1 https://github.com/microsoft/vcpkg "$env:USERPROFILE\vcpkg"
+          if ($cachedInstalled) {
+            Move-Item $cachedInstalled "$env:USERPROFILE\vcpkg\installed"
+          }
+          & "$env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat" -disableMetrics
+          & "$env:USERPROFILE\vcpkg\vcpkg.exe" install openssl --triplet arm64-windows
+
+          $installed = "$env:USERPROFILE\vcpkg\installed\arm64-windows"
+
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\vcpkg"
+          Add-Content -Path $env:GITHUB_PATH -Value "$installed\tools\pkgconf"
+          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_ROOT=$env:USERPROFILE\vcpkg"
+          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_DEFAULT_TRIPLET=arm64-windows"
+          Add-Content -Path $env:GITHUB_ENV -Value "OPENSSL_DIR=$installed"
+          $sep = [IO.Path]::PathSeparator
+          Add-Content -Path $env:GITHUB_ENV -Value "PKG_CONFIG_PATH=$installed\lib\pkgconfig$sep$env:PKG_CONFIG_PATH"
+          Add-Content -Path $env:GITHUB_ENV -Value "CMAKE_PREFIX_PATH=$installed$sep$env:CMAKE_PREFIX_PATH"
+          Add-Content -Path $env:GITHUB_ENV -Value "LIB=$installed\lib$sep$env:LIB"
+          Add-Content -Path $env:GITHUB_ENV -Value "INCLUDE=$installed\include$sep$env:INCLUDE"
+        shell: 'pwsh'
       - if: runner.os == 'Windows'
         name: 'Shorten uv cache path'
         run: |
@@ -81,9 +116,14 @@ jobs:
                   cat version-info.txt
               fi
               echo "Building executable for '${script_name}'..."
+              openssl_args=()
+              if [[ -n "${OPENSSL_DIR:-}" ]]; then
+                  openssl_args=(--add-binary "${OPENSSL_DIR}/bin/*.dll;.")
+              fi
               uv run pyinstaller --log-level ERROR --onefile -n "${script_name}" --optimize 1 \
                 --hidden-import colorlog \
                 -y --version-file version-info.txt \
+                "${openssl_args[@]}" \
                 temp_script.py
               if [[ "${ACTIONS_RUNNER_DEBUG}" == 'true' ]]; then
                   cat "${script_name}.spec"

@@ -90,7 +90,6 @@ compressobj
 conftest
 cookfs
 cookfsinfo
-cooldown
 coredata
 coveragerc
 coverallsapp
@@ -161,6 +160,7 @@ efmt
 elem
 elif
 empy
+endswith
 entr
 esac
 esbenp
@@ -558,7 +558,6 @@ sysex
 szlen
 tatsh
 tcllzham
-teardown
 tesa
 testpaths
 texel
@@ -610,6 +609,7 @@ unswizzled
 untile
 untiled
 usemtl
+userprofile
 usrdir
 vaddr
 vadpcm
