@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 import runpy
 
+import pytest
+
 from destin.monopoly08 import namehash
 from destin.monopoly08.namehash import GROUND_TRUTH, name_hash
-import pytest
 
 _MODULE_PATH = str(Path(namehash.__file__))
 

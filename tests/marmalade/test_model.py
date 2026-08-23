@@ -1,9 +1,10 @@
 """Tests for :mod:`destin.marmalade.model`."""
 from __future__ import annotations
 
+import pytest
+
 from destin.marmalade.model import decode_model
 from destin.marmalade.test_utils import build_model
-import pytest
 
 
 def test_decode_geometry() -> None:

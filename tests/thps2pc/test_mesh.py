@@ -5,10 +5,11 @@ from typing import TYPE_CHECKING
 import json
 import struct
 
+import pytest
+
 from destin.thps2pc import mesh
 from destin.thps2pc.psx import Scene
 from destin.thps2pc.test_utils import SectorSpec, face_record, psx_scene
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING
 import pathlib
 
 from anyio import Path
+import pytest
+
 from destin.incoming.dispatch import ConversionSummary, convert_file, run_conversions
 from destin.incoming.sources import PreparedSource
 from destin.incoming.test_utils import ctl_records, pvr_pack, pvrt_chunk
-import pytest
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture

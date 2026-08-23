@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.marmalade.derbh import unpack
 import click
+
+from destin.marmalade.derbh import unpack
 
 from .utils import console, debug_option
 

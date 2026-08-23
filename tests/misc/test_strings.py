@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import plistlib
 
-from destin.misc import read_strings
 import pytest
+
+from destin.misc import read_strings
 
 if TYPE_CHECKING:
     from pathlib import Path

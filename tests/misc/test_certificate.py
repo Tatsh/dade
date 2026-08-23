@@ -9,13 +9,14 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed448, ed25519, x25519
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
+import pytest
+
 from destin.misc.certificate import (
     certificate_lines,
     certificate_to_json,
     find_certificates,
     load_certificate,
 )
-import pytest
 
 from .conftest import CERTIFICATE_SERIAL
 

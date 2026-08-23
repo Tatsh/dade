@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 import logging
 import struct
 
-from destin.rhythmin.aep import entry_to_json, index_to_json, read_aep_index
 import click
+
+from destin.rhythmin.aep import entry_to_json, index_to_json, read_aep_index
 
 from .utils import READABLE_FILE, debug_option, echo_json
 

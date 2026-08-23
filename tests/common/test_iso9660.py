@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin.common.exceptions import InvalidFormatError
 from destin.common.io import BytesReader
 from destin.common.iso9660 import Iso9660Image
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

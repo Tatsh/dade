@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import struct
 
+import pytest
+
 from destin.rhythmin.dialogue import (
     POOLS,
     PoolSpec,
@@ -11,7 +13,6 @@ from destin.rhythmin.dialogue import (
     render_binary,
     render_c_header,
 )
-import pytest
 
 from .conftest import MACHO_STRINGS, MACHO_TABLE_ADDRESS
 

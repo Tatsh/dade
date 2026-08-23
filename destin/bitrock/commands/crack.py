@@ -12,9 +12,10 @@ import sys
 import time
 
 from bascom import setup_logging
+import click
+
 from destin.bitrock.exceptions import BitrockError
 from destin.bitrock.password_cracker import Mask, combine, crack, iter_wordlist, mangle
-import click
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable

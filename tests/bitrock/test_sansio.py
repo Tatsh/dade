@@ -5,6 +5,8 @@ import bz2
 import struct
 import zlib
 
+import pytest
+
 from destin.bitrock.exceptions import (
     CorruptArchiveError,
     DecryptionError,
@@ -13,7 +15,6 @@ from destin.bitrock.exceptions import (
     UnsupportedCompressionError,
 )
 from destin.bitrock.sansio import BytesReader, CookFS, decompress_page, parse_fs_index
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

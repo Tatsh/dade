@@ -18,8 +18,9 @@ from destin.common.io import BytesReader, u16, u32
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
-    from destin.common.io import Reader
     from typing_extensions import Self
+
+    from destin.common.io import Reader
 
 __all__ = ('Iso9660Image',)
 

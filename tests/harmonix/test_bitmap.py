@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 import struct
 
 from PIL import Image
-from destin.harmonix import bitmap
 import pytest
+
+from destin.harmonix import bitmap
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.marmalade.convert import ConvertOptions, decode_group_to_dir
 import click
+
+from destin.marmalade.convert import ConvertOptions, decode_group_to_dir
 
 from .utils import console, debug_option
 

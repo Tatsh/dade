@@ -5,10 +5,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 import subprocess as sp
 
-from destin.thps2pc.imagemagick import ImageMagickNotFoundError, montage, write_image
-from destin.thps2pc.psx import Scene
 import bascom
 import click
+
+from destin.thps2pc.imagemagick import ImageMagickNotFoundError, montage, write_image
+from destin.thps2pc.psx import Scene
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence

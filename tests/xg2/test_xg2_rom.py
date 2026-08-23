@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.xg2.offsets import (
     GAME_CODE_OFFSET,
     XG1_BOOT_HEADER,
@@ -26,7 +28,6 @@ from destin.xg2.rom import (
     xg2_level_bases,
     xg2_resource_archives,
 )
-import pytest
 
 from .conftest import BOOT_SIGNATURE, XG1_LEVEL_BASES, XG2_LEVEL_BASES, XG2_MODEL_ARCHIVE
 

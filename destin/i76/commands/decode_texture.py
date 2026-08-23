@@ -4,6 +4,8 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
+import click
+
 from destin.common.png import write_rgb
 from destin.i76.textures import (
     decode_map,
@@ -14,7 +16,6 @@ from destin.i76.textures import (
     vqm_codebook_name,
 )
 from destin.i76.typing import IndexedImage
-import click
 
 from .utils import debug_option
 

@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.bit192.save import DLC_OFFSETS, SaveFile
 import click
+
+from destin.bit192.save import DLC_OFFSETS, SaveFile
 
 from .utils import console, debug_option
 

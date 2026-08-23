@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.bit192 import cz
 import click
+
+from destin.bit192 import cz
 
 from .utils import console, debug_option
 

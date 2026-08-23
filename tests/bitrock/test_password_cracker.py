@@ -6,10 +6,11 @@ import importlib
 import itertools
 import signal
 
+import pytest
+
 from destin.bitrock.commands.crack import crack_main
 from destin.bitrock.exceptions import BitrockError, NotEncryptedError
 from destin.bitrock.password_cracker import Mask, combine, crack, iter_wordlist, mangle
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

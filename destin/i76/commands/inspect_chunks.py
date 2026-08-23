@@ -5,8 +5,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 import logging
 
-from destin.i76.bwd2 import DEFAULT_CONTAINER_TAGS, ascii_strings, walk
 import click
+
+from destin.i76.bwd2 import DEFAULT_CONTAINER_TAGS, ascii_strings, walk
 
 from .utils import debug_option
 

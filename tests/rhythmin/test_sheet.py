@@ -6,6 +6,8 @@ import struct
 import zipfile
 
 from PIL import Image
+import pytest
+
 from destin.rhythmin.bfcodec import encipher
 from destin.rhythmin.sheet import (
     arcade_strip,
@@ -18,7 +20,6 @@ from destin.rhythmin.sheet import (
     standard_strip,
     standard_to_json,
 )
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

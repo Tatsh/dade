@@ -4,9 +4,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.common.exceptions import InvalidFormatError
 from destin.ddrsplus.pvr import BANNER_SIZE, crop, decode_pvr, read_header
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

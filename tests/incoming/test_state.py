@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING, Any, cast
 import json
 import struct
 
-from destin.incoming.converters.state import cfg_to_json, lev_to_json, sav_to_json, xxx_to_json
 import pytest
+
+from destin.incoming.converters.state import cfg_to_json, lev_to_json, sav_to_json, xxx_to_json
 
 if TYPE_CHECKING:
     from pathlib import Path

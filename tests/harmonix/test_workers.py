@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import logging
 
-from destin.harmonix import workers
 import pytest
+
+from destin.harmonix import workers
 
 if TYPE_CHECKING:
     from collections.abc import Callable

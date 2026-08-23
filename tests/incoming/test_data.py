@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import json
 
+import pytest
+
 from destin.incoming.converters import ConversionError, UnsupportedFormatError
 from destin.incoming.converters.data import bin_to_json, ctl_to_json
 from destin.incoming.test_utils import ctl_records
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

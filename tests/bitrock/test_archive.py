@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin.bitrock.archive import InstallBuilderFile
 from destin.bitrock.exceptions import CorruptArchiveError
 from destin.bitrock.io import MmapReader
 from destin.bitrock.sansio import BytesReader
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

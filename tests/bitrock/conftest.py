@@ -10,8 +10,9 @@ import struct
 import zlib
 
 from click.testing import CliRunner
-from destin.bitrock.crypto import Twofish, cbc_encrypt, derive_key
 import pytest
+
+from destin.bitrock.crypto import Twofish, cbc_encrypt, derive_key
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping

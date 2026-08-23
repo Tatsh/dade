@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.xg2.albank import BANK_MAGIC, parse_bank
 from destin.xg2.soundfont import (
     DRUM_BANK,
@@ -13,7 +15,6 @@ from destin.xg2.soundfont import (
     make_zone,
     sample_meta,
 )
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

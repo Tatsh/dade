@@ -7,6 +7,7 @@ import logging
 import subprocess as sp
 
 from PIL import Image
+
 from destin.incoming.pvrpack import iter_pack_textures
 from destin.incoming.tools import find_spvr2png
 

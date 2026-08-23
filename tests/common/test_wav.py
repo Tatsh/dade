@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.common.wav import pcm16_to_bytes, wrap_pcm, write_pcm
 import pytest
+
+from destin.common.wav import pcm16_to_bytes, wrap_pcm, write_pcm
 
 if TYPE_CHECKING:
     from pathlib import Path

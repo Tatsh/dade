@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.thps2pc.textures import iter_decoded, parse_lighting, to_ppm
 import click
+
+from destin.thps2pc.textures import iter_decoded, parse_lighting, to_ppm
 
 from .utils import convert_path_option, debug_option, run_montage, save_image
 

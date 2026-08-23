@@ -5,9 +5,10 @@ import json
 import struct
 
 from PIL import Image
+import pytest
+
 from destin.common import ps2_icon as icon
 from destin.common.exceptions import InvalidFormatError
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

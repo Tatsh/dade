@@ -1,8 +1,9 @@
 """Tests for :py:mod:`destin.i76.geo`."""
 from __future__ import annotations
 
-from destin.i76.geo import parse
 import pytest
+
+from destin.i76.geo import parse
 
 
 def test_parse_vertex_positions(geo_mesh: bytes) -> None:

@@ -18,9 +18,10 @@ from typing import TYPE_CHECKING
 import logging
 import time
 
-from destin.bitrock.crypto import verify_password
 import cupy as cp  # type: ignore[import-untyped]
 import numpy as np
+
+from destin.bitrock.crypto import verify_password
 
 from .kernel_source import MAX_IV_POOL as _MAX_IV_POOL, MAX_PASSWORD as _MAX_PASSWORD, kernel_source
 

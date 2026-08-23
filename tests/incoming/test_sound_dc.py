@@ -5,10 +5,11 @@ import json
 import logging
 import wave
 
+import pytest
+
 from destin.incoming.converters import ConversionError
 from destin.incoming.converters.sound_dc import mlt_to_json, osb_to_wav
 from destin.incoming.test_utils import mlt_container, osb_bank
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

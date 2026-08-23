@@ -7,6 +7,8 @@ import struct
 import sys
 import zlib
 
+import pytest
+
 from destin.bitrock.crypto import (
     Twofish,
     cbc_decrypt,
@@ -17,7 +19,6 @@ from destin.bitrock.crypto import (
 )
 from destin.bitrock.exceptions import DecryptionError
 from destin.bitrock.typing import PayloadInfo
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

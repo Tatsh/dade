@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.monopoly08.refpack import decompress, is_refpack
 import pytest
+
+from destin.monopoly08.refpack import decompress, is_refpack
 
 if TYPE_CHECKING:
     from collections.abc import Callable

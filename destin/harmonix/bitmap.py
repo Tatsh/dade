@@ -16,6 +16,7 @@ import shutil
 import struct
 
 from PIL import Image
+
 from destin.common.image import double_ps2_alpha, ps2_clut_swizzle_index
 from destin.common.io import u16, u32
 from destin.common.png import write_rgba

@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING, cast
 import struct
 
 from PIL import Image
-from destin.monopoly08.images import EXTENSIONS, convert
 import pytest
+
+from destin.monopoly08.images import EXTENSIONS, convert
 
 if TYPE_CHECKING:
     from collections.abc import Callable

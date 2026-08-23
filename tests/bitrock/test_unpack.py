@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin.bitrock import unpack
 from destin.bitrock.exceptions import MemberNotFoundError
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

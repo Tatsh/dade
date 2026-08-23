@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
-from destin.i76.main import cli
 import pytest
+
+from destin.i76.main import cli
 
 if TYPE_CHECKING:
     from pathlib import Path

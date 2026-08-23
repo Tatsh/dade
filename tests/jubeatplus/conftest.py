@@ -8,10 +8,11 @@ import struct
 import zipfile
 import zlib
 
+import pytest
+
 from destin.common.bfcodec import BFCodec
 from destin.jubeatplus.cipher import bgm_key, lab_url_key, texture_key
 from destin.jubeatplus.pipeline import unpack
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence

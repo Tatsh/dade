@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.xg2.archive import (
     decode_entries,
     decode_entry,
@@ -12,7 +14,6 @@ from destin.xg2.archive import (
     try_sized_lzss,
 )
 from destin.xg2.lzhuf import LzhufUnavailableError
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

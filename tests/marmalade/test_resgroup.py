@@ -3,10 +3,11 @@ from __future__ import annotations
 
 import struct
 
+import pytest
+
 from destin.marmalade.hashstring import iw_hash_string
 from destin.marmalade.resgroup import is_resgroup, parse
 from destin.marmalade.test_utils import build_resgroup
-import pytest
 
 
 def _group(sections: list[tuple[str, bytes]]) -> bytes:

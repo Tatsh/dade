@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 import logging
 import zipfile
 
+import click
+
 from destin.rhythmin.sheet import (
     SUFFIXES,
     SUFFIX_LEVEL_KEYS,
@@ -18,7 +20,6 @@ from destin.rhythmin.sheet import (
     standard_strip,
     standard_to_json,
 )
-import click
 
 from .utils import READABLE_DIR, READABLE_FILE, WRITABLE_FILE, debug_option, echo_json
 

@@ -4,11 +4,12 @@ from typing import TYPE_CHECKING
 import json
 import struct
 
+import pytest
+
 from destin.common.context import using_input_root
 from destin.incoming.converters import ConversionError
 from destin.incoming.converters.models_dc import mbin_to_obj, mlbin_to_json
 from destin.incoming.test_utils import mbin_pair
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

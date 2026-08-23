@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import logging
 
-from destin.rhythmin.dialogue import empty_pools, extract_pools, render_binary, render_c_header
 import click
+
+from destin.rhythmin.dialogue import empty_pools, extract_pools, render_binary, render_c_header
 
 from .utils import READABLE_FILE, WRITABLE_FILE, debug_option
 

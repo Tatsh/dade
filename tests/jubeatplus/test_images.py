@@ -4,10 +4,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import subprocess as sp
 
+import pytest
+
 from destin.common.bfcodec import BFCodec
 from destin.jubeatplus.cipher import bgm_key, texture_key
 from destin.jubeatplus.images import PNG_MAGIC, decipher_image, defry_png, write_defried_png
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -5,11 +5,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 import asyncio
 
-from destin.common.exceptions import InvalidFormatError
-from destin.frequency.unpacker import FrequencyUnpacker
 from rich.console import Console
 import bascom
 import click
+
+from destin.common.exceptions import InvalidFormatError
+from destin.frequency.unpacker import FrequencyUnpacker
 
 if TYPE_CHECKING:
     from collections.abc import Callable

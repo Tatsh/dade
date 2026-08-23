@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import struct
 
+import pytest
+
 from destin.common.exceptions import InvalidFormatError
 from destin.common.ssq import (
     TICKS_PER_MEASURE,
@@ -11,7 +13,6 @@ from destin.common.ssq import (
     chart_notes,
     parse_ssq,
 )
-import pytest
 
 
 def _step_chunk(parameter: int,

@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import json
 
+import pytest
+
 from destin.thps2pc.commands import render as render_commands
 from destin.thps2pc.commands.convert_scene import convert_scene
 from destin.thps2pc.commands.decode_textures import decode_textures
@@ -25,7 +27,6 @@ from destin.thps2pc.test_utils import (
     psx_scene,
     stored_file,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

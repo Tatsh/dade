@@ -1,9 +1,10 @@
 """Tests for :mod:`destin.bit192.cz`."""
 from __future__ import annotations
 
+import pytest
+
 from destin.bit192 import cz
 from destin.marmalade.test_utils import build_derbh
-import pytest
 
 
 def test_decrypt_is_involution() -> None:

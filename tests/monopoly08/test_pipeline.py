@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING, Any
 import logging
 import struct
 
-from destin.monopoly08.pipeline import StepStats, run
 import pytest
+
+from destin.monopoly08.pipeline import StepStats, run
 
 from .conftest import VgmPlan
 

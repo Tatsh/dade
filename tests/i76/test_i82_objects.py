@@ -1,6 +1,8 @@
 """Tests for :py:mod:`destin.i76.i82_objects`."""
 from __future__ import annotations
 
+import pytest
+
 from destin.i76.i82_objects import (
     chassis_name,
     geometry_files,
@@ -9,7 +11,6 @@ from destin.i76.i82_objects import (
     stock_paint,
     wheel_meshes,
 )
-import pytest
 
 
 def test_placement_refs_static(msa_world: bytes) -> None:

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from hashlib import sha256
 
+import pytest
+
 from destin.bitrock.crypto import Twofish, cbc_encrypt, derive_key
 from destin.bitrock.typing import PayloadInfo
-import pytest
 
 cl = pytest.importorskip('pyopencl')
 

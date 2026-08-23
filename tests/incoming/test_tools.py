@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin.common.context import using_tool_paths
 from destin.incoming.tools import ToolNotFoundError, find_spvr2png, run_gdiextract, run_unshield
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

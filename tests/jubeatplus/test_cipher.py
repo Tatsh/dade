@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import hashlib
 
+import pytest
+
 from destin.jubeatplus.cipher import (
     BGM_PASSPHRASE,
     LAB_URL_PASSPHRASE,
@@ -21,7 +23,6 @@ from destin.jubeatplus.cipher import (
     texture_key,
     tune_info_key,
 )
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

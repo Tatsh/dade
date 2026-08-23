@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import subprocess as sp
 
 from PIL import Image
+import pytest
+
 from destin.incoming.converters import ConversionError
 from destin.incoming.converters.images import (
     ppm_to_png,
@@ -13,7 +15,6 @@ from destin.incoming.converters.images import (
     spvr2png_converter,
 )
 from destin.incoming.test_utils import pvr_pack, pvrt_chunk
-import pytest
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture

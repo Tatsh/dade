@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.xg2.displaylist import (
     MAX_TEXTURE_SIDE,
     MIN_TEXTURE_SIDE,
@@ -14,7 +16,6 @@ from destin.xg2.displaylist import (
 from destin.xg2.models import SKYBOX_HEIGHT, SKYBOX_WIDTH, collect_textures, walk_sub_archive
 from destin.xg2.montage import build_index, build_montage
 from destin.xg2.typing import Texture
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

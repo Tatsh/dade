@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin.i76.sdf import (
     apply_transform,
     assemble,
@@ -12,7 +14,6 @@ from destin.i76.sdf import (
     write_obj,
 )
 from destin.i76.typing import Mesh
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

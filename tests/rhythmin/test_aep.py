@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
-from destin.rhythmin.aep import AepIndex, entry_to_json, index_to_json, read_aep_index
 import pytest
+
+from destin.rhythmin.aep import AepIndex, entry_to_json, index_to_json, read_aep_index
 
 if TYPE_CHECKING:
     from pathlib import Path

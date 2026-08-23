@@ -21,10 +21,11 @@ import logging
 import time
 import warnings
 
-from destin.bitrock.crypto import verify_password
 import numpy as np
 import numpy.typing as npt
 import pyopencl as cl
+
+from destin.bitrock.crypto import verify_password
 
 from .kernel_source import MAX_IV_POOL as _MAX_IV_POOL, MAX_PASSWORD as _MAX_PASSWORD, kernel_source
 

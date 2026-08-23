@@ -8,9 +8,10 @@ import struct
 import subprocess as sp
 import wave
 
-from destin.monopoly08 import audio
 import numpy as np
 import pytest
+
+from destin.monopoly08 import audio
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence

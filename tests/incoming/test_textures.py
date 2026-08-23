@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PIL import Image
+
 from destin.incoming.test_utils import pvr_pack, pvrt_chunk
 from destin.incoming.textures import find_level_pack, place_ian_texture, place_pack_textures
 

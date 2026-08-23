@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PIL import Image
+
 from destin.common.png import write_rgb, write_rgba
 
 if TYPE_CHECKING:

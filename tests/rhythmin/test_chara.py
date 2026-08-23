@@ -4,9 +4,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import json
 
+import pytest
+
 from destin.rhythmin.bfcodec import encipher
 from destin.rhythmin.chara import decrypt_chara, parse_chara, read_chara
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

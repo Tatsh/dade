@@ -6,8 +6,9 @@ import json
 import plistlib
 import zipfile
 
-from destin.jubeatplus.pipeline import find_bundle, unpack
 import pytest
+
+from destin.jubeatplus.pipeline import find_bundle, unpack
 
 if TYPE_CHECKING:
     from collections.abc import Callable

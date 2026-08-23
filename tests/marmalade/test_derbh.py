@@ -7,9 +7,10 @@ import lzma
 import struct
 import zlib
 
+import pytest
+
 from destin.marmalade.derbh import is_derbh, unpack, unpack_to_dir
 from destin.marmalade.test_utils import build_derbh
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

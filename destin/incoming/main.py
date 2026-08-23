@@ -7,12 +7,13 @@ import logging
 import pathlib
 
 from anyio import Path
+import bascom
+import click
+
 from destin import __version__
 from destin.common.context import using_tool_paths
 from destin.common.utils import pluralize
 from destin.common.workers import default_jobs
-import bascom
-import click
 
 from .dispatch import run_conversions
 from .sources import SourceError, prepare_source

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from destin.common.twofish import Twofish, cbc_decrypt, cbc_encrypt
 import pytest
+
+from destin.common.twofish import Twofish, cbc_decrypt, cbc_encrypt
 
 # Official Twofish known-answer test vectors (key, plaintext is all zero, ciphertext).
 _KAT = [

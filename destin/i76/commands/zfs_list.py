@@ -6,8 +6,9 @@ from pathlib import Path
 import json
 import logging
 
-from destin.i76.zfs import InvalidArchiveError, archive_format, read_directory
 import click
+
+from destin.i76.zfs import InvalidArchiveError, archive_format, read_directory
 
 from .utils import debug_option
 

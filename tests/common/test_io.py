@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 import io
 import struct
 
+import pytest
+
 from destin.common.io import (
     BytesReader,
     MmapReader,
@@ -19,7 +21,6 @@ from destin.common.io import (
     u16,
     u32,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

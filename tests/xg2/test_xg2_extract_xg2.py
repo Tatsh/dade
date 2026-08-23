@@ -4,9 +4,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.xg2.extract_xg2 import iter_model_blobs, run, unpack
 from destin.xg2.offsets import XG2_MELODIC_BANK, XG2_SOUNDBANKS
-import pytest
 
 from .conftest import XG2_LEVEL_BASES, XG2_MODEL_ARCHIVE
 

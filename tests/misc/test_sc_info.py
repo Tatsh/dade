@@ -7,6 +7,8 @@ import plistlib
 import struct
 import zipfile
 
+import pytest
+
 from destin.misc.sc_info import (
     Atom,
     Right,
@@ -29,7 +31,6 @@ from destin.misc.sc_info import (
     render_text,
     sc_info_to_json,
 )
-import pytest
 
 from .conftest import (
     SC_INFO_ACCOUNT_ID,

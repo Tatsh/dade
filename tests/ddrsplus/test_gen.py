@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.common.exceptions import InvalidFormatError
 from destin.ddrsplus.gen import (
     DIFFICULTY_SLOTS,
@@ -13,7 +15,6 @@ from destin.ddrsplus.gen import (
     read_gen,
     split_gen,
 )
-import pytest
 
 from .conftest import ARTIST, LEVELS, MAX_COMBOS, MUSIC_ID, NAME_ENGLISH
 

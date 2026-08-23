@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 import logging
 import subprocess as sp
 
+import click
+
 from destin.thps2pc.imagemagick import ImageMagickNotFoundError, convert
 from destin.thps2pc.mesh import (
     DEFAULT_SCALE,
@@ -15,7 +17,6 @@ from destin.thps2pc.mesh import (
     pack,
     write_manifest,
 )
-import click
 
 from .utils import convert_path_option, debug_option, read_scene
 

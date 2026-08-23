@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.i76.pe_unpack import InvalidImageError, unpack
 import click
+
+from destin.i76.pe_unpack import InvalidImageError, unpack
 
 from .utils import debug_option
 

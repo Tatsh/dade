@@ -35,9 +35,10 @@ import subprocess as sp
 import tempfile
 import wave
 
-from destin.common.io import u32
 import numpy as np
 import numpy.typing as npt
+
+from destin.common.io import u32
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

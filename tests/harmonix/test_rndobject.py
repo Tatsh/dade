@@ -5,9 +5,10 @@ import json
 import math
 import struct
 
+import pytest
+
 from destin.common.exceptions import InvalidFormatError
 from destin.harmonix import rndobject
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping

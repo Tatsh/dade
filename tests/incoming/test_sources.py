@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 import subprocess as sp
 
-from destin.incoming.sources import PreparedSource, SourceError, prepare_source
 import pytest
+
+from destin.incoming.sources import PreparedSource, SourceError, prepare_source
 
 if TYPE_CHECKING:
     from collections.abc import Callable

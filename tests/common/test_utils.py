@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from destin.common.utils import align_up, pluralize, safe_name
 import pytest
+
+from destin.common.utils import align_up, pluralize, safe_name
 
 
 @pytest.mark.parametrize(('value', 'alignment', 'expected'), [(0, 4, 0), (1, 4, 4), (4, 4, 4),

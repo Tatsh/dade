@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 import json
 import logging
 
-from destin.misc.macho import read_macho
 import click
+
+from destin.misc.macho import read_macho
 
 from .utils import READABLE_FILE, debug_option
 

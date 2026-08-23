@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 import json
 import logging
 
-from destin.rhythmin.chara import decrypt_chara, parse_chara
 import click
+
+from destin.rhythmin.chara import decrypt_chara, parse_chara
 
 from .utils import READABLE_FILE, debug_option, echo_json
 

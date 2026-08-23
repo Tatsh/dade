@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.i76.pak import extract
 import click
+
+from destin.i76.pak import extract
 
 from .utils import debug_option
 

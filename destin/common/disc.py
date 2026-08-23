@@ -12,10 +12,11 @@ from typing import TYPE_CHECKING
 import asyncio
 import shutil
 
+import anyio
+
 from destin.common.cuebin import cuebin_to_iso
 from destin.common.io import MmapReader
 from destin.common.iso9660 import Iso9660Image
-import anyio
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

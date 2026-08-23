@@ -5,10 +5,11 @@ from typing import TYPE_CHECKING
 import io
 import zipfile
 
+import pytest
+
 from destin.bit192 import cz
 from destin.bit192.extract import extract
 from destin.marmalade.test_utils import build_derbh, build_model, build_resgroup
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

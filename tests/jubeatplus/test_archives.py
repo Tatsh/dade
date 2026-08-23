@@ -7,11 +7,12 @@ import plistlib
 import subprocess as sp
 import zipfile
 
+import pytest
+
 from destin.common.bfcodec import BFCodec
 from destin.jubeatplus.archives import unpack_jbt, unpack_zip
 from destin.jubeatplus.audio import caf_to_wav
 from destin.jubeatplus.cipher import bgm_key, texture_key, tune_info_key
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

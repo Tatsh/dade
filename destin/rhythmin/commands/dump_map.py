@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import logging
 
-from destin.rhythmin.treasure_map import map_to_json, read_treasure_map, render_ascii, render_image
 import click
+
+from destin.rhythmin.treasure_map import map_to_json, read_treasure_map, render_ascii, render_image
 
 from .utils import READABLE_FILE, WRITABLE_FILE, debug_option, echo_json
 

@@ -4,11 +4,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
+import bascom
+import click
+
 from destin.bitrock.archive import InstallBuilderFile
 from destin.bitrock.exceptions import BitrockError
 from destin.bitrock.unpack import unpack
-import bascom
-import click
 
 if TYPE_CHECKING:
     from destin.bitrock.typing import PageCompression

@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import plistlib
 
-from destin.misc import build_sql, convert, load_mom_column_types
 import pytest
+
+from destin.misc import build_sql, convert, load_mom_column_types
 
 from .conftest import ArchiveBuilder
 

@@ -1,8 +1,9 @@
 """Tests for :py:mod:`destin.common.stepmania`."""
 from __future__ import annotations
 
-from destin.common.stepmania import SimfileChart, quantize_measures, write_sm
 import pytest
+
+from destin.common.stepmania import SimfileChart, quantize_measures, write_sm
 
 _MEASURE = 4096
 

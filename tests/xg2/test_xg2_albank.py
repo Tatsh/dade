@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
-from destin.xg2.albank import parse_bank
 import pytest
+
+from destin.xg2.albank import parse_bank
 
 if TYPE_CHECKING:
     from collections.abc import Callable

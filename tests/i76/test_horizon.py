@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import struct
 
+import pytest
+
 from destin.i76.horizon import assemble_panorama, bundle_stem, horizon_set, parse_hzd
 from destin.i76.textures import decode_map
-import pytest
 
 
 def test_parse_hzd(hzd: bytes) -> None:

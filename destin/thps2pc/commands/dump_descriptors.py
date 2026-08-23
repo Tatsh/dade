@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from destin.thps2pc.analysis import describe
 import click
+
+from destin.thps2pc.analysis import describe
 
 from .utils import debug_option, read_scene
 

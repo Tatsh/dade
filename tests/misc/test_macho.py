@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, Any
 import hashlib
 import struct
 
-from destin.misc.macho import read_macho
 import pytest
+
+from destin.misc.macho import read_macho
 
 if TYPE_CHECKING:
     from collections.abc import Callable

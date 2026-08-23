@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING
 import json
 
 from PIL import Image
+import pytest
+
 from destin.ddrsplus.extract import extract_gen
 from destin.ddrsplus.pvr import BANNER_SIZE
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import array
 
-from destin.ddrsplus.gap import beat_phase, estimate_gap, first_audible
 import pytest
+
+from destin.ddrsplus.gap import beat_phase, estimate_gap, first_audible
 
 if TYPE_CHECKING:
     from pathlib import Path

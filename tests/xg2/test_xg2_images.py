@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import struct
 
 from PIL import Image
+import pytest
+
 from destin.xg2.images import (
     TLUT_SIZE,
     bmp_to_png,
@@ -15,7 +17,6 @@ from destin.xg2.images import (
     rgba5551,
     write_png,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

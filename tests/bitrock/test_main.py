@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.bitrock.commands.extract import extract_main as main
 import pytest
+
+from destin.bitrock.commands.extract import extract_main as main
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
-from destin.xg2.displaylist import parse_dl_textures, parse_pc_descriptors
 import pytest
+
+from destin.xg2.displaylist import parse_dl_textures, parse_pc_descriptors
 
 if TYPE_CHECKING:
     from collections.abc import Callable

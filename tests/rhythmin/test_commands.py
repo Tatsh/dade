@@ -4,13 +4,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import json
 
+import pytest
+
 from destin.rhythmin.commands.dump_chara import dump_chara
 from destin.rhythmin.commands.dump_idx import dump_idx
 from destin.rhythmin.commands.dump_map import dump_map
 from destin.rhythmin.commands.dump_sheet import dump_sheet
 from destin.rhythmin.commands.extract_dialogue import extract_dialogue
 from destin.rhythmin.main import main, rhythmin
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

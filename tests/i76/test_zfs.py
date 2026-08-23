@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin.i76.zfs import (
     InvalidArchiveError,
     archive_format,
@@ -10,7 +12,6 @@ from destin.i76.zfs import (
     iter_members,
     read_directory,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 import json
 import logging
 
+import click
+
 from destin.thps2pc.render import (
     HANGAR_SCENERY_NODES,
     SceneryNode,
@@ -15,7 +17,6 @@ from destin.thps2pc.render import (
     render_object_models,
     render_objects,
 )
-import click
 
 from .utils import (
     canvas_options,

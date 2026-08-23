@@ -4,9 +4,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.xg2.extract_xg1 import LEVEL_SUB_BLOBS, RunLog, run, unpack
 from destin.xg2.mfs import MfsCalibrationError
-import pytest
 
 from .conftest import XG1_LEVEL_BASES
 

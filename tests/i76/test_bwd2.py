@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import struct
 
-from destin.i76.bwd2 import DEFAULT_CONTAINER_TAGS, ascii_strings, is_tag, walk, world_refs
 import pytest
+
+from destin.i76.bwd2 import DEFAULT_CONTAINER_TAGS, ascii_strings, is_tag, walk, world_refs
 
 
 @pytest.mark.parametrize('tag', [b'ABCD', b'A\x00\x00\x00', b'GRP ', b'abcd'])

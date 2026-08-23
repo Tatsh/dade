@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import hashlib
 
+import pytest
+
 from destin.rhythmin.bfcodec import (
     BLOWFISH_INIT_WORDS,
     DEFAULT_IV,
@@ -13,7 +15,6 @@ from destin.rhythmin.bfcodec import (
     default_key,
     encipher,
 )
-import pytest
 
 # Schneier's published Blowfish known-answer vectors, as key, plaintext, and ciphertext.
 _VECTORS = (

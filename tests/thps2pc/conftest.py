@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin.thps2pc.psx import Scene
 from destin.thps2pc.test_utils import (
     SectorSpec,
@@ -13,7 +15,6 @@ from destin.thps2pc.test_utils import (
     psx_scene,
     stored_file,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

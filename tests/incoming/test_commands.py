@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PIL import Image
+
 from destin.incoming.commands.extract_pvr_pack import extract_pvr_pack
 from destin.incoming.commands.ian2obj import ian2obj
 from destin.incoming.test_utils import ian_model, mbin_pair, pvr_pack, pvrt_chunk

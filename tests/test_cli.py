@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin import __version__
 from destin.main import main
-import pytest
 
 if TYPE_CHECKING:
     from click.testing import CliRunner

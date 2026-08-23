@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import struct
 
+import pytest
+
 from destin.xg2.smf import (
     DRUM_CHANNEL,
     GM_DRUM_MAP,
@@ -13,7 +15,6 @@ from destin.xg2.smf import (
     used_channels,
     write_vlq,
 )
-import pytest
 
 
 @pytest.mark.parametrize('value', [0, 1, 127, 128, 300, 8192, 100000, 0x0FFFFFFF])

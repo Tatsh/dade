@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.i76.lzo import decompress_record, lzo1x_decompress, lzo1y_decompress
 import pytest
+
+from destin.i76.lzo import decompress_record, lzo1x_decompress, lzo1y_decompress
 
 if TYPE_CHECKING:
     from collections.abc import Callable

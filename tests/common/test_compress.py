@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import Literal
 import zlib
 
-from destin.common.compress import GZIP_WBITS, inflate
 import pytest
+
+from destin.common.compress import GZIP_WBITS, inflate
 
 _PAYLOAD = b'the quick brown fox jumps over the lazy dog' * 8
 

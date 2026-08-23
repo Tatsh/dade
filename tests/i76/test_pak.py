@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin.i76.pak import (
     build_bundle_index,
     extract,
@@ -11,7 +13,6 @@ from destin.i76.pak import (
     parse_index,
     read_index,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -5,10 +5,11 @@ import io
 import json
 import math
 
-from destin.common.exceptions import InvalidFormatError
-from destin.harmonix import midi
 import mido  # type: ignore[import-untyped]
 import pytest
+
+from destin.common.exceptions import InvalidFormatError
+from destin.harmonix import midi
 
 if TYPE_CHECKING:
     from pathlib import Path

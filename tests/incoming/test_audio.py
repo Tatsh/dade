@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import wave
 
+import pytest
+
 from destin.incoming.converters import ConversionError
 from destin.incoming.converters.audio import raw_to_wav
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

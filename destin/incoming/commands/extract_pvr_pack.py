@@ -4,9 +4,10 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
+import click
+
 from destin.common.utils import pluralize
 from destin.incoming.converters.images import pvr_pack_to_files, pvr_pack_to_png
-import click
 
 from .utils import debug_option
 

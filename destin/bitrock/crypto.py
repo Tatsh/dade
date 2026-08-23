@@ -19,9 +19,10 @@ import binascii
 import lzma
 import struct
 
+from typing_extensions import assert_never
+
 from destin.common.compress import inflate
 from destin.common.twofish import Twofish, cbc_decrypt, cbc_encrypt
-from typing_extensions import assert_never
 
 from .exceptions import DecryptionError
 from .typing import PayloadInfo

@@ -4,8 +4,9 @@ from __future__ import annotations
 import hashlib
 import struct
 
-from destin.common.bfcodec import DEFAULT_IV, BFCodec, Blowfish, decipher, encipher
 import pytest
+
+from destin.common.bfcodec import DEFAULT_IV, BFCodec, Blowfish, decipher, encipher
 
 _KEY = hashlib.md5(b'example passphrase', usedforsecurity=False).digest()
 

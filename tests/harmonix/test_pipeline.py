@@ -5,8 +5,9 @@ import gzip
 import json
 import struct
 
-from destin.harmonix import pipeline
 import pytest
+
+from destin.harmonix import pipeline
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

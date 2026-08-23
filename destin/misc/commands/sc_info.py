@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 import json
 import logging
 
-from destin.misc.sc_info import read_bundles, render_text, sc_info_to_json
 import click
+
+from destin.misc.sc_info import read_bundles, render_text, sc_info_to_json
 
 from .utils import READABLE_PATH, debug_option
 

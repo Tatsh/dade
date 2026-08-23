@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import struct
 
+import pytest
+
 from destin.i76.pe_unpack import (
     OVERLAY_MAGIC,
     OVERLAY_OFFSET,
@@ -11,7 +13,6 @@ from destin.i76.pe_unpack import (
     parse_sections,
     unpack,
 )
-import pytest
 
 _PE_OFFSET = 0x80
 _OPTIONAL_SIZE = 0xE0

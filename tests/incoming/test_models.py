@@ -3,11 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.common.context import using_input_root
 from destin.incoming.converters import ConversionError
 from destin.incoming.converters.models import ian_to_obj, parse_ian
 from destin.incoming.test_utils import ian_model
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

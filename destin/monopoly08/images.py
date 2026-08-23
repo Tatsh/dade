@@ -21,11 +21,12 @@ import io
 import struct
 
 from PIL import Image
+import numpy as np
+import numpy.typing as npt
+
 from destin.common.image import expand5, expand6, ps2_clut_swizzle_index
 from destin.common.io import u16
 from destin.common.utils import align_up
-import numpy as np
-import numpy.typing as npt
 
 __all__ = ('EXTENSIONS', 'convert')
 

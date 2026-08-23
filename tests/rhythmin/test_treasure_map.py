@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PIL import Image
+import pytest
+
 from destin.rhythmin.treasure_map import (
     map_to_json,
     parse_treasure_map,
@@ -11,7 +13,6 @@ from destin.rhythmin.treasure_map import (
     render_ascii,
     render_image,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

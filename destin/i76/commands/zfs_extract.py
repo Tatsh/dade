@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.i76.zfs import InvalidArchiveError, extract
 import click
+
+from destin.i76.zfs import InvalidArchiveError, extract
 
 from .utils import debug_option
 

@@ -3,11 +3,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from destin.xg2.main import cli
 from destin.xg2.offsets import GAME_CODE_OFFSET, XG1_GAME_CODE, XG2_GAME_CODE
 from destin.xg2.smf import GM_DRUM_MAP, split_tracks
 from destin.xg2.typing import Texture
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

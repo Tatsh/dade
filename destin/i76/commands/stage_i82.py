@@ -5,8 +5,9 @@ from pathlib import Path
 import logging
 import shutil
 
-from destin.i76.i82 import find_in_pools, level_ids, texture_refs
 import click
+
+from destin.i76.i82 import find_in_pools, level_ids, texture_refs
 
 from .utils import debug_option
 

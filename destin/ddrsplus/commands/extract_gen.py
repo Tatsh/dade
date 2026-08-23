@@ -4,11 +4,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import logging
 
+import click
+
 from destin.common.exceptions import InvalidFormatError
 from destin.common.tools import ToolNotFoundError, locate_tool
 from destin.ddrsplus.bfcodec import DEFAULT_IV, GEN_KEY
 from destin.ddrsplus.extract import extract_gen as extract
-import click
 
 from .utils import READABLE_FILE, WRITABLE_DIR, debug_option
 

@@ -4,10 +4,11 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.common.tools import ToolNotFoundError, locate_tool
-from destin.jubeatplus.pipeline import unpack as unpack_download
 import bascom
 import click
+
+from destin.common.tools import ToolNotFoundError, locate_tool
+from destin.jubeatplus.pipeline import unpack as unpack_download
 
 __all__ = ('unpack',)
 

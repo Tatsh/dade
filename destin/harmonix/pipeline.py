@@ -14,9 +14,10 @@ from typing import TYPE_CHECKING
 import asyncio
 import logging
 
+import anyio
+
 from destin.common.exceptions import InvalidFormatError
 from destin.common.json import write_json
-import anyio
 
 from . import ark, audio, bitmap, mesh, workers
 

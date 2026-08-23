@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING
 import json
 import logging
 
-from destin.misc.coredata import build_sql, convert, load_mom_column_types
 import click
+
+from destin.misc.coredata import build_sql, convert, load_mom_column_types
 
 from .utils import READABLE_FILE, debug_option
 

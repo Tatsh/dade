@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING, Any
 import json
 import struct
 
-from destin.monopoly08.meshes import EXTENSIONS, convert
 import pytest
+
+from destin.monopoly08.meshes import EXTENSIONS, convert
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

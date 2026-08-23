@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import struct
 
+import pytest
+
 from destin.i76.textures import (
     PALETTE_SIZE,
     decode_map,
@@ -12,7 +14,6 @@ from destin.i76.textures import (
     to_rgb,
     vqm_codebook_name,
 )
-import pytest
 
 
 def test_load_palette_truncates(palette: bytes) -> None:

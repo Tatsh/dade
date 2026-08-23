@@ -5,6 +5,8 @@ import json
 import struct
 
 from PIL import Image
+import pytest
+
 from destin.monopoly08.structured import (
     EXTENSIONS,
     convert,
@@ -15,7 +17,6 @@ from destin.monopoly08.structured import (
     convert_pamc,
     convert_vanb,
 )
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence

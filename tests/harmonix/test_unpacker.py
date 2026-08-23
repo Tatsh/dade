@@ -2,17 +2,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
+import pytest
+
 from destin.common.exceptions import InvalidFormatError
 from destin.harmonix.typing import Asset
 from destin.harmonix.unpacker import Unpacker
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from pathlib import Path
 
-    from destin.harmonix.typing import ArkLayout
     from pytest_mock import MockerFixture
+
+    from destin.harmonix.typing import ArkLayout
 
 
 class _AmpUnpacker(Unpacker):

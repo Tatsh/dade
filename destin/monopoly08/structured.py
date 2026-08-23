@@ -31,9 +31,10 @@ import re
 import struct
 
 from PIL import Image
+import numpy as np
+
 from destin.common.io import f32, read_cstring, u16, u32
 from destin.common.json import write_json
-import numpy as np
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

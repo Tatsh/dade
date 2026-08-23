@@ -4,6 +4,8 @@ import bz2
 import struct
 import zlib
 
+import pytest
+
 from destin.bitrock.exceptions import (
     CorruptArchiveError,
     SignatureNotFoundError,
@@ -17,7 +19,6 @@ from destin.common.cookfs import (
     parse_index,
 )
 from destin.common.io import BytesReader
-import pytest
 
 
 def test_block_fields() -> None:

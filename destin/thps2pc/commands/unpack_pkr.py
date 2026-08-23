@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from destin.thps2pc.pkr import PkrArchive, UnsafePathError, extract_all, iter_entries, parse
 import click
+
+from destin.thps2pc.pkr import PkrArchive, UnsafePathError, extract_all, iter_entries, parse
 
 from .utils import debug_option
 

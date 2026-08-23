@@ -8,8 +8,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
-from destin.ddrsplus.bfcodec import encipher
 import pytest
+
+from destin.ddrsplus.bfcodec import encipher
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

@@ -4,9 +4,10 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
+import click
+
 from destin.i76.pak import build_bundle_index, load_member
 from destin.i76.sdf import assemble, write_obj
-import click
 
 from .utils import debug_option
 

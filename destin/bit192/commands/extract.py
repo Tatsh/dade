@@ -4,8 +4,9 @@ from __future__ import annotations
 from pathlib import Path
 import logging
 
-from destin.bit192.extract import extract as extract_assets
 import click
+
+from destin.bit192.extract import extract as extract_assets
 
 from .utils import console, debug_option
 

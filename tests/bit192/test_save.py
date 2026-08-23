@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import hashlib
 
+import pytest
+
 from destin.bit192.save import (
     DLC_OFFSETS,
     SAVE_SIZE,
@@ -12,7 +14,6 @@ from destin.bit192.save import (
     SaveFile,
     dlc_token,
 )
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

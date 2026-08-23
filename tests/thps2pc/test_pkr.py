@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING
 import struct
 import zlib
 
+import pytest
+
 from destin.thps2pc import pkr
 from destin.thps2pc.test_utils import PkrFileSpec, pkr_archive, stored_file
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

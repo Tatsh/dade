@@ -10,9 +10,10 @@ import struct
 import zipfile
 
 from click.testing import CliRunner
+import pytest
+
 from destin.rhythmin.bfcodec import encipher
 from destin.rhythmin.dialogue import POOLS
-import pytest
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 import json
 import struct
 
-from destin.harmonix import milo
 import pytest
+
+from destin.harmonix import milo
 
 if TYPE_CHECKING:
     from collections.abc import Callable

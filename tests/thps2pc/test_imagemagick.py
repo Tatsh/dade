@@ -4,8 +4,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import subprocess as sp
 
-from destin.thps2pc import imagemagick
 import pytest
+
+from destin.thps2pc import imagemagick
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

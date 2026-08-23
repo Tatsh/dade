@@ -4,9 +4,10 @@ from typing import TYPE_CHECKING
 import json
 import struct
 
+import pytest
+
 from destin.common.exceptions import InvalidFormatError
 from destin.harmonix import video
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 import struct
 
+import pytest
+
 from destin.incoming.pvrpack import iter_pack_textures
 from destin.incoming.test_utils import pvr_pack, pvrt_chunk
-import pytest
 
 
 def test_single_pvrt() -> None:

@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 import json
 import math
 
-from destin.harmonix import dataarray
 import pytest
+
+from destin.harmonix import dataarray
 
 if TYPE_CHECKING:
     from collections.abc import Callable

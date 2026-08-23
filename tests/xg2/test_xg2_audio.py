@@ -4,10 +4,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import pytest
+
 from destin.xg2.bmc import BMC_HEADER_SIZE, BMC_MAGIC, decode_bmc_dpcm, parse_bmc
 from destin.xg2.vadpcm import FRAME_SIZE, decode_vadpcm, find_table_base, read_codebook
 from destin.xg2.wav import pcm_to_bytes, wrap_wav, write_wav, write_wav16
-import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path

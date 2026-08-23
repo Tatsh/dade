@@ -3,8 +3,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.bit192.main import main, tonesphere
 import pytest
+
+from destin.bit192.main import main, tonesphere
 
 if TYPE_CHECKING:
     from click.testing import CliRunner
