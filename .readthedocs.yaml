@@ -1,5 +1,6 @@
 build:
-  apt_packages: ['graphviz']
+  apt_packages:
+    - 'graphviz'
   jobs:
     post_install:
       - 'pip install uv'

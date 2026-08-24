@@ -35,7 +35,20 @@ local utils = import 'utils.libjsonnet';
     main+: {
       anyio: utils.latestPypiPackageVersionCaret('anyio'),
       bascom: '>=0.2.0',
-      cryptography: utils.latestPypiPackageVersionCaret('cryptography'),
+      // cryptography 49 dropped the macOS universal2 wheels, leaving arm64 only, so an Intel Mac
+      // builds from the sdist and links against whichever OpenSSL the runner has. PyInstaller then
+      // bundles a different libssl and the binary cannot resolve its symbols. Cap Intel Macs at the
+      // last release that still ships a wheel, which statically links its own OpenSSL.
+      cryptography: [
+        {
+          markers: "sys_platform != 'darwin' or platform_machine != 'x86_64'",
+          version: utils.latestPypiPackageVersionCaret('cryptography'),
+        },
+        {
+          markers: "sys_platform == 'darwin' and platform_machine == 'x86_64'",
+          version: '<49',
+        },
+      ],
       jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
       mido: utils.latestPypiPackageVersionCaret('mido'),
       // numpy 2.3 dropped Python 3.10 (it requires >=3.11), which the project still supports, so
