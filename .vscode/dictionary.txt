@@ -345,6 +345,7 @@ nomultidefs
 nonexistent
 nonrendered
 nonrendering
+noqa
 norecursedirs
 noseparator
 notarytool
