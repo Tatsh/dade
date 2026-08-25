@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.common.json import write_json
+from dade.common.json import write_json
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -1,11 +1,11 @@
-"""Tests for the ``destin misc sc-info`` command."""
+"""Tests for the ``dade misc sc-info`` command."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import json
 
-from destin.misc.commands.sc_info import sc_info
-from destin.misc.main import misc
+from dade.misc.commands.sc_info import sc_info
+from dade.misc.main import misc
 
 if TYPE_CHECKING:
     from pathlib import Path

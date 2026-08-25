@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.models`, :mod:`destin.xg2.displaylist`, and montage building."""
+"""Tests for :mod:`dade.xg2.models`, :mod:`dade.xg2.displaylist`, and montage building."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,21 +6,21 @@ import struct
 
 import pytest
 
-from destin.xg2.displaylist import (
+from dade.xg2.displaylist import (
     MAX_TEXTURE_SIDE,
     MIN_TEXTURE_SIDE,
     parse_dl_textures,
     parse_pc_descriptors,
     parse_pc_textures,
 )
-from destin.xg2.models import SKYBOX_HEIGHT, SKYBOX_WIDTH, collect_textures, walk_sub_archive
-from destin.xg2.montage import build_index, build_montage
-from destin.xg2.typing import Texture
+from dade.xg2.models import SKYBOX_HEIGHT, SKYBOX_WIDTH, collect_textures, walk_sub_archive
+from dade.xg2.montage import build_index, build_montage
+from dade.xg2.typing import Texture
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from destin.xg2.typing import Endian
+    from dade.xg2.typing import Endian
 
 
 def _skybox_tile() -> bytes:

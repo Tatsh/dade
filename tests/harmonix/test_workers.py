@@ -5,7 +5,7 @@ import logging
 
 import pytest
 
-from destin.harmonix import workers
+from dade.harmonix import workers
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -157,7 +157,7 @@ async def test_run_pool_parallel_propagates_worker_logs(make_hmx_bitmap: Callabl
                                                         tmp_path: Path) -> None:
     for name in ('a', 'b'):
         (tmp_path / f'{name}.bmp').write_bytes(make_hmx_bitmap(4, 4, bpp=8))
-    with caplog.at_level(logging.DEBUG, logger='destin.harmonix.bitmap'):
+    with caplog.at_level(logging.DEBUG, logger='dade.harmonix.bitmap'):
         await workers.run_pool(workers.convert_file, [tmp_path / 'a.bmp', tmp_path / 'b.bmp'],
                                jobs=2,
                                ignore_failures=False,

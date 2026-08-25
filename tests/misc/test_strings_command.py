@@ -1,11 +1,11 @@
-"""Tests for the ``destin misc strings`` command."""
+"""Tests for the ``dade misc strings`` command."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import json
 import plistlib
 
-from destin.misc.commands.strings import strings
+from dade.misc.commands.strings import strings
 
 if TYPE_CHECKING:
     from pathlib import Path

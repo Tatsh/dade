@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from destin.frequency.main import main
+from dade.frequency.main import main
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -28,9 +28,8 @@ def test_main_runs_game(runner: CliRunner, mocker: MockerFixture, tmp_path: Path
     game = tmp_path / 'game'
     game.mkdir()
     (game / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))  # ARK\0 magic: FreQuency layout.
-    mocker.patch('destin.harmonix.unpacker.materialize')
-    run_game = mocker.patch('destin.harmonix.unpacker.run_game',
-                            return_value={'ARK/ROOT.ARK': 'ok'})
+    mocker.patch('dade.harmonix.unpacker.materialize')
+    run_game = mocker.patch('dade.harmonix.unpacker.run_game', return_value={'ARK/ROOT.ARK': 'ok'})
     out = tmp_path / 'out'
     result = runner.invoke(main, (str(game), '-o', str(out), '--jobs', '3'))
     assert result.exit_code == 0
@@ -51,7 +50,7 @@ def test_main_accepts_cuebin(make_cuebin: Callable[..., Path], make_iso9660: Cal
         seen['ark'] = (work_dir / 'GEN' / 'MAIN.ARK').read_bytes()
         return {'GEN/MAIN.ARK': 'ok'}
 
-    mocker.patch('destin.harmonix.unpacker.run_game', side_effect=capture)
+    mocker.patch('dade.harmonix.unpacker.run_game', side_effect=capture)
     result = runner.invoke(main, (str(cue), '-o', str(tmp_path / 'out')))
     assert result.exit_code == 0
     assert seen['ark'] == b'ARK\x00' + bytes(12)  # The cue/bin ISO was extracted into the output.
@@ -59,9 +58,8 @@ def test_main_accepts_cuebin(make_cuebin: Callable[..., Path], make_iso9660: Cal
 
 def test_main_default_output_dir(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     (tmp_path / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))
-    mocker.patch('destin.harmonix.unpacker.materialize')
-    run_game = mocker.patch('destin.harmonix.unpacker.run_game',
-                            return_value={'ARK/ROOT.ARK': 'ok'})
+    mocker.patch('dade.harmonix.unpacker.materialize')
+    run_game = mocker.patch('dade.harmonix.unpacker.run_game', return_value={'ARK/ROOT.ARK': 'ok'})
     result = runner.invoke(main, (str(tmp_path),))
     assert result.exit_code == 0
     assert run_game.call_args.args == (Path(),)
@@ -70,10 +68,9 @@ def test_main_default_output_dir(runner: CliRunner, mocker: MockerFixture, tmp_p
 
 def test_main_debug_skips_spinner(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     (tmp_path / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))
-    mocker.patch('destin.harmonix.unpacker.materialize')
-    run_game = mocker.patch('destin.harmonix.unpacker.run_game',
-                            return_value={'ARK/ROOT.ARK': 'ok'})
-    console = mocker.patch('destin.frequency.main.console')
+    mocker.patch('dade.harmonix.unpacker.materialize')
+    run_game = mocker.patch('dade.harmonix.unpacker.run_game', return_value={'ARK/ROOT.ARK': 'ok'})
+    console = mocker.patch('dade.frequency.main.console')
     result = runner.invoke(main, (str(tmp_path), '--debug'))
     assert result.exit_code == 0
     console.status.assert_not_called()
@@ -82,9 +79,9 @@ def test_main_debug_skips_spinner(runner: CliRunner, mocker: MockerFixture, tmp_
 
 def test_main_uses_spinner(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     (tmp_path / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))
-    mocker.patch('destin.harmonix.unpacker.materialize')
-    mocker.patch('destin.harmonix.unpacker.run_game', return_value={'ARK/ROOT.ARK': 'ok'})
-    console = mocker.patch('destin.frequency.main.console')
+    mocker.patch('dade.harmonix.unpacker.materialize')
+    mocker.patch('dade.harmonix.unpacker.run_game', return_value={'ARK/ROOT.ARK': 'ok'})
+    console = mocker.patch('dade.frequency.main.console')
     result = runner.invoke(main, (str(tmp_path),))
     assert result.exit_code == 0
     console.status.assert_called_once()
@@ -101,8 +98,8 @@ def test_main_reports_an_unpack_failure(runner: CliRunner, mocker: MockerFixture
     game = tmp_path / 'game'
     game.mkdir()
     (game / 'ROOT.ARK').write_bytes(b'ARK\x00' + bytes(12))
-    mocker.patch('destin.harmonix.unpacker.materialize')
-    mocker.patch('destin.harmonix.unpacker.run_game', side_effect=ValueError('bad disc'))
+    mocker.patch('dade.harmonix.unpacker.materialize')
+    mocker.patch('dade.harmonix.unpacker.run_game', side_effect=ValueError('bad disc'))
     result = runner.invoke(main, (str(game), '-o', str(tmp_path / 'out')))
     assert result.exit_code == 1
     assert 'bad disc' in result.output

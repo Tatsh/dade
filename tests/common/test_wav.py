@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.common.wav import pcm16_to_bytes, wrap_pcm, write_pcm
+from dade.common.wav import pcm16_to_bytes, wrap_pcm, write_pcm
 
 if TYPE_CHECKING:
     from pathlib import Path

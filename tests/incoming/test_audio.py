@@ -5,8 +5,8 @@ import wave
 
 import pytest
 
-from destin.incoming.converters import ConversionError
-from destin.incoming.converters.audio import raw_to_wav
+from dade.incoming.converters import ConversionError
+from dade.incoming.converters.audio import raw_to_wav
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -34,6 +34,6 @@ def test_raw_bad_size(tmp_path: Path) -> None:
 def test_raw_io_error(tmp_path: Path, mocker: MockerFixture) -> None:
     source = tmp_path / 't.raw'
     source.write_bytes(bytes(2352))
-    mocker.patch('destin.incoming.converters.audio.wave.open', side_effect=OSError('disk full'))
+    mocker.patch('dade.incoming.converters.audio.wave.open', side_effect=OSError('disk full'))
     with pytest.raises(ConversionError, match='Failed to convert'):
         raw_to_wav(source, tmp_path)

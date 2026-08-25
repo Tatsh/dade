@@ -5,10 +5,10 @@ import struct
 
 import pytest
 
-from destin.common.context import using_input_root
-from destin.incoming.converters import ConversionError
-from destin.incoming.converters.models import ian_to_obj, parse_ian
-from destin.incoming.test_utils import ian_model
+from dade.common.context import using_input_root
+from dade.incoming.converters import ConversionError
+from dade.incoming.converters.models import ian_to_obj, parse_ian
+from dade.incoming.test_utils import ian_model
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -51,7 +51,7 @@ def test_ian_to_obj_no_texture(tmp_path: Path) -> None:
 def test_ian_to_obj_with_texture(tmp_path: Path, mocker: MockerFixture) -> None:
     source = tmp_path / 'arrow.ian'
     source.write_bytes(ian_model([_VERTEX], [(0, 0, 0)]))
-    mocker.patch('destin.incoming.converters.models.place_ian_texture', return_value='arrow.png')
+    mocker.patch('dade.incoming.converters.models.place_ian_texture', return_value='arrow.png')
     with using_input_root(tmp_path):
         outputs = ian_to_obj(source, tmp_path)
     assert len(outputs) == 3
@@ -61,7 +61,7 @@ def test_ian_to_obj_with_texture(tmp_path: Path, mocker: MockerFixture) -> None:
 def test_ian_to_obj_context_without_texture(tmp_path: Path, mocker: MockerFixture) -> None:
     source = tmp_path / 'arrow.ian'
     source.write_bytes(ian_model([_VERTEX], [(0, 0, 0)]))
-    mocker.patch('destin.incoming.converters.models.place_ian_texture', return_value=None)
+    mocker.patch('dade.incoming.converters.models.place_ian_texture', return_value=None)
     with using_input_root(tmp_path):
         outputs = ian_to_obj(source, tmp_path)
     assert len(outputs) == 2

@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.common.exceptions import InvalidFormatError
-from destin.common.io import BytesReader
-from destin.common.iso9660 import Iso9660Image
+from dade.common.exceptions import InvalidFormatError
+from dade.common.io import BytesReader
+from dade.common.iso9660 import Iso9660Image
 
 if TYPE_CHECKING:
     from collections.abc import Callable

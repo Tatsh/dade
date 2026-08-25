@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.ddrsplus.gen`."""
+"""Tests for :py:mod:`dade.ddrsplus.gen`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,8 +6,8 @@ import struct
 
 import pytest
 
-from destin.common.exceptions import InvalidFormatError
-from destin.ddrsplus.gen import (
+from dade.common.exceptions import InvalidFormatError
+from dade.ddrsplus.gen import (
     DIFFICULTY_SLOTS,
     SHAKE_SLOTS,
     parse_chart_table,

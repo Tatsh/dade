@@ -7,14 +7,14 @@ import subprocess as sp
 from PIL import Image
 import pytest
 
-from destin.incoming.converters import ConversionError
-from destin.incoming.converters.images import (
+from dade.incoming.converters import ConversionError
+from dade.incoming.converters.images import (
     ppm_to_png,
     pvr_pack_to_files,
     pvr_pack_to_png,
     spvr2png_converter,
 )
-from destin.incoming.test_utils import pvr_pack, pvrt_chunk
+from dade.incoming.test_utils import pvr_pack, pvrt_chunk
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -43,18 +43,18 @@ def test_ppm_to_png_error(tmp_path: Path) -> None:
 
 
 def test_spvr2png_converter(tmp_path: Path, mocker: MockerFixture) -> None:
-    mocker.patch('destin.incoming.converters.images.find_spvr2png', return_value=Path('/spv'))
-    mocker.patch('destin.incoming.converters.images.sp.run')
+    mocker.patch('dade.incoming.converters.images.find_spvr2png', return_value=Path('/spv'))
+    mocker.patch('dade.incoming.converters.images.sp.run')
     source = tmp_path / 't.pvr'
     source.write_bytes(b'x')
     assert spvr2png_converter(source, tmp_path) == tmp_path / 't.png'
 
 
 def test_spvr2png_converter_failure(tmp_path: Path, mocker: MockerFixture) -> None:
-    mocker.patch('destin.incoming.converters.images.find_spvr2png', return_value=Path('/spv'))
+    mocker.patch('dade.incoming.converters.images.find_spvr2png', return_value=Path('/spv'))
     error = sp.CalledProcessError(1, ['spv'])
     error.stderr = b'bad pixel format'
-    mocker.patch('destin.incoming.converters.images.sp.run', side_effect=error)
+    mocker.patch('dade.incoming.converters.images.sp.run', side_effect=error)
     source = tmp_path / 't.pvr'
     source.write_bytes(b'x')
     with pytest.raises(ConversionError, match='spvr2png failed'):
@@ -62,8 +62,8 @@ def test_spvr2png_converter_failure(tmp_path: Path, mocker: MockerFixture) -> No
 
 
 def test_pvr_pack_to_png(tmp_path: Path, mocker: MockerFixture) -> None:
-    mocker.patch('destin.incoming.converters.images.find_spvr2png', return_value=Path('/spv'))
-    mocker.patch('destin.incoming.converters.images.sp.run',
+    mocker.patch('dade.incoming.converters.images.find_spvr2png', return_value=Path('/spv'))
+    mocker.patch('dade.incoming.converters.images.sp.run',
                  side_effect=lambda args, **_: _fake_spvr2png_dir(args))
     source = tmp_path / 'AFRICA_T.PVR'
     source.write_bytes(pvr_pack([pvrt_chunk(2, 2), pvrt_chunk(4, 4)]))

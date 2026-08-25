@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.i76.bwd2`."""
+"""Tests for :py:mod:`dade.i76.bwd2`."""
 from __future__ import annotations
 
 import struct
 
 import pytest
 
-from destin.i76.bwd2 import DEFAULT_CONTAINER_TAGS, ascii_strings, is_tag, walk, world_refs
+from dade.i76.bwd2 import DEFAULT_CONTAINER_TAGS, ascii_strings, is_tag, walk, world_refs
 
 
 @pytest.mark.parametrize('tag', [b'ABCD', b'A\x00\x00\x00', b'GRP ', b'abcd'])

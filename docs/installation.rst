@@ -5,15 +5,15 @@ Install from PyPI with your preferred tool:
 
 .. code-block:: shell
 
-   pip install destin
+   pip install dade
 
 Or with `uv <https://docs.astral.sh/uv/>`_:
 
 .. code-block:: shell
 
-   uv tool install destin
+   uv tool install dade
 
-This installs a single console script, ``destin``, whose sub-commands cover every supported game
+This installs a single console script, ``dade``, whose sub-commands cover every supported game
 (see :doc:`usage` and the :doc:`utilities`).
 
 Prerequisites

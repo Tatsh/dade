@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.marmalade.main import marm
-from destin.marmalade.test_utils import build_derbh, build_model, build_resgroup, build_texture
+from dade.marmalade.main import marm
+from dade.marmalade.test_utils import build_derbh, build_model, build_resgroup, build_texture
 
 if TYPE_CHECKING:
     from pathlib import Path

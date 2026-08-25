@@ -1,9 +1,9 @@
-"""Tests for :mod:`destin.marmalade.viewer`."""
+"""Tests for :mod:`dade.marmalade.viewer`."""
 from __future__ import annotations
 
-from destin.marmalade.model import decode_model
-from destin.marmalade.test_utils import build_model
-from destin.marmalade.viewer import obj_to_html
+from dade.marmalade.model import decode_model
+from dade.marmalade.test_utils import build_model
+from dade.marmalade.viewer import obj_to_html
 
 
 def test_obj_to_html_embeds_geometry() -> None:

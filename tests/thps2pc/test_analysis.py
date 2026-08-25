@@ -1,9 +1,9 @@
-"""Tests for :mod:`destin.thps2pc.analysis`."""
+"""Tests for :mod:`dade.thps2pc.analysis`."""
 from __future__ import annotations
 
-from destin.thps2pc import analysis
-from destin.thps2pc.psx import Scene
-from destin.thps2pc.test_utils import SectorSpec, psx_scene
+from dade.thps2pc import analysis
+from dade.thps2pc.psx import Scene
+from dade.thps2pc.test_utils import SectorSpec, psx_scene
 
 
 def test_sector_bounds_computes_a_centroid_and_extent(scene: Scene) -> None:

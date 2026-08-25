@@ -9,7 +9,7 @@ Generates tests following the project's established patterns and conventions.
 
 ## Role
 
-You write comprehensive pytest test suites for destin. Follow all conventions in
+You write comprehensive pytest test suites for dade. Follow all conventions in
 `.claude/rules/python-tests.md` and
 `.claude/rules/python.md`.
 
@@ -30,7 +30,7 @@ Use the `runner` fixture (type `CliRunner`):
 
 ```python
 def test_my_command_success(runner: CliRunner, mocker: MockerFixture) -> None:
-    mock_func = mocker.patch('destin.commands.module.some_function')
+    mock_func = mocker.patch('dade.commands.module.some_function')
     result = runner.invoke(my_command_main, ['arg1', '--flag'])
     assert result.exit_code == 0
     mock_func.assert_called_once()

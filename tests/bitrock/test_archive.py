@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.bitrock.archive import InstallBuilderFile
-from destin.bitrock.exceptions import CorruptArchiveError
-from destin.bitrock.io import MmapReader
-from destin.bitrock.sansio import BytesReader
+from dade.bitrock.archive import InstallBuilderFile
+from dade.bitrock.exceptions import CorruptArchiveError
+from dade.bitrock.io import MmapReader
+from dade.bitrock.sansio import BytesReader
 
 if TYPE_CHECKING:
     from collections.abc import Callable

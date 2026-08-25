@@ -12,7 +12,7 @@ import zlib
 from click.testing import CliRunner
 import pytest
 
-from destin.bitrock.crypto import Twofish, cbc_encrypt, derive_key
+from dade.bitrock.crypto import Twofish, cbc_encrypt, derive_key
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -111,7 +111,7 @@ def build_encrypted_page() -> Callable[..., bytes]:
     Return a builder for an encrypted cookfs page body.
 
     The builder wraps an already-compressed payload in the ``[CRC32][iv index][ciphertext]``
-    framing that :py:func:`destin.bitrock.crypto.decrypt_page` expects.
+    framing that :py:func:`dade.bitrock.crypto.decrypt_page` expects.
     """
     return _build_encrypted_page
 

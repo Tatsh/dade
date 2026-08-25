@@ -5,56 +5,56 @@ Decoders for assets built with the Marmalade SDK: Derbh (``.dz``) archives, IwRe
 (``.group.bin``) resources, and the ``CIwTexture``, ``CIwGxFont``, ``CIwMaterial``, and
 ``CIwModel`` resources.
 
-``destin.marmalade.convert``
+``dade.marmalade.convert``
 ----------------------------
 
-.. automodule:: destin.marmalade.convert
+.. automodule:: dade.marmalade.convert
    :members:
 
-``destin.marmalade.derbh``
+``dade.marmalade.derbh``
 --------------------------
 
-.. automodule:: destin.marmalade.derbh
+.. automodule:: dade.marmalade.derbh
    :members:
 
-``destin.marmalade.font``
+``dade.marmalade.font``
 -------------------------
 
-.. automodule:: destin.marmalade.font
+.. automodule:: dade.marmalade.font
    :members:
 
-``destin.marmalade.hashstring``
+``dade.marmalade.hashstring``
 -------------------------------
 
-.. automodule:: destin.marmalade.hashstring
+.. automodule:: dade.marmalade.hashstring
    :members:
 
-``destin.marmalade.material``
+``dade.marmalade.material``
 -----------------------------
 
-.. automodule:: destin.marmalade.material
+.. automodule:: dade.marmalade.material
    :members:
 
-``destin.marmalade.model``
+``dade.marmalade.model``
 --------------------------
 
-.. automodule:: destin.marmalade.model
+.. automodule:: dade.marmalade.model
    :members:
 
-``destin.marmalade.resgroup``
+``dade.marmalade.resgroup``
 -----------------------------
 
-.. automodule:: destin.marmalade.resgroup
+.. automodule:: dade.marmalade.resgroup
    :members:
 
-``destin.marmalade.texture``
+``dade.marmalade.texture``
 ----------------------------
 
-.. automodule:: destin.marmalade.texture
+.. automodule:: dade.marmalade.texture
    :members:
 
-``destin.marmalade.viewer``
+``dade.marmalade.viewer``
 ---------------------------
 
-.. automodule:: destin.marmalade.viewer
+.. automodule:: dade.marmalade.viewer
    :members:

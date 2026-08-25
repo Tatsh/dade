@@ -6,7 +6,7 @@ import struct
 from PIL import Image
 import pytest
 
-from destin.monopoly08.images import EXTENSIONS, convert
+from dade.monopoly08.images import EXTENSIONS, convert
 
 if TYPE_CHECKING:
     from collections.abc import Callable

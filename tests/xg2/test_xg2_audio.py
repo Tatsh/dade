@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.vadpcm`, :mod:`destin.xg2.bmc`, and :mod:`destin.xg2.wav`."""
+"""Tests for :mod:`dade.xg2.vadpcm`, :mod:`dade.xg2.bmc`, and :mod:`dade.xg2.wav`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,9 +6,9 @@ import struct
 
 import pytest
 
-from destin.xg2.bmc import BMC_HEADER_SIZE, BMC_MAGIC, decode_bmc_dpcm, parse_bmc
-from destin.xg2.vadpcm import FRAME_SIZE, decode_vadpcm, find_table_base, read_codebook
-from destin.xg2.wav import pcm_to_bytes, wrap_wav, write_wav, write_wav16
+from dade.xg2.bmc import BMC_HEADER_SIZE, BMC_MAGIC, decode_bmc_dpcm, parse_bmc
+from dade.xg2.vadpcm import FRAME_SIZE, decode_vadpcm, find_table_base, read_codebook
+from dade.xg2.wav import pcm_to_bytes, wrap_wav, write_wav, write_wav16
 
 if TYPE_CHECKING:
     from pathlib import Path

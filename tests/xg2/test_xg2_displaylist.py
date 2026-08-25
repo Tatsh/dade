@@ -1,4 +1,4 @@
-"""Tests for the F3DEX walker in :mod:`destin.xg2.displaylist`."""
+"""Tests for the F3DEX walker in :mod:`dade.xg2.displaylist`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from destin.xg2.displaylist import parse_dl_textures, parse_pc_descriptors
+from dade.xg2.displaylist import parse_dl_textures, parse_pc_descriptors
 
 if TYPE_CHECKING:
     from collections.abc import Callable

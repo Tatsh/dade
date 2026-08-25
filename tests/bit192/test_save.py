@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.bit192.save`."""
+"""Tests for :mod:`dade.bit192.save`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ import hashlib
 
 import pytest
 
-from destin.bit192.save import (
+from dade.bit192.save import (
     DLC_OFFSETS,
     SAVE_SIZE,
     UNLOCK_FLAGS_COUNT,

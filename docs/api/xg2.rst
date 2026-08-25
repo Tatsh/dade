@@ -5,122 +5,122 @@ Readers and converters for the Probe / Acclaim racing games *Extreme-G* and *Ext
 Nintendo 64 and PC: the MFS archive, ROM layout, display lists, models, images, and the audio
 stack (ALBank, ALCSeq, VADPCM, SoundFont, and SMF).
 
-``destin.xg2.albank``
+``dade.xg2.albank``
 ---------------------
 
-.. automodule:: destin.xg2.albank
+.. automodule:: dade.xg2.albank
    :members:
 
-``destin.xg2.alcseq``
+``dade.xg2.alcseq``
 ---------------------
 
-.. automodule:: destin.xg2.alcseq
+.. automodule:: dade.xg2.alcseq
    :members:
 
-``destin.xg2.archive``
+``dade.xg2.archive``
 ----------------------
 
-.. automodule:: destin.xg2.archive
+.. automodule:: dade.xg2.archive
    :members:
 
-``destin.xg2.bmc``
+``dade.xg2.bmc``
 ------------------
 
-.. automodule:: destin.xg2.bmc
+.. automodule:: dade.xg2.bmc
    :members:
 
-``destin.xg2.displaylist``
+``dade.xg2.displaylist``
 --------------------------
 
-.. automodule:: destin.xg2.displaylist
+.. automodule:: dade.xg2.displaylist
    :members:
 
-``destin.xg2.extract_pc``
+``dade.xg2.extract_pc``
 -------------------------
 
-.. automodule:: destin.xg2.extract_pc
+.. automodule:: dade.xg2.extract_pc
    :members:
 
-``destin.xg2.extract_xg1``
+``dade.xg2.extract_xg1``
 --------------------------
 
-.. automodule:: destin.xg2.extract_xg1
+.. automodule:: dade.xg2.extract_xg1
    :members:
 
-``destin.xg2.extract_xg2``
+``dade.xg2.extract_xg2``
 --------------------------
 
-.. automodule:: destin.xg2.extract_xg2
+.. automodule:: dade.xg2.extract_xg2
    :members:
 
-``destin.xg2.fluidsynth``
+``dade.xg2.fluidsynth``
 -------------------------
 
-.. automodule:: destin.xg2.fluidsynth
+.. automodule:: dade.xg2.fluidsynth
    :members:
 
-``destin.xg2.images``
+``dade.xg2.images``
 ---------------------
 
-.. automodule:: destin.xg2.images
+.. automodule:: dade.xg2.images
    :members:
 
-``destin.xg2.lzhuf``
+``dade.xg2.lzhuf``
 --------------------
 
-.. automodule:: destin.xg2.lzhuf
+.. automodule:: dade.xg2.lzhuf
    :members:
 
-``destin.xg2.mfs``
+``dade.xg2.mfs``
 ------------------
 
-.. automodule:: destin.xg2.mfs
+.. automodule:: dade.xg2.mfs
    :members:
 
-``destin.xg2.models``
+``dade.xg2.models``
 ---------------------
 
-.. automodule:: destin.xg2.models
+.. automodule:: dade.xg2.models
    :members:
 
-``destin.xg2.montage``
+``dade.xg2.montage``
 ----------------------
 
-.. automodule:: destin.xg2.montage
+.. automodule:: dade.xg2.montage
    :members:
 
-``destin.xg2.offsets``
+``dade.xg2.offsets``
 ----------------------
 
-.. automodule:: destin.xg2.offsets
+.. automodule:: dade.xg2.offsets
    :members:
 
-``destin.xg2.rom``
+``dade.xg2.rom``
 ------------------
 
-.. automodule:: destin.xg2.rom
+.. automodule:: dade.xg2.rom
    :members:
 
-``destin.xg2.smf``
+``dade.xg2.smf``
 ------------------
 
-.. automodule:: destin.xg2.smf
+.. automodule:: dade.xg2.smf
    :members:
 
-``destin.xg2.soundfont``
+``dade.xg2.soundfont``
 ------------------------
 
-.. automodule:: destin.xg2.soundfont
+.. automodule:: dade.xg2.soundfont
    :members:
 
-``destin.xg2.vadpcm``
+``dade.xg2.vadpcm``
 ---------------------
 
-.. automodule:: destin.xg2.vadpcm
+.. automodule:: dade.xg2.vadpcm
    :members:
 
-``destin.xg2.wav``
+``dade.xg2.wav``
 ------------------
 
-.. automodule:: destin.xg2.wav
+.. automodule:: dade.xg2.wav
    :members:

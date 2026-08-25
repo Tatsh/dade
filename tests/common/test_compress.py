@@ -5,7 +5,7 @@ import zlib
 
 import pytest
 
-from destin.common.compress import GZIP_WBITS, inflate
+from dade.common.compress import GZIP_WBITS, inflate
 
 _PAYLOAD = b'the quick brown fox jumps over the lazy dog' * 8
 

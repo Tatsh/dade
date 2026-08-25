@@ -1,10 +1,10 @@
-"""Tests for :mod:`destin.xg2.extract_pc`."""
+"""Tests for :mod:`dade.xg2.extract_pc`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import struct
 
-from destin.xg2.extract_pc import MODEL_SUBDIRECTORIES, iter_model_blobs, process_model, run
+from dade.xg2.extract_pc import MODEL_SUBDIRECTORIES, iter_model_blobs, process_model, run
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -63,7 +63,7 @@ def test_run_mirrors_the_layout(tmp_path: Path) -> None:
 def test_run_copies_wavs(tmp_path: Path, mocker: MockerFixture) -> None:
     data1 = _make_data1(tmp_path)
     (data1 / 'WAVS' / 'engine.wav').write_bytes(b'RIFF')
-    copy = mocker.patch('destin.xg2.extract_pc.shutil.copy2')
+    copy = mocker.patch('dade.xg2.extract_pc.shutil.copy2')
     assert run(data1, tmp_path / 'out')['wavs'] == 1
     copy.assert_called_once()
 
@@ -71,7 +71,7 @@ def test_run_copies_wavs(tmp_path: Path, mocker: MockerFixture) -> None:
 def test_run_converts_bitmaps(tmp_path: Path, mocker: MockerFixture) -> None:
     data1 = _make_data1(tmp_path)
     (data1 / 'logo.bmp').write_bytes(b'BM' + b'\x00' * 64)
-    mocker.patch('destin.xg2.extract_pc.bmp_to_png', return_value=True)
+    mocker.patch('dade.xg2.extract_pc.bmp_to_png', return_value=True)
     assert run(data1, tmp_path / 'out')['bitmaps'] == 1
 
 
@@ -158,7 +158,7 @@ def test_run_ignores_a_bitmap_it_cannot_convert(tmp_path: Path, mocker: MockerFi
     data1 = _make_data1(tmp_path)
     for name in ('a.bmp', 'b.bmp'):
         (data1 / name).write_bytes(b'BM')
-    mocker.patch('destin.xg2.extract_pc.bmp_to_png', return_value=False)
+    mocker.patch('dade.xg2.extract_pc.bmp_to_png', return_value=False)
     assert run(data1, tmp_path / 'out')['bitmaps'] == 0
 
 

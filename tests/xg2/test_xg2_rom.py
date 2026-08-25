@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.rom`."""
+"""Tests for :mod:`dade.xg2.rom`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from destin.xg2.offsets import (
+from dade.xg2.offsets import (
     GAME_CODE_OFFSET,
     XG1_BOOT_HEADER,
     XG1_GLOBAL_TEXTURE_BANK_POINTER,
@@ -17,7 +17,7 @@ from destin.xg2.offsets import (
     XG2_LEVEL_TABLE,
     XG2_MFS_ARCHIVE,
 )
-from destin.xg2.rom import (
+from dade.xg2.rom import (
     BootSanityError,
     game_code,
     read_u32,

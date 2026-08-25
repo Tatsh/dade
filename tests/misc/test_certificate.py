@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.misc.certificate`."""
+"""Tests for :py:mod:`dade.misc.certificate`."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 import pytest
 
-from destin.misc.certificate import (
+from dade.misc.certificate import (
     certificate_lines,
     certificate_to_json,
     find_certificates,

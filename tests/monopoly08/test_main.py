@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.monopoly08.main import main
-from destin.monopoly08.pipeline import StepStats
+from dade.monopoly08.main import main
+from dade.monopoly08.pipeline import StepStats
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -17,7 +17,7 @@ _STATS = {'archives': StepStats(2, 0), 'packs': StepStats(5, 1)}
 
 
 def test_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
-    run = mocker.patch('destin.monopoly08.main.run', return_value=_STATS)
+    run = mocker.patch('dade.monopoly08.main.run', return_value=_STATS)
     result = runner.invoke(main, [str(tmp_path)])
     assert result.exit_code == 0
     assert result.output == 'archives   2 ok, 0 fail\npacks      5 ok, 1 fail\n'
@@ -31,7 +31,7 @@ def test_main(mocker: MockerFixture, runner: CliRunner, tmp_path: Path) -> None:
                                                             (['--debug'], False, None)])
 def test_main_options(*, args: list[str], mocker: MockerFixture, no_movies: bool, runner: CliRunner,
                       tmp_path: Path, workers: int | None) -> None:
-    run = mocker.patch('destin.monopoly08.main.run', return_value={})
+    run = mocker.patch('dade.monopoly08.main.run', return_value={})
     result = runner.invoke(main, [str(tmp_path), *args])
     assert result.exit_code == 0
     run.assert_called_once_with(tmp_path, no_movies=no_movies, workers=workers)

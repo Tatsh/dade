@@ -1,4 +1,4 @@
-"""Shared pytest configuration for the ``destin.rhythmin`` suite.
+"""Shared pytest configuration for the ``dade.rhythmin`` suite.
 
 Every fixture builds its sample file from scratch, so the suite needs no copy of the game.
 """
@@ -12,8 +12,8 @@ import zipfile
 from click.testing import CliRunner
 import pytest
 
-from destin.rhythmin.bfcodec import encipher
-from destin.rhythmin.dialogue import POOLS
+from dade.rhythmin.bfcodec import encipher
+from dade.rhythmin.dialogue import POOLS
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -416,7 +416,7 @@ def clear_font_caches() -> Iterator[None]:
     None
         Control while the caches are empty.
     """
-    from destin.rhythmin.render import japanese_font_path, load_font
+    from dade.rhythmin.render import japanese_font_path, load_font
     japanese_font_path.cache_clear()
     load_font.cache_clear()
     yield

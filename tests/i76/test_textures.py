@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.i76.textures`."""
+"""Tests for :py:mod:`dade.i76.textures`."""
 from __future__ import annotations
 
 import struct
 
 import pytest
 
-from destin.i76.textures import (
+from dade.i76.textures import (
     PALETTE_SIZE,
     decode_map,
     decode_vqm,

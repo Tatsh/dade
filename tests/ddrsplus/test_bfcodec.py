@@ -1,12 +1,12 @@
-"""Tests for :py:mod:`destin.ddrsplus.bfcodec`."""
+"""Tests for :py:mod:`dade.ddrsplus.bfcodec`."""
 from __future__ import annotations
 
 import struct
 
 import pytest
 
-from destin.common.exceptions import InvalidFormatError
-from destin.ddrsplus.bfcodec import GEN_KEY, KDEI_MAGIC, decipher, encipher
+from dade.common.exceptions import InvalidFormatError
+from dade.ddrsplus.bfcodec import GEN_KEY, KDEI_MAGIC, decipher, encipher
 
 
 @pytest.mark.parametrize('payload', [b'', b'\0', b'x' * 8, b'y' * 9, bytes(range(256))])

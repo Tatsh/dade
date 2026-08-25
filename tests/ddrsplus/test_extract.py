@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.ddrsplus.extract`."""
+"""Tests for :py:mod:`dade.ddrsplus.extract`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -7,8 +7,8 @@ import json
 from PIL import Image
 import pytest
 
-from destin.ddrsplus.extract import extract_gen
-from destin.ddrsplus.pvr import BANNER_SIZE
+from dade.ddrsplus.extract import extract_gen
+from dade.ddrsplus.pvr import BANNER_SIZE
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -102,7 +102,7 @@ def test_the_result_lists_every_file_written(make_gen: Callable[..., bytes],
 
 def test_the_gap_is_measured_when_ffmpeg_is_supplied(make_gen: Callable[..., bytes], tmp_path: Path,
                                                      mocker: MockerFixture) -> None:
-    mocker.patch('destin.ddrsplus.extract.estimate_gap', return_value=1.234)
+    mocker.patch('dade.ddrsplus.extract.estimate_gap', return_value=1.234)
     result = extract_gen(make_gen(), 'song', tmp_path, ffmpeg=tmp_path / 'ffmpeg')
     assert result.gap == pytest.approx(1.234)
     assert '#OFFSET:-1.234;' in (tmp_path / 'song.sm').read_text()

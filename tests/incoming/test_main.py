@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.incoming.dispatch import ConversionSummary
-from destin.incoming.main import main
-from destin.incoming.sources import PreparedSource, SourceError
+from dade.incoming.dispatch import ConversionSummary
+from dade.incoming.main import main
+from dade.incoming.sources import PreparedSource, SourceError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -16,8 +16,8 @@ if TYPE_CHECKING:
 def test_main_success(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     source = tmp_path / 'in'
     source.mkdir()
-    mocker.patch('destin.incoming.main.prepare_source', return_value=PreparedSource(source, ()))
-    mocker.patch('destin.incoming.main.run_conversions',
+    mocker.patch('dade.incoming.main.prepare_source', return_value=PreparedSource(source, ()))
+    mocker.patch('dade.incoming.main.run_conversions',
                  new_callable=mocker.AsyncMock,
                  return_value=ConversionSummary(2, 3, 0, 0, 0))
     result = runner.invoke(main, ['-o', str(tmp_path / 'out'), str(source)])
@@ -28,8 +28,8 @@ def test_main_success(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) 
 def test_main_jobs_option(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     source = tmp_path / 'in'
     source.mkdir()
-    mocker.patch('destin.incoming.main.prepare_source', return_value=PreparedSource(source, ()))
-    run_conversions = mocker.patch('destin.incoming.main.run_conversions',
+    mocker.patch('dade.incoming.main.prepare_source', return_value=PreparedSource(source, ()))
+    run_conversions = mocker.patch('dade.incoming.main.run_conversions',
                                    new_callable=mocker.AsyncMock,
                                    return_value=ConversionSummary(1, 1, 0, 0, 0))
     result = runner.invoke(main, ['-j', '3', '-o', str(tmp_path / 'out'), str(source)])
@@ -40,8 +40,8 @@ def test_main_jobs_option(runner: CliRunner, mocker: MockerFixture, tmp_path: Pa
 def test_main_loose_files(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     asset = tmp_path / 't.raw'
     asset.write_text('x')
-    mocker.patch('destin.incoming.main.prepare_source', return_value=PreparedSource(None, (asset,)))
-    run_conversions = mocker.patch('destin.incoming.main.run_conversions',
+    mocker.patch('dade.incoming.main.prepare_source', return_value=PreparedSource(None, (asset,)))
+    run_conversions = mocker.patch('dade.incoming.main.run_conversions',
                                    new_callable=mocker.AsyncMock,
                                    return_value=ConversionSummary(1, 1, 0, 0, 0))
     result = runner.invoke(main, ['-o', str(tmp_path / 'out'), str(asset)])
@@ -52,7 +52,7 @@ def test_main_loose_files(runner: CliRunner, mocker: MockerFixture, tmp_path: Pa
 def test_main_source_error(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     source = tmp_path / 'in'
     source.mkdir()
-    mocker.patch('destin.incoming.main.prepare_source', side_effect=SourceError('bad source'))
+    mocker.patch('dade.incoming.main.prepare_source', side_effect=SourceError('bad source'))
     result = runner.invoke(main, ['-o', str(tmp_path / 'out'), str(source)])
     assert result.exit_code == 1
 
@@ -60,8 +60,8 @@ def test_main_source_error(runner: CliRunner, mocker: MockerFixture, tmp_path: P
 def test_main_reports_failures(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     source = tmp_path / 'in'
     source.mkdir()
-    mocker.patch('destin.incoming.main.prepare_source', return_value=PreparedSource(source, ()))
-    mocker.patch('destin.incoming.main.run_conversions',
+    mocker.patch('dade.incoming.main.prepare_source', return_value=PreparedSource(source, ()))
+    mocker.patch('dade.incoming.main.run_conversions',
                  new_callable=mocker.AsyncMock,
                  return_value=ConversionSummary(0, 0, 0, 0, 1))
     result = runner.invoke(main, ['-o', str(tmp_path / 'out'), str(source)])

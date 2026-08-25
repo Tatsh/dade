@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from destin.common.obj import encode_obj
+from dade.common.obj import encode_obj
 
 _VERTICES = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0)]
 _FACES = [(0, 1, 2)]

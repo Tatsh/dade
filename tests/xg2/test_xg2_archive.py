@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.archive`."""
+"""Tests for :mod:`dade.xg2.archive`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,14 +6,14 @@ import struct
 
 import pytest
 
-from destin.xg2.archive import (
+from dade.xg2.archive import (
     decode_entries,
     decode_entry,
     is_archive,
     parse_archive,
     try_sized_lzss,
 )
-from destin.xg2.lzhuf import LzhufUnavailableError
+from dade.xg2.lzhuf import LzhufUnavailableError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

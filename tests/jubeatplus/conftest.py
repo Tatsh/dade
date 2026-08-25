@@ -1,4 +1,4 @@
-"""Shared pytest configuration for the ``destin.jubeatplus`` suite."""
+"""Shared pytest configuration for the ``dade.jubeatplus`` suite."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -10,9 +10,9 @@ import zlib
 
 import pytest
 
-from destin.common.bfcodec import BFCodec
-from destin.jubeatplus.cipher import bgm_key, lab_url_key, texture_key
-from destin.jubeatplus.pipeline import unpack
+from dade.common.bfcodec import BFCodec
+from dade.jubeatplus.cipher import bgm_key, lab_url_key, texture_key
+from dade.jubeatplus.pipeline import unpack
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
@@ -463,4 +463,4 @@ def serial_pool(mocker: MockerFixture) -> Any:
         pool.map = lambda fn, items, **_: [fn(item) for item in items]
         return pool
 
-    return mocker.patch('destin.jubeatplus.pipeline.ProcessPoolExecutor', side_effect=factory)
+    return mocker.patch('dade.jubeatplus.pipeline.ProcessPoolExecutor', side_effect=factory)

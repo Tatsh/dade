@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.rhythmin.treasure_map`."""
+"""Tests for :py:mod:`dade.rhythmin.treasure_map`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from PIL import Image
 import pytest
 
-from destin.rhythmin.treasure_map import (
+from dade.rhythmin.treasure_map import (
     map_to_json,
     parse_treasure_map,
     read_treasure_map,
@@ -88,7 +88,7 @@ def test_render_image(treasure_map_bytes: bytes, tmp_path: Path) -> None:
 def test_render_image_with_an_empty_legend(treasure_map_bytes: bytes, tmp_path: Path,
                                            mocker: MockerFixture) -> None:
     # With no glyphs the legend wraps to nothing, so the trailing-line append is skipped.
-    mocker.patch('destin.rhythmin.treasure_map.GRID_GLYPHS', {})
+    mocker.patch('dade.rhythmin.treasure_map.GRID_GLYPHS', {})
     path = tmp_path / 'board.png'
     render_image(parse_treasure_map(treasure_map_bytes, 'map_042.map'), path)
     assert path.is_file()

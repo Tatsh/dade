@@ -4,26 +4,26 @@ Tone Sphere
 The game-specific layer for the bit192labs rhythm game *Tone Sphere*, built on top of the generic
 Marmalade support: ``.cz`` decryption, asset extraction, and ``save.bin`` editing.
 
-``destin.bit192.audio``
+``dade.bit192.audio``
 -----------------------
 
-.. automodule:: destin.bit192.audio
+.. automodule:: dade.bit192.audio
    :members:
 
-``destin.bit192.cz``
+``dade.bit192.cz``
 --------------------
 
-.. automodule:: destin.bit192.cz
+.. automodule:: dade.bit192.cz
    :members:
 
-``destin.bit192.extract``
+``dade.bit192.extract``
 -------------------------
 
-.. automodule:: destin.bit192.extract
+.. automodule:: dade.bit192.extract
    :members:
 
-``destin.bit192.save``
+``dade.bit192.save``
 ----------------------
 
-.. automodule:: destin.bit192.save
+.. automodule:: dade.bit192.save
    :members:

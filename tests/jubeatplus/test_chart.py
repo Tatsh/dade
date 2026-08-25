@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.jubeatplus.chart`."""
+"""Tests for :py:mod:`dade.jubeatplus.chart`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.jubeatplus.chart import MAGICS, SECTORS_PER_SECOND, parse_chart
+from dade.jubeatplus.chart import MAGICS, SECTORS_PER_SECOND, parse_chart
 
 if TYPE_CHECKING:
     from collections.abc import Callable

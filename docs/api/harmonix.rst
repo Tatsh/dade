@@ -5,80 +5,80 @@ Readers and converters for the PS2 Harmonix rhythm games *Amplitude* and *FreQue
 archives, Milo scenes, DataArray resources, bitmaps, meshes, MIDI, movies, and the streaming
 audio pipeline.
 
-``destin.harmonix.ark``
+``dade.harmonix.ark``
 ------------------------
 
-.. automodule:: destin.harmonix.ark
+.. automodule:: dade.harmonix.ark
    :members:
 
-``destin.harmonix.audio``
+``dade.harmonix.audio``
 --------------------------
 
-.. automodule:: destin.harmonix.audio
+.. automodule:: dade.harmonix.audio
    :members:
 
-``destin.harmonix.bitmap``
+``dade.harmonix.bitmap``
 ---------------------------
 
-.. automodule:: destin.harmonix.bitmap
+.. automodule:: dade.harmonix.bitmap
    :members:
 
-``destin.harmonix.dataarray``
+``dade.harmonix.dataarray``
 ------------------------------
 
-.. automodule:: destin.harmonix.dataarray
+.. automodule:: dade.harmonix.dataarray
    :members:
 
-``destin.harmonix.mesh``
+``dade.harmonix.mesh``
 -------------------------
 
-.. automodule:: destin.harmonix.mesh
+.. automodule:: dade.harmonix.mesh
    :members:
 
-``destin.harmonix.midi``
+``dade.harmonix.midi``
 -------------------------
 
-.. automodule:: destin.harmonix.midi
+.. automodule:: dade.harmonix.midi
    :members:
 
-``destin.harmonix.milo``
+``dade.harmonix.milo``
 -------------------------
 
-.. automodule:: destin.harmonix.milo
+.. automodule:: dade.harmonix.milo
    :members:
 
-``destin.harmonix.movie``
+``dade.harmonix.movie``
 --------------------------
 
-.. automodule:: destin.harmonix.movie
+.. automodule:: dade.harmonix.movie
    :members:
 
-``destin.harmonix.pipeline``
+``dade.harmonix.pipeline``
 -----------------------------
 
-.. automodule:: destin.harmonix.pipeline
+.. automodule:: dade.harmonix.pipeline
    :members:
 
-``destin.harmonix.rndobject``
+``dade.harmonix.rndobject``
 ------------------------------
 
-.. automodule:: destin.harmonix.rndobject
+.. automodule:: dade.harmonix.rndobject
    :members:
 
-``destin.harmonix.unpacker``
+``dade.harmonix.unpacker``
 -----------------------------
 
-.. automodule:: destin.harmonix.unpacker
+.. automodule:: dade.harmonix.unpacker
    :members:
 
-``destin.harmonix.video``
+``dade.harmonix.video``
 --------------------------
 
-.. automodule:: destin.harmonix.video
+.. automodule:: dade.harmonix.video
    :members:
 
-``destin.harmonix.workers``
+``dade.harmonix.workers``
 ----------------------------
 
-.. automodule:: destin.harmonix.workers
+.. automodule:: dade.harmonix.workers
    :members:

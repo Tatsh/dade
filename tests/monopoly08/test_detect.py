@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.monopoly08.detect import detect, find_bigs
+from dade.monopoly08.detect import detect, find_bigs
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from pathlib import Path
 
-    from destin.monopoly08.typing import Platform
+    from dade.monopoly08.typing import Platform
 
 
 def test_find_bigs_only_returns_files(make_disc: Callable[[Sequence[str]], Path]) -> None:

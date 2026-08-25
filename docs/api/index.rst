@@ -1,7 +1,7 @@
 API reference
 =============
 
-Module-level reference for the ``destin`` package: the shared ``destin.common`` modules and a page
+Module-level reference for the ``dade`` package: the shared ``dade.common`` modules and a page
 per game submodule. The command-line entry points are documented separately under :doc:`../usage`
 and :doc:`../utilities`.
 

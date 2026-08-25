@@ -347,7 +347,7 @@ def test_convert_file_logs_failures(audio_module: ModuleType, caplog: pytest.Log
                                     make_schl: Callable[..., bytes], tmp_path: Path) -> None:
     fake_vgmstream(VgmPlan(message='broken', output=False))
     source = _write(tmp_path, 'bank.sdt', make_schl([b'first-unit']))
-    with caplog.at_level(logging.WARNING, logger='destin.monopoly08.audio'):
+    with caplog.at_level(logging.WARNING, logger='dade.monopoly08.audio'):
         assert audio_module.convert_file(source) == []
     assert 'Failed to decode' in caplog.text
 

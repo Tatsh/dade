@@ -1,12 +1,12 @@
-"""Tests for :py:mod:`destin.i76.horizon`."""
+"""Tests for :py:mod:`dade.i76.horizon`."""
 from __future__ import annotations
 
 import struct
 
 import pytest
 
-from destin.i76.horizon import assemble_panorama, bundle_stem, horizon_set, parse_hzd
-from destin.i76.textures import decode_map
+from dade.i76.horizon import assemble_panorama, bundle_stem, horizon_set, parse_hzd
+from dade.i76.textures import decode_map
 
 
 def test_parse_hzd(hzd: bytes) -> None:

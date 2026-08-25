@@ -1,13 +1,13 @@
-"""Tests for :py:mod:`destin.jubeatplus.plists`."""
+"""Tests for :py:mod:`dade.jubeatplus.plists`."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 import plistlib
 
-from destin.common.bfcodec import BFCodec
-from destin.jubeatplus.cipher import lab_url_key, texture_key
-from destin.jubeatplus.plists import json_safe, read_plist
+from dade.common.bfcodec import BFCodec
+from dade.jubeatplus.cipher import lab_url_key, texture_key
+from dade.jubeatplus.plists import json_safe, read_plist
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping

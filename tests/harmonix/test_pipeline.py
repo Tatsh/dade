@@ -7,7 +7,7 @@ import struct
 
 import pytest
 
-from destin.harmonix import pipeline
+from dade.harmonix import pipeline
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -179,7 +179,7 @@ async def test_run_game_keeps_unconverted_str_on_delete(make_amp_ark: _Builder,
     (work / 'AUDIO').mkdir()
     (work / 'GEN' / 'MAIN.ARK').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
     (work / 'AUDIO' / 'SONG.STR').write_bytes(bytes(4096))
-    mocker.patch('destin.harmonix.workers.str_to_wav_file', side_effect=ValueError('boom'))
+    mocker.patch('dade.harmonix.workers.str_to_wav_file', side_effect=ValueError('boom'))
     await pipeline.run_game(work, delete=True, ignore_failures=True, jobs=1)
     assert not (work / 'GEN' / 'MAIN.ARK').exists()  # The ARK still unpacked and is removed.
     assert (work / 'AUDIO' / 'SONG.STR').is_file()  # A STR that failed to convert is kept.

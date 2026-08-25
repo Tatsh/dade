@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.i76.pe_unpack`."""
+"""Tests for :py:mod:`dade.i76.pe_unpack`."""
 from __future__ import annotations
 
 import struct
 
 import pytest
 
-from destin.i76.pe_unpack import (
+from dade.i76.pe_unpack import (
     OVERLAY_MAGIC,
     OVERLAY_OFFSET,
     InvalidImageError,
@@ -32,7 +32,7 @@ def _build_pe(sections: tuple[tuple[str, int, int, int, int], ...],
     size_of_image : int
         Value for the optional header's SizeOfImage field.
     overlay : bytes
-        Bytes placed at :py:data:`destin.i76.pe_unpack.OVERLAY_OFFSET`.
+        Bytes placed at :py:data:`dade.i76.pe_unpack.OVERLAY_OFFSET`.
 
     Returns
     -------

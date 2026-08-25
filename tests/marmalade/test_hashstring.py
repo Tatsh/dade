@@ -1,7 +1,7 @@
-"""Tests for :func:`destin.marmalade.hashstring.iw_hash_string`."""
+"""Tests for :func:`dade.marmalade.hashstring.iw_hash_string`."""
 from __future__ import annotations
 
-from destin.marmalade.hashstring import iw_hash_string
+from dade.marmalade.hashstring import iw_hash_string
 
 
 def test_empty_string_is_seed() -> None:

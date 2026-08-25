@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.extract_xg2`."""
+"""Tests for :mod:`dade.xg2.extract_xg2`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,8 +6,8 @@ import struct
 
 import pytest
 
-from destin.xg2.extract_xg2 import iter_model_blobs, run, unpack
-from destin.xg2.offsets import XG2_MELODIC_BANK, XG2_SOUNDBANKS
+from dade.xg2.extract_xg2 import iter_model_blobs, run, unpack
+from dade.xg2.offsets import XG2_MELODIC_BANK, XG2_SOUNDBANKS
 
 from .conftest import XG2_LEVEL_BASES, XG2_MODEL_ARCHIVE
 
@@ -22,7 +22,7 @@ _SEQUENCES = 'audio/sequences'
 
 @pytest.fixture(autouse=True)
 def _no_fluidsynth(mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg2.render_directory', return_value=0)
+    mocker.patch('dade.xg2.extract_xg2.render_directory', return_value=0)
 
 
 def test_run_writes_the_level_containers(make_xg2_rom: Callable[..., bytes],
@@ -52,7 +52,7 @@ def test_run_converts_the_sequences(make_xg2_rom: Callable[..., bytes], tmp_path
 def test_run_skips_a_sequence_that_will_not_convert(make_xg2_rom: Callable[..., bytes],
                                                     tmp_path: Path, mocker: MockerFixture,
                                                     caplog: pytest.LogCaptureFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg2.to_midi', side_effect=struct.error)
+    mocker.patch('dade.xg2.extract_xg2.to_midi', side_effect=struct.error)
     with caplog.at_level('WARNING'):
         assert run(make_xg2_rom(), tmp_path, convert=True)['midis'] == 0
     assert 'could not be converted to MIDI' in caplog.text
@@ -60,14 +60,14 @@ def test_run_skips_a_sequence_that_will_not_convert(make_xg2_rom: Callable[..., 
 
 def test_run_skips_a_sequence_without_tracks(make_xg2_rom: Callable[..., bytes], tmp_path: Path,
                                              mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg2.to_midi', return_value=(b'', 0))
+    mocker.patch('dade.xg2.extract_xg2.to_midi', return_value=(b'', 0))
     assert run(make_xg2_rom(), tmp_path, convert=True)['midis'] == 0
 
 
 def test_run_moves_the_drum_channel_aside(make_xg2_rom: Callable[..., bytes], tmp_path: Path,
                                           mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg2.used_channels', return_value={9})
-    remap = mocker.patch('destin.xg2.extract_xg2.remap_channel', return_value=b'MThd')
+    mocker.patch('dade.xg2.extract_xg2.used_channels', return_value={9})
+    remap = mocker.patch('dade.xg2.extract_xg2.remap_channel', return_value=b'MThd')
     run(make_xg2_rom(), tmp_path, convert=True)
     assert remap.call_args.args[1:] == (9, 0)
 
@@ -75,8 +75,8 @@ def test_run_moves_the_drum_channel_aside(make_xg2_rom: Callable[..., bytes], tm
 def test_run_keeps_the_drum_channel_when_none_is_free(make_xg2_rom: Callable[...,
                                                                              bytes], tmp_path: Path,
                                                       mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg2.used_channels', return_value=set(range(16)))
-    remap = mocker.patch('destin.xg2.extract_xg2.remap_channel')
+    mocker.patch('dade.xg2.extract_xg2.used_channels', return_value=set(range(16)))
+    remap = mocker.patch('dade.xg2.extract_xg2.remap_channel')
     run(make_xg2_rom(), tmp_path, convert=True)
     remap.assert_not_called()
 
@@ -96,7 +96,7 @@ def test_run_converts_the_samples(make_xg2_rom: Callable[..., bytes], tmp_path: 
 
 def test_run_skips_an_empty_sample(make_xg2_rom: Callable[..., bytes], tmp_path: Path,
                                    mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg2.parse_bank',
+    mocker.patch('dade.xg2.extract_xg2.parse_bank',
                  return_value={
                      'sample_rate': 22050,
                      'instruments': [],
@@ -111,14 +111,14 @@ def test_run_skips_an_empty_sample(make_xg2_rom: Callable[..., bytes], tmp_path:
 
 def test_run_skips_a_soundfont_it_cannot_build(make_xg2_rom: Callable[..., bytes], tmp_path: Path,
                                                mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg2.bank_to_sf2', return_value=None)
+    mocker.patch('dade.xg2.extract_xg2.bank_to_sf2', return_value=None)
     assert run(make_xg2_rom(), tmp_path, convert=True)['soundfonts'] == 0
 
 
 def test_run_warns_about_a_bank_that_will_not_parse(make_xg2_rom: Callable[..., bytes],
                                                     tmp_path: Path, mocker: MockerFixture,
                                                     caplog: pytest.LogCaptureFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg2.parse_bank', return_value=None)
+    mocker.patch('dade.xg2.extract_xg2.parse_bank', return_value=None)
     with caplog.at_level('WARNING'):
         run(make_xg2_rom(), tmp_path)
     assert 'did not parse' in caplog.text
@@ -165,7 +165,7 @@ def test_run_decodes_the_textures(make_xg2_rom: Callable[..., bytes], tmp_path: 
 
 def test_run_renders_the_sequences(make_xg2_rom: Callable[..., bytes], tmp_path: Path,
                                    mocker: MockerFixture) -> None:
-    render = mocker.patch('destin.xg2.extract_xg2.render_directory', return_value=3)
+    render = mocker.patch('dade.xg2.extract_xg2.render_directory', return_value=3)
     fluidsynth = tmp_path / 'fluidsynth'
     assert run(make_xg2_rom(), tmp_path, convert=True, fluidsynth_path=fluidsynth)['rendered'] == 3
     assert render.call_args.args[2] == fluidsynth

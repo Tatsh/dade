@@ -1,13 +1,13 @@
-destin
+dade
 ======
 
 .. only:: html
 
    .. include:: badges.rst
 
-   ``destin`` bundles a collection of asset extractors and converters for a set of PC and console
-   video games into a single package. Each game is a sub-command of one ``destin`` command, invoked
-   as ``destin <game> <subcommand>``.
+   ``dade`` bundles a collection of asset extractors and converters for a set of PC and console
+   video games into a single package. Each game is a sub-command of one ``dade`` command, invoked
+   as ``dade <game> <subcommand>``.
 
    The games currently supported are *Incoming* (PC and Dreamcast), *Amplitude* and *FreQuency*
    (PS2), *Tone Sphere*, *jubeat plus* and *pop'n rhythmin* (iOS), any Marmalade SDK title,

@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.extract_xg1`."""
+"""Tests for :mod:`dade.xg2.extract_xg1`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,8 +6,8 @@ import struct
 
 import pytest
 
-from destin.xg2.extract_xg1 import LEVEL_SUB_BLOBS, RunLog, run, unpack
-from destin.xg2.mfs import MfsCalibrationError
+from dade.xg2.extract_xg1 import LEVEL_SUB_BLOBS, RunLog, run, unpack
+from dade.xg2.mfs import MfsCalibrationError
 
 from .conftest import XG1_LEVEL_BASES
 
@@ -56,7 +56,7 @@ def test_run_writes_the_mfs_files(make_xg1_rom: Callable[..., bytes], tmp_path: 
 
 def test_run_records_an_uncalibratable_mfs(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                            mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.iter_files', side_effect=MfsCalibrationError)
+    mocker.patch('dade.xg2.extract_xg1.iter_files', side_effect=MfsCalibrationError)
     assert run(make_xg1_rom(), tmp_path)['mfs'] == 0
     assert 'mfs:' in (tmp_path / 'extract.log').read_text()
 
@@ -88,7 +88,7 @@ def test_run_writes_the_object_table(make_xg1_rom: Callable[..., bytes], tmp_pat
 def test_run_decompresses_level_blobs_when_the_codec_exists(make_xg1_rom: Callable[..., bytes],
                                                             tmp_path: Path,
                                                             mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.decompress_lzhuf', return_value=b'decoded')
+    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', return_value=b'decoded')
     counts = run(make_xg1_rom(), tmp_path)
     level = tmp_path / 'levels' / f'00_{XG1_LEVEL_BASES[0]:07X}'
     assert (level / 't1_desc.bin').read_bytes() == b'decoded'
@@ -111,7 +111,7 @@ def test_run_records_a_skipped_texture_bank(make_xg1_rom: Callable[..., bytes],
 
 def test_run_writes_texture_bank_pngs(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                       mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.decompress_lzhuf', return_value=_texture_bank())
+    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', return_value=_texture_bank())
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 4
     assert (tmp_path / 'textures' / 'global' / 'tex000_4x4.png').is_file()
 
@@ -119,21 +119,20 @@ def test_run_writes_texture_bank_pngs(make_xg1_rom: Callable[..., bytes], tmp_pa
 def test_run_falls_back_to_greyscale_without_a_palette(make_xg1_rom: Callable[..., bytes],
                                                        tmp_path: Path,
                                                        mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.decompress_lzhuf',
-                 return_value=_texture_bank(palette=False))
+    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', return_value=_texture_bank(palette=False))
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 4
 
 
 def test_run_skips_a_truncated_texture(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                        mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.decompress_lzhuf',
+    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf',
                  return_value=_texture_bank(truncated=True))
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 2
 
 
 def test_run_records_a_bank_without_descriptors(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                                 mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.decompress_lzhuf', return_value=b'\x00' * 0x100)
+    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', return_value=b'\x00' * 0x100)
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 0
     assert 'no valid descriptor table' in (tmp_path / 'extract.log').read_text()
 
@@ -153,7 +152,7 @@ def test_run_writes_a_bank_whose_table_runs_to_the_end(make_xg1_rom: Callable[..
                                                        mocker: MockerFixture) -> None:
     bank = bytearray(0x10)
     struct.pack_into('>IHH', bank, 8, 0x0C, 1, 1)
-    mocker.patch('destin.xg2.extract_xg1.decompress_lzhuf', return_value=bytes(bank))
+    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', return_value=bytes(bank))
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 0
 
 
@@ -167,21 +166,21 @@ def test_run_converts_the_sequences(make_xg1_rom: Callable[..., bytes], tmp_path
 def test_run_records_a_sequence_that_will_not_convert(make_xg1_rom: Callable[...,
                                                                              bytes], tmp_path: Path,
                                                       mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.to_midi', side_effect=IndexError)
+    mocker.patch('dade.xg2.extract_xg1.to_midi', side_effect=IndexError)
     run(make_xg1_rom(), tmp_path, convert=True)
     assert 'ALCSeq to MIDI failed' in (tmp_path / 'extract.log').read_text()
 
 
 def test_run_skips_a_sequence_without_tracks(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                              mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.to_midi', return_value=(b'', 0))
+    mocker.patch('dade.xg2.extract_xg1.to_midi', return_value=(b'', 0))
     run(make_xg1_rom(), tmp_path, convert=True)
     assert not (tmp_path / 'audio' / 'soundbank_0500000' / 'seq00.mid').exists()
 
 
 def test_run_records_a_failed_xg_conversion(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                             mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.to_xg', side_effect=ValueError('bad'))
+    mocker.patch('dade.xg2.extract_xg1.to_xg', side_effect=ValueError('bad'))
     run(make_xg1_rom(), tmp_path, convert=True)
     assert 'XG conversion failed' in (tmp_path / 'extract.log').read_text()
 
@@ -194,7 +193,7 @@ def test_run_writes_the_sample_wavs(make_xg1_rom: Callable[..., bytes], tmp_path
 
 def test_run_skips_an_empty_sample(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                    mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.parse_bank',
+    mocker.patch('dade.xg2.extract_xg1.parse_bank',
                  return_value={
                      'sample_rate': 22050,
                      'instruments': [],
@@ -208,7 +207,7 @@ def test_run_skips_an_empty_sample(make_xg1_rom: Callable[..., bytes], tmp_path:
 
 def test_run_ignores_a_bank_with_no_sounds(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                            mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.parse_bank',
+    mocker.patch('dade.xg2.extract_xg1.parse_bank',
                  return_value={
                      'sample_rate': 22050,
                      'instruments': [],
@@ -227,14 +226,14 @@ def test_run_builds_the_combined_soundfont(make_xg1_rom: Callable[..., bytes],
 
 def test_run_passes_a_fallback_drum_bank(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                          mocker: MockerFixture) -> None:
-    build = mocker.patch('destin.xg2.extract_xg1.build_combined', return_value=b'RIFF')
+    build = mocker.patch('dade.xg2.extract_xg1.build_combined', return_value=b'RIFF')
     run(make_xg1_rom(banks=2), tmp_path, convert=True)
     assert build.call_args.args[1:] == (0x600000, 0x600000)
 
 
 def test_run_records_a_failed_soundfont(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                         mocker: MockerFixture) -> None:
-    mocker.patch('destin.xg2.extract_xg1.build_combined', side_effect=ValueError('no bank'))
+    mocker.patch('dade.xg2.extract_xg1.build_combined', side_effect=ValueError('no bank'))
     run(make_xg1_rom(), tmp_path, convert=True)
     assert 'combined SoundFont failed' in (tmp_path / 'extract.log').read_text()
 

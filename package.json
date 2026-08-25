@@ -50,8 +50,8 @@
     "prettier-plugin-toml": "^2.0.6",
     "pyright": "^1.1.413"
   },
-  "files": ["LICENSE.txt", "README.md", "man/destin.1"],
-  "homepage": "https://tatsh.github.io/destin/",
+  "files": ["LICENSE.txt", "README.md", "man/dade.1"],
+  "homepage": "https://tatsh.github.io/dade/",
   "keywords": [
     "acclaim",
     "activision",
@@ -95,7 +95,7 @@
     "noBanner": true,
     "showFound": true
   },
-  "name": "destin",
+  "name": "dade",
   "packageManager": "yarn@4.18.0",
   "prettier": {
     "endOfLine": "lf",
@@ -121,7 +121,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tatsh/destin.git"
+    "url": "git+https://github.com/Tatsh/dade.git"
   },
   "scripts": {
     "check-formatting": "prettier --check . && uv run yapf --diff --parallel --recursive . && markdownlint-cli2 --config package.json --configPointer /markdownlint-cli2",

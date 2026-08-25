@@ -1,47 +1,47 @@
 .. only:: html
 
-   .. image:: https://img.shields.io/pypi/pyversions/destin.svg?color=blue&logo=python&logoColor=white
+   .. image:: https://img.shields.io/pypi/pyversions/dade.svg?color=blue&logo=python&logoColor=white
       :target: https://www.python.org/
       :alt: Python versions
 
-   .. image:: https://img.shields.io/pypi/v/destin
-      :target: https://pypi.org/project/destin/
+   .. image:: https://img.shields.io/pypi/v/dade
+      :target: https://pypi.org/project/dade/
       :alt: PyPI - Version
 
-   .. image:: https://img.shields.io/github/v/tag/Tatsh/destin
-      :target: https://github.com/Tatsh/destin/tags
+   .. image:: https://img.shields.io/github/v/tag/Tatsh/dade
+      :target: https://github.com/Tatsh/dade/tags
       :alt: GitHub tag (with filter)
 
-   .. image:: https://img.shields.io/github/license/Tatsh/destin
-      :target: https://github.com/Tatsh/destin/blob/master/LICENSE.txt
+   .. image:: https://img.shields.io/github/license/Tatsh/dade
+      :target: https://github.com/Tatsh/dade/blob/master/LICENSE.txt
       :alt: License
 
-   .. image:: https://img.shields.io/github/commits-since/Tatsh/destin/v0.0.0/master
-      :target: https://github.com/Tatsh/destin/compare/v0.0.0...master
+   .. image:: https://img.shields.io/github/commits-since/Tatsh/dade/v0.0.0/master
+      :target: https://github.com/Tatsh/dade/compare/v0.0.0...master
       :alt: GitHub commits since latest release (by SemVer including pre-releases)
 
-   .. image:: https://github.com/Tatsh/destin/actions/workflows/codeql.yml/badge.svg
-      :target: https://github.com/Tatsh/destin/actions/workflows/codeql.yml
+   .. image:: https://github.com/Tatsh/dade/actions/workflows/codeql.yml/badge.svg
+      :target: https://github.com/Tatsh/dade/actions/workflows/codeql.yml
       :alt: CodeQL
 
-   .. image:: https://github.com/Tatsh/destin/actions/workflows/qa.yml/badge.svg
-      :target: https://github.com/Tatsh/destin/actions/workflows/qa.yml
+   .. image:: https://github.com/Tatsh/dade/actions/workflows/qa.yml/badge.svg
+      :target: https://github.com/Tatsh/dade/actions/workflows/qa.yml
       :alt: QA
 
-   .. image:: https://github.com/Tatsh/destin/actions/workflows/tests.yml/badge.svg
-      :target: https://github.com/Tatsh/destin/actions/workflows/tests.yml
+   .. image:: https://github.com/Tatsh/dade/actions/workflows/tests.yml/badge.svg
+      :target: https://github.com/Tatsh/dade/actions/workflows/tests.yml
       :alt: Tests
 
-   .. image:: https://coveralls.io/repos/github/Tatsh/destin/badge.svg?branch=master
-      :target: https://coveralls.io/github/Tatsh/destin?branch=master
+   .. image:: https://coveralls.io/repos/github/Tatsh/dade/badge.svg?branch=master
+      :target: https://coveralls.io/github/Tatsh/dade?branch=master
       :alt: Coverage Status
 
    .. image:: https://img.shields.io/badge/Dependabot-enabled-blue?logo=dependabot
       :target: https://github.com/dependabot
       :alt: Dependabot
 
-   .. image:: https://readthedocs.org/projects/destin/badge/?version=latest
-      :target: https://destin.readthedocs.org/?badge=latest
+   .. image:: https://readthedocs.org/projects/dade/badge/?version=latest
+      :target: https://dade.readthedocs.org/?badge=latest
       :alt: Documentation Status
 
    .. image:: https://www.mypy-lang.org/static/mypy_badge.svg
@@ -64,16 +64,16 @@
       :target: https://github.com/astral-sh/ruff
       :alt: Ruff
 
-   .. image:: https://static.pepy.tech/badge/destin/month
-      :target: https://pepy.tech/project/destin
+   .. image:: https://static.pepy.tech/badge/dade/month
+      :target: https://pepy.tech/project/dade
       :alt: Downloads
 
-   .. image:: https://img.shields.io/github/stars/Tatsh/destin?logo=github&style=flat
-      :target: https://github.com/Tatsh/destin/stargazers
+   .. image:: https://img.shields.io/github/stars/Tatsh/dade?logo=github&style=flat
+      :target: https://github.com/Tatsh/dade/stargazers
       :alt: Stargazers
 
-   .. image:: https://results.pre-commit.ci/badge/github/Tatsh/destin/master.svg
-      :target: https://results.pre-commit.ci/latest/github/Tatsh/destin/master
+   .. image:: https://results.pre-commit.ci/badge/github/Tatsh/dade/master.svg
+      :target: https://results.pre-commit.ci/latest/github/Tatsh/dade/master
       :alt: pre-commit.ci status
 
    .. image:: https://img.shields.io/badge/Prettier-black?logo=prettier

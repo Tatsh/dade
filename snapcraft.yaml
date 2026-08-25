@@ -1,21 +1,21 @@
 apps:
-  destin:
-    command: 'bin/destin'
+  dade:
+    command: 'bin/dade'
     plugs:
       - 'home'
       - 'network'
       - 'network-bind'
 base: 'core24'
 confinement: 'strict'
-contact: 'https://github.com/Tatsh/destin/issues'
+contact: 'https://github.com/Tatsh/dade/issues'
 description: 'Extract and convert assets from a collection of PC and console video games.'
 donation: 'https://buymeacoffee.com/Tatsh'
 grade: 'stable'
-issues: 'https://github.com/Tatsh/destin/issues'
+issues: 'https://github.com/Tatsh/dade/issues'
 license: 'MIT'
-name: 'destin'
+name: 'dade'
 parts:
-  destin:
+  dade:
     build-packages: []
     plugin: 'python'
     python-packages:
@@ -27,8 +27,8 @@ platforms:
     build-on: 'amd64'
   arm64:
     build-on: 'arm64'
-source-code: 'https://github.com/Tatsh/destin'
+source-code: 'https://github.com/Tatsh/dade'
 summary: 'Extract and convert assets from a collection of PC and console video games.'
-title: 'destin'
+title: 'dade'
 version: '0.0.0'
-website: 'https://tatsh.github.io/destin/'
+website: 'https://tatsh.github.io/dade/'

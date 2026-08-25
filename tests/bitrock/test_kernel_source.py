@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from destin.bitrock.password_cracker.kernel_source import MAX_IV_POOL, MAX_PASSWORD, kernel_source
-from destin.common.twofish import H_QSEQ, MDS, MDS_POLYNOMIAL, Q0, Q1, RS, RS_POLYNOMIAL
+from dade.bitrock.password_cracker.kernel_source import MAX_IV_POOL, MAX_PASSWORD, kernel_source
+from dade.common.twofish import H_QSEQ, MDS, MDS_POLYNOMIAL, Q0, Q1, RS, RS_POLYNOMIAL
 
 
 @pytest.mark.parametrize(

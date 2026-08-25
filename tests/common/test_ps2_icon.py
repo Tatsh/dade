@@ -7,8 +7,8 @@ import struct
 from PIL import Image
 import pytest
 
-from destin.common import ps2_icon as icon
-from destin.common.exceptions import InvalidFormatError
+from dade.common import ps2_icon as icon
+from dade.common.exceptions import InvalidFormatError
 
 if TYPE_CHECKING:
     from collections.abc import Callable

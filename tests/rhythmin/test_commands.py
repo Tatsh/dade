@@ -1,4 +1,4 @@
-"""Tests for the ``destin rhythmin`` commands."""
+"""Tests for the ``dade rhythmin`` commands."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,12 +6,12 @@ import json
 
 import pytest
 
-from destin.rhythmin.commands.dump_chara import dump_chara
-from destin.rhythmin.commands.dump_idx import dump_idx
-from destin.rhythmin.commands.dump_map import dump_map
-from destin.rhythmin.commands.dump_sheet import dump_sheet
-from destin.rhythmin.commands.extract_dialogue import extract_dialogue
-from destin.rhythmin.main import main, rhythmin
+from dade.rhythmin.commands.dump_chara import dump_chara
+from dade.rhythmin.commands.dump_idx import dump_idx
+from dade.rhythmin.commands.dump_map import dump_map
+from dade.rhythmin.commands.dump_sheet import dump_sheet
+from dade.rhythmin.commands.extract_dialogue import extract_dialogue
+from dade.rhythmin.main import main, rhythmin
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -49,7 +49,7 @@ def test_dump_chara_aborts_on_a_bad_payload(runner: CliRunner, tmp_path: Path) -
 
 def test_dump_chara_aborts_when_the_plaintext_is_not_json(runner: CliRunner,
                                                           tmp_path: Path) -> None:
-    from destin.rhythmin.bfcodec import encipher
+    from dade.rhythmin.bfcodec import encipher
     path = tmp_path / 'notjson.chr'
     path.write_bytes(encipher(b'not json at all'))
     result = runner.invoke(dump_chara, (str(path),))
@@ -218,6 +218,6 @@ def test_extract_dialogue_aborts_on_a_64_bit_binary(runner: CliRunner, tmp_path:
 
 
 def test_the_group_entry_point(mocker: MockerFixture) -> None:
-    group = mocker.patch('destin.rhythmin.main.rhythmin')
+    group = mocker.patch('dade.rhythmin.main.rhythmin')
     main()
     group.assert_called_once_with()

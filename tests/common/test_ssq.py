@@ -1,12 +1,12 @@
-"""Tests for :py:mod:`destin.common.ssq`."""
+"""Tests for :py:mod:`dade.common.ssq`."""
 from __future__ import annotations
 
 import struct
 
 import pytest
 
-from destin.common.exceptions import InvalidFormatError
-from destin.common.ssq import (
+from dade.common.exceptions import InvalidFormatError
+from dade.common.ssq import (
     TICKS_PER_MEASURE,
     Chart,
     TempoMap,

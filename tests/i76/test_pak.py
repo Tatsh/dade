@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.i76.pak`."""
+"""Tests for :py:mod:`dade.i76.pak`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.i76.pak import (
+from dade.i76.pak import (
     build_bundle_index,
     extract,
     iter_members,

@@ -1,4 +1,4 @@
-"""Shared pytest configuration for the ``destin.misc`` suite."""
+"""Shared pytest configuration for the ``dade.misc`` suite."""
 from __future__ import annotations
 
 from datetime import datetime, timezone

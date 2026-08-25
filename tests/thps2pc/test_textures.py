@@ -1,10 +1,10 @@
-"""Tests for :mod:`destin.thps2pc.textures`."""
+"""Tests for :mod:`dade.thps2pc.textures`."""
 from __future__ import annotations
 
 import pytest
 
-from destin.thps2pc import textures
-from destin.thps2pc.test_utils import psx_lighting
+from dade.thps2pc import textures
+from dade.thps2pc.test_utils import psx_lighting
 
 
 def test_parse_lighting_walks_past_the_chunk_list() -> None:

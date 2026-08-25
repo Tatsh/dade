@@ -1,8 +1,8 @@
-"""Tests for :mod:`destin.marmalade.material`."""
+"""Tests for :mod:`dade.marmalade.material`."""
 from __future__ import annotations
 
-from destin.marmalade.material import decode_material
-from destin.marmalade.test_utils import build_material
+from dade.marmalade.material import decode_material
+from dade.marmalade.test_utils import build_material
 
 
 def test_decode_same_as_default() -> None:

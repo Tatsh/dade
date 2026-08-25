@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.misc.macho`."""
+"""Tests for :py:mod:`dade.misc.macho`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -7,7 +7,7 @@ import struct
 
 import pytest
 
-from destin.misc.macho import read_macho
+from dade.misc.macho import read_macho
 
 if TYPE_CHECKING:
     from collections.abc import Callable

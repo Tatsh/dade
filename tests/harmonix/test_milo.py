@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from destin.harmonix import milo
+from dade.harmonix import milo
 
 if TYPE_CHECKING:
     from collections.abc import Callable

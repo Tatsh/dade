@@ -1,10 +1,10 @@
-"""Tests for :mod:`destin.xg2.alcseq`."""
+"""Tests for :mod:`dade.xg2.alcseq`."""
 from __future__ import annotations
 
 import struct
 
-from destin.xg2.alcseq import DEFAULT_DIVISION, CSeqReader, decode_track, to_midi
-from destin.xg2.smf import split_tracks
+from dade.xg2.alcseq import DEFAULT_DIVISION, CSeqReader, decode_track, to_midi
+from dade.xg2.smf import split_tracks
 
 
 def test_reader_reads_plain_bytes() -> None:

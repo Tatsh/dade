@@ -1,10 +1,10 @@
-"""Tests for the ``destin jubeatplus unpack`` command."""
+"""Tests for the ``dade jubeatplus unpack`` command."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.jubeatplus.commands.unpack import unpack
-from destin.jubeatplus.main import jubeatplus, main
+from dade.jubeatplus.commands.unpack import unpack
+from dade.jubeatplus.main import jubeatplus, main
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -84,6 +84,6 @@ def test_the_group_lists_unpack(runner: CliRunner) -> None:
 
 
 def test_the_group_entry_point(mocker: MockerFixture) -> None:
-    group = mocker.patch('destin.jubeatplus.main.jubeatplus')
+    group = mocker.patch('dade.jubeatplus.main.jubeatplus')
     main()
     group.assert_called_once_with()

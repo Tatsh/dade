@@ -11,7 +11,7 @@ import pytest
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from destin.harmonix.typing import DataArrayNode
+    from dade.harmonix.typing import DataArrayNode
 
 _SENTINEL = b'\xad\xde\xad\xde'
 """The Milo inter-object body terminator.

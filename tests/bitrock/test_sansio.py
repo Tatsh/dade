@@ -7,14 +7,14 @@ import zlib
 
 import pytest
 
-from destin.bitrock.exceptions import (
+from dade.bitrock.exceptions import (
     CorruptArchiveError,
     DecryptionError,
     MemberNotFoundError,
     SignatureNotFoundError,
     UnsupportedCompressionError,
 )
-from destin.bitrock.sansio import BytesReader, CookFS, decompress_page, parse_fs_index
+from dade.bitrock.sansio import BytesReader, CookFS, decompress_page, parse_fs_index
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.jubeatplus.cipher`."""
+"""Tests for :py:mod:`dade.jubeatplus.cipher`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ import hashlib
 
 import pytest
 
-from destin.jubeatplus.cipher import (
+from dade.jubeatplus.cipher import (
     BGM_PASSPHRASE,
     LAB_URL_PASSPHRASE,
     MISSION_DATA_PASSPHRASE,

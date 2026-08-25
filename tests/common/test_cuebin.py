@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.common.cuebin import cuebin_to_iso
-from destin.common.exceptions import InvalidFormatError
-from destin.common.iso9660 import Iso9660Image
+from dade.common.cuebin import cuebin_to_iso
+from dade.common.exceptions import InvalidFormatError
+from dade.common.iso9660 import Iso9660Image
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from destin.common.context import input_root, tool_path, using_input_root, using_tool_paths
+from dade.common.context import input_root, tool_path, using_input_root, using_tool_paths
 
 
 def test_input_root_default() -> None:

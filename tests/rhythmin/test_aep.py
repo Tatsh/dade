@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.rhythmin.aep`."""
+"""Tests for :py:mod:`dade.rhythmin.aep`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from destin.rhythmin.aep import AepIndex, entry_to_json, index_to_json, read_aep_index
+from dade.rhythmin.aep import AepIndex, entry_to_json, index_to_json, read_aep_index
 
 if TYPE_CHECKING:
     from pathlib import Path

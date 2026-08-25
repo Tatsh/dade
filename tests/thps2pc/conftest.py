@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.thps2pc.psx import Scene
-from destin.thps2pc.test_utils import (
+from dade.thps2pc.psx import Scene
+from dade.thps2pc.test_utils import (
     SectorSpec,
     TextureSpec,
     face_record,

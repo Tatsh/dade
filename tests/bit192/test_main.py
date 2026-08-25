@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.bit192.main import main, tonesphere
+from dade.bit192.main import main, tonesphere
 
 if TYPE_CHECKING:
     from click.testing import CliRunner

@@ -17,18 +17,18 @@ jobs:
         run: |
           version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
           echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "filename=sh.tat.destin-${version}-${{ matrix.system.arch }}.flatpak" >> "$GITHUB_OUTPUT"
+          echo "filename=sh.tat.dade-${version}-${{ matrix.system.arch }}.flatpak" >> "$GITHUB_OUTPUT"
       - name: 'Build Flatpak'
         uses: 'flatpak/flatpak-github-actions/flatpak-builder@401fe28a8384095fc1531b9d320b292f0ee45adb'
         with:
           arch: '${{ matrix.system.arch }}'
           bundle: '${{ steps.flatpak_bundle.outputs.filename }}'
-          manifest-path: 'sh.tat.destin.yml'
+          manifest-path: 'sh.tat.dade.yml'
       - name: 'Upload Artifacts'
         uses: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'
         with:
           if-no-files-found: 'error'
-          name: 'sh.tat.destin-${{ steps.flatpak_bundle.outputs.version }}-${{ matrix.system.arch }}'
+          name: 'sh.tat.dade-${{ steps.flatpak_bundle.outputs.version }}-${{ matrix.system.arch }}'
           path: '${{ steps.flatpak_bundle.outputs.filename }}'
       - name: 'Attest'
         uses: 'actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6'
@@ -57,7 +57,7 @@ jobs:
         with:
           merge-multiple: true
           path: '_release_assets'
-          pattern: 'sh.tat.destin-*'
+          pattern: 'sh.tat.dade-*'
       - env:
           GH_REPO: '${{ github.repository }}'
           GH_TOKEN: '${{ github.token }}'
@@ -79,9 +79,9 @@ name: 'Flatpak'
     branches:
       - 'master'
     paths:
-      - 'destin/**'
+      - 'dade/**'
       - '.github/workflows/flatpak.yml'
-      - 'sh.tat.destin.yml'
+      - 'sh.tat.dade.yml'
       - 'pyproject.toml'
       - 'uv.lock'
       - 'poetry.lock'

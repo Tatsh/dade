@@ -4,8 +4,8 @@ from hashlib import sha256
 
 import pytest
 
-from destin.bitrock.crypto import Twofish, cbc_encrypt, derive_key
-from destin.bitrock.typing import PayloadInfo
+from dade.bitrock.crypto import Twofish, cbc_encrypt, derive_key
+from dade.bitrock.typing import PayloadInfo
 
 cp = pytest.importorskip('cupy')
 
@@ -41,28 +41,28 @@ def _synthetic_payload(password: bytes, times: int) -> PayloadInfo:
 
 
 def test_cuda_finds_correct_password() -> None:
-    from destin.bitrock.password_cracker.cuda import crack_cuda
+    from dade.bitrock.password_cracker.cuda import crack_cuda
     info = _synthetic_payload(b'ab', 2)
     assert crack_cuda(info, [b'no', b'ab', b'zz']) == b'ab'
 
 
 def test_cuda_returns_none_when_exhausted() -> None:
-    from destin.bitrock.password_cracker.cuda import crack_cuda
+    from dade.bitrock.password_cracker.cuda import crack_cuda
     info = _synthetic_payload(b'ab', 2)
     assert crack_cuda(info, [b'no', b'zz']) is None
 
 
 @pytest.mark.parametrize('password', [b'a', b'secret', b'0123456789abcdef', b'p@ss'])
 def test_cuda_matches_cpu_oracle(password: bytes) -> None:
-    from destin.bitrock.crypto import verify_password
-    from destin.bitrock.password_cracker.cuda import crack_cuda
+    from dade.bitrock.crypto import verify_password
+    from dade.bitrock.password_cracker.cuda import crack_cuda
     info = _synthetic_payload(password, 128)
     assert verify_password(password, info) is not None
     assert crack_cuda(info, [password]) == password
 
 
 def test_cuda_rejects_oversized_candidate() -> None:
-    from destin.bitrock.password_cracker.cuda import crack_cuda
+    from dade.bitrock.password_cracker.cuda import crack_cuda
     info = _synthetic_payload(b'ab', 2)
     with pytest.raises(ValueError, match='maximum'):
         crack_cuda(info, [b'x' * 65])

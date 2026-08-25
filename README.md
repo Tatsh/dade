@@ -1,26 +1,26 @@
-# destin
+# dade
 
 <!-- WISWA-GENERATED-README:START -->
 
-[![Python versions](https://img.shields.io/pypi/pyversions/destin.svg?color=blue&logo=python&logoColor=white)](https://www.python.org/)
-[![PyPI - Version](https://img.shields.io/pypi/v/destin)](https://pypi.org/project/destin/)
-[![GitHub tag (with filter)](https://img.shields.io/github/v/tag/Tatsh/destin)](https://github.com/Tatsh/destin/tags)
-[![License](https://img.shields.io/github/license/Tatsh/destin)](https://github.com/Tatsh/destin/blob/master/LICENSE.txt)
-[![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/Tatsh/destin/v0.0.0/master)](https://github.com/Tatsh/destin/compare/v0.0.0...master)
-[![CodeQL](https://github.com/Tatsh/destin/actions/workflows/codeql.yml/badge.svg)](https://github.com/Tatsh/destin/actions/workflows/codeql.yml)
-[![QA](https://github.com/Tatsh/destin/actions/workflows/qa.yml/badge.svg)](https://github.com/Tatsh/destin/actions/workflows/qa.yml)
-[![Tests](https://github.com/Tatsh/destin/actions/workflows/tests.yml/badge.svg)](https://github.com/Tatsh/destin/actions/workflows/tests.yml)
-[![Coverage Status](https://coveralls.io/repos/github/Tatsh/destin/badge.svg?branch=master)](https://coveralls.io/github/Tatsh/destin?branch=master)
+[![Python versions](https://img.shields.io/pypi/pyversions/dade.svg?color=blue&logo=python&logoColor=white)](https://www.python.org/)
+[![PyPI - Version](https://img.shields.io/pypi/v/dade)](https://pypi.org/project/dade/)
+[![GitHub tag (with filter)](https://img.shields.io/github/v/tag/Tatsh/dade)](https://github.com/Tatsh/dade/tags)
+[![License](https://img.shields.io/github/license/Tatsh/dade)](https://github.com/Tatsh/dade/blob/master/LICENSE.txt)
+[![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/Tatsh/dade/v0.0.0/master)](https://github.com/Tatsh/dade/compare/v0.0.0...master)
+[![CodeQL](https://github.com/Tatsh/dade/actions/workflows/codeql.yml/badge.svg)](https://github.com/Tatsh/dade/actions/workflows/codeql.yml)
+[![QA](https://github.com/Tatsh/dade/actions/workflows/qa.yml/badge.svg)](https://github.com/Tatsh/dade/actions/workflows/qa.yml)
+[![Tests](https://github.com/Tatsh/dade/actions/workflows/tests.yml/badge.svg)](https://github.com/Tatsh/dade/actions/workflows/tests.yml)
+[![Coverage Status](https://coveralls.io/repos/github/Tatsh/dade/badge.svg?branch=master)](https://coveralls.io/github/Tatsh/dade?branch=master)
 [![Dependabot](https://img.shields.io/badge/Dependabot-enabled-blue?logo=dependabot)](https://github.com/dependabot)
-[![Documentation Status](https://readthedocs.org/projects/destin/badge/?version=latest)](https://destin.readthedocs.org/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/dade/badge/?version=latest)](https://dade.readthedocs.org/?badge=latest)
 [![mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 [![uv](https://img.shields.io/badge/uv-261230?logo=astral)](https://docs.astral.sh/uv/)
 [![numpy](https://img.shields.io/badge/numpy-black?logo=numpy)](https://pypi.org/project/numpy/)
 [![pytest](https://img.shields.io/badge/pytest-zz?logo=Pytest&labelColor=black&color=black)](https://docs.pytest.org/en/stable/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Downloads](https://static.pepy.tech/badge/destin/month)](https://pepy.tech/project/destin)
-[![Stargazers](https://img.shields.io/github/stars/Tatsh/destin?logo=github&style=flat)](https://github.com/Tatsh/destin/stargazers)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Tatsh/destin/master.svg)](https://results.pre-commit.ci/latest/github/Tatsh/destin/master)
+[![Downloads](https://static.pepy.tech/badge/dade/month)](https://pepy.tech/project/dade)
+[![Stargazers](https://img.shields.io/github/stars/Tatsh/dade?logo=github&style=flat)](https://github.com/Tatsh/dade/stargazers)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Tatsh/dade/master.svg)](https://results.pre-commit.ci/latest/github/Tatsh/dade/master)
 [![Prettier](https://img.shields.io/badge/Prettier-black?logo=prettier)](https://prettier.io/)
 
 [![@Tatsh](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpublic.api.bsky.app%2Fxrpc%2Fapp.bsky.actor.getProfile%2F%3Factor=did%3Aplc%3Auq42idtvuccnmtl57nsucz72&query=%24.followersCount&label=Follow+%40Tatsh&logo=bluesky&style=social)](https://bsky.app/profile/Tatsh.bsky.social)
@@ -31,44 +31,44 @@
 
 <!-- WISWA-GENERATED-README:STOP -->
 
-[Destin](https://en.wikipedia.org/wiki/Destin,_Florida) is a single package that bundles a
-collection of asset extractors and converters for a set of PC and console video games. Each game is
-a sub-command of one `destin` command, so every tool is invoked the same way:
+**Dade** (Decompress, Analyse, Decode, Export) is a single package that bundles a collection of
+asset extractors and converters for a set of PC and console video games. Each game is a sub-command
+of one `dade` command, so every tool is invoked the same way:
 
 ```shell
-destin <game> <subcommand> [ARGS]
+dade <game> <subcommand> [ARGS]
 ```
 
-Run `destin --help` to list the games, and `destin <game> --help` to list a game's subcommands.
+Run `dade --help` to list the games, and `dade <game> --help` to list a game's subcommands.
 
 ## Games
 
-| Sub-command         | Game(s)                                     | Publisher / developer         |
-| ------------------- | ------------------------------------------- | ----------------------------- |
-| `destin amplitude`  | _Amplitude_ (PS2)                           | Harmonix                      |
-| `destin bit192`     | _Tone Sphere_                               | bit192labs                    |
-| `destin bitrock`    | BitRock / InstallBuilder installers         | BitRock / VMware              |
-| `destin frequency`  | _FreQuency_ (PS2)                           | Harmonix                      |
-| `destin i76`        | _Interstate '76_ and _Interstate '82_       | Activision                    |
-| `destin incoming`   | _Incoming_ (PC and Dreamcast)               | Rage Software / Interplay     |
-| `destin jubeatplus` | _jubeat plus_ (iOS)                         | Konami                        |
-| `destin marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
-| `destin misc`       | Formats belonging to no single game         | —                             |
-| `destin monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
-| `destin rhythmin`   | _pop'n rhythmin_ (iOS)                      | Konami                        |
-| `destin thps2pc`    | _Tony Hawk's Pro Skater 2_ (PC)             | Neversoft / Activision        |
-| `destin xg2`        | _Extreme-G_ and _Extreme-G 2_ (N64 and PC)  | Probe Entertainment / Acclaim |
+| Sub-command       | Game(s)                                     | Publisher / developer         |
+| ----------------- | ------------------------------------------- | ----------------------------- |
+| `dade amplitude`  | _Amplitude_ (PS2)                           | Harmonix                      |
+| `dade bit192`     | _Tone Sphere_                               | bit192labs                    |
+| `dade bitrock`    | BitRock / InstallBuilder installers         | BitRock / VMware              |
+| `dade frequency`  | _FreQuency_ (PS2)                           | Harmonix                      |
+| `dade i76`        | _Interstate '76_ and _Interstate '82_       | Activision                    |
+| `dade incoming`   | _Incoming_ (PC and Dreamcast)               | Rage Software / Interplay     |
+| `dade jubeatplus` | _jubeat plus_ (iOS)                         | Konami                        |
+| `dade marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
+| `dade misc`       | Formats belonging to no single game         | —                             |
+| `dade monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
+| `dade rhythmin`   | _pop'n rhythmin_ (iOS)                      | Konami                        |
+| `dade thps2pc`    | _Tony Hawk's Pro Skater 2_ (PC)             | Neversoft / Activision        |
+| `dade xg2`        | _Extreme-G_ and _Extreme-G 2_ (N64 and PC)  | Probe Entertainment / Acclaim |
 
 ## Installation
 
 ```shell
-pip install destin
+pip install dade
 ```
 
 ## Incoming
 
 ```shell
-destin incoming extract --output OUTPUT_DIR SOURCE
+dade incoming extract --output OUTPUT_DIR SOURCE
 ```
 
 `SOURCE` may be a PC disc directory or ISO containing `DATA1.CAB` (or the `DATA1.CAB` itself), a
@@ -90,12 +90,12 @@ the CPU count), and `--debug` for verbose logging.
 
 Two further subcommands convert a single asset without mirroring a whole source tree:
 
-- `destin incoming ian2obj MODEL OUTDIR` — convert one model to Wavefront OBJ and MTL. Both the PC
+- `dade incoming ian2obj MODEL OUTDIR` — convert one model to Wavefront OBJ and MTL. Both the PC
   `.ian` mesh and the Dreamcast `*_M.BIN` model pack are accepted (the format is detected from the
   file name); a Dreamcast pack needs its matching `*_ML.BIN` index beside it and yields one OBJ and
   MTL per object. The texture is resolved from the game root, auto-detected from `MODEL` or set with
   `--game-root`, unless `--no-texture` is given.
-- `destin incoming extract-pvr-pack PACK OUTDIR` — unpack a Dreamcast `*_T.PVR` texture pack,
+- `dade incoming extract-pvr-pack PACK OUTDIR` — unpack a Dreamcast `*_T.PVR` texture pack,
   writing each texture as a separate `.pvr` file, or as a PNG with `--png` (which requires
   `spvr2png`).
 
@@ -115,8 +115,8 @@ matching `--*-path` option:
 ## Amplitude and FreQuency
 
 ```shell
-destin amplitude unpack DISC -o OUT
-destin frequency unpack DISC -o OUT
+dade amplitude unpack DISC -o OUT
+dade frequency unpack DISC -o OUT
 ```
 
 _Amplitude_ and _FreQuency_ (Harmonix) share one PS2 engine but are separate commands, one per game.
@@ -128,20 +128,20 @@ to the current directory; set it with `-o`/`--output-dir`.
 ## Tone Sphere
 
 ```shell
-destin bit192 extract "Tone Sphere.xapk" -o out/
-destin bit192 decrypt-cz gamedata_sub.cz gamedata_sub.dz
-destin bit192 save …
+dade bit192 extract "Tone Sphere.xapk" -o out/
+dade bit192 decrypt-cz gamedata_sub.cz gamedata_sub.dz
+dade bit192 save …
 ```
 
 Tools for the [bit192labs](https://bit192.com/) rhythm game _Tone Sphere_: `.cz` decryption, full
 asset extraction, and `save.bin` editing. This is the game-specific layer on top of the generic
-Marmalade support in `destin marmalade`.
+Marmalade support in `dade marmalade`.
 
 ## Marmalade SDK
 
 ```shell
-destin marmalade extract-dz ARCHIVE.dz OUTDIR
-destin marmalade extract-group RESOURCES.group.bin OUTDIR
+dade marmalade extract-dz ARCHIVE.dz OUTDIR
+dade marmalade extract-group RESOURCES.group.bin OUTDIR
 ```
 
 Unpack and decode assets built with the Marmalade SDK: Derbh (`.dz`) archives, IwResGroup
@@ -151,8 +151,8 @@ PNG, JSON, and Wavefront OBJ.
 ## BitRock / InstallBuilder
 
 ```shell
-destin bitrock extract INSTALLER OUTDIR
-destin bitrock crack INSTALLER
+dade bitrock extract INSTALLER OUTDIR
+dade bitrock crack INSTALLER
 ```
 
 Extract (and, for encrypted installers, brute-force the password of) BitRock / InstallBuilder
@@ -161,7 +161,7 @@ installers. Optional `cuda` and `opencl` extras accelerate password cracking on 
 ## Monopoly 2008
 
 ```shell
-destin monopoly08 extract ROOT
+dade monopoly08 extract ROOT
 ```
 
 Unpack and convert an extracted _Monopoly_ (2008, Electronic Arts) disc for Xbox 360, PS3, PS2, or
@@ -170,7 +170,7 @@ Wii. The platform is auto-detected and every output is written next to its sourc
 ## jubeat plus
 
 ```shell
-destin jubeatplus unpack Jubeat.ipa -o out/
+dade jubeatplus unpack Jubeat.ipa -o out/
 ```
 
 Convert a whole _jubeat plus_ (`jp.konami.jubeatplus`) download to formats that open outside iOS.
@@ -178,7 +178,7 @@ Convert a whole _jubeat plus_ (`jp.konami.jubeatplus`) download to formats that 
 `Payload`; it is only read, and the converted bundle is written under `-o`/`--output-dir` into a
 directory named after it.
 
-Every encrypted asset uses the same Blowfish variant as `destin rhythmin`, differing only in the
+Every encrypted asset uses the same Blowfish variant as `dade rhythmin`, differing only in the
 key. There are seven, each the MD5 of a passphrase the binary assembles on the stack so it never
 appears whole in the executable; two of them carry the shipped assets.
 
@@ -191,10 +191,10 @@ appears whole in the executable; two of them carry the shipped assets.
 | `.zip`                          | a directory         | Marker, hold-marker, and share images; enciphered entries with the header, plain ones left alone.                                |
 | `seq_bas`, `seq_adv`, `seq_ext` | `.json`             | Note charts: header, music bar, and every event with its panel, hold length, tempo, and time.                                    |
 | `.plist`, `.xcent`              | `.json`             | Data values are reported as hex; the two that are enciphered URLs are decoded as well.                                           |
-| `.strings`                      | `.json`             | Read by the `destin misc strings` parser.                                                                                        |
-| `.mom`, `.cdm`                  | `.json`             | Read by the `destin misc coredata` parser.                                                                                       |
-| `SC_Info`                       | `SC_Info.json`      | Read by the `destin misc sc-info` parser, and written only when the directory still holds records.                               |
-| the executable                  | `<name>.macho.json` | Read by the `destin misc macho` reader.                                                                                          |
+| `.strings`                      | `.json`             | Read by the `dade misc strings` parser.                                                                                          |
+| `.mom`, `.cdm`                  | `.json`             | Read by the `dade misc coredata` parser.                                                                                         |
+| `SC_Info`                       | `SC_Info.json`      | Read by the `dade misc sc-info` parser, and written only when the directory still holds records.                                 |
+| the executable                  | `<name>.macho.json` | Read by the `dade misc macho` reader.                                                                                            |
 
 Every other file is copied unchanged, so the output is a complete bundle rather than a selection.
 Nothing is decrypted beyond the game's own asset cipher: an App Store executable stays enciphered,
@@ -208,11 +208,11 @@ logging.
 ## pop'n rhythmin
 
 ```shell
-destin rhythmin dump-chara chara001.chr
-destin rhythmin dump-idx music_select.idx
-destin rhythmin dump-map map_042.map
-destin rhythmin dump-sheet 000000007.orb n
-destin rhythmin extract-dialogue pools.inc --binary PopnRhythmin
+dade rhythmin dump-chara chara001.chr
+dade rhythmin dump-idx music_select.idx
+dade rhythmin dump-map map_042.map
+dade rhythmin dump-sheet 000000007.orb n
+dade rhythmin extract-dialogue pools.inc --binary PopnRhythmin
 ```
 
 Decrypt and decode the data files of the Konami iOS rhythm game _pop'n rhythmin_. Every encrypted
@@ -235,10 +235,10 @@ JSON to standard output:
 ## Miscellaneous
 
 ```shell
-destin misc coredata MODEL
-destin misc macho dump BINARY
-destin misc sc-info dump PATH
-destin misc strings STRINGS
+dade misc coredata MODEL
+dade misc macho dump BINARY
+dade misc sc-info dump PATH
+dade misc strings STRINGS
 ```
 
 Converters and readers for platform-level formats that belong to no single game. `coredata`
@@ -296,9 +296,9 @@ the first ten `.supp` records and counts the rest; `--json` always carries all o
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 
 ```shell
-destin xg2 --help
-destin i76 --help
-destin thps2pc --help
+dade xg2 --help
+dade i76 --help
+dade thps2pc --help
 ```
 
 Asset extractors and converters for _Extreme-G_ / _Extreme-G 2_ (N64 and PC), _Interstate '76_ and

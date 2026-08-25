@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.common.bfcodec`."""
+"""Tests for :py:mod:`dade.common.bfcodec`."""
 from __future__ import annotations
 
 import hashlib
@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from destin.common.bfcodec import DEFAULT_IV, BFCodec, Blowfish, decipher, encipher
+from dade.common.bfcodec import DEFAULT_IV, BFCodec, Blowfish, decipher, encipher
 
 _KEY = hashlib.md5(b'example passphrase', usedforsecurity=False).digest()
 

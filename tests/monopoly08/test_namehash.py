@@ -5,8 +5,8 @@ import runpy
 
 import pytest
 
-from destin.monopoly08 import namehash
-from destin.monopoly08.namehash import GROUND_TRUTH, name_hash
+from dade.monopoly08 import namehash
+from dade.monopoly08.namehash import GROUND_TRUTH, name_hash
 
 _MODULE_PATH = str(Path(namehash.__file__))
 

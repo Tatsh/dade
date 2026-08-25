@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.rhythmin.chara`."""
+"""Tests for :py:mod:`dade.rhythmin.chara`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from destin.rhythmin.bfcodec import encipher
-from destin.rhythmin.chara import decrypt_chara, parse_chara, read_chara
+from dade.rhythmin.bfcodec import encipher
+from dade.rhythmin.chara import decrypt_chara, parse_chara, read_chara
 
 if TYPE_CHECKING:
     from pathlib import Path

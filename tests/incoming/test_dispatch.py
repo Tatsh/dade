@@ -6,9 +6,9 @@ import pathlib
 from anyio import Path
 import pytest
 
-from destin.incoming.dispatch import ConversionSummary, convert_file, run_conversions
-from destin.incoming.sources import PreparedSource
-from destin.incoming.test_utils import ctl_records, pvr_pack, pvrt_chunk
+from dade.incoming.dispatch import ConversionSummary, convert_file, run_conversions
+from dade.incoming.sources import PreparedSource
+from dade.incoming.test_utils import ctl_records, pvr_pack, pvrt_chunk
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -76,8 +76,7 @@ async def test_convert_file_name_matched_pack(tmp_path: pathlib.Path,
                                               mocker: MockerFixture) -> None:
     source = tmp_path / 'AFRICA_T.PVR'  # matched by the _t.pvr name rule
     source.write_bytes(pvr_pack([pvrt_chunk(2, 2)]))
-    mocker.patch('destin.incoming.converters.images.find_spvr2png',
-                 return_value=pathlib.Path('/spv'))
+    mocker.patch('dade.incoming.converters.images.find_spvr2png', return_value=pathlib.Path('/spv'))
 
     def run(args: list[str], **_: object) -> object:
         raw_dir, dest = pathlib.Path(args[2]), pathlib.Path(args[4])
@@ -85,7 +84,7 @@ async def test_convert_file_name_matched_pack(tmp_path: pathlib.Path,
             (dest / f'{pvr.stem}.png').write_bytes(b'PNG')
         return mocker.Mock()
 
-    mocker.patch('destin.incoming.converters.images.sp.run', side_effect=run)
+    mocker.patch('dade.incoming.converters.images.sp.run', side_effect=run)
     out = tmp_path / 'out'
     out.mkdir()
     summary = await convert_file(Path(source), Path(out), Path(tmp_path), set())

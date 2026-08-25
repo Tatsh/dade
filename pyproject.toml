@@ -82,7 +82,7 @@ keywords = [
   "tony hawk",
 ]
 license = "MIT"
-name = "destin"
+name = "dade"
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
 version = "0.0.0"
@@ -97,28 +97,28 @@ lzham = ["pylzham>=0.1.3"]
 opencl = ["pyopencl>=2024.1"]
 
 [project.scripts]
-destin = "destin.main:main"
+dade = "dade.main:main"
 
 [project.urls]
-Issues = "https://github.com/Tatsh/destin/issues"
-documentation = "https://destin.readthedocs.org"
-homepage = "https://tatsh.github.io/destin/"
-repository = "https://github.com/Tatsh/destin"
+Issues = "https://github.com/Tatsh/dade/issues"
+documentation = "https://dade.readthedocs.org"
+homepage = "https://tatsh.github.io/dade/"
+repository = "https://github.com/Tatsh/dade"
 
 [tool.commitizen]
 name = "cz_path"
-remove_path_prefixes = ["destin", "include", "src"]
+remove_path_prefixes = ["dade", "include", "src"]
 tag_format = "v$version"
 version_files = [
   ".wiswa.jsonnet",
   "CITATION.cff",
   "README.md",
-  "destin/__init__.py",
+  "dade/__init__.py",
   "docs/badges.rst",
   "docs/index.rst",
-  "man/destin.1",
+  "man/dade.1",
   "package.json",
-  "sh.tat.destin.yml",
+  "sh.tat.dade.yml",
   "snapcraft.yaml",
 ]
 version_provider = "pep621"
@@ -127,14 +127,14 @@ version_provider = "pep621"
 exclude_also = ["if TYPE_CHECKING:"]
 omit = [
   "conftest.py",
-  "destin/__main__.py",
+  "dade/__main__.py",
   "tests.py",
   "tests/*/test_*.py",
   "tests/test_*.py",
-  "destin/bitrock/password_cracker/cuda.py",
-  "destin/bitrock/password_cracker/opencl.py",
-  "destin/*/__main__.py",
-  "destin/*/typing.py",
+  "dade/bitrock/password_cracker/cuda.py",
+  "dade/bitrock/password_cracker/opencl.py",
+  "dade/*/__main__.py",
+  "dade/*/typing.py",
 ]
 show_missing = true
 
@@ -142,24 +142,24 @@ show_missing = true
 branch = true
 omit = [
   "conftest.py",
-  "destin/__main__.py",
+  "dade/__main__.py",
   "tests.py",
   "tests/*/test_*.py",
   "tests/test_*.py",
-  "destin/bitrock/password_cracker/cuda.py",
-  "destin/bitrock/password_cracker/opencl.py",
-  "destin/*/__main__.py",
-  "destin/*/typing.py",
+  "dade/bitrock/password_cracker/cuda.py",
+  "dade/bitrock/password_cracker/opencl.py",
+  "dade/*/__main__.py",
+  "dade/*/typing.py",
 ]
 
 [tool.doc8]
 max-line-length = 100
 
 [tool.hatch.build.targets.sdist]
-include = ["destin", "man", "tests"]
+include = ["dade", "man", "tests"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["destin"]
+packages = ["dade"]
 
 [tool.mypy]
 cache_dir = "~/.cache/mypy"
@@ -175,7 +175,7 @@ warn_unreachable = true
 deprecateTypingAliases = true
 enableExperimentalFeatures = true
 exclude = [".sbclaude-venv", ".venv", "**/node_modules", "**/__pycache__", "**/.*"]
-include = ["./destin", "./tests"]
+include = ["./dade", "./tests"]
 pythonPlatform = "Linux"
 pythonVersion = "3.10"
 reportCallInDefaultInitializer = "warning"
@@ -241,7 +241,7 @@ multiline-quotes = "double"
 case-sensitive = true
 combine-as-imports = true
 from-first = true
-known-first-party = ["destin"]
+known-first-party = ["dade"]
 required-imports = ["from __future__ import annotations"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
@@ -252,7 +252,7 @@ max-complexity = 20
 extend-ignore-names = ["test_*"]
 
 [tool.ruff.lint.per-file-ignores]
-"destin/main.py" = ["PLR0913"]
+"dade/main.py" = ["PLR0913"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

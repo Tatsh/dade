@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.monopoly08.refpack import decompress, is_refpack
+from dade.monopoly08.refpack import decompress, is_refpack
 
 if TYPE_CHECKING:
     from collections.abc import Callable

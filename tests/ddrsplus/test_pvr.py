@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.ddrsplus.pvr`."""
+"""Tests for :py:mod:`dade.ddrsplus.pvr`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,8 +6,8 @@ import struct
 
 import pytest
 
-from destin.common.exceptions import InvalidFormatError
-from destin.ddrsplus.pvr import BANNER_SIZE, crop, decode_pvr, read_header
+from dade.common.exceptions import InvalidFormatError
+from dade.ddrsplus.pvr import BANNER_SIZE, crop, decode_pvr, read_header
 
 if TYPE_CHECKING:
     from collections.abc import Callable

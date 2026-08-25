@@ -6,10 +6,10 @@ import struct
 
 import pytest
 
-from destin.common.context import using_input_root
-from destin.incoming.converters import ConversionError
-from destin.incoming.converters.models_dc import mbin_to_obj, mlbin_to_json
-from destin.incoming.test_utils import mbin_pair
+from dade.common.context import using_input_root
+from dade.incoming.converters import ConversionError
+from dade.incoming.converters.models_dc import mbin_to_obj, mlbin_to_json
+from dade.incoming.test_utils import mbin_pair
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -41,14 +41,14 @@ def test_mbin_no_context(tmp_path: Path) -> None:
 def test_mbin_with_textures(tmp_path: Path, mocker: MockerFixture) -> None:
     source = _write_pair(tmp_path, *mbin_pair(texture_index=8))
     out = tmp_path / 'out'
-    mocker.patch('destin.incoming.converters.models_dc.find_level_pack',
+    mocker.patch('dade.incoming.converters.models_dc.find_level_pack',
                  return_value=tmp_path / 'pack.pvr')
 
     def fake_textures(_pack: Path, _indices: set[int], cache: Path, prefix: str) -> dict[int, str]:
         (cache / f'{prefix}_tex8.png').write_bytes(b'PNG')
         return {8: f'{prefix}_tex8.png'}
 
-    mocker.patch('destin.incoming.converters.models_dc.place_pack_textures',
+    mocker.patch('dade.incoming.converters.models_dc.place_pack_textures',
                  side_effect=fake_textures)
     with using_input_root(tmp_path):
         mbin_to_obj(source, out)
@@ -58,7 +58,7 @@ def test_mbin_with_textures(tmp_path: Path, mocker: MockerFixture) -> None:
 
 def test_mbin_pack_not_found(tmp_path: Path, mocker: MockerFixture) -> None:
     source = _write_pair(tmp_path, *mbin_pair())
-    mocker.patch('destin.incoming.converters.models_dc.find_level_pack', return_value=None)
+    mocker.patch('dade.incoming.converters.models_dc.find_level_pack', return_value=None)
     with using_input_root(tmp_path):
         mbin_to_obj(source, tmp_path / 'out')
     assert 'not resolved' in (tmp_path / 'out' / 'LEVEL_M' / 'LEVEL_M_000.mtl').read_text('utf-8')

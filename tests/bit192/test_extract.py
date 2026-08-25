@@ -1,4 +1,4 @@
-"""Integration tests for :mod:`destin.bit192.extract`."""
+"""Integration tests for :mod:`dade.bit192.extract`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -7,9 +7,9 @@ import zipfile
 
 import pytest
 
-from destin.bit192 import cz
-from destin.bit192.extract import extract
-from destin.marmalade.test_utils import build_derbh, build_model, build_resgroup
+from dade.bit192 import cz
+from dade.bit192.extract import extract
+from dade.marmalade.test_utils import build_derbh, build_model, build_resgroup
 
 if TYPE_CHECKING:
     from pathlib import Path

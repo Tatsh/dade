@@ -9,7 +9,7 @@ import zlib
 from typing_extensions import override
 import pytest
 
-from destin.harmonix import ark
+from dade.harmonix import ark
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

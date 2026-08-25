@@ -1,12 +1,12 @@
 Usage
 =====
 
-This page documents the ``destin incoming`` sub-command (the *Incoming* extractor). Run
-``destin --help`` for the full list of games and ``destin <game> --help`` for a game's subcommands.
+This page documents the ``dade incoming`` sub-command (the *Incoming* extractor). Run
+``dade --help`` for the full list of games and ``dade <game> --help`` for a game's subcommands.
 
 .. code-block:: shell
 
-   destin incoming extract --output OUTPUT_DIR SOURCE
+   dade incoming extract --output OUTPUT_DIR SOURCE
 
 The extractor mirrors ``SOURCE`` into ``OUTPUT_DIR``: recognised assets are converted to open
 formats and every other file is copied verbatim, preserving the original directory layout. The
@@ -47,6 +47,6 @@ logging.
 Command reference
 -----------------
 
-.. click:: destin.incoming.main:main
-   :prog: destin incoming extract
+.. click:: dade.incoming.main:main
+   :prog: dade incoming extract
    :nested: full

@@ -7,7 +7,7 @@ import struct
 from PIL import Image
 import pytest
 
-from destin.monopoly08.structured import (
+from dade.monopoly08.structured import (
     EXTENSIONS,
     convert,
     convert_anim,

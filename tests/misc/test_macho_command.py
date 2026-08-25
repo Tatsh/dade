@@ -1,11 +1,11 @@
-"""Tests for the ``destin misc macho`` command."""
+"""Tests for the ``dade misc macho`` command."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import json
 
-from destin.misc.commands.macho import macho
-from destin.misc.main import main, misc
+from dade.misc.commands.macho import macho
+from dade.misc.main import main, misc
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def test_the_group_entry_point(mocker: MockerFixture) -> None:
-    group = mocker.patch('destin.misc.main.misc')
+    group = mocker.patch('dade.misc.main.misc')
     main()
     group.assert_called_once_with()
 

@@ -1,10 +1,10 @@
-"""Tests for :mod:`destin.thps2pc.psx`."""
+"""Tests for :mod:`dade.thps2pc.psx`."""
 from __future__ import annotations
 
 import pytest
 
-from destin.thps2pc.psx import Scene
-from destin.thps2pc.test_utils import SectorSpec, face_record, psx_scene
+from dade.thps2pc.psx import Scene
+from dade.thps2pc.test_utils import SectorSpec, face_record, psx_scene
 
 
 def test_parse_reads_header(scene: Scene) -> None:

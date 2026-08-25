@@ -6,32 +6,32 @@ S+*: the ``KDEI`` framing around the shared ``BFCodec`` cipher, the container an
 the PowerVR banner textures, the ``#OFFSET`` gap measured from the audio, and the extraction that
 ties them together. The step charts themselves are SSQ, read by :doc:`common`.
 
-``destin.ddrsplus.bfcodec``
+``dade.ddrsplus.bfcodec``
 ---------------------------
 
-.. automodule:: destin.ddrsplus.bfcodec
+.. automodule:: dade.ddrsplus.bfcodec
    :members:
 
-``destin.ddrsplus.extract``
+``dade.ddrsplus.extract``
 ---------------------------
 
-.. automodule:: destin.ddrsplus.extract
+.. automodule:: dade.ddrsplus.extract
    :members:
 
-``destin.ddrsplus.gap``
+``dade.ddrsplus.gap``
 -----------------------
 
-.. automodule:: destin.ddrsplus.gap
+.. automodule:: dade.ddrsplus.gap
    :members:
 
-``destin.ddrsplus.gen``
+``dade.ddrsplus.gen``
 -----------------------
 
-.. automodule:: destin.ddrsplus.gen
+.. automodule:: dade.ddrsplus.gen
    :members:
 
-``destin.ddrsplus.pvr``
+``dade.ddrsplus.pvr``
 -----------------------
 
-.. automodule:: destin.ddrsplus.pvr
+.. automodule:: dade.ddrsplus.pvr
    :members:

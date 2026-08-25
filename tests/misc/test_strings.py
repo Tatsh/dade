@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.misc.strings`."""
+"""Tests for :py:mod:`dade.misc.strings`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ import plistlib
 
 import pytest
 
-from destin.misc import read_strings
+from dade.misc import read_strings
 
 if TYPE_CHECKING:
     from pathlib import Path

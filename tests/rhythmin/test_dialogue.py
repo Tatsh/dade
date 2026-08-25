@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.rhythmin.dialogue`."""
+"""Tests for :py:mod:`dade.rhythmin.dialogue`."""
 from __future__ import annotations
 
 import struct
 
 import pytest
 
-from destin.rhythmin.dialogue import (
+from dade.rhythmin.dialogue import (
     POOLS,
     PoolSpec,
     empty_pools,

@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin import __version__
-from destin.main import main
+from dade import __version__
+from dade.main import main
 
 if TYPE_CHECKING:
     from click.testing import CliRunner

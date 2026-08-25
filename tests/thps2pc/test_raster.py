@@ -1,9 +1,9 @@
-"""Tests for :mod:`destin.thps2pc.raster`."""
+"""Tests for :mod:`dade.thps2pc.raster`."""
 from __future__ import annotations
 
 import pytest
 
-from destin.thps2pc import raster
+from dade.thps2pc import raster
 
 
 def _pixel(framebuffer: raster.Framebuffer, x: int, y: int) -> tuple[int, int, int]:

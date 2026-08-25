@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.thps2pc.mesh`."""
+"""Tests for :mod:`dade.thps2pc.mesh`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -7,14 +7,14 @@ import struct
 
 import pytest
 
-from destin.thps2pc import mesh
-from destin.thps2pc.psx import Scene
-from destin.thps2pc.test_utils import SectorSpec, face_record, psx_scene
+from dade.thps2pc import mesh
+from dade.thps2pc.psx import Scene
+from dade.thps2pc.test_utils import SectorSpec, face_record, psx_scene
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from destin.thps2pc.typing import MeshManifest
+    from dade.thps2pc.typing import MeshManifest
 
 
 def test_build_batches_groups_by_checksum(scene: Scene) -> None:

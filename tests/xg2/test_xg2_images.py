@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.images`."""
+"""Tests for :mod:`dade.xg2.images`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -7,7 +7,7 @@ import struct
 from PIL import Image
 import pytest
 
-from destin.xg2.images import (
+from dade.xg2.images import (
     TLUT_SIZE,
     bmp_to_png,
     decode_ci,

@@ -53,8 +53,8 @@ all rules in `.claude/rules/python.md`.
 ## Workflow
 
 1. Read `pyproject.toml` to get the list of all entry points in `[project.scripts]`.
-2. For each command module in `destin/commands/`
-   or just `destin/main.py`:
+2. For each command module in `dade/commands/`
+   or just `dade/main.py`:
    a. Read the file.
    b. Run each check above against every command.
    c. Apply fixes directly to the file.

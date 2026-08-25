@@ -7,44 +7,44 @@ keys, the Apple-optimised PNGs and enciphered ``.tex`` textures, the ``.caf`` so
 whose data values are enciphered strings, and the pipeline that converts a whole download in one
 pass.
 
-``destin.jubeatplus.archives``
+``dade.jubeatplus.archives``
 ------------------------------
 
-.. automodule:: destin.jubeatplus.archives
+.. automodule:: dade.jubeatplus.archives
    :members:
 
-``destin.jubeatplus.audio``
+``dade.jubeatplus.audio``
 ---------------------------
 
-.. automodule:: destin.jubeatplus.audio
+.. automodule:: dade.jubeatplus.audio
    :members:
 
-``destin.jubeatplus.chart``
+``dade.jubeatplus.chart``
 ---------------------------
 
-.. automodule:: destin.jubeatplus.chart
+.. automodule:: dade.jubeatplus.chart
    :members:
 
-``destin.jubeatplus.cipher``
+``dade.jubeatplus.cipher``
 ----------------------------
 
-.. automodule:: destin.jubeatplus.cipher
+.. automodule:: dade.jubeatplus.cipher
    :members:
 
-``destin.jubeatplus.images``
+``dade.jubeatplus.images``
 ----------------------------
 
-.. automodule:: destin.jubeatplus.images
+.. automodule:: dade.jubeatplus.images
    :members:
 
-``destin.jubeatplus.pipeline``
+``dade.jubeatplus.pipeline``
 ------------------------------
 
-.. automodule:: destin.jubeatplus.pipeline
+.. automodule:: dade.jubeatplus.pipeline
    :members:
 
-``destin.jubeatplus.plists``
+``dade.jubeatplus.plists``
 ----------------------------
 
-.. automodule:: destin.jubeatplus.plists
+.. automodule:: dade.jubeatplus.plists
    :members:

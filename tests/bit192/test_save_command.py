@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.bit192.commands.save import device_id, generate, unlock_all, unlock_dlc, unlock_songs
+from dade.bit192.commands.save import device_id, generate, unlock_all, unlock_dlc, unlock_songs
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -29,7 +29,7 @@ def test_device_id_found(runner: CliRunner, mocker: MockerFixture, tmp_path: Pat
     save_path = tmp_path / 'save.bin'
     save_path.write_bytes(b'\x00')
     sf = _save_file_mock(mocker, device_id='abc123')
-    mocker.patch('destin.bit192.commands.save.SaveFile.load', return_value=sf)
+    mocker.patch('dade.bit192.commands.save.SaveFile.load', return_value=sf)
     result = runner.invoke(device_id, [str(save_path)])
     assert result.exit_code == 0
     assert 'Device ID: abc123' in result.output
@@ -39,7 +39,7 @@ def test_device_id_absent(runner: CliRunner, mocker: MockerFixture, tmp_path: Pa
     save_path = tmp_path / 'save.bin'
     save_path.write_bytes(b'\x00')
     sf = _save_file_mock(mocker, device_id='')
-    mocker.patch('destin.bit192.commands.save.SaveFile.load', return_value=sf)
+    mocker.patch('dade.bit192.commands.save.SaveFile.load', return_value=sf)
     result = runner.invoke(device_id, [str(save_path)])
     assert result.exit_code == 0
     assert 'No device id is cached' in result.output
@@ -49,7 +49,7 @@ def test_unlock_dlc_all_packs(runner: CliRunner, mocker: MockerFixture, tmp_path
     save_path = tmp_path / 'save.bin'
     save_path.write_bytes(b'\x00')
     sf = _save_file_mock(mocker, packs=['darksphere', 'vvv'])
-    load = mocker.patch('destin.bit192.commands.save.SaveFile.load', return_value=sf)
+    load = mocker.patch('dade.bit192.commands.save.SaveFile.load', return_value=sf)
     result = runner.invoke(unlock_dlc, [str(save_path)])
     assert result.exit_code == 0
     assert 'Unlocked darksphere, vvv' in result.output
@@ -65,7 +65,7 @@ def test_unlock_dlc_specific_packs(runner: CliRunner, mocker: MockerFixture,
     save_path.write_bytes(b'\x00')
     out_path = tmp_path / 'save.new'
     sf = _save_file_mock(mocker)
-    mocker.patch('destin.bit192.commands.save.SaveFile.load', return_value=sf)
+    mocker.patch('dade.bit192.commands.save.SaveFile.load', return_value=sf)
     result = runner.invoke(unlock_dlc,
                            [str(save_path), '-p', 'vvv', '-p', 'empy', '-o',
                             str(out_path)])
@@ -80,7 +80,7 @@ def test_unlock_dlc_rejects_unknown_pack(runner: CliRunner, mocker: MockerFixtur
                                          tmp_path: Path) -> None:
     save_path = tmp_path / 'save.bin'
     save_path.write_bytes(b'\x00')
-    load = mocker.patch('destin.bit192.commands.save.SaveFile.load')
+    load = mocker.patch('dade.bit192.commands.save.SaveFile.load')
     result = runner.invoke(unlock_dlc, [str(save_path), '-p', 'not-a-pack'])
     assert result.exit_code == 2
     load.assert_not_called()
@@ -90,7 +90,7 @@ def test_unlock_songs_success(runner: CliRunner, mocker: MockerFixture, tmp_path
     save_path = tmp_path / 'save.bin'
     save_path.write_bytes(b'\x00')
     sf = _save_file_mock(mocker, song_count=1023)
-    load = mocker.patch('destin.bit192.commands.save.SaveFile.load', return_value=sf)
+    load = mocker.patch('dade.bit192.commands.save.SaveFile.load', return_value=sf)
     result = runner.invoke(unlock_songs, [str(save_path)])
     assert result.exit_code == 0
     assert 'Set 1023 song unlock flags' in result.output
@@ -105,14 +105,14 @@ def test_unlock_songs_out_option(runner: CliRunner, mocker: MockerFixture, tmp_p
     save_path.write_bytes(b'\x00')
     out_path = tmp_path / 'save.new'
     sf = _save_file_mock(mocker)
-    mocker.patch('destin.bit192.commands.save.SaveFile.load', return_value=sf)
+    mocker.patch('dade.bit192.commands.save.SaveFile.load', return_value=sf)
     result = runner.invoke(unlock_songs, [str(save_path), '-o', str(out_path)])
     assert result.exit_code == 0
     sf.save.assert_called_once_with(out_path)
 
 
 def test_unlock_songs_missing_path(runner: CliRunner, mocker: MockerFixture) -> None:
-    load = mocker.patch('destin.bit192.commands.save.SaveFile.load')
+    load = mocker.patch('dade.bit192.commands.save.SaveFile.load')
     result = runner.invoke(unlock_songs, ['does-not-exist.bin'])
     assert result.exit_code == 2
     load.assert_not_called()
@@ -122,7 +122,7 @@ def test_unlock_all_success(runner: CliRunner, mocker: MockerFixture, tmp_path: 
     save_path = tmp_path / 'save.bin'
     save_path.write_bytes(b'\x00')
     sf = _save_file_mock(mocker, song_count=1023, packs=['vvv', 'empy'])
-    load = mocker.patch('destin.bit192.commands.save.SaveFile.load', return_value=sf)
+    load = mocker.patch('dade.bit192.commands.save.SaveFile.load', return_value=sf)
     result = runner.invoke(unlock_all, [str(save_path)])
     assert result.exit_code == 0
     assert 'Set 1023 song flags' in result.output
@@ -139,14 +139,14 @@ def test_unlock_all_out_option(runner: CliRunner, mocker: MockerFixture, tmp_pat
     save_path.write_bytes(b'\x00')
     out_path = tmp_path / 'save.new'
     sf = _save_file_mock(mocker)
-    mocker.patch('destin.bit192.commands.save.SaveFile.load', return_value=sf)
+    mocker.patch('dade.bit192.commands.save.SaveFile.load', return_value=sf)
     result = runner.invoke(unlock_all, [str(save_path), '-o', str(out_path)])
     assert result.exit_code == 0
     sf.save.assert_called_once_with(out_path)
 
 
 def test_unlock_all_missing_path(runner: CliRunner, mocker: MockerFixture) -> None:
-    load = mocker.patch('destin.bit192.commands.save.SaveFile.load')
+    load = mocker.patch('dade.bit192.commands.save.SaveFile.load')
     result = runner.invoke(unlock_all, ['does-not-exist.bin'])
     assert result.exit_code == 2
     load.assert_not_called()
@@ -155,7 +155,7 @@ def test_unlock_all_missing_path(runner: CliRunner, mocker: MockerFixture) -> No
 def test_generate_success(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     out_path = tmp_path / 'gen.bin'
     sf = _save_file_mock(mocker, song_count=1023, packs=['vvv', 'empy'])
-    blank = mocker.patch('destin.bit192.commands.save.SaveFile.blank', return_value=sf)
+    blank = mocker.patch('dade.bit192.commands.save.SaveFile.blank', return_value=sf)
     result = runner.invoke(generate, [str(out_path), '--device-id', 'iOS'])
     assert result.exit_code == 0
     assert 'Generated' in result.output
@@ -169,7 +169,7 @@ def test_generate_success(runner: CliRunner, mocker: MockerFixture, tmp_path: Pa
 def test_generate_no_dlc(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:
     out_path = tmp_path / 'gen.bin'
     sf = _save_file_mock(mocker)
-    mocker.patch('destin.bit192.commands.save.SaveFile.blank', return_value=sf)
+    mocker.patch('dade.bit192.commands.save.SaveFile.blank', return_value=sf)
     result = runner.invoke(generate, [str(out_path), '--no-dlc'])
     assert result.exit_code == 0
     assert 'DLC skipped' in result.output
@@ -185,8 +185,8 @@ def test_generate_from_save_copies_device_id(runner: CliRunner, mocker: MockerFi
     out_path = tmp_path / 'gen.bin'
     existing = _save_file_mock(mocker, device_id='copied-id')
     generated = _save_file_mock(mocker)
-    mocker.patch('destin.bit192.commands.save.SaveFile.load', return_value=existing)
-    mocker.patch('destin.bit192.commands.save.SaveFile.blank', return_value=generated)
+    mocker.patch('dade.bit192.commands.save.SaveFile.load', return_value=existing)
+    mocker.patch('dade.bit192.commands.save.SaveFile.blank', return_value=generated)
     result = runner.invoke(generate, [str(out_path), '--from-save', str(src)])
     assert result.exit_code == 0
     generated.set_device_id.assert_called_once_with('copied-id')
@@ -196,7 +196,7 @@ def test_generate_warns_without_device_id(runner: CliRunner, mocker: MockerFixtu
                                           tmp_path: Path) -> None:
     out_path = tmp_path / 'gen.bin'
     sf = _save_file_mock(mocker, device_id='')
-    mocker.patch('destin.bit192.commands.save.SaveFile.blank', return_value=sf)
+    mocker.patch('dade.bit192.commands.save.SaveFile.blank', return_value=sf)
     result = runner.invoke(generate, [str(out_path)])
     assert result.exit_code == 0
     assert 'no device id was set' in result.output

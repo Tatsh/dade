@@ -6,7 +6,7 @@ import subprocess as sp
 
 import pytest
 
-from destin.incoming.sources import PreparedSource, SourceError, prepare_source
+from dade.incoming.sources import PreparedSource, SourceError, prepare_source
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -38,7 +38,7 @@ def test_prepare_gdi_file(tmp_path: Path, mocker: MockerFixture) -> None:
     gdi = tmp_path / 'x.gdi'
     gdi.write_text('x')
     (tmp_path / 'track02.raw').write_text('a')
-    run = mocker.patch('destin.incoming.sources.run_gdiextract')
+    run = mocker.patch('dade.incoming.sources.run_gdiextract')
     work = tmp_path / 'work'
     result = prepare_source(gdi, work)
     run.assert_called_once()
@@ -49,7 +49,7 @@ def test_prepare_gdi_file(tmp_path: Path, mocker: MockerFixture) -> None:
 def test_prepare_cab_file(tmp_path: Path, mocker: MockerFixture) -> None:
     cab = tmp_path / 'DATA1.CAB'
     cab.write_text('x')
-    run = mocker.patch('destin.incoming.sources.run_unshield')
+    run = mocker.patch('dade.incoming.sources.run_unshield')
     work = tmp_path / 'work'
     assert prepare_source(cab, work) == PreparedSource(work, ())
     run.assert_called_once()
@@ -57,7 +57,7 @@ def test_prepare_cab_file(tmp_path: Path, mocker: MockerFixture) -> None:
 
 def test_prepare_dir_with_cab(tmp_path: Path, mocker: MockerFixture) -> None:
     (tmp_path / 'DATA1.CAB').write_text('x')
-    mocker.patch('destin.incoming.sources.run_unshield')
+    mocker.patch('dade.incoming.sources.run_unshield')
     work = tmp_path / 'work'
     assert prepare_source(tmp_path, work).root == work
 
@@ -65,7 +65,7 @@ def test_prepare_dir_with_cab(tmp_path: Path, mocker: MockerFixture) -> None:
 def test_prepare_dir_with_gdi(tmp_path: Path, mocker: MockerFixture) -> None:
     (tmp_path / 'g.gdi').write_text('x')
     (tmp_path / 'track01.raw').write_text('a')
-    mocker.patch('destin.incoming.sources.run_gdiextract')
+    mocker.patch('dade.incoming.sources.run_gdiextract')
     work = tmp_path / 'work'
     assert prepare_source(tmp_path, work).root == work
 
@@ -78,15 +78,15 @@ def test_prepare_extracted_dir(tmp_path: Path) -> None:
 def test_iso_isodump_success(tmp_path: Path, mocker: MockerFixture) -> None:
     iso = tmp_path / 'game.iso'
     iso.write_text('x')
-    mocker.patch('destin.incoming.sources.which', side_effect=_which({'isodump': '/isodump'}))
+    mocker.patch('dade.incoming.sources.which', side_effect=_which({'isodump': '/isodump'}))
 
     def run(args: tuple[str, ...], **kwargs: object) -> object:
         kwargs['stdout'].write(  # type: ignore[attr-defined] # ty: ignore[unresolved-attribute]
             b'CABDATA')
         return mocker.Mock()
 
-    mocker.patch('destin.incoming.sources.sp.run', side_effect=run)
-    unshield = mocker.patch('destin.incoming.sources.run_unshield')
+    mocker.patch('dade.incoming.sources.sp.run', side_effect=run)
+    unshield = mocker.patch('dade.incoming.sources.run_unshield')
     assert prepare_source(iso, tmp_path / 'work').root == tmp_path / 'work'
     unshield.assert_called_once()
 
@@ -94,7 +94,7 @@ def test_iso_isodump_success(tmp_path: Path, mocker: MockerFixture) -> None:
 def test_iso_isodump_empty_then_7z(tmp_path: Path, mocker: MockerFixture) -> None:
     iso = tmp_path / 'game.iso'
     iso.write_text('x')
-    mocker.patch('destin.incoming.sources.which',
+    mocker.patch('dade.incoming.sources.which',
                  side_effect=_which({
                      'isodump': '/isodump',
                      '7z': '/7z'
@@ -105,8 +105,8 @@ def test_iso_isodump_empty_then_7z(tmp_path: Path, mocker: MockerFixture) -> Non
             _seven_zip_writes_cab(args)
         return mocker.Mock()
 
-    mocker.patch('destin.incoming.sources.sp.run', side_effect=run)
-    unshield = mocker.patch('destin.incoming.sources.run_unshield')
+    mocker.patch('dade.incoming.sources.sp.run', side_effect=run)
+    unshield = mocker.patch('dade.incoming.sources.run_unshield')
     assert prepare_source(iso, tmp_path / 'work').root == tmp_path / 'work'
     unshield.assert_called_once()
 
@@ -114,7 +114,7 @@ def test_iso_isodump_empty_then_7z(tmp_path: Path, mocker: MockerFixture) -> Non
 def test_iso_isodump_error_then_7z(tmp_path: Path, mocker: MockerFixture) -> None:
     iso = tmp_path / 'game.iso'
     iso.write_text('x')
-    mocker.patch('destin.incoming.sources.which',
+    mocker.patch('dade.incoming.sources.which',
                  side_effect=_which({
                      'isodump': '/isodump',
                      '7z': '/7z'
@@ -126,26 +126,26 @@ def test_iso_isodump_error_then_7z(tmp_path: Path, mocker: MockerFixture) -> Non
         _seven_zip_writes_cab(args)
         return mocker.Mock()
 
-    mocker.patch('destin.incoming.sources.sp.run', side_effect=run)
-    mocker.patch('destin.incoming.sources.run_unshield')
+    mocker.patch('dade.incoming.sources.sp.run', side_effect=run)
+    mocker.patch('dade.incoming.sources.run_unshield')
     assert prepare_source(iso, tmp_path / 'work').root == tmp_path / 'work'
 
 
 def test_iso_no_isodump_uses_7z(tmp_path: Path, mocker: MockerFixture) -> None:
     iso = tmp_path / 'game.iso'
     iso.write_text('x')
-    mocker.patch('destin.incoming.sources.which', side_effect=_which({'7z': '/7z'}))
-    mocker.patch('destin.incoming.sources.sp.run',
+    mocker.patch('dade.incoming.sources.which', side_effect=_which({'7z': '/7z'}))
+    mocker.patch('dade.incoming.sources.sp.run',
                  side_effect=lambda args, **_: _seven_zip_writes_cab(args))
-    mocker.patch('destin.incoming.sources.run_unshield')
+    mocker.patch('dade.incoming.sources.run_unshield')
     assert prepare_source(iso, tmp_path / 'work').root == tmp_path / 'work'
 
 
 def test_iso_7z_finds_nothing(tmp_path: Path, mocker: MockerFixture) -> None:
     iso = tmp_path / 'game.iso'
     iso.write_text('x')
-    mocker.patch('destin.incoming.sources.which', side_effect=_which({'7z': '/7z'}))
-    mocker.patch('destin.incoming.sources.sp.run', return_value=mocker.Mock())
+    mocker.patch('dade.incoming.sources.which', side_effect=_which({'7z': '/7z'}))
+    mocker.patch('dade.incoming.sources.sp.run', return_value=mocker.Mock())
     with pytest.raises(SourceError, match='Could not extract'):
         prepare_source(iso, tmp_path / 'work')
 
@@ -153,6 +153,6 @@ def test_iso_7z_finds_nothing(tmp_path: Path, mocker: MockerFixture) -> None:
 def test_iso_no_tools(tmp_path: Path, mocker: MockerFixture) -> None:
     iso = tmp_path / 'game.iso'
     iso.write_text('x')
-    mocker.patch('destin.incoming.sources.which', return_value=None)
+    mocker.patch('dade.incoming.sources.which', return_value=None)
     with pytest.raises(SourceError, match='Could not extract'):
         prepare_source(iso, tmp_path / 'work')

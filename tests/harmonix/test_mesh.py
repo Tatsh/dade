@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from destin.harmonix import mesh
+from dade.harmonix import mesh
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

@@ -9,7 +9,7 @@ import zlib
 
 import pytest
 
-from destin.bitrock.crypto import (
+from dade.bitrock.crypto import (
     Twofish,
     cbc_decrypt,
     cbc_encrypt,
@@ -17,8 +17,8 @@ from destin.bitrock.crypto import (
     derive_key,
     verify_password,
 )
-from destin.bitrock.exceptions import DecryptionError
-from destin.bitrock.typing import PayloadInfo
+from dade.bitrock.exceptions import DecryptionError
+from dade.bitrock.typing import PayloadInfo
 
 if TYPE_CHECKING:
     from collections.abc import Callable

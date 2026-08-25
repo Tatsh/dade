@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.rhythmin.bfcodec`."""
+"""Tests for :py:mod:`dade.rhythmin.bfcodec`."""
 from __future__ import annotations
 
 import hashlib
 
 import pytest
 
-from destin.rhythmin.bfcodec import (
+from dade.rhythmin.bfcodec import (
     BLOWFISH_INIT_WORDS,
     DEFAULT_IV,
     KEY_PLAINTEXT,

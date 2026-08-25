@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.misc.coredata`."""
+"""Tests for :py:mod:`dade.misc.coredata`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ import plistlib
 
 import pytest
 
-from destin.misc import build_sql, convert, load_mom_column_types
+from dade.misc import build_sql, convert, load_mom_column_types
 
 from .conftest import ArchiveBuilder
 

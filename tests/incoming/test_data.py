@@ -5,9 +5,9 @@ import json
 
 import pytest
 
-from destin.incoming.converters import ConversionError, UnsupportedFormatError
-from destin.incoming.converters.data import bin_to_json, ctl_to_json
-from destin.incoming.test_utils import ctl_records
+from dade.incoming.converters import ConversionError, UnsupportedFormatError
+from dade.incoming.converters.data import bin_to_json, ctl_to_json
+from dade.incoming.test_utils import ctl_records
 
 if TYPE_CHECKING:
     from pathlib import Path

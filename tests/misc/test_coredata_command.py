@@ -1,10 +1,10 @@
-"""Tests for the ``destin misc coredata`` command."""
+"""Tests for the ``dade misc coredata`` command."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import json
 
-from destin.misc.commands.coredata import coredata
+from dade.misc.commands.coredata import coredata
 
 if TYPE_CHECKING:
     from pathlib import Path

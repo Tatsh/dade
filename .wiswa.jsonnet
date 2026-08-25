@@ -2,7 +2,7 @@ local utils = import 'utils.libjsonnet';
 
 {
   uses_user_defaults: true,
-  project_name: 'destin',
+  project_name: 'dade',
   description: 'Extract and convert assets from a collection of PC and console video games.',
   keywords: [
     'acclaim',
@@ -29,7 +29,7 @@ local utils = import 'utils.libjsonnet';
   version: '0.0.0',
   want_main: true,
   want_flatpak: true,
-  publishing+: { flathub: 'sh.tat.destin' },
+  publishing+: { flathub: 'sh.tat.dade' },
   local top = self,
   python_deps+: {
     main+: {

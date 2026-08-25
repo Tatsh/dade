@@ -6,50 +6,50 @@ with the password cracker used to recover the password of an encrypted installer
 CUDA and OpenCL back ends are omitted here because they require GPU libraries that are not part of
 the documentation build.
 
-``destin.bitrock.archive``
+``dade.bitrock.archive``
 --------------------------
 
-.. automodule:: destin.bitrock.archive
+.. automodule:: dade.bitrock.archive
    :members:
 
-``destin.bitrock.crypto``
+``dade.bitrock.crypto``
 -------------------------
 
-.. automodule:: destin.bitrock.crypto
+.. automodule:: dade.bitrock.crypto
    :members:
 
-``destin.bitrock.exceptions``
+``dade.bitrock.exceptions``
 -----------------------------
 
-.. automodule:: destin.bitrock.exceptions
+.. automodule:: dade.bitrock.exceptions
    :members:
 
-``destin.bitrock.sansio``
+``dade.bitrock.sansio``
 -------------------------
 
-.. automodule:: destin.bitrock.sansio
+.. automodule:: dade.bitrock.sansio
    :members:
 
-``destin.bitrock.unpack``
+``dade.bitrock.unpack``
 -------------------------
 
-.. automodule:: destin.bitrock.unpack
+.. automodule:: dade.bitrock.unpack
    :members:
 
-``destin.bitrock.password_cracker.crack``
+``dade.bitrock.password_cracker.crack``
 -----------------------------------------
 
-.. automodule:: destin.bitrock.password_cracker.crack
+.. automodule:: dade.bitrock.password_cracker.crack
    :members:
 
-``destin.bitrock.password_cracker.kernel_source``
+``dade.bitrock.password_cracker.kernel_source``
 -------------------------------------------------
 
-.. automodule:: destin.bitrock.password_cracker.kernel_source
+.. automodule:: dade.bitrock.password_cracker.kernel_source
    :members:
 
-``destin.bitrock.password_cracker.rules``
+``dade.bitrock.password_cracker.rules``
 -----------------------------------------
 
-.. automodule:: destin.bitrock.password_cracker.rules
+.. automodule:: dade.bitrock.password_cracker.rules
    :members:

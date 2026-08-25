@@ -1,9 +1,9 @@
-"""Tests for :py:mod:`destin.common.stepmania`."""
+"""Tests for :py:mod:`dade.common.stepmania`."""
 from __future__ import annotations
 
 import pytest
 
-from destin.common.stepmania import SimfileChart, quantize_measures, write_sm
+from dade.common.stepmania import SimfileChart, quantize_measures, write_sm
 
 _MEASURE = 4096
 

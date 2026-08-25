@@ -1,7 +1,7 @@
 Asset formats
 =============
 
-Status and notes for every asset format handled by ``destin incoming``. Two builds are covered:
+Status and notes for every asset format handled by ``dade incoming``. Two builds are covered:
 
 - **PC** — Windows, driven by ``incoming.exe``.
 - **DC** — Sega Dreamcast, driven by ``1ST_READ.BIN``.

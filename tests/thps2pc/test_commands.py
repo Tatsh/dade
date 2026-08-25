@@ -1,4 +1,4 @@
-"""CLI tests for the ``destin thps2pc`` commands."""
+"""CLI tests for the ``dade thps2pc`` commands."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,20 +6,20 @@ import json
 
 import pytest
 
-from destin.thps2pc.commands import render as render_commands
-from destin.thps2pc.commands.convert_scene import convert_scene
-from destin.thps2pc.commands.decode_textures import decode_textures
-from destin.thps2pc.commands.dump_descriptors import dump_descriptors
-from destin.thps2pc.commands.psx_info import psx_info
-from destin.thps2pc.commands.render import (
+from dade.thps2pc.commands import render as render_commands
+from dade.thps2pc.commands.convert_scene import convert_scene
+from dade.thps2pc.commands.decode_textures import decode_textures
+from dade.thps2pc.commands.dump_descriptors import dump_descriptors
+from dade.thps2pc.commands.psx_info import psx_info
+from dade.thps2pc.commands.render import (
     render_authoritative_command,
     render_layers_command,
     render_node_map_command,
     render_object_models_command,
     render_objects_command,
 )
-from destin.thps2pc.commands.unpack_pkr import unpack_pkr
-from destin.thps2pc.test_utils import (
+from dade.thps2pc.commands.unpack_pkr import unpack_pkr
+from dade.thps2pc.test_utils import (
     SectorSpec,
     face_record,
     pkr_archive,
@@ -38,8 +38,8 @@ if TYPE_CHECKING:
 
 @pytest.fixture(autouse=True)
 def _no_subprocess(mocker: MockerFixture) -> None:
-    mocker.patch('destin.thps2pc.imagemagick.sp.run')
-    mocker.patch('destin.thps2pc.imagemagick.which', side_effect=lambda name: f'/usr/bin/{name}')
+    mocker.patch('dade.thps2pc.imagemagick.sp.run')
+    mocker.patch('dade.thps2pc.imagemagick.which', side_effect=lambda name: f'/usr/bin/{name}')
 
 
 def test_unpack_pkr_lists_without_extracting(runner: CliRunner, pkr_bytes: bytes,
@@ -135,7 +135,7 @@ def test_convert_scene_converts_resolved_textures(runner: CliRunner, scene_file:
     textures = tmp_path / 'newtex'
     textures.mkdir()
     (textures / 'deadbeef.bmp').write_bytes(b'BM')
-    convert = mocker.patch('destin.thps2pc.commands.convert_scene.convert')
+    convert = mocker.patch('dade.thps2pc.commands.convert_scene.convert')
     out = tmp_path / 'out'
     result = runner.invoke(
         convert_scene, [str(scene_file), str(out), '--texture-dir',
@@ -150,7 +150,7 @@ def test_convert_scene_reports_a_conversion_failure(runner: CliRunner, scene_fil
     textures = tmp_path / 'newtex'
     textures.mkdir()
     (textures / 'deadbeef.bmp').write_bytes(b'BM')
-    mocker.patch('destin.thps2pc.commands.convert_scene.convert', side_effect=OSError('boom'))
+    mocker.patch('dade.thps2pc.commands.convert_scene.convert', side_effect=OSError('boom'))
     result = runner.invoke(
         convert_scene,
         [str(scene_file), str(tmp_path / 'out'), '--texture-dir',
@@ -171,7 +171,7 @@ def test_convert_scene_skips_untextured_and_already_written_textures(runner: Cli
     out = tmp_path / 'out'
     (out / 'textures' / 'S').mkdir(parents=True)
     (out / 'textures' / 'S' / 'DEADBEEF.png').write_bytes(b'\x89PNG')
-    convert = mocker.patch('destin.thps2pc.commands.convert_scene.convert')
+    convert = mocker.patch('dade.thps2pc.commands.convert_scene.convert')
     result = runner.invoke(convert_scene, [str(source), str(out)])
     assert result.exit_code == 0
     convert.assert_not_called()
@@ -181,7 +181,7 @@ def test_convert_scene_skips_untextured_and_already_written_textures(runner: Cli
 
 def test_render_reports_a_write_failure(runner: CliRunner, scene_file: Path, tmp_path: Path,
                                         mocker: MockerFixture) -> None:
-    mocker.patch('destin.thps2pc.commands.utils.write_image', side_effect=OSError('boom'))
+    mocker.patch('dade.thps2pc.commands.utils.write_image', side_effect=OSError('boom'))
     result = runner.invoke(render_authoritative_command, [
         str(scene_file),
         str(tmp_path / 'out.png'), '--width', '32', '--height', '32', '--padding', '2'
@@ -193,7 +193,7 @@ def test_render_reports_a_write_failure(runner: CliRunner, scene_file: Path, tmp
 def test_render_object_models_reports_a_montage_failure(runner: CliRunner, scene_file: Path,
                                                         tmp_path: Path,
                                                         mocker: MockerFixture) -> None:
-    mocker.patch('destin.thps2pc.commands.utils.montage', side_effect=OSError('boom'))
+    mocker.patch('dade.thps2pc.commands.utils.montage', side_effect=OSError('boom'))
     result = runner.invoke(render_object_models_command, [
         str(scene_file),
         str(tmp_path / 'models'), '--suffix', '.ppm', '--size', '24', '--padding', '2'
@@ -218,7 +218,7 @@ def test_render_node_map_annotates_with_a_detected_font(runner: CliRunner, scene
     fonts.mkdir(parents=True)
     (fonts / 'DejaVuSans.ttf').write_bytes(b'\x00')
     monkeypatch.setattr(render_commands, '_FONT_ROOT', tmp_path / 'fonts')
-    write_image = mocker.patch('destin.thps2pc.commands.utils.write_image')
+    write_image = mocker.patch('dade.thps2pc.commands.utils.write_image')
     result = runner.invoke(render_node_map_command, [
         str(scene_file),
         str(tmp_path / 'nodes.png'), '--width', '64', '--height', '64', '--padding', '2'
@@ -238,7 +238,7 @@ def test_render_node_map_annotates_without_a_font(runner: CliRunner, scene_file:
         fonts.mkdir()
         (fonts / 'Cursive.ttf').write_bytes(b'\x00')
     monkeypatch.setattr(render_commands, '_FONT_ROOT', fonts)
-    write_image = mocker.patch('destin.thps2pc.commands.utils.write_image')
+    write_image = mocker.patch('dade.thps2pc.commands.utils.write_image')
     result = runner.invoke(render_node_map_command, [
         str(scene_file),
         str(tmp_path / 'nodes.png'), '--width', '64', '--height', '64', '--padding', '2'
@@ -252,7 +252,7 @@ def test_render_node_map_annotates_without_a_font(runner: CliRunner, scene_file:
 def test_decode_textures_writes_ppm_without_imagemagick(runner: CliRunner, lighting_file: Path,
                                                         tmp_path: Path,
                                                         mocker: MockerFixture) -> None:
-    run = mocker.patch('destin.thps2pc.imagemagick.sp.run')
+    run = mocker.patch('dade.thps2pc.imagemagick.sp.run')
     out = tmp_path / 'tex'
     result = runner.invoke(
         decode_textures,
@@ -266,7 +266,7 @@ def test_decode_textures_writes_ppm_without_imagemagick(runner: CliRunner, light
 
 def test_decode_textures_builds_contact_sheets(runner: CliRunner, lighting_file: Path,
                                                tmp_path: Path, mocker: MockerFixture) -> None:
-    montage = mocker.patch('destin.thps2pc.commands.utils.montage')
+    montage = mocker.patch('dade.thps2pc.commands.utils.montage')
     result = runner.invoke(
         decode_textures,
         [str(lighting_file),
@@ -335,8 +335,8 @@ def test_render_node_map_loads_nodes_from_json(runner: CliRunner, scene_file: Pa
 
 def test_render_node_map_annotates_labels(runner: CliRunner, scene_file: Path, tmp_path: Path,
                                           mocker: MockerFixture) -> None:
-    write_image = mocker.patch('destin.thps2pc.commands.utils.write_image')
-    mocker.patch('destin.thps2pc.commands.render._find_font', return_value=None)
+    write_image = mocker.patch('dade.thps2pc.commands.utils.write_image')
+    mocker.patch('dade.thps2pc.commands.render._find_font', return_value=None)
     result = runner.invoke(render_node_map_command, [
         str(scene_file),
         str(tmp_path / 'nodes.png'), '--width', '64', '--height', '64', '--padding', '2'
@@ -384,7 +384,7 @@ def test_render_object_models_writes_tiles(runner: CliRunner, scene_file: Path,
 
 def test_render_object_models_builds_a_sheet(runner: CliRunner, scene_file: Path, tmp_path: Path,
                                              mocker: MockerFixture) -> None:
-    montage = mocker.patch('destin.thps2pc.commands.utils.montage')
+    montage = mocker.patch('dade.thps2pc.commands.utils.montage')
     result = runner.invoke(render_object_models_command, [
         str(scene_file),
         str(tmp_path / 'models'), '--suffix', '.ppm', '--size', '24', '--padding', '2'

@@ -1,10 +1,10 @@
-"""Tests for :py:mod:`destin.i76.i82`."""
+"""Tests for :py:mod:`dade.i76.i82`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import struct
 
-from destin.i76.i82 import find_in_pools, level_ids, surface_names, texture_refs
+from dade.i76.i82 import find_in_pools, level_ids, surface_names, texture_refs
 
 if TYPE_CHECKING:
     from pathlib import Path

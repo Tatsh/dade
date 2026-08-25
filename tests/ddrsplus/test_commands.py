@@ -1,10 +1,10 @@
-"""Tests for the ``destin ddrsplus`` commands."""
+"""Tests for the ``dade ddrsplus`` commands."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.common.tools import ToolNotFoundError
-from destin.ddrsplus.main import ddrsplus, main
+from dade.common.tools import ToolNotFoundError
+from dade.ddrsplus.main import ddrsplus, main
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -70,8 +70,7 @@ def test_extract_gen_locates_ffmpeg_when_neither_flag_is_given(make_gen: Callabl
                                                                mocker: MockerFixture) -> None:
     source = tmp_path / '259.gen'
     source.write_bytes(make_gen())
-    mocker.patch('destin.ddrsplus.commands.extract_gen.locate_tool',
-                 return_value=tmp_path / 'ffmpeg')
+    mocker.patch('dade.ddrsplus.commands.extract_gen.locate_tool', return_value=tmp_path / 'ffmpeg')
     result = runner.invoke(ddrsplus, ('extract-gen', str(source)))
     assert result.exit_code == 0
 
@@ -81,12 +80,12 @@ def test_extract_gen_warns_when_ffmpeg_cannot_be_found(make_gen: Callable[..., b
                                                        mocker: MockerFixture) -> None:
     source = tmp_path / '259.gen'
     source.write_bytes(make_gen())
-    mocker.patch('destin.ddrsplus.commands.extract_gen.locate_tool', side_effect=ToolNotFoundError)
+    mocker.patch('dade.ddrsplus.commands.extract_gen.locate_tool', side_effect=ToolNotFoundError)
     result = runner.invoke(ddrsplus, ('extract-gen', str(source)))
     assert result.exit_code == 0
 
 
 def test_the_group_entry_point(mocker: MockerFixture) -> None:
-    group = mocker.patch('destin.ddrsplus.main.ddrsplus')
+    group = mocker.patch('dade.ddrsplus.main.ddrsplus')
     main()
     group.assert_called_once_with()

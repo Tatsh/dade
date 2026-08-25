@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.marmalade.derbh`."""
+"""Tests for :mod:`dade.marmalade.derbh`."""
 from __future__ import annotations
 
 from posixpath import basename, dirname
@@ -9,8 +9,8 @@ import zlib
 
 import pytest
 
-from destin.marmalade.derbh import is_derbh, unpack, unpack_to_dir
-from destin.marmalade.test_utils import build_derbh
+from dade.marmalade.derbh import is_derbh, unpack, unpack_to_dir
+from dade.marmalade.test_utils import build_derbh
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

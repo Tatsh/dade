@@ -5,8 +5,8 @@ import struct
 
 import pytest
 
-from destin.monopoly08.namehash import name_hash
-from destin.monopoly08.packs import extract, parse, read_rpk
+from dade.monopoly08.namehash import name_hash
+from dade.monopoly08.packs import extract, parse, read_rpk
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

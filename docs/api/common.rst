@@ -4,158 +4,158 @@ Common
 Shared format readers, writers, and helpers used by more than one game submodule. Each was lifted
 from a game package once a second consumer appeared, so a single implementation is maintained.
 
-``destin.common.bfcodec``
+``dade.common.bfcodec``
 -------------------------
 
-.. automodule:: destin.common.bfcodec
+.. automodule:: dade.common.bfcodec
    :members:
 
-``destin.common.compress``
+``dade.common.compress``
 --------------------------
 
-.. automodule:: destin.common.compress
+.. automodule:: dade.common.compress
    :members:
 
-``destin.common.context``
+``dade.common.context``
 -------------------------
 
-.. automodule:: destin.common.context
+.. automodule:: dade.common.context
    :members:
 
-``destin.common.cookfs``
+``dade.common.cookfs``
 ------------------------
 
-.. automodule:: destin.common.cookfs
+.. automodule:: dade.common.cookfs
    :members:
 
-``destin.common.cuebin``
+``dade.common.cuebin``
 ------------------------
 
-.. automodule:: destin.common.cuebin
+.. automodule:: dade.common.cuebin
    :members:
 
-``destin.common.disc``
+``dade.common.disc``
 ----------------------
 
-.. automodule:: destin.common.disc
+.. automodule:: dade.common.disc
    :members:
 
-``destin.common.exceptions``
+``dade.common.exceptions``
 ----------------------------
 
-.. automodule:: destin.common.exceptions
+.. automodule:: dade.common.exceptions
    :members:
 
-``destin.common.image``
+``dade.common.image``
 -----------------------
 
-.. automodule:: destin.common.image
+.. automodule:: dade.common.image
    :members:
 
-``destin.common.iso9660``
+``dade.common.iso9660``
 -------------------------
 
-.. automodule:: destin.common.iso9660
+.. automodule:: dade.common.iso9660
    :members:
 
-``destin.common.io``
+``dade.common.io``
 --------------------
 
-.. automodule:: destin.common.io
+.. automodule:: dade.common.io
    :members:
 
-``destin.common.json``
+``dade.common.json``
 ----------------------
 
-.. automodule:: destin.common.json
+.. automodule:: dade.common.json
    :members:
 
-``destin.common.lz``
+``dade.common.lz``
 --------------------
 
-.. automodule:: destin.common.lz
+.. automodule:: dade.common.lz
    :members:
 
-``destin.common.obj``
+``dade.common.obj``
 ---------------------
 
-.. automodule:: destin.common.obj
+.. automodule:: dade.common.obj
    :members:
 
-``destin.common.png``
+``dade.common.png``
 ---------------------
 
-.. automodule:: destin.common.png
+.. automodule:: dade.common.png
    :members:
 
-``destin.common.ppm``
+``dade.common.ppm``
 ---------------------
 
-.. automodule:: destin.common.ppm
+.. automodule:: dade.common.ppm
    :members:
 
-``destin.common.ps2_icon``
+``dade.common.ps2_icon``
 --------------------------
 
-.. automodule:: destin.common.ps2_icon
+.. automodule:: dade.common.ps2_icon
    :members:
 
-``destin.common.registry``
+``dade.common.registry``
 --------------------------
 
-.. automodule:: destin.common.registry
+.. automodule:: dade.common.registry
    :members:
 
-``destin.common.smf``
+``dade.common.smf``
 ---------------------
 
-.. automodule:: destin.common.smf
+.. automodule:: dade.common.smf
    :members:
 
-``destin.common.ssq``
+``dade.common.ssq``
 ---------------------
 
-.. automodule:: destin.common.ssq
+.. automodule:: dade.common.ssq
    :members:
 
-``destin.common.stepmania``
+``dade.common.stepmania``
 ---------------------------
 
-.. automodule:: destin.common.stepmania
+.. automodule:: dade.common.stepmania
    :members:
 
-``destin.common.text``
+``dade.common.text``
 ----------------------
 
-.. automodule:: destin.common.text
+.. automodule:: dade.common.text
    :members:
 
-``destin.common.tools``
+``dade.common.tools``
 -----------------------
 
-.. automodule:: destin.common.tools
+.. automodule:: dade.common.tools
    :members:
 
-``destin.common.twofish``
+``dade.common.twofish``
 -------------------------
 
-.. automodule:: destin.common.twofish
+.. automodule:: dade.common.twofish
    :members:
 
-``destin.common.utils``
+``dade.common.utils``
 -----------------------
 
-.. automodule:: destin.common.utils
+.. automodule:: dade.common.utils
    :members:
 
-``destin.common.wav``
+``dade.common.wav``
 ---------------------
 
-.. automodule:: destin.common.wav
+.. automodule:: dade.common.wav
    :members:
 
-``destin.common.workers``
+``dade.common.workers``
 -------------------------
 
-.. automodule:: destin.common.workers
+.. automodule:: dade.common.workers
    :members:

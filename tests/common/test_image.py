@@ -1,9 +1,9 @@
-"""Tests for :py:mod:`destin.common.image`."""
+"""Tests for :py:mod:`dade.common.image`."""
 from __future__ import annotations
 
 import pytest
 
-from destin.common.image import double_ps2_alpha, expand5, expand6, ps2_clut_swizzle_index
+from dade.common.image import double_ps2_alpha, expand5, expand6, ps2_clut_swizzle_index
 
 
 @pytest.mark.parametrize(('alpha', 'expected'), [(0, 0), (1, 2), (64, 128), (127, 254), (128, 255),

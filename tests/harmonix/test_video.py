@@ -6,8 +6,8 @@ import struct
 
 import pytest
 
-from destin.common.exceptions import InvalidFormatError
-from destin.harmonix import video
+from dade.common.exceptions import InvalidFormatError
+from dade.harmonix import video
 
 if TYPE_CHECKING:
     from pathlib import Path

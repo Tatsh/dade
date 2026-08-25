@@ -1,9 +1,9 @@
-"""Tests for :py:mod:`destin.i76.i82_objects`."""
+"""Tests for :py:mod:`dade.i76.i82_objects`."""
 from __future__ import annotations
 
 import pytest
 
-from destin.i76.i82_objects import (
+from dade.i76.i82_objects import (
     chassis_name,
     geometry_files,
     mesh_textures,

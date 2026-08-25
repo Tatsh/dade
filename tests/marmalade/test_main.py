@@ -1,9 +1,9 @@
-"""Tests for :mod:`destin.marmalade.main`."""
+"""Tests for :mod:`dade.marmalade.main`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.marmalade.main import main, marm
+from dade.marmalade.main import main, marm
 
 if TYPE_CHECKING:
     from click.testing import CliRunner
@@ -18,6 +18,6 @@ def test_marm_group_lists_subcommands(runner: CliRunner) -> None:
 
 
 def test_main_invokes_group(mocker: MockerFixture) -> None:
-    marm_mock = mocker.patch('destin.marmalade.main.marm')
+    marm_mock = mocker.patch('dade.marmalade.main.marm')
     main()
     marm_mock.assert_called_once_with()

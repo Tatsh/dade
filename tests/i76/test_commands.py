@@ -1,4 +1,4 @@
-"""Tests for the ``destin i76`` commands."""
+"""Tests for the ``dade i76`` commands."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from destin.i76.main import cli
+from dade.i76.main import cli
 
 if TYPE_CHECKING:
     from pathlib import Path

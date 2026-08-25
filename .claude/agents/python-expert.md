@@ -1,11 +1,11 @@
 ---
 name: python-expert
-description: Expert-level Python author for non-trivial implementation work in the destin project. Use when the task needs idiomatic, production-quality Python beyond a simple edit.
+description: Expert-level Python author for non-trivial implementation work in the dade project. Use when the task needs idiomatic, production-quality Python beyond a simple edit.
 ---
 
 # Python Expert Agent
 
-General-purpose expert-level Python coding agent for the destin project.
+General-purpose expert-level Python coding agent for the dade project.
 
 ## Role
 
@@ -35,14 +35,14 @@ conventions defined in the rule files under `.claude/rules/`.
   @click.option('-d', '--debug', is_flag=True)
   def my_command(debug: bool = False) -> None:
       """Do something."""
-      setup_logging(debug=debug, loggers={'destin': {}})
+      setup_logging(debug=debug, loggers={'dade': {}})
   ```
 
   Additional third-party loggers can be added as needed:
 
   ```python
   setup_logging(debug=debug, loggers={
-      'destin': {},
+      'dade': {},
       'urllib3': {},
       'soupsieve': {},
   })
@@ -214,12 +214,12 @@ text, not Sphinx references. Use `soup : bs4.Tag` not `` soup : :py:class:`~bs4.
 In descriptive prose within docstrings, use Sphinx cross-references when referring to other types,
 modules, or functions:
 
-- `` :py:mod:`destin.string` `` for modules
-- `` :py:func:`destin.string.slugify` `` for functions
-- `` :py:class:`destin.typing.ProbeDict` `` for classes
+- `` :py:mod:`dade.string` `` for modules
+- `` :py:func:`dade.string.slugify` `` for functions
+- `` :py:class:`dade.typing.ProbeDict` `` for classes
 - `` :py:meth:`MyClass.my_method` `` for methods
 - Use `~` to shorten the displayed name:
-  `` :py:func:`~destin.string.slugify` `` renders as `slugify`
+  `` :py:func:`~dade.string.slugify` `` renders as `slugify`
 - This applies to third-party types as well: `` :py:class:`~pathlib.Path` ``,
   `` :py:func:`~json.dumps` ``, `` :py:class:`~click.Context` ``, etc.
 

@@ -1,5 +1,5 @@
 """
-Shared pytest configuration for the ``destin.ddrsplus`` suite.
+Shared pytest configuration for the ``dade.ddrsplus`` suite.
 
 Every fixture builds its sample file from scratch, so the suite needs no copy of the game.
 """
@@ -10,7 +10,7 @@ import struct
 
 import pytest
 
-from destin.ddrsplus.bfcodec import encipher
+from dade.ddrsplus.bfcodec import encipher
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -205,7 +205,7 @@ def fake_ffmpeg(tmp_path: Path) -> Path:
     Stand in for ``ffmpeg`` when decoding audio, writing signed 16-bit mono PCM to standard output.
 
     The stream is a tenth of a second at 44100 Hz: silence for the first half, then a loud tone,
-    so :py:func:`~destin.ddrsplus.gap.first_audible` lands near its midpoint.
+    so :py:func:`~dade.ddrsplus.gap.first_audible` lands near its midpoint.
 
     Returns
     -------

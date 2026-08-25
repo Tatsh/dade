@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.i76.sdf`."""
+"""Tests for :py:mod:`dade.i76.sdf`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.i76.sdf import (
+from dade.i76.sdf import (
     apply_transform,
     assemble,
     encode_obj,
@@ -13,7 +13,7 @@ from destin.i76.sdf import (
     world_transform,
     write_obj,
 )
-from destin.i76.typing import Mesh
+from dade.i76.typing import Mesh
 
 if TYPE_CHECKING:
     from pathlib import Path

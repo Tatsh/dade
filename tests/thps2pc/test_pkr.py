@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.thps2pc.pkr`."""
+"""Tests for :mod:`dade.thps2pc.pkr`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -7,8 +7,8 @@ import zlib
 
 import pytest
 
-from destin.thps2pc import pkr
-from destin.thps2pc.test_utils import PkrFileSpec, pkr_archive, stored_file
+from dade.thps2pc import pkr
+from dade.thps2pc.test_utils import PkrFileSpec, pkr_archive, stored_file
 
 if TYPE_CHECKING:
     from pathlib import Path

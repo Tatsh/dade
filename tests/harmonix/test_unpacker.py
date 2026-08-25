@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, ClassVar
 
 import pytest
 
-from destin.common.exceptions import InvalidFormatError
-from destin.harmonix.typing import Asset
-from destin.harmonix.unpacker import Unpacker
+from dade.common.exceptions import InvalidFormatError
+from dade.harmonix.typing import Asset
+from dade.harmonix.unpacker import Unpacker
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from pytest_mock import MockerFixture
 
-    from destin.harmonix.typing import ArkLayout
+    from dade.harmonix.typing import ArkLayout
 
 
 class _AmpUnpacker(Unpacker):
@@ -49,7 +49,7 @@ async def test_unpack_delegates_with_layout(make_amp_ark: Callable[..., bytes],
     game = tmp_path / 'game'
     game.mkdir()
     (game / 'MAIN.ARK').write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
-    run_game = mocker.patch('destin.harmonix.unpacker.run_game', return_value={'MAIN.ARK': 'ok'})
+    run_game = mocker.patch('dade.harmonix.unpacker.run_game', return_value={'MAIN.ARK': 'ok'})
     out = tmp_path / 'out'
     assert await _AmpUnpacker(game).unpack(out, jobs=2) == {'MAIN.ARK': 'ok'}
     assert run_game.call_args.args == (out,)  # Processed in place in the output directory.
@@ -65,7 +65,7 @@ async def test_unpack_rejects_wrong_game(make_freq_ark: Callable[..., bytes], mo
     game = tmp_path / 'game'
     game.mkdir()
     (game / 'ROOT.ARK').write_bytes(make_freq_ark((('gen/a.txt', b'AAA'),)))
-    run_game = mocker.patch('destin.harmonix.unpacker.run_game')
+    run_game = mocker.patch('dade.harmonix.unpacker.run_game')
     with pytest.raises(InvalidFormatError):
         await _AmpUnpacker(game).unpack(tmp_path / 'out')
     run_game.assert_not_called()
@@ -77,7 +77,7 @@ async def test_unpack_rejects_output_inside_input(make_amp_ark: Callable[..., by
                                                   mocker: MockerFixture, subpath: str,
                                                   tmp_path: Path) -> None:
     (tmp_path / 'MAIN.ARK').write_bytes(make_amp_ark((('a.txt', b'AAA'),)))
-    run_game = mocker.patch('destin.harmonix.unpacker.run_game')
+    run_game = mocker.patch('dade.harmonix.unpacker.run_game')
     with pytest.raises(ValueError, match='cannot be inside the input'):
         await _AmpUnpacker(tmp_path).unpack(tmp_path / subpath)
     run_game.assert_not_called()

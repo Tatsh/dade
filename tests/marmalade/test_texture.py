@@ -1,10 +1,10 @@
-"""Tests for :mod:`destin.marmalade.texture`."""
+"""Tests for :mod:`dade.marmalade.texture`."""
 from __future__ import annotations
 
 import struct
 
-from destin.marmalade.test_utils import build_texture
-from destin.marmalade.texture import decode_texture
+from dade.marmalade.test_utils import build_texture
+from dade.marmalade.texture import decode_texture
 
 
 def _tex_header(width: int, height: int, pitch: int) -> bytes:

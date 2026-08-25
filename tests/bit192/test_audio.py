@@ -1,10 +1,10 @@
-"""Tests for :mod:`destin.bit192.audio`."""
+"""Tests for :mod:`dade.bit192.audio`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import struct
 
-from destin.bit192 import audio
+from dade.bit192 import audio
 
 if TYPE_CHECKING:
     from pathlib import Path

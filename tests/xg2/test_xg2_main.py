@@ -1,14 +1,14 @@
-"""Tests for :mod:`destin.xg2.main`."""
+"""Tests for :mod:`dade.xg2.main`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.xg2.main import cli
-from destin.xg2.offsets import GAME_CODE_OFFSET, XG1_GAME_CODE, XG2_GAME_CODE
-from destin.xg2.smf import GM_DRUM_MAP, split_tracks
-from destin.xg2.typing import Texture
+from dade.xg2.main import cli
+from dade.xg2.offsets import GAME_CODE_OFFSET, XG1_GAME_CODE, XG2_GAME_CODE
+from dade.xg2.smf import GM_DRUM_MAP, split_tracks
+from dade.xg2.typing import Texture
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -48,7 +48,7 @@ def test_command_help(runner: CliRunner, name: str) -> None:
 def test_extract_xg1(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
     rom = tmp_path / 'game.z64'
     rom.write_bytes(_rom(XG1_GAME_CODE))
-    run = mocker.patch('destin.xg2.main.run_xg1',
+    run = mocker.patch('dade.xg2.main.run_xg1',
                        return_value={
                            'boot': 1,
                            'mfs': 50,
@@ -68,7 +68,7 @@ def test_extract_xg1_convert_flag(runner: CliRunner, tmp_path: Path, mocker: Moc
     rom = tmp_path / 'game.z64'
     rom.write_bytes(_rom(XG1_GAME_CODE))
     run = mocker.patch(
-        'destin.xg2.main.run_xg1',
+        'dade.xg2.main.run_xg1',
         return_value=dict.fromkeys(
             ('boot', 'mfs', 'levels', 'containers', 'directory', 'textures', 'audio'), 0))
     runner.invoke(cli, ['extract-xg1', str(rom), str(tmp_path / 'out'), '-c'])
@@ -80,7 +80,7 @@ def test_extract_xg1_warns_on_the_wrong_game(runner: CliRunner, tmp_path: Path,
                                              caplog: pytest.LogCaptureFixture) -> None:
     rom = tmp_path / 'game.z64'
     rom.write_bytes(_rom(b'ZZZZ'))
-    mocker.patch('destin.xg2.main.run_xg1',
+    mocker.patch('dade.xg2.main.run_xg1',
                  return_value=dict.fromkeys(
                      ('boot', 'mfs', 'levels', 'containers', 'directory', 'textures', 'audio'), 0))
     with caplog.at_level('WARNING'):
@@ -91,7 +91,7 @@ def test_extract_xg1_warns_on_the_wrong_game(runner: CliRunner, tmp_path: Path,
 def test_extract_xg2(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
     rom = tmp_path / 'game.z64'
     rom.write_bytes(_rom())
-    run = mocker.patch('destin.xg2.main.run_xg2',
+    run = mocker.patch('dade.xg2.main.run_xg2',
                        return_value={
                            'levels': 8,
                            'sequences': 23,
@@ -120,7 +120,7 @@ def test_extract_xg2_rejects_a_bad_rate(runner: CliRunner, tmp_path: Path) -> No
 def test_extract_xg2_pc(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
     data1 = tmp_path / 'data1'
     data1.mkdir()
-    mocker.patch('destin.xg2.main.run_pc',
+    mocker.patch('dade.xg2.main.run_pc',
                  return_value={
                      'containers': 3,
                      'raw': 1,
@@ -140,8 +140,8 @@ def test_extract_xg2_pc_requires_a_directory(runner: CliRunner, tmp_path: Path) 
     assert result.exit_code != 0
 
 
-@pytest.mark.parametrize(('command', 'patched'), [('unpack-xg1-rom', 'destin.xg2.main.unpack_xg1'),
-                                                  ('unpack-xg2-rom', 'destin.xg2.main.unpack_xg2')])
+@pytest.mark.parametrize(('command', 'patched'), [('unpack-xg1-rom', 'dade.xg2.main.unpack_xg1'),
+                                                  ('unpack-xg2-rom', 'dade.xg2.main.unpack_xg2')])
 def test_unpack_commands(runner: CliRunner, tmp_path: Path, mocker: MockerFixture, command: str,
                          patched: str) -> None:
     rom = tmp_path / 'game.z64'
@@ -182,7 +182,7 @@ def test_convert_midi_rejects_an_unknown_mode(runner: CliRunner, tmp_path: Path,
 def test_make_sf2(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
     rom = tmp_path / 'game.z64'
     rom.write_bytes(_rom())
-    build = mocker.patch('destin.xg2.main.build_combined', return_value=b'RIFF')
+    build = mocker.patch('dade.xg2.main.build_combined', return_value=b'RIFF')
     out = tmp_path / 'bank.sf2'
     result = runner.invoke(
         cli,
@@ -214,7 +214,7 @@ def test_make_sf2_aborts_when_the_bank_will_not_parse(runner: CliRunner, tmp_pat
                                                       mocker: MockerFixture) -> None:
     rom = tmp_path / 'game.z64'
     rom.write_bytes(_rom())
-    mocker.patch('destin.xg2.main.build_combined', side_effect=ValueError('no bank'))
+    mocker.patch('dade.xg2.main.build_combined', side_effect=ValueError('no bank'))
     result = runner.invoke(
         cli,
         ['make-sf2', str(rom), str(tmp_path / 'b.sf2'), '--melodic-bank', '0'])
@@ -224,8 +224,8 @@ def test_make_sf2_aborts_when_the_bank_will_not_parse(runner: CliRunner, tmp_pat
 def test_montage_n64(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
     rom = tmp_path / 'game.z64'
     rom.write_bytes(_rom())
-    mocker.patch('destin.xg2.main.iter_n64_model_blobs', return_value=[('mfs/file000', b'\x00')])
-    mocker.patch('destin.xg2.main.collect_textures', return_value=[])
+    mocker.patch('dade.xg2.main.iter_n64_model_blobs', return_value=[('mfs/file000', b'\x00')])
+    mocker.patch('dade.xg2.main.collect_textures', return_value=[])
     out = tmp_path / 'sheet.png'
     result = runner.invoke(cli, ['montage-n64', str(rom), str(out)])
     assert result.exit_code == 0
@@ -237,7 +237,7 @@ def test_montage_pc_writes_an_index(runner: CliRunner, tmp_path: Path,
                                     mocker: MockerFixture) -> None:
     data1 = tmp_path / 'data1'
     data1.mkdir()
-    mocker.patch('destin.xg2.main.iter_pc_model_blobs', return_value=[])
+    mocker.patch('dade.xg2.main.iter_pc_model_blobs', return_value=[])
     index = tmp_path / 'index.txt'
     result = runner.invoke(
         cli, ['montage-pc', str(data1),
@@ -267,8 +267,8 @@ def test_montage_n64_labels_each_texture(runner: CliRunner, tmp_path: Path,
                                          mocker: MockerFixture) -> None:
     rom = tmp_path / 'game.z64'
     rom.write_bytes(_rom())
-    mocker.patch('destin.xg2.main.iter_n64_model_blobs', return_value=[('mfs/file000', b'\x00')])
-    mocker.patch('destin.xg2.main.collect_textures',
+    mocker.patch('dade.xg2.main.iter_n64_model_blobs', return_value=[('mfs/file000', b'\x00')])
+    mocker.patch('dade.xg2.main.collect_textures',
                  return_value=[Texture('ci8', 0x40, 8, 8, b'\xff' * (8 * 8 * 4))])
     index = tmp_path / 'index.txt'
     result = runner.invoke(
@@ -284,8 +284,8 @@ def test_montage_pc_labels_each_texture(runner: CliRunner, tmp_path: Path,
                                         mocker: MockerFixture) -> None:
     data1 = tmp_path / 'data1'
     data1.mkdir()
-    mocker.patch('destin.xg2.main.iter_pc_model_blobs', return_value=[('bike.cmp', b'\x00')])
-    mocker.patch('destin.xg2.main.collect_textures',
+    mocker.patch('dade.xg2.main.iter_pc_model_blobs', return_value=[('bike.cmp', b'\x00')])
+    mocker.patch('dade.xg2.main.collect_textures',
                  return_value=[Texture('ci8', 0x80, 8, 8, b'\xff' * (8 * 8 * 4))])
     result = runner.invoke(cli, ['montage-pc', str(data1), str(tmp_path / 'sheet.png')])
     assert result.exit_code == 0

@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from destin.harmonix import dataarray
+from dade.harmonix import dataarray
 
 if TYPE_CHECKING:
     from collections.abc import Callable

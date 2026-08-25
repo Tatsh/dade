@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from destin.monopoly08.meshes import EXTENSIONS, convert
+from dade.monopoly08.meshes import EXTENSIONS, convert
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

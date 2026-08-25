@@ -220,7 +220,7 @@ jobs:
         uses: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'
         with:
           if-no-files-found: error
-          name: destin-binaries-${{ matrix.suffix }}
+          name: dade-binaries-${{ matrix.suffix }}
           path: |
             ${{ matrix.dist_path }}
       - name: 'Attest'
@@ -230,7 +230,7 @@ jobs:
       - name: 'Generate SBOM'
         uses: 'anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610'
         env:
-          SYFT_SOURCE_NAME: 'destin'
+          SYFT_SOURCE_NAME: 'dade'
           SYFT_SOURCE_VERSION: ${{ github.ref_name }}
         with:
           path: 'dist/'
@@ -251,7 +251,7 @@ jobs:
           rm -fR _out
           mkdir _out
           # shellcheck disable=SC2086 # DIST_PATH is a glob and must expand.
-          zip -j "_out/destin-${REF_NAME}-${SUFFIX}.zip" $DIST_PATH
+          zip -j "_out/dade-${REF_NAME}-${SUFFIX}.zip" $DIST_PATH
       - if: (matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm') && github.ref_type == 'tag'
         name: 'Zip files'
         env:
@@ -261,7 +261,7 @@ jobs:
         run: |
           Remove-Item -Force _out -ErrorAction Continue
           New-Item -ItemType Directory -Name _out
-          Compress-Archive -Path $env:DIST_PATH -DestinationPath "_out/destin-$env:REF_NAME-$env:SUFFIX.zip"
+          Compress-Archive -Path $env:DIST_PATH -DestinationPath "_out/dade-$env:REF_NAME-$env:SUFFIX.zip"
         shell: pwsh
       - if: github.ref_type == 'tag'
         name: 'Attest'
@@ -305,7 +305,7 @@ jobs:
         with:
           merge-multiple: true
           path: '_release_assets'
-          pattern: destin-binaries-*
+          pattern: dade-binaries-*
       - name: 'Create or update draft release'
         env:
           GH_REPO: ${{ github.repository }}
@@ -327,7 +327,7 @@ name: 'PyInstaller'
     branches:
       - 'master'
     paths:
-      - 'destin/**'
+      - 'dade/**'
       - '.github/workflows/pyinstaller.yml'
       - 'pyproject.toml'
       - 'uv.lock'

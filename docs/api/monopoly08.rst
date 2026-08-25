@@ -5,62 +5,62 @@ Readers and converters for the 2008 Electronic Arts *Monopoly* disc across its X
 and Wii releases: platform detection, the big-file container, RefPack decompression, audio,
 images, and meshes.
 
-``destin.monopoly08.audio``
+``dade.monopoly08.audio``
 ---------------------------
 
-.. automodule:: destin.monopoly08.audio
+.. automodule:: dade.monopoly08.audio
    :members:
 
-``destin.monopoly08.bigfile``
+``dade.monopoly08.bigfile``
 -----------------------------
 
-.. automodule:: destin.monopoly08.bigfile
+.. automodule:: dade.monopoly08.bigfile
    :members:
 
-``destin.monopoly08.detect``
+``dade.monopoly08.detect``
 ----------------------------
 
-.. automodule:: destin.monopoly08.detect
+.. automodule:: dade.monopoly08.detect
    :members:
 
-``destin.monopoly08.images``
+``dade.monopoly08.images``
 ----------------------------
 
-.. automodule:: destin.monopoly08.images
+.. automodule:: dade.monopoly08.images
    :members:
 
-``destin.monopoly08.meshes``
+``dade.monopoly08.meshes``
 ----------------------------
 
-.. automodule:: destin.monopoly08.meshes
+.. automodule:: dade.monopoly08.meshes
    :members:
 
-``destin.monopoly08.namehash``
+``dade.monopoly08.namehash``
 ------------------------------
 
-.. automodule:: destin.monopoly08.namehash
+.. automodule:: dade.monopoly08.namehash
    :members:
 
-``destin.monopoly08.packs``
+``dade.monopoly08.packs``
 ---------------------------
 
-.. automodule:: destin.monopoly08.packs
+.. automodule:: dade.monopoly08.packs
    :members:
 
-``destin.monopoly08.pipeline``
+``dade.monopoly08.pipeline``
 ------------------------------
 
-.. automodule:: destin.monopoly08.pipeline
+.. automodule:: dade.monopoly08.pipeline
    :members:
 
-``destin.monopoly08.refpack``
+``dade.monopoly08.refpack``
 -----------------------------
 
-.. automodule:: destin.monopoly08.refpack
+.. automodule:: dade.monopoly08.refpack
    :members:
 
-``destin.monopoly08.structured``
+``dade.monopoly08.structured``
 --------------------------------
 
-.. automodule:: destin.monopoly08.structured
+.. automodule:: dade.monopoly08.structured
    :members:

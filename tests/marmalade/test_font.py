@@ -1,10 +1,10 @@
-"""Tests for :mod:`destin.marmalade.font`."""
+"""Tests for :mod:`dade.marmalade.font`."""
 from __future__ import annotations
 
 import struct
 
-from destin.marmalade.font import decode_font
-from destin.marmalade.test_utils import build_font
+from dade.marmalade.font import decode_font
+from dade.marmalade.test_utils import build_font
 
 
 def _font_with_unmatched_palette() -> bytes:

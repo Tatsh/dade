@@ -8,8 +8,8 @@ import math
 import mido  # type: ignore[import-untyped]
 import pytest
 
-from destin.common.exceptions import InvalidFormatError
-from destin.harmonix import midi
+from dade.common.exceptions import InvalidFormatError
+from dade.harmonix import midi
 
 if TYPE_CHECKING:
     from pathlib import Path

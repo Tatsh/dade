@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 from PIL import Image
 
-from destin.incoming.test_utils import pvr_pack, pvrt_chunk
-from destin.incoming.textures import find_level_pack, place_ian_texture, place_pack_textures
+from dade.incoming.test_utils import pvr_pack, pvrt_chunk
+from dade.incoming.textures import find_level_pack, place_ian_texture, place_pack_textures
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -78,7 +78,7 @@ def test_place_ian_texture_source_outside_root(tmp_path: Path) -> None:
 def test_place_pack_textures(tmp_path: Path, mocker: MockerFixture) -> None:
     pack = tmp_path / 'AFRICA_T.PVR'
     pack.write_bytes(pvr_pack([pvrt_chunk(2, 2), pvrt_chunk(4, 4)]))
-    mocker.patch('destin.incoming.textures.find_spvr2png', return_value=Path('/spv'))
+    mocker.patch('dade.incoming.textures.find_spvr2png', return_value=Path('/spv'))
 
     def run(args: list[str], **_: object) -> object:
         raw_dir, dest = Path(args[2]), Path(args[4])
@@ -86,7 +86,7 @@ def test_place_pack_textures(tmp_path: Path, mocker: MockerFixture) -> None:
             (dest / f'{pvr.stem}.png').write_bytes(b'PNG')
         return mocker.Mock()
 
-    mocker.patch('destin.incoming.textures.sp.run', side_effect=run)
+    mocker.patch('dade.incoming.textures.sp.run', side_effect=run)
     out = tmp_path / 'out'
     out.mkdir()
     result = place_pack_textures(pack, {0, 1, 99}, out, 'AFRICA_M')
@@ -96,7 +96,7 @@ def test_place_pack_textures(tmp_path: Path, mocker: MockerFixture) -> None:
 def test_place_pack_textures_partial(tmp_path: Path, mocker: MockerFixture) -> None:
     pack = tmp_path / 'A_T.PVR'
     pack.write_bytes(pvr_pack([pvrt_chunk(2, 2), pvrt_chunk(4, 4)]))
-    mocker.patch('destin.incoming.textures.find_spvr2png', return_value=Path('/spv'))
+    mocker.patch('dade.incoming.textures.find_spvr2png', return_value=Path('/spv'))
 
     def run(args: list[str], **_: object) -> object:
         raw_dir, dest = Path(args[2]), Path(args[4])
@@ -104,7 +104,7 @@ def test_place_pack_textures_partial(tmp_path: Path, mocker: MockerFixture) -> N
         (dest / f'{first.stem}.png').write_bytes(b'PNG')
         return mocker.Mock()
 
-    mocker.patch('destin.incoming.textures.sp.run', side_effect=run)
+    mocker.patch('dade.incoming.textures.sp.run', side_effect=run)
     out = tmp_path / 'out'
     out.mkdir()
     assert len(place_pack_textures(pack, {0, 1}, out, 'P')) == 1
@@ -113,7 +113,7 @@ def test_place_pack_textures_partial(tmp_path: Path, mocker: MockerFixture) -> N
 def test_place_pack_textures_no_match(tmp_path: Path, mocker: MockerFixture) -> None:
     pack = tmp_path / 'A_T.PVR'
     pack.write_bytes(pvr_pack([pvrt_chunk(2, 2)]))
-    run = mocker.patch('destin.incoming.textures.sp.run')
+    run = mocker.patch('dade.incoming.textures.sp.run')
     out = tmp_path / 'out'
     out.mkdir()
     assert place_pack_textures(pack, {99}, out, 'P') == {}

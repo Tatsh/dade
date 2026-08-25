@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.soundfont` and :mod:`destin.xg2.albank`."""
+"""Tests for :mod:`dade.xg2.soundfont` and :mod:`dade.xg2.albank`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,8 +6,8 @@ import struct
 
 import pytest
 
-from destin.xg2.albank import BANK_MAGIC, parse_bank
-from destin.xg2.soundfont import (
+from dade.xg2.albank import BANK_MAGIC, parse_bank
+from dade.xg2.soundfont import (
     DRUM_BANK,
     bank_to_sf2,
     build_combined,
@@ -19,7 +19,7 @@ from destin.xg2.soundfont import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from destin.xg2.typing import ParsedBank, SampleMeta, Sf2Preset, Sf2Zone, SoundZone
+    from dade.xg2.typing import ParsedBank, SampleMeta, Sf2Preset, Sf2Zone, SoundZone
 
 
 def _sound_zone(sample: int = 0, key_min: int = 36) -> SoundZone:

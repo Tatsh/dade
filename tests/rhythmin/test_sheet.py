@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.rhythmin.sheet`."""
+"""Tests for :py:mod:`dade.rhythmin.sheet`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -8,8 +8,8 @@ import zipfile
 from PIL import Image
 import pytest
 
-from destin.rhythmin.bfcodec import encipher
-from destin.rhythmin.sheet import (
+from dade.rhythmin.bfcodec import encipher
+from dade.rhythmin.sheet import (
     arcade_strip,
     arcade_to_json,
     detect_format,

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.monopoly08.bigfile import BigEntry, iter_big_payloads, parse_toc, unpack
+from dade.monopoly08.bigfile import BigEntry, iter_big_payloads, parse_toc, unpack
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

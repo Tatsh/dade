@@ -2,66 +2,66 @@ Converters
 ==========
 
 Each converter turns one asset format into an open output. The package root re-exports the shared
-:py:class:`~destin.common.registry.Rule` type, and :mod:`~destin.incoming.converters.registry`
+:py:class:`~dade.common.registry.Rule` type, and :mod:`~dade.incoming.converters.registry`
 assembles every rule into the dispatch table.
 
 Shared types
 ------------
 
-.. automodule:: destin.incoming.converters
+.. automodule:: dade.incoming.converters
    :members: ConversionError, UnsupportedFormatError
    :imported-members:
 
-``destin.incoming.converters.registry``
+``dade.incoming.converters.registry``
 ------------------------------------------
 
-.. automodule:: destin.incoming.converters.registry
+.. automodule:: dade.incoming.converters.registry
    :members:
 
-``destin.incoming.converters.images``
+``dade.incoming.converters.images``
 ----------------------------------------
 
-.. automodule:: destin.incoming.converters.images
+.. automodule:: dade.incoming.converters.images
    :members:
 
-``destin.incoming.converters.models``
+``dade.incoming.converters.models``
 ----------------------------------------
 
-.. automodule:: destin.incoming.converters.models
+.. automodule:: dade.incoming.converters.models
    :members:
 
-``destin.incoming.converters.models_dc``
+``dade.incoming.converters.models_dc``
 -------------------------------------------
 
-.. automodule:: destin.incoming.converters.models_dc
+.. automodule:: dade.incoming.converters.models_dc
    :members:
 
-``destin.incoming.converters.audio``
+``dade.incoming.converters.audio``
 ---------------------------------------
 
-.. automodule:: destin.incoming.converters.audio
+.. automodule:: dade.incoming.converters.audio
    :members:
 
-``destin.incoming.converters.sound_dc``
+``dade.incoming.converters.sound_dc``
 ------------------------------------------
 
-.. automodule:: destin.incoming.converters.sound_dc
+.. automodule:: dade.incoming.converters.sound_dc
    :members:
 
-``destin.incoming.converters.data``
+``dade.incoming.converters.data``
 --------------------------------------
 
-.. automodule:: destin.incoming.converters.data
+.. automodule:: dade.incoming.converters.data
    :members:
 
-``destin.incoming.converters.state``
+``dade.incoming.converters.state``
 ---------------------------------------
 
-.. automodule:: destin.incoming.converters.state
+.. automodule:: dade.incoming.converters.state
    :members:
 
-``destin.incoming.converters.text``
+``dade.incoming.converters.text``
 --------------------------------------
 
-.. automodule:: destin.incoming.converters.text
+.. automodule:: dade.incoming.converters.text
    :members:

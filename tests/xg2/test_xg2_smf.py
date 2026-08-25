@@ -1,11 +1,11 @@
-"""Tests for :mod:`destin.xg2.smf`."""
+"""Tests for :mod:`dade.xg2.smf`."""
 from __future__ import annotations
 
 import struct
 
 import pytest
 
-from destin.xg2.smf import (
+from dade.xg2.smf import (
     DRUM_CHANNEL,
     GM_DRUM_MAP,
     read_vlq,

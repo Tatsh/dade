@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.albank`."""
+"""Tests for :mod:`dade.xg2.albank`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,12 +6,12 @@ import struct
 
 import pytest
 
-from destin.xg2.albank import parse_bank
+from dade.xg2.albank import parse_bank
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from destin.xg2.typing import ParsedBank
+    from dade.xg2.typing import ParsedBank
 
 _SOUND = 0x80
 _WAVE_TABLE = 0xA0

@@ -1,10 +1,10 @@
-"""Tests for :mod:`destin.marmalade.convert`."""
+"""Tests for :mod:`dade.marmalade.convert`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.marmalade.convert import ConvertOptions, decode_group_to_dir
-from destin.marmalade.test_utils import (
+from dade.marmalade.convert import ConvertOptions, decode_group_to_dir
+from dade.marmalade.test_utils import (
     build_font,
     build_material,
     build_model,

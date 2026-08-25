@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.i76.zfs`."""
+"""Tests for :py:mod:`dade.i76.zfs`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.i76.zfs import (
+from dade.i76.zfs import (
     InvalidArchiveError,
     archive_format,
     extract,
@@ -57,7 +57,7 @@ def test_iter_members_zfs3_is_verbatim(zfs3_archive: bytes) -> None:
 
 def test_iter_members_warns_on_zfs3_flags(zfs3_archive: bytes,
                                           caplog: pytest.LogCaptureFixture) -> None:
-    with caplog.at_level('WARNING', logger='destin.i76.zfs'):
+    with caplog.at_level('WARNING', logger='dade.i76.zfs'):
         list(iter_members(zfs3_archive))
     assert 'ODD.BIN' in caplog.text
 

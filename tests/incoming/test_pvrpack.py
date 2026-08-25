@@ -5,8 +5,8 @@ import struct
 
 import pytest
 
-from destin.incoming.pvrpack import iter_pack_textures
-from destin.incoming.test_utils import pvr_pack, pvrt_chunk
+from dade.incoming.pvrpack import iter_pack_textures
+from dade.incoming.test_utils import pvr_pack, pvrt_chunk
 
 
 def test_single_pvrt() -> None:
@@ -33,7 +33,7 @@ def test_zero_terminated_toc() -> None:
 def test_truncated_last_entry(caplog: pytest.LogCaptureFixture) -> None:
     chunk = pvrt_chunk(2, 2)
     data = pvr_pack([chunk], sizes=[len(chunk) + 8])
-    with caplog.at_level(logging.WARNING, logger='destin.incoming.pvrpack'):
+    with caplog.at_level(logging.WARNING, logger='dade.incoming.pvrpack'):
         textures = list(iter_pack_textures(data))
     assert len(textures[0].data) == len(chunk)
     assert 'truncated' in caplog.text

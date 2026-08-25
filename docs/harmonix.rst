@@ -1,15 +1,15 @@
 Amplitude and FreQuency
 =======================
 
-*Amplitude* and *FreQuency* (Harmonix, PS2) share one engine, so ``destin amplitude`` and
-``destin frequency`` are two commands over the same unpacking pipeline; only the ARK layout differs
+*Amplitude* and *FreQuency* (Harmonix, PS2) share one engine, so ``dade amplitude`` and
+``dade frequency`` are two commands over the same unpacking pipeline; only the ARK layout differs
 (Amplitude is magic-less, FreQuency starts with ``ARK\0``). Point either at a disc and it writes a
 tree of converted assets:
 
 .. code-block:: shell
 
-   destin amplitude unpack Amplitude.iso -o out
-   destin frequency unpack FreQuency.cue -o out
+   dade amplitude unpack Amplitude.iso -o out
+   dade frequency unpack FreQuency.cue -o out
 
 The ``DISC`` argument may be an already-extracted directory, a PS2 ISO image, or -- for the
 FreQuency CD release -- the ``.cue`` of a cue/bin pair. The disc is always opened read-only; nothing
@@ -85,7 +85,7 @@ Using the unpackers from Python
 -------------------------------
 
 The per-game unpackers are part of the developer API. Construct one over a disc and ``await`` its
-:py:meth:`~destin.harmonix.unpacker.Unpacker.unpack` coroutine; the source may be a directory, an
+:py:meth:`~dade.harmonix.unpacker.Unpacker.unpack` coroutine; the source may be a directory, an
 ISO, or a cue/bin ``.cue``:
 
 .. code-block:: python
@@ -93,8 +93,8 @@ ISO, or a cue/bin ``.cue``:
    import asyncio
    from pathlib import Path
 
-   from destin.amplitude import AmplitudeUnpacker
-   from destin.common import InvalidFormatError
+   from dade.amplitude import AmplitudeUnpacker
+   from dade.common import InvalidFormatError
 
 
    async def main() -> None:
@@ -110,7 +110,7 @@ ISO, or a cue/bin ``.cue``:
    asyncio.run(main())
 
 ``unpack`` rejects an unusable source itself, so there is no need to guard it: it raises
-:py:class:`~destin.common.exceptions.InvalidFormatError` when the disc is not readable or holds no
+:py:class:`~dade.common.exceptions.InvalidFormatError` when the disc is not readable or holds no
 ARK of the game's layout, and :py:exc:`ValueError` when the output directory is inside a source
 directory.
 
@@ -133,5 +133,5 @@ handling and let a thin wrapper own the recovery policy:
        except InvalidFormatError as e:
            raise SystemExit(f'error: {e}') from e
 
-``FrequencyUnpacker`` from :py:mod:`destin.frequency` has the identical interface; only the ARK
+``FrequencyUnpacker`` from :py:mod:`dade.frequency` has the identical interface; only the ARK
 layout it reads and its acceptance of a cue/bin disc differ.

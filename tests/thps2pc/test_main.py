@@ -1,11 +1,11 @@
-"""Tests for :mod:`destin.thps2pc.main`."""
+"""Tests for :mod:`dade.thps2pc.main`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.thps2pc.main import cli
+from dade.thps2pc.main import cli
 
 if TYPE_CHECKING:
     from click.testing import CliRunner

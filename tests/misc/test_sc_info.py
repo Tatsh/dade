@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.misc.sc_info`."""
+"""Tests for :py:mod:`dade.misc.sc_info`."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -9,7 +9,7 @@ import zipfile
 
 import pytest
 
-from destin.misc.sc_info import (
+from dade.misc.sc_info import (
     Atom,
     Right,
     SCInfo,

@@ -1,13 +1,13 @@
-"""Tests for :mod:`destin.marmalade.resgroup`."""
+"""Tests for :mod:`dade.marmalade.resgroup`."""
 from __future__ import annotations
 
 import struct
 
 import pytest
 
-from destin.marmalade.hashstring import iw_hash_string
-from destin.marmalade.resgroup import is_resgroup, parse
-from destin.marmalade.test_utils import build_resgroup
+from dade.marmalade.hashstring import iw_hash_string
+from dade.marmalade.resgroup import is_resgroup, parse
+from dade.marmalade.test_utils import build_resgroup
 
 
 def _group(sections: list[tuple[str, bytes]]) -> bytes:

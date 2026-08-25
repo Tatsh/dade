@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from destin.monopoly08.pipeline import StepStats, run
+from dade.monopoly08.pipeline import StepStats, run
 
 from .conftest import VgmPlan
 
@@ -44,7 +44,7 @@ def test_run_skips_movie_archives(make_big: Builder, caplog: pytest.LogCaptureFi
     root.mkdir()
     for name in ('audio.big', 'movies.big'):
         (root / name).write_bytes(make_big((('notes.txt', b'hello'),)))
-    with caplog.at_level(logging.INFO, logger='destin.monopoly08.pipeline'):
+    with caplog.at_level(logging.INFO, logger='dade.monopoly08.pipeline'):
         stats = run(root, no_movies=True, workers=2)
     assert stats['archives'] == StepStats(1, 0)
     assert 'Skipping movie archive' in caplog.text
@@ -68,7 +68,7 @@ def test_run_converts_every_asset_group(caplog: pytest.LogCaptureFixture, fake_v
     (root / 'place.bin').write_bytes(_PLACE_BIN)
     (root / 'bank.sdt').write_bytes(make_schl([b'first-unit', b'second-unit']))
     (root / 'bank_0000.wav').write_bytes(b'\x00' * 100)  # Already decoded, so it is skipped.
-    with caplog.at_level(logging.WARNING, logger='destin.monopoly08.pipeline'):
+    with caplog.at_level(logging.WARNING, logger='dade.monopoly08.pipeline'):
         stats = run(root, workers=2)
     assert stats['archives'] == StepStats(1, 0)
     assert stats['packs'] == StepStats(1, 1)

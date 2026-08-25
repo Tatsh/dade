@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.jubeatplus.archives` and :py:mod:`destin.jubeatplus.audio`."""
+"""Tests for :py:mod:`dade.jubeatplus.archives` and :py:mod:`dade.jubeatplus.audio`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -9,10 +9,10 @@ import zipfile
 
 import pytest
 
-from destin.common.bfcodec import BFCodec
-from destin.jubeatplus.archives import unpack_jbt, unpack_zip
-from destin.jubeatplus.audio import caf_to_wav
-from destin.jubeatplus.cipher import bgm_key, texture_key, tune_info_key
+from dade.common.bfcodec import BFCodec
+from dade.jubeatplus.archives import unpack_jbt, unpack_zip
+from dade.jubeatplus.audio import caf_to_wav
+from dade.jubeatplus.cipher import bgm_key, texture_key, tune_info_key
 
 if TYPE_CHECKING:
     from collections.abc import Callable

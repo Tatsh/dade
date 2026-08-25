@@ -49,7 +49,7 @@ name: 'Tests'
     branches:
       - 'master'
     paths:
-      - 'destin/**'
+      - 'dade/**'
       - '.github/workflows/tests.yml'
       - 'pyproject.toml'
       - 'uv.lock'
@@ -59,7 +59,7 @@ name: 'Tests'
     branches:
       - 'master'
     paths:
-      - 'destin/**'
+      - 'dade/**'
       - '.github/workflows/tests.yml'
       - 'pyproject.toml'
       - 'uv.lock'

@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.i76.lzo`."""
+"""Tests for :py:mod:`dade.i76.lzo`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.i76.lzo import decompress_record, lzo1x_decompress, lzo1y_decompress
+from dade.i76.lzo import decompress_record, lzo1x_decompress, lzo1y_decompress
 
 if TYPE_CHECKING:
     from collections.abc import Callable

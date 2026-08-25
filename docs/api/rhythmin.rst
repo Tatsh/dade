@@ -5,44 +5,44 @@ Readers for the data files of the Konami iOS rhythm game *pop'n rhythmin*: the `
 every encrypted file uses, the downloaded character data, the AEP animation indexes, the sugoroku
 boards, the note charts inside song packages, and the dialogue pools inside an app binary.
 
-``destin.rhythmin.aep``
+``dade.rhythmin.aep``
 -----------------------
 
-.. automodule:: destin.rhythmin.aep
+.. automodule:: dade.rhythmin.aep
    :members:
 
-``destin.rhythmin.bfcodec``
+``dade.rhythmin.bfcodec``
 ---------------------------
 
-.. automodule:: destin.rhythmin.bfcodec
+.. automodule:: dade.rhythmin.bfcodec
    :members:
 
-``destin.rhythmin.chara``
+``dade.rhythmin.chara``
 -------------------------
 
-.. automodule:: destin.rhythmin.chara
+.. automodule:: dade.rhythmin.chara
    :members:
 
-``destin.rhythmin.dialogue``
+``dade.rhythmin.dialogue``
 ----------------------------
 
-.. automodule:: destin.rhythmin.dialogue
+.. automodule:: dade.rhythmin.dialogue
    :members:
 
-``destin.rhythmin.render``
+``dade.rhythmin.render``
 --------------------------
 
-.. automodule:: destin.rhythmin.render
+.. automodule:: dade.rhythmin.render
    :members:
 
-``destin.rhythmin.sheet``
+``dade.rhythmin.sheet``
 -------------------------
 
-.. automodule:: destin.rhythmin.sheet
+.. automodule:: dade.rhythmin.sheet
    :members:
 
-``destin.rhythmin.treasure_map``
+``dade.rhythmin.treasure_map``
 --------------------------------
 
-.. automodule:: destin.rhythmin.treasure_map
+.. automodule:: dade.rhythmin.treasure_map
    :members:

@@ -24,7 +24,7 @@ _TOTAL_SECTORS = 22
 
 _SETUP_LOGGING_BINDINGS = (
     'bascom.cli',
-    'destin.bitrock.commands.crack',
+    'dade.bitrock.commands.crack',
 )
 """Modules that import :py:func:`bascom.setup_logging` and are neutralised during tests.
 

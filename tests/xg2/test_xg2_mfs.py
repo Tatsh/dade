@@ -1,4 +1,4 @@
-"""Tests for :mod:`destin.xg2.mfs`."""
+"""Tests for :mod:`dade.xg2.mfs`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,8 +6,8 @@ import struct
 
 import pytest
 
-from destin.xg2.mfs import MfsCalibrationError, calibrate_base, iter_files, read_table
-from destin.xg2.offsets import XG1_MFS_COUNT, XG1_MFS_TABLE
+from dade.xg2.mfs import MfsCalibrationError, calibrate_base, iter_files, read_table
+from dade.xg2.offsets import XG1_MFS_COUNT, XG1_MFS_TABLE
 
 if TYPE_CHECKING:
     from collections.abc import Callable

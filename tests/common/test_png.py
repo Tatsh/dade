@@ -1,11 +1,11 @@
-"""Tests for :py:mod:`destin.common.png`."""
+"""Tests for :py:mod:`dade.common.png`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from PIL import Image
 
-from destin.common.png import write_rgb, write_rgba
+from dade.common.png import write_rgb, write_rgba
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -1,11 +1,11 @@
-"""Tests for :mod:`destin.common.lz`."""
+"""Tests for :mod:`dade.common.lz`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import pytest
 
-from destin.common.lz import RING_SIZE, RING_START, decompress_lzss0
+from dade.common.lz import RING_SIZE, RING_START, decompress_lzss0
 
 if TYPE_CHECKING:
     from collections.abc import Callable

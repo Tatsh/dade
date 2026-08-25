@@ -6,19 +6,19 @@ import zlib
 
 import pytest
 
-from destin.bitrock.exceptions import (
+from dade.bitrock.exceptions import (
     CorruptArchiveError,
     SignatureNotFoundError,
     UnsupportedCompressionError,
 )
-from destin.common.cookfs import (
+from dade.common.cookfs import (
     Block,
     decompress_page,
     locate_end_offset,
     parse_fs_index,
     parse_index,
 )
-from destin.common.io import BytesReader
+from dade.common.io import BytesReader
 
 
 def test_block_fields() -> None:

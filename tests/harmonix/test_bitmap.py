@@ -6,7 +6,7 @@ import struct
 from PIL import Image
 import pytest
 
-from destin.harmonix import bitmap
+from dade.harmonix import bitmap
 
 if TYPE_CHECKING:
     from collections.abc import Callable

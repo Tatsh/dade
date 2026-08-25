@@ -6,7 +6,7 @@ import struct
 
 import pytest
 
-from destin.common.io import (
+from dade.common.io import (
     BytesReader,
     MmapReader,
     Reader,
@@ -25,7 +25,7 @@ from destin.common.io import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from destin.common.typing import Endian
+    from dade.common.typing import Endian
 
 
 def test_bytes_reader_size_and_read() -> None:

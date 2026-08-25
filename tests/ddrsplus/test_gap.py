@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.ddrsplus.gap`."""
+"""Tests for :py:mod:`dade.ddrsplus.gap`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,7 +6,7 @@ import array
 
 import pytest
 
-from destin.ddrsplus.gap import beat_phase, estimate_gap, first_audible
+from dade.ddrsplus.gap import beat_phase, estimate_gap, first_audible
 
 if TYPE_CHECKING:
     from pathlib import Path

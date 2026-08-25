@@ -1,4 +1,4 @@
-"""Tests for :py:mod:`destin.jubeatplus.pipeline`."""
+"""Tests for :py:mod:`dade.jubeatplus.pipeline`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
@@ -8,7 +8,7 @@ import zipfile
 
 import pytest
 
-from destin.jubeatplus.pipeline import find_bundle, unpack
+from dade.jubeatplus.pipeline import find_bundle, unpack
 
 if TYPE_CHECKING:
     from collections.abc import Callable

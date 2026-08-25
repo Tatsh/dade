@@ -11,7 +11,7 @@ import wave
 import numpy as np
 import pytest
 
-from destin.monopoly08 import audio
+from dade.monopoly08 import audio
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -274,13 +274,13 @@ def serial_pool(mocker: MockerFixture) -> Any:
         pool.map = lambda fn, items: [fn(item) for item in items]
         return pool
 
-    return mocker.patch('destin.monopoly08.pipeline.ProcessPoolExecutor', side_effect=factory)
+    return mocker.patch('dade.monopoly08.pipeline.ProcessPoolExecutor', side_effect=factory)
 
 
 @pytest.fixture
 def audio_module() -> Iterator[ModuleType]:
     """
-    Reload :py:mod:`destin.monopoly08.audio` so its cached binary lookup starts empty.
+    Reload :py:mod:`dade.monopoly08.audio` so its cached binary lookup starts empty.
 
     Yields
     ------

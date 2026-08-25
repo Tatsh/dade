@@ -1,14 +1,14 @@
-"""Tests for :mod:`destin.thps2pc.render`."""
+"""Tests for :mod:`dade.thps2pc.render`."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from destin.thps2pc import render
-from destin.thps2pc.psx import Scene
-from destin.thps2pc.test_utils import SectorSpec, face_record, psx_scene
+from dade.thps2pc import render
+from dade.thps2pc.psx import Scene
+from dade.thps2pc.test_utils import SectorSpec, face_record, psx_scene
 
 if TYPE_CHECKING:
-    from destin.thps2pc.raster import Framebuffer
+    from dade.thps2pc.raster import Framebuffer
 
 
 def _body(framebuffer: Framebuffer) -> bytes:

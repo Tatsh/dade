@@ -1,4 +1,4 @@
-"""Fixtures for the :py:mod:`destin.xg2` tests."""
+"""Fixtures for the :py:mod:`dade.xg2` tests."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,10 +6,10 @@ import struct
 
 import pytest
 
-from destin.xg2.albank import BANK_MAGIC
-from destin.xg2.bmc import BMC_HEADER_SIZE, BMC_MAGIC
-from destin.xg2.extract_xg2 import SHAW_MAGIC
-from destin.xg2.offsets import (
+from dade.xg2.albank import BANK_MAGIC
+from dade.xg2.bmc import BMC_HEADER_SIZE, BMC_MAGIC
+from dade.xg2.extract_xg2 import SHAW_MAGIC
+from dade.xg2.offsets import (
     XG1_BOOT_HEADER,
     XG1_DIRECTORY_POINTER,
     XG1_GLOBAL_TEXTURE_BANK_POINTER,
@@ -28,7 +28,7 @@ from destin.xg2.offsets import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from destin.xg2.typing import SampleMeta, Sf2Preset, Sf2Zone
+    from dade.xg2.typing import SampleMeta, Sf2Preset, Sf2Zone
 
 BOOT_SIGNATURE = b'\x3c\x1d\x80\x3f'
 """First instruction of a decompressed boot segment, which both games are checked against.
@@ -187,7 +187,7 @@ def sf2_zone() -> Sf2Zone:
 
     Returns
     -------
-    destin.xg2.typing.Sf2Zone
+    dade.xg2.typing.Sf2Zone
         The zone.
     """
     return {
@@ -214,7 +214,7 @@ def sf2_sample() -> SampleMeta:
 
     Returns
     -------
-    destin.xg2.typing.SampleMeta
+    dade.xg2.typing.SampleMeta
         The sample.
     """
     return {'pcm': [1, -2, 3, -4, 5], 'loop_start': 1, 'loop_end': 4}
@@ -227,7 +227,7 @@ def sf2_preset() -> Sf2Preset:
 
     Returns
     -------
-    destin.xg2.typing.Sf2Preset
+    dade.xg2.typing.Sf2Preset
         The preset.
     """
     return {'bank': 0, 'program': 7, 'name': 'prog007', 'instrument': 0}

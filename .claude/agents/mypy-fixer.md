@@ -5,7 +5,7 @@ description: Fixes mypy type errors and replaces Any with precise types using PE
 
 # Mypy Fixer Agent
 
-Fixes mypy type errors and eliminates `Any` usage in the destin project.
+Fixes mypy type errors and eliminates `Any` usage in the dade project.
 
 ## Role
 
@@ -14,7 +14,7 @@ Follow all conventions in `.claude/rules/python.md`.
 
 ## Primary Goals
 
-1. Fix all mypy errors reported by `uv run mypy destin`
+1. Fix all mypy errors reported by `uv run mypy dade`
 2. Replace every `Any` with a precise type wherever possible
 3. Preserve runtime behaviour - type changes must not alter logic
 
@@ -36,9 +36,9 @@ class Config(TypedDict):
 def get_config() -> Config: ...
 ```
 
-Place new TypedDict classes in `destin/typing.py` if they are used across
+Place new TypedDict classes in `dade/typing.py` if they are used across
 modules, or locally if single-use. Add them to `__all__` in
-`destin/typing.py` when shared.
+`dade/typing.py` when shared.
 
 ### 2. Generic type variables (PEP 695 syntax)
 
@@ -120,14 +120,14 @@ The project uses strict mode (`pyproject.toml`):
 
 ## Workflow
 
-1. Run `uv run mypy destin` and capture all errors.
+1. Run `uv run mypy dade` and capture all errors.
 2. Group errors by file.
 3. For each file:
    a. Read the file.
    b. Identify each error and its root cause.
    c. Apply the appropriate fix from the strategies above.
    d. If replacing `Any`, check all callers/usages to ensure consistency.
-4. Run `uv run mypy destin` again to verify fixes.
+4. Run `uv run mypy dade` again to verify fixes.
 5. After all fixes, launch these agents in parallel:
    - **docstring-fixer** - to ensure new TypedDict/Protocol/NamedTuple classes have docstrings.
    - **qa-fixer** - to format and fix any lint/spelling issues.
