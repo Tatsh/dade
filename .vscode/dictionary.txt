@@ -15,7 +15,6 @@ alcseq
 allmodsbound
 alnum
 anchore
-Ångström
 anim
 anyio
 apfn
@@ -38,7 +37,9 @@ autouse
 backslashreplace
 bascom
 bbhhh
+bbhi
 beatmaps
+beatplus
 beginswith
 behavior
 bemani
@@ -69,6 +70,7 @@ cdda
 cdir
 cdrommsf
 cdtitle
+cgbi
 chara
 checkerboard
 chunksize
@@ -203,6 +205,8 @@ gbox
 gdiextract
 gdir
 genindex
+getcolors
+geteuid
 getpixel
 gigayears
 globaltoc
@@ -216,9 +220,11 @@ headerless
 heightfield
 hhhi
 hhhiii
+hhii
 hhiihh
 hhiiiii
 hier
+hira
 hostbuf
 hoverxref
 htmlcov
@@ -237,6 +243,7 @@ ihhi
 ihhiihh
 ihhiii
 iibbbbb
+iihhh
 ijbq
 ijsq
 importability
@@ -299,6 +306,7 @@ magick
 magics
 manylinux
 marm
+maxcolors
 maxidx
 mbin
 medi
@@ -348,6 +356,7 @@ nonrendering
 noqa
 norecursedirs
 noseparator
+notachart
 notarytool
 notcfs
 notjson
@@ -436,10 +445,14 @@ quicktime
 rawptr
 rawsize
 rb'decompresscommand
+rbff
+rbplus
 rdata
 recs
 reexport
 reexported
+reflec
+reflecbeatplus
 refpack
 regen
 resgroup
@@ -540,8 +553,8 @@ strow
 strt
 subentities
 submesh
-submeshes
 submesh's
+submeshes
 subpredicate
 subpredicates
 substreams
@@ -549,6 +562,7 @@ subtitletranslit
 sugoroku
 sunandmoon
 superentity
+supersample
 supf
 supp
 supx
@@ -661,4 +675,5 @@ zplays
 zrating
 zstr
 ztitle
+Ångström
 Яire

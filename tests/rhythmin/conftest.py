@@ -16,7 +16,7 @@ from dade.rhythmin.bfcodec import encipher
 from dade.rhythmin.dialogue import POOLS
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Sequence
     from pathlib import Path
 
 _IDX_BASE = 4
@@ -404,21 +404,3 @@ def chara_json() -> dict[str, object]:
         The parsed character data.
     """
     return dict(CHARA_JSON)
-
-
-@pytest.fixture
-def clear_font_caches() -> Iterator[None]:
-    """
-    Clear the cached font lookups before and after a test that patches them.
-
-    Yields
-    ------
-    None
-        Control while the caches are empty.
-    """
-    from dade.rhythmin.render import japanese_font_path, load_font
-    japanese_font_path.cache_clear()
-    load_font.cache_clear()
-    yield
-    japanese_font_path.cache_clear()
-    load_font.cache_clear()

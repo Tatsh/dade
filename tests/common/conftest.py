@@ -6,7 +6,25 @@ import struct
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterator
+
+
+@pytest.fixture
+def clear_font_caches() -> Iterator[None]:
+    """
+    Clear the cached font lookups before and after a test that patches them.
+
+    Yields
+    ------
+    None
+        Control while the caches are empty.
+    """
+    from dade.common.fonts import japanese_font_path, load_font
+    japanese_font_path.cache_clear()
+    load_font.cache_clear()
+    yield
+    japanese_font_path.cache_clear()
+    load_font.cache_clear()
 
 
 @pytest.fixture

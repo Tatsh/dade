@@ -4,6 +4,18 @@ Common
 Shared format readers, writers, and helpers used by more than one game submodule. Each was lifted
 from a game package once a second consumer appeared, so a single implementation is maintained.
 
+``dade.common.apple_png``
+---------------------------
+
+.. automodule:: dade.common.apple_png
+   :members:
+
+``dade.common.audio``
+-----------------------
+
+.. automodule:: dade.common.audio
+   :members:
+
 ``dade.common.bfcodec``
 -------------------------
 
@@ -44,6 +56,12 @@ from a game package once a second consumer appeared, so a single implementation 
 ----------------------------
 
 .. automodule:: dade.common.exceptions
+   :members:
+
+``dade.common.fonts``
+-----------------------
+
+.. automodule:: dade.common.fonts
    :members:
 
 ``dade.common.image``

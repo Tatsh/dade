@@ -7,49 +7,11 @@ samples. ``ffmpeg`` rewraps them as WAV without touching the samples.
 
 Music ships as ``.m4a``, both loose in the bundle and, enciphered, inside every tune package. That
 is already a portable container, so it is written out as it is rather than transcoded.
+
+The rewrap itself is :py:mod:`dade.common.audio`, shared with the other iOS titles.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Final
-import subprocess as sp
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from dade.common.audio import M4A_MAGIC, to_wav as caf_to_wav
 
 __all__ = ('M4A_MAGIC', 'caf_to_wav')
-
-M4A_MAGIC: Final = b'ftyp'
-"""The tag at offset four of an MPEG-4 container, used to recognise a tune's audio entries.
-
-:meta hide-value:
-"""
-
-
-def caf_to_wav(source: Path, destination: Path, ffmpeg: Path) -> Path:
-    """
-    Rewrap a Core Audio Format file as a WAV.
-
-    The samples are copied rather than re-encoded wherever the codec allows it, so a PCM ``.caf``
-    comes out bit-identical.
-
-    Parameters
-    ----------
-    source : pathlib.Path
-        The ``.caf`` to convert.
-    destination : pathlib.Path
-        The ``.wav`` to write. Its parent directory must already exist.
-    ffmpeg : pathlib.Path
-        The ``ffmpeg`` binary.
-
-    Returns
-    -------
-    pathlib.Path
-        The written file. ``ffmpeg`` failing raises
-        :py:class:`subprocess.CalledProcessError`.
-    """
-    sp.run((str(ffmpeg), '-hide_banner', '-loglevel', 'error', '-y', '-i', str(source),
-            str(destination)),
-           capture_output=True,
-           check=True,
-           text=True)
-    return destination
