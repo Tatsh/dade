@@ -44,16 +44,14 @@ import math
 import operator
 import random
 
-from PIL import Image, ImageDraw
-
-from dade.common.fonts import load_font
-
+from .canvas import canvas_for
 from .chart import SLIDE_LANE_REMAP, SPEED_CHANGE_KIND
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
     from pathlib import Path
 
+    from .canvas import Canvas
     from .typing import ChartDict, NoteDict, SlideDict, TempoEventDict
 
 __all__ = (
@@ -340,7 +338,7 @@ def _claimed_until(note: NoteDict) -> int:
     return note['hit_time'] + _hold_length(note)
 
 
-def _draw_note_head(draw: ImageDraw.ImageDraw,
+def _draw_note_head(canvas: Canvas,
                     center: int,
                     y: int,
                     color: tuple[int, int, int],
@@ -351,16 +349,16 @@ def _draw_note_head(draw: ImageDraw.ImageDraw,
     # nearest the player and takes gold on the half it leaves by, so it says both whose it is and
     # that it has to be swiped back. A note that comes straight down carries a V cut into it.
     box = (center - _NOTE_RADIUS, y - _NOTE_RADIUS, center + _NOTE_RADIUS, y + _NOTE_RADIUS)
-    draw.ellipse(box, fill=color)
+    canvas.ellipse(box, fill=color)
     if side_object:
-        draw.pieslice(box, _HALF_TURN, _FULL_TURN, fill=SIDE_OBJECT_COLOR)
+        canvas.pieslice(box, _HALF_TURN, _FULL_TURN, fill=SIDE_OBJECT_COLOR)
     if vertical:
         arm = round(_NOTE_RADIUS * _VEE_WIDTH)
         rise = round(_NOTE_RADIUS * _VEE_RISE)
-        draw.line((center - arm, y - rise, center, y + rise, center + arm, y - rise),
-                  fill=_BACKGROUND,
-                  width=_VEE_STROKE,
-                  joint='curve')
+        canvas.line((center - arm, y - rise, center, y + rise, center + arm, y - rise),
+                    fill=_BACKGROUND,
+                    width=_VEE_STROKE,
+                    joint='curve')
 
 
 def _hold_length(note: NoteDict) -> int:
@@ -584,7 +582,7 @@ class _Layout(NamedTuple):
         return int(column), self.bottom - int(within)
 
 
-def _draw_beats(draw: ImageDraw.ImageDraw, layout: _Layout, bpm: float) -> None:
+def _draw_beats(canvas: Canvas, layout: _Layout, bpm: float) -> None:
     # A line on every quarter note, with a brighter one every fourth, in both panels. The grid is
     # anchored at time zero, which is where the tune's own clock starts; a chart may begin before
     # it.
@@ -597,48 +595,45 @@ def _draw_beats(draw: ImageDraw.ImageDraw, layout: _Layout, bpm: float) -> None:
         color = _BAR_LINE if beat % _BEATS_PER_BAR == 0 else _BEAT_LINE
         for side in range(SIDE_COUNT):
             origin = layout.column_origin(side, column)
-            draw.line((origin + _GUTTER, y, origin + layout.column_width, y),
-                      fill=color,
-                      width=_SUPERSAMPLE)
+            canvas.line((origin + _GUTTER, y, origin + layout.column_width, y),
+                        fill=color,
+                        width=_SUPERSAMPLE)
 
 
-def _draw_grid(draw: ImageDraw.ImageDraw, layout: _Layout, bpm: float | None) -> None:
+def _draw_grid(canvas: Canvas, layout: _Layout, bpm: float | None) -> None:
     # Each side's panel of columns, their lane divisions, the beat grid, and the seconds.
-    small = load_font(_SMALL_SIZE)
-    label = load_font(_LABEL_SIZE)
     for side in range(SIDE_COUNT):
-        draw.text((layout.panel_origin(side), layout.top - _LABEL_SIZE - _TEXT_GAP),
-                  SIDE_LABELS[side],
-                  fill=NOTE_COLORS[side],
-                  font=label)
+        canvas.text((layout.panel_origin(side), layout.top - _LABEL_SIZE - _TEXT_GAP),
+                    SIDE_LABELS[side],
+                    fill=NOTE_COLORS[side],
+                    size=_LABEL_SIZE)
         for column in range(layout.columns):
             left = layout.column_origin(side, column) + _GUTTER
-            draw.rectangle((left, layout.top, left + layout.lanes * _LANE_PX, layout.bottom),
-                           fill=_TRACK_COLOR,
-                           outline=_TRACK_EDGE,
-                           width=_SUPERSAMPLE)
+            canvas.rect((left, layout.top, left + layout.lanes * _LANE_PX, layout.bottom),
+                        fill=_TRACK_COLOR,
+                        outline=_TRACK_EDGE,
+                        width=_SUPERSAMPLE)
             for lane in range(1, layout.lanes):
                 x = left + lane * _LANE_PX
-                draw.line((x, layout.top, x, layout.bottom), fill=_LANE_LINE, width=_SUPERSAMPLE)
+                canvas.line((x, layout.top, x, layout.bottom), fill=_LANE_LINE, width=_SUPERSAMPLE)
     if bpm is not None and bpm > 0:
-        _draw_beats(draw, layout, bpm)
+        _draw_beats(canvas, layout, bpm)
     for side in range(SIDE_COUNT):
         for column in range(layout.columns):
             origin = layout.column_origin(side, column)
             for second in range(layout.seconds_per_column + 1):
                 y = layout.bottom - second * layout.pixels_per_second
-                draw.line((origin + _GUTTER, y, origin + layout.column_width, y),
-                          fill=_GRID_COLOR,
-                          width=_SUPERSAMPLE)
+                canvas.line((origin + _GUTTER, y, origin + layout.column_width, y),
+                            fill=_GRID_COLOR,
+                            width=_SUPERSAMPLE)
                 absolute = (layout.start_ms + column * layout.span_ms) / _MILLISECONDS + second
-                draw.text((origin, y - _SMALL_SIZE // 2),
-                          f'{absolute:.0f}s',
-                          fill=_SECOND_TEXT,
-                          font=small)
+                canvas.text((origin, y - _SMALL_SIZE // 2),
+                            f'{absolute:.0f}s',
+                            fill=_SECOND_TEXT,
+                            size=_SMALL_SIZE)
 
 
-def _draw_tempo_events(draw: ImageDraw.ImageDraw, layout: _Layout,
-                       events: Sequence[TempoEventDict]) -> None:
+def _draw_tempo_events(canvas: Canvas, layout: _Layout, events: Sequence[TempoEventDict]) -> None:
     # A speed change rules its column across in both panels, labelled with the speed it installs.
     for event in events:
         if event['kind'] != SPEED_CHANGE_KIND or (spot := layout.place(event['time'])) is None:
@@ -646,9 +641,9 @@ def _draw_tempo_events(draw: ImageDraw.ImageDraw, layout: _Layout,
         column, y = spot
         for side in range(SIDE_COUNT):
             origin = layout.column_origin(side, column)
-            draw.line((origin + _GUTTER, y, origin + layout.column_width, y),
-                      fill=_TEMPO_COLOR,
-                      width=2 * _SUPERSAMPLE)
+            canvas.line((origin + _GUTTER, y, origin + layout.column_width, y),
+                        fill=_TEMPO_COLOR,
+                        width=2 * _SUPERSAMPLE)
 
 
 def _spot(layout: _Layout, notes: Sequence[NoteDict], lanes: Mapping[int, int],
@@ -663,7 +658,7 @@ def _spot(layout: _Layout, notes: Sequence[NoteDict], lanes: Mapping[int, int],
     return column, layout.lane_center(side, column, lanes.get(index, 0)), y
 
 
-def _draw_chains(draw: ImageDraw.ImageDraw, layout: _Layout, notes: Sequence[NoteDict],
+def _draw_chains(canvas: Canvas, layout: _Layout, notes: Sequence[NoteDict],
                  lanes: Mapping[int, int], version: int) -> None:
     # A line joins each note of a chain to the next, drawn under the notes themselves. Nothing is
     # drawn before the first note or after the last, and a pair split across two columns is left
@@ -675,9 +670,9 @@ def _draw_chains(draw: ImageDraw.ImageDraw, layout: _Layout, notes: Sequence[Not
         for (_, before), (index, after) in itertools.pairwise(placed):
             if before is None or after is None or before[0] != after[0]:
                 continue
-            draw.line((before[1], before[2], after[1], after[2]),
-                      fill=_note_color(notes[index], version),
-                      width=_BAR_WIDTH)
+            canvas.line((before[1], before[2], after[1], after[2]),
+                        fill=_note_color(notes[index], version),
+                        width=_BAR_WIDTH)
 
 
 def _slide_paths(notes: Sequence[NoteDict],
@@ -714,7 +709,7 @@ def _slide_paths(notes: Sequence[NoteDict],
     }
 
 
-def _draw_slides(draw: ImageDraw.ImageDraw, layout: _Layout, notes: Sequence[NoteDict],
+def _draw_slides(canvas: Canvas, layout: _Layout, notes: Sequence[NoteDict],
                  lanes: Mapping[int, int], slides: Sequence[SlideDict]) -> None:
     # The track a finger takes: down on the note, then across to each waypoint in turn. It is drawn
     # under the notes, and a leg whose two ends fall in different columns is left out, there being
@@ -731,15 +726,52 @@ def _draw_slides(draw: ImageDraw.ImageDraw, layout: _Layout, notes: Sequence[Not
         for before, after in itertools.pairwise(points):
             if before[0] != after[0]:
                 continue
-            draw.line((before[1], before[2], after[1], after[2]),
-                      fill=SLIDE_COLOR,
-                      width=_SLIDE_WIDTH)
-            draw.ellipse((after[1] - _SLIDE_DOT, after[2] - _SLIDE_DOT, after[1] + _SLIDE_DOT,
-                          after[2] + _SLIDE_DOT),
-                         fill=SLIDE_COLOR)
+            canvas.line((before[1], before[2], after[1], after[2]),
+                        fill=SLIDE_COLOR,
+                        width=_SLIDE_WIDTH)
+            canvas.ellipse((after[1] - _SLIDE_DOT, after[2] - _SLIDE_DOT, after[1] + _SLIDE_DOT,
+                            after[2] + _SLIDE_DOT),
+                           fill=SLIDE_COLOR)
 
 
-def _draw_notes(draw: ImageDraw.ImageDraw,
+def _note_details(note: NoteDict, index: int, lane: int | None, version: int, *, held: int,
+                  sliding: bool, vertical: bool) -> dict[str, str]:
+    # What one note says about itself when it is clicked. Everything here is read off the record or
+    # worked out beside it, so the page reports the chart rather than a summary of it.
+    kinds = []
+    if held > 0:
+        kinds.append('hold')
+    if sliding:
+        kinds.append('slide')
+    if vertical:
+        kinds.append('vertical')
+    if note['flags'] & SIDE_OBJECT_FLAG:
+        kinds.append('swipe back')
+    if _alternate_target(note, version):
+        kinds.append('alternative target')
+    details = {
+        'index': str(index),
+        'id': str(note['id']),
+        'side': SIDE_LABELS[note['side']] if 0 <= note['side'] < SIDE_COUNT else str(note['side']),
+        'kind': ', '.join(kinds) if kinds else 'ordinary',
+        'hit time': f'{note["hit_time"] / _MILLISECONDS:.3f} s',
+        'spawn time': f'{note["spawn_time"] / _MILLISECONDS:.3f} s',
+        'travel time': f'{note["travel_time"] / _MILLISECONDS:.3f} s',
+        'lane': 'not laid out' if lane is None else str(lane),
+        'route selector': str(_timing_selector(note, version)),
+        'group': 'free' if note['start_time'] == FREE_NOTE_START_TIME else str(note['start_time']),
+        'flags': f'0x{note["flags"]:x}',
+    }
+    if held > 0:
+        details['held for'] = f'{held / _MILLISECONDS:.3f} s'
+    if note['path_points']:
+        details['path points'] = ', '.join(str(point) for point in note['path_points'])
+    if note['chain'] is not None:
+        details['chain'] = ', '.join(str(field) for field in note['chain'])
+    return details
+
+
+def _draw_notes(canvas: Canvas,
                 layout: _Layout,
                 notes: Sequence[NoteDict],
                 lanes: Mapping[int, int],
@@ -751,34 +783,44 @@ def _draw_notes(draw: ImageDraw.ImageDraw,
             continue
         _, center, y = placed
         color = _note_color(note, version)
-        if (held := _hold_length(note)) > 0:
-            # A hold runs from the note up to the moment it is released, clipped to the column. It
-            # is drawn wide, with a cap at the release, so that a hold sitting at the end of a chain
-            # cannot be taken for the narrower line joining the chain.
-            top = max(y - int(held / _MILLISECONDS * layout.pixels_per_second), layout.top)
-            draw.rectangle((center - _HOLD_WIDTH // 2, top, center + _HOLD_WIDTH // 2, y),
-                           fill=color)
-            draw.line((center - _HOLD_WIDTH, top, center + _HOLD_WIDTH, top),
-                      fill=color,
-                      width=2 * _SUPERSAMPLE)
-        _draw_note_head(draw,
-                        center,
-                        y,
-                        color,
-                        side_object=bool(note['flags'] & SIDE_OBJECT_FLAG),
-                        vertical=index not in sliding and _vertical(note, version))
+        vertical = index not in sliding and _vertical(note, version)
+        held = _hold_length(note)
+        # Everything the note is drawn from goes in one group, so a surface that can be clicked
+        # through answers for the whole mark rather than one shape of it.
+        with canvas.note(
+                _note_details(note,
+                              index,
+                              lanes.get(index),
+                              version,
+                              held=held,
+                              sliding=index in sliding,
+                              vertical=vertical)):
+            if held > 0:
+                # A hold runs from the note up to the moment it is released, clipped to the column.
+                # It is drawn wide, with a cap at the release, so that a hold sitting at the end of
+                # a chain cannot be taken for the narrower line joining the chain.
+                top = max(y - int(held / _MILLISECONDS * layout.pixels_per_second), layout.top)
+                canvas.rect((center - _HOLD_WIDTH // 2, top, center + _HOLD_WIDTH // 2, y),
+                            fill=color)
+                canvas.line((center - _HOLD_WIDTH, top, center + _HOLD_WIDTH, top),
+                            fill=color,
+                            width=2 * _SUPERSAMPLE)
+            _draw_note_head(canvas,
+                            center,
+                            y,
+                            color,
+                            side_object=bool(note['flags'] & SIDE_OBJECT_FLAG),
+                            vertical=vertical)
 
 
-def _draw_header(draw: ImageDraw.ImageDraw, layout: _Layout, chart: ChartDict, *,
-                 artist: str | None, difficulty: str | None, level: int | None,
-                 title: str | None) -> None:
-    label_font = load_font(_LABEL_SIZE)
+def _draw_header(canvas: Canvas, layout: _Layout, chart: ChartDict, *, artist: str | None,
+                 difficulty: str | None, level: int | None, title: str | None) -> None:
     y = _MARGIN
     if title:
-        draw.text((_MARGIN, y), title, fill=_TITLE_COLOR, font=load_font(_TITLE_SIZE))
+        canvas.text((_MARGIN, y), title, fill=_TITLE_COLOR, size=_TITLE_SIZE)
         y += _TITLE_SIZE + 8
     if artist:
-        draw.text((_MARGIN, y), artist, fill=_SUBTITLE_COLOR, font=label_font)
+        canvas.text((_MARGIN, y), artist, fill=_SUBTITLE_COLOR, size=_LABEL_SIZE)
         y += _LABEL_SIZE + _TEXT_GAP
     parts = [difficulty or 'chart']
     if level is not None:
@@ -788,94 +830,94 @@ def _draw_header(draw: ImageDraw.ImageDraw, layout: _Layout, chart: ChartDict, *
     parts.extend(f'{SIDE_LABELS[side]}: {_playable(chart["notes"], side)} notes'
                  for side in range(SIDE_COUNT))
     parts.append(f'v{chart["header"]["version"]}')
-    draw.text((_MARGIN, y), '  ·  '.join(parts), fill=_SUBTITLE_COLOR, font=label_font)
-    draw.text(
+    canvas.text((_MARGIN, y), '  ·  '.join(parts), fill=_SUBTITLE_COLOR, size=_LABEL_SIZE)
+    canvas.text(
         (_MARGIN,
          layout.height - _MARGIN - layout.legend_rows * _LEGEND_ROW - _SMALL_SIZE - _TEXT_GAP),
         'Time runs upward. Across is where a note falls in its chain.',
         fill=_SECOND_TEXT,
-        font=load_font(_SMALL_SIZE))
+        size=_SMALL_SIZE)
 
 
-def _draw_legend(draw: ImageDraw.ImageDraw, layout: _Layout) -> None:
+def _draw_legend(canvas: Canvas, layout: _Layout) -> None:
     # One drawn example of every mark, so the picture explains itself.
-    small = load_font(_SMALL_SIZE)
     per_row = _legend_columns(layout.width)
     base = layout.height - _MARGIN - layout.legend_rows * _LEGEND_ROW
     for index, (label, glyph) in enumerate(_LEGEND):
         x = _MARGIN + (index % per_row) * _LEGEND_ITEM
         y = base + (index // per_row) * _LEGEND_ROW + _LEGEND_ROW // 2
-        glyph(draw, x + _LEGEND_GLYPH // 2, y)
-        draw.text((x + _LEGEND_GLYPH + _TEXT_GAP, y - _SMALL_SIZE // 2),
-                  label,
-                  fill=_SUBTITLE_COLOR,
-                  font=small)
+        glyph(canvas, x + _LEGEND_GLYPH // 2, y)
+        canvas.text((x + _LEGEND_GLYPH + _TEXT_GAP, y - _SMALL_SIZE // 2),
+                    label,
+                    fill=_SUBTITLE_COLOR,
+                    size=_SMALL_SIZE)
 
 
-def _glyph_side_note(draw: ImageDraw.ImageDraw, x: int, y: int, side: int) -> None:
-    draw.ellipse((x - _NOTE_RADIUS, y - _NOTE_RADIUS, x + _NOTE_RADIUS, y + _NOTE_RADIUS),
-                 fill=NOTE_COLORS[side])
+def _glyph_side_note(canvas: Canvas, x: int, y: int, side: int) -> None:
+    canvas.ellipse((x - _NOTE_RADIUS, y - _NOTE_RADIUS, x + _NOTE_RADIUS, y + _NOTE_RADIUS),
+                   fill=NOTE_COLORS[side])
 
 
-def _glyph_note(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
-    _glyph_side_note(draw, x, y, 1)
+def _glyph_note(canvas: Canvas, x: int, y: int) -> None:
+    _glyph_side_note(canvas, x, y, 1)
 
 
-def _glyph_side_0_note(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
-    _glyph_side_note(draw, x, y, 0)
+def _glyph_side_0_note(canvas: Canvas, x: int, y: int) -> None:
+    _glyph_side_note(canvas, x, y, 0)
 
 
-def _glyph_side_1_note(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
-    _glyph_side_note(draw, x, y, 1)
+def _glyph_side_1_note(canvas: Canvas, x: int, y: int) -> None:
+    _glyph_side_note(canvas, x, y, 1)
 
 
-def _glyph_alternate(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
-    draw.ellipse((x - _NOTE_RADIUS, y - _NOTE_RADIUS, x + _NOTE_RADIUS, y + _NOTE_RADIUS),
-                 fill=ALTERNATE_TARGET_COLOR)
+def _glyph_alternate(canvas: Canvas, x: int, y: int) -> None:
+    canvas.ellipse((x - _NOTE_RADIUS, y - _NOTE_RADIUS, x + _NOTE_RADIUS, y + _NOTE_RADIUS),
+                   fill=ALTERNATE_TARGET_COLOR)
 
 
-def _glyph_side_object(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
-    _draw_note_head(draw, x, y, NOTE_COLOR, side_object=True)
+def _glyph_side_object(canvas: Canvas, x: int, y: int) -> None:
+    _draw_note_head(canvas, x, y, NOTE_COLOR, side_object=True)
 
 
-def _glyph_hold(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
-    draw.rectangle((x - _HOLD_WIDTH // 2, y - _LEGEND_HOLD, x + _HOLD_WIDTH // 2, y),
-                   fill=NOTE_COLOR)
-    draw.line((x - _HOLD_WIDTH, y - _LEGEND_HOLD, x + _HOLD_WIDTH, y - _LEGEND_HOLD),
-              fill=NOTE_COLOR,
-              width=2 * _SUPERSAMPLE)
-    _glyph_note(draw, x, y)
+def _glyph_hold(canvas: Canvas, x: int, y: int) -> None:
+    canvas.rect((x - _HOLD_WIDTH // 2, y - _LEGEND_HOLD, x + _HOLD_WIDTH // 2, y), fill=NOTE_COLOR)
+    canvas.line((x - _HOLD_WIDTH, y - _LEGEND_HOLD, x + _HOLD_WIDTH, y - _LEGEND_HOLD),
+                fill=NOTE_COLOR,
+                width=2 * _SUPERSAMPLE)
+    _glyph_note(canvas, x, y)
 
 
-def _glyph_chain(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
+def _glyph_chain(canvas: Canvas, x: int, y: int) -> None:
     # Three notes, since a chain runs to as many as five and two would read as a special case.
     spots = [(x + (step - 1) * _LEGEND_CHAIN, y) for step in range(3)]
-    draw.line(spots[0] + spots[-1], fill=NOTE_COLOR, width=_BAR_WIDTH)
+    canvas.line(spots[0] + spots[-1], fill=NOTE_COLOR, width=_BAR_WIDTH)
     for spot_x, spot_y in spots:
-        _glyph_note(draw, spot_x, spot_y)
+        _glyph_note(canvas, spot_x, spot_y)
 
 
-def _glyph_slide(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
+def _glyph_slide(canvas: Canvas, x: int, y: int) -> None:
     # A finger going down and stepping sideways twice, which is what a slide asks for.
     spots = ((x - _LEGEND_CHAIN, y + _LEGEND_CHAIN), (x, y), (x + _LEGEND_CHAIN, y - _LEGEND_CHAIN))
     for before, after in itertools.pairwise(spots):
-        draw.line(before + after, fill=SLIDE_COLOR, width=_SLIDE_WIDTH)
+        canvas.line(before + after, fill=SLIDE_COLOR, width=_SLIDE_WIDTH)
     for spot_x, spot_y in spots[1:]:
-        draw.ellipse(
+        canvas.ellipse(
             (spot_x - _SLIDE_DOT, spot_y - _SLIDE_DOT, spot_x + _SLIDE_DOT, spot_y + _SLIDE_DOT),
             fill=SLIDE_COLOR)
-    _glyph_note(draw, spots[0][0], spots[0][1])
+    _glyph_note(canvas, spots[0][0], spots[0][1])
 
 
-def _glyph_vertical(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
-    _draw_note_head(draw, x, y, NOTE_COLOR, vertical=True)
+def _glyph_vertical(canvas: Canvas, x: int, y: int) -> None:
+    _draw_note_head(canvas, x, y, NOTE_COLOR, vertical=True)
 
 
-def _glyph_speed(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
-    draw.line((x - _LEGEND_RULE, y, x + _LEGEND_RULE, y), fill=_TEMPO_COLOR, width=2 * _SUPERSAMPLE)
+def _glyph_speed(canvas: Canvas, x: int, y: int) -> None:
+    canvas.line((x - _LEGEND_RULE, y, x + _LEGEND_RULE, y),
+                fill=_TEMPO_COLOR,
+                width=2 * _SUPERSAMPLE)
 
 
-_LEGEND: tuple[tuple[str, Callable[[ImageDraw.ImageDraw, int, int], None]], ...] = (
+_LEGEND: tuple[tuple[str, Callable[[Canvas, int, int], None]], ...] = (
     ('side 0 note', _glyph_side_0_note),
     ('side 1 note', _glyph_side_1_note),
     ('alternative target', _glyph_alternate),
@@ -957,26 +999,26 @@ def render_chart_image(chart: ChartDict,
         msg = f'seconds_per_column must be positive, got {seconds_per_column}.'
         raise ValueError(msg)
     layout = _Layout.for_chart(chart, seconds_per_column, speed)
-    image = Image.new('RGB', (layout.width, layout.height), _BACKGROUND)
-    draw = ImageDraw.Draw(image)
+    canvas = canvas_for(path.suffix,
+                        layout.width,
+                        layout.height,
+                        _BACKGROUND,
+                        title=' - '.join(part for part in (title, difficulty) if part) or 'Chart')
     lanes = _lanes(chart['notes'], chart['header']['version'], seed)
-    _draw_grid(draw, layout, bpm)
-    _draw_tempo_events(draw, layout, chart['tempo_events'])
-    _draw_slides(draw, layout, chart['notes'], lanes, chart['slides'])
-    _draw_chains(draw, layout, chart['notes'], lanes, chart['header']['version'])
-    _draw_notes(draw, layout, chart['notes'], lanes, chart['header']['version'], chart['slides'])
-    _draw_header(draw,
+    _draw_grid(canvas, layout, bpm)
+    _draw_tempo_events(canvas, layout, chart['tempo_events'])
+    _draw_slides(canvas, layout, chart['notes'], lanes, chart['slides'])
+    _draw_chains(canvas, layout, chart['notes'], lanes, chart['header']['version'])
+    _draw_notes(canvas, layout, chart['notes'], lanes, chart['header']['version'], chart['slides'])
+    _draw_header(canvas,
                  layout,
                  chart,
                  artist=artist,
                  difficulty=difficulty,
                  level=level,
                  title=title)
-    _draw_legend(draw, layout)
-    # Pillow draws no anti-aliasing of its own, so everything is laid out at a multiple of the
-    # final size and reduced once at the end, which smooths every edge in one pass. Asking for a
-    # larger image reduces it by less, so it keeps more pixels and is smoothed by that much less.
-    width = round(layout.width * scale / _SUPERSAMPLE)
-    height = round(layout.height * scale / _SUPERSAMPLE)
-    image.resize((width, height), Image.Resampling.LANCZOS).save(path)
-    return width, height
+    _draw_legend(canvas, layout)
+    # The layout is in units a whole multiple of the finished size. A raster surface draws there
+    # and reduces once at the end, which smooths every edge in one pass; a vector one carries the
+    # same numbers as its view box and needs no such thing.
+    return canvas.save(path, scale=scale, supersample=_SUPERSAMPLE)

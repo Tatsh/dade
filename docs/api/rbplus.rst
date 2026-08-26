@@ -12,6 +12,12 @@ nested manifest, and the pipeline that converts a whole download in one pass.
 .. automodule:: dade.rbplus.archive
    :members:
 
+``dade.rbplus.canvas``
+----------------------
+
+.. automodule:: dade.rbplus.canvas
+   :members:
+
 ``dade.rbplus.chart``
 ---------------------
 

@@ -52,7 +52,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `.ipa`, the `.app` bundle, the `Payload` directory, or a directory holding `Payload`, never
   writes to the source, and mirrors the bundle into the output directory. A `%09d.rb` tune package
   becomes a directory: its metadata as JSON, its artwork and name strips as ordinary PNGs, each of
-  its three note charts as both JSON and a rendered strip image, and its two audio streams as
+  its three note charts as both JSON and a rendered strip image, which `dump-chart --image` also
+  writes as SVG or as a Bootstrap page whose every note answers to a click, and its two audio
+  streams as
   `.m4a`. Loose Apple-optimised PNGs are rewritten by `pngdefry`, `.caf` sound effects become WAV,
   and property lists, localisation tables, Core Data models, and the `SC_Info` bookkeeping all
   become JSON. Mach-O images are left behind entirely. Every other file is copied unchanged. The

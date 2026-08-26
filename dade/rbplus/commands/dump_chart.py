@@ -101,7 +101,8 @@ def _hex(ctx: click.Context, param: click.Parameter, value: str | None) -> bytes
               help='Key as hex, for a chart enciphered under neither of the game keys.')
 @click.option('--image',
               type=click.Path(dir_okay=False, path_type=Path),
-              help='Also render the chart as a strip image at this path.')
+              help='Also render the chart as a strip at this path. The suffix chooses the form: '
+              '.png, .svg, or .html.')
 @click.option('--scale',
               type=click.FloatRange(*SCALE_RANGE),
               default=DEFAULT_SCALE,
@@ -161,16 +162,22 @@ def dump_chart(package: Path,
         click.echo(str(e), err=True)
         raise click.Abort from e
     if image is not None:
-        render_chart_image(chart,
-                           image,
-                           artist=info.get('ArtistName'),
-                           bpm=info.get('BpmMin'),
-                           difficulty=chart_difficulty(entry),
-                           level=chart_level(info, entry),
-                           scale=scale,
-                           seed=seed,
-                           speed=speed,
-                           title=info.get('MusicName'))
+        try:
+            render_chart_image(chart,
+                               image,
+                               artist=info.get('ArtistName'),
+                               bpm=info.get('BpmMin'),
+                               difficulty=chart_difficulty(entry),
+                               level=chart_level(info, entry),
+                               scale=scale,
+                               seed=seed,
+                               speed=speed,
+                               title=info.get('MusicName'))
+        except (OSError, ValueError) as e:
+            # The suffix chooses the form, so naming one nothing writes is a user error rather
+            # than a fault, and is reported as one.
+            click.echo(str(e), err=True)
+            raise click.Abort from e
         log.info('Wrote `%s`.', image)
     payload = dict(chart)
     if summary:

@@ -226,6 +226,7 @@ hhiihh
 hhiiiii
 hier
 hira
+hiragino
 hostbuf
 hoverxref
 htmlcov
@@ -296,6 +297,8 @@ libera
 libjsonnet
 libsg
 libsonnet
+linecap
+linejoin
 linters
 loadtile
 loadtlut
@@ -361,6 +364,7 @@ notachart
 notarytool
 notcfs
 notjson
+noto
 notscei
 noundefs
 nrec
@@ -572,6 +576,7 @@ syft
 symtab
 sysex
 szlen
+tabindex
 tatsh
 tcllzham
 tesa

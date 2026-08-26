@@ -212,6 +212,7 @@ logging.
 dade rbplus unpack "REFLEC BEAT plus.app" -o out/
 dade rbplus extract-assets iPhone@2x.zip -o out/
 dade rbplus dump-chart 100000109.rb har --image chart.png
+dade rbplus dump-chart 100000109.rb har --image chart.html
 ```
 
 Convert a whole _REFLEC BEAT plus_ (`jp.konami.reflecbeatplus`) download to formats that open
@@ -269,6 +270,18 @@ column across. Every image carries a drawn legend saying so.
 `--speed`, from 1.0 to 2.0 as the game offers it, spreads the notes further apart without changing
 how much time a column holds. `--scale`, from 1.0 to 3.0, writes the image larger for a display
 that would otherwise have to enlarge it.
+
+The suffix given to `--image` chooses the form the strip is written in, and the picture is the same
+in all three:
+
+- `.png` — a raster image, drawn at three times its size and reduced once so every edge is
+  smoothed.
+- `.svg` — the same drawing as vectors, which enlarges without loss.
+- `.html` — a page holding that SVG inline, styled with [Bootstrap](https://getbootstrap.com/),
+  where every note answers to a click and reports itself: its side, its kind, its hit, spawn, and
+  travel times, the lane it was laid out in, its route selector, its flags, and its chain and path
+  fields. Bootstrap is fetched from its content delivery network, so the page wants a connection
+  the first time it is opened.
 
 `dade rbplus dump-chart` also reads one note chart from a file of its own, either as the package
 stores it or already deciphered, in which case the difficulty is taken from the file name when it

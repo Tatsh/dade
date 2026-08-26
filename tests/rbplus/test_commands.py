@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import json
+import xml.etree.ElementTree as ET  # noqa: S405
 
 from dade.rbplus.main import main, rbplus
 
@@ -122,6 +123,34 @@ def test_dump_chart_renders_an_image(runner: CliRunner, tune_package: Path, tmp_
     result = runner.invoke(rbplus, ('dump-chart', str(tune_package), 'har', '--image', str(image)))
     assert result.exit_code == 0
     assert image.is_file()
+    assert image.read_bytes().startswith(b'\x89PNG\r\n\x1a\n')
+
+
+def test_dump_chart_renders_a_vector_image(runner: CliRunner, tune_package: Path,
+                                           tmp_path: Path) -> None:
+    image = tmp_path / 'chart.svg'
+    result = runner.invoke(rbplus, ('dump-chart', str(tune_package), 'har', '--image', str(image)))
+    assert result.exit_code == 0
+    assert ET.fromstring(image.read_text()).get('viewBox') is not None  # noqa: S314
+
+
+def test_dump_chart_renders_a_page(runner: CliRunner, tune_package: Path, tmp_path: Path) -> None:
+    image = tmp_path / 'chart.html'
+    # The basic chart is the one holding notes, so the page has something to be clicked through.
+    result = runner.invoke(rbplus, ('dump-chart', str(tune_package), 'bas', '--image', str(image)))
+    assert result.exit_code == 0
+    page = image.read_text()
+    assert page.startswith('<!doctype html>')
+    assert 'class="rb-note"' in page
+    assert 'bootstrap' in page
+
+
+def test_dump_chart_refuses_an_unknown_image_form(runner: CliRunner, tune_package: Path,
+                                                  tmp_path: Path) -> None:
+    result = runner.invoke(
+        rbplus, ('dump-chart', str(tune_package), 'har', '--image', str(tmp_path / 'chart.gif')))
+    assert result.exit_code == 1
+    assert 'No surface writes' in result.output
 
 
 def test_dump_chart_reports_an_absent_difficulty(runner: CliRunner, make_package: Callable[...,
