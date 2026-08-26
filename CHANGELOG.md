@@ -29,6 +29,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   JSON. Every other file is copied unchanged. The assets use the same `BFCodec` cipher as
   _pop'n rhythmin_, under seven keys of their own. `--no-png` and `--no-audio` skip the two
   conversions that need a helper tool, and `-j`/`--jobs` sets the pool size.
+- `dade rbplus` group for the Konami iOS game _REFLEC BEAT plus_: `unpack` converts a whole
+  download to formats that open outside iOS, `extract-assets` unpacks one of the three
+  downloadable texture archives, and `dump-chart` writes a single note chart. `unpack` accepts an
+  `.ipa`, the `.app` bundle, the `Payload` directory, or a directory holding `Payload`, never
+  writes to the source, and mirrors the bundle into the output directory. A `%09d.rb` tune package
+  becomes a directory: its metadata as JSON, its artwork and name strips as ordinary PNGs, each of
+  its three note charts as both JSON and a rendered strip image, and its two audio streams as
+  `.m4a`. Loose Apple-optimised PNGs are rewritten by `pngdefry`, `.caf` sound effects become WAV,
+  and property lists, localisation tables, Core Data models, and the `SC_Info` bookkeeping all
+  become JSON. Mach-O images are left behind entirely. Every other file is copied unchanged. The
+  assets use the same `BFCodec` cipher as _pop'n rhythmin_ and _jubeat plus_, under two keys of
+  their own, neither of which appears in the executable as a passphrase.
+- The RBFF note chart, versions 10 to 14: a header giving the scroll speed, end time, and record
+  counts, then variable-length note records carrying an inline path-point array and an optional
+  chain block, then thirty-six byte tempo events, then sixteen-byte slide records. A note's hit
+  time is its two stored times added, which is also what makes two notes simultaneous. A chain is
+  the note record's own doubly linked list: its chain block names the note before it and the note
+  after it by identifier, with -1 at each end. Every one of the five flag bits a note carries is
+  exactly redundant with another field: two mark a note struck at the same moment as one on its own
+  or the other side, and the rest mark a chain block, a free note, and a note that travels to the
+  other side to be swiped back, which the engine counts as a side object and which is the same bit
+  as the one marking a path.
+- A note's route selector, derived from its second target coordinate the way the engine derives it,
+  says whether the chart names the note's lane. One naming a lane, 0 to 6, comes straight down into
+  that lane and no randomness touches it: that is every slide and every vertical note. One naming
+  7, 8, or 9 is aimed at one of the three alternative targets beyond the lanes. Only a note naming
+  nothing is laid out at run time, from a generator seeded with `rand()`, so that part of a chart
+  falls differently on every play.
+- A slide's records are its waypoints, one per point the finger passes through. Each gives the lane
+  to be in and, in the same shape a note's own timing takes, a spawn time and a travel time whose
+  sum is the moment to be there. The travel time is one constant per chart, the scroll lead-in, and
+  the waypoints land on musical divisions of the tune's own tempo.
 - `dade rhythmin` group for the Konami iOS game _pop'n rhythmin_: the `BFCodec` cipher (Blowfish
   with one deviation in its F function), `dump-chara` for downloaded character data, `dump-idx` for
   AEP animation indexes, `dump-map` for sugoroku boards (JSON, a text board, or a rendered PNG),
@@ -60,6 +92,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `dade incoming extract-pvr-pack`.
 - `ian2obj` converts Dreamcast `*_M.BIN` model packs in addition to PC `.ian` meshes.
 - `-j`/`--jobs` option to run Incoming file conversions concurrently, defaulting to the CPU count.
+- Three more shared modules under `dade.common`, each lifted from a game package once a second
+  consumer appeared: `apple_png` for the `pngdefry` conversion of Apple-optimised PNGs, `audio` for
+  the `ffmpeg` rewrap, and `fonts` for the fontconfig lookup that picks a font with Japanese
+  coverage. `dade.jubeatplus.images`, `dade.jubeatplus.audio`, and `dade.rhythmin.render` keep
+  every name they exported.
 - Shared format code used by more than one game lives in a single `dade.common` package: WAV, PNG,
   and PPM writers, an LZSS decompressor, a Twofish cipher, the `BFCodec` Blowfish variant shared by
   _pop'n rhythmin_ and _jubeat plus_, a CookFS reader, memory-mapped and byte-range readers,

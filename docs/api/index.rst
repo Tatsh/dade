@@ -26,6 +26,7 @@ and :doc:`../utilities`.
    jubeatplus
    marmalade
    monopoly08
+   rbplus
    rhythmin
    thps2pc
    xg2

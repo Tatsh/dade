@@ -55,6 +55,7 @@ Run `dade --help` to list the games, and `dade <game> --help` to list a game's s
 | `dade marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
 | `dade misc`       | Formats belonging to no single game         | —                             |
 | `dade monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
+| `dade rbplus`     | _REFLEC BEAT plus_ (iOS)                    | Konami                        |
 | `dade rhythmin`   | _pop'n rhythmin_ (iOS)                      | Konami                        |
 | `dade thps2pc`    | _Tony Hawk's Pro Skater 2_ (PC)             | Neversoft / Activision        |
 | `dade xg2`        | _Extreme-G_ and _Extreme-G 2_ (N64 and PC)  | Probe Entertainment / Acclaim |
@@ -204,6 +205,84 @@ and its `LC_ENCRYPTION_INFO` command says so.
 `--no-png` or `--no-audio` to skip either conversion and copy those files instead, `-j`/`--jobs` to
 set the number of concurrent conversion jobs (defaults to the CPU count), and `--debug` for verbose
 logging.
+
+## REFLEC BEAT plus
+
+```shell
+dade rbplus unpack "REFLEC BEAT plus.app" -o out/
+dade rbplus extract-assets iPhone@2x.zip -o out/
+dade rbplus dump-chart 100000109.rb har --image chart.png
+```
+
+Convert a whole _REFLEC BEAT plus_ (`jp.konami.reflecbeatplus`) download to formats that open
+outside iOS. `SOURCE` may be an `.ipa`, the `.app` bundle, the `Payload` directory, or a directory
+holding `Payload`; it is only read, and the converted bundle is written under `-o`/`--output-dir`
+into a directory named after it.
+
+A tune ships as a `%09d.rb` package: an ordinary ZIP whose every entry is enciphered with the same
+Blowfish variant as `dade rhythmin` and `dade jubeatplus`, differing only in the key. There are two
+keys, neither of which appears in the executable as a passphrase: each is stored with every byte
+reduced by its own index, so adding the index back yields `Konami ReflecBeat For iOS.` and
+`Konami ReflecBeatplus.`, whose MD5s are the keys. A package does not record which one it uses, so
+the first is tried and the second used when the metadata does not parse.
+
+| Input                                | Output           | Notes                                                                                      |
+| ------------------------------------ | ---------------- | ------------------------------------------------------------------------------------------ |
+| `.rb`                                | a directory      | One tune: metadata, artwork, title and artist strips, three charts, and two audio streams. |
+| ↳ `info`                             | `.json`          | Title and artist with their readings, the three levels, and the tempo range.               |
+| ↳ `artwork`, `title_*`, `artist_*`   | `.png`           | Apple-optimised (`CgBI`); rewritten by `pngdefry`. Each also ships at `2x`.                |
+| ↳ `note_bas`, `note_med`, `note_har` | `.json` + `.png` | RBFF charts, as data and as a rendered strip image.                                        |
+| ↳ `bgm`, `pre`                       | `.m4a`           | Already a portable container, so written out rather than transcoded.                       |
+| `.png`                               | `.png`           | Apple-optimised; rewritten by `pngdefry`.                                                  |
+| `.caf`                               | `.wav`           | Rewrapped by `ffmpeg`; the samples are copied, not re-encoded.                             |
+| `.m4a`                               | `.m4a`           | Copied.                                                                                    |
+| `.plist`, `.xcent`                   | `.json`          | Read by the `dade misc` property list reader.                                              |
+| `.strings`                           | `.json`          | Read by the `dade misc strings` parser.                                                    |
+| `.mom`                               | `.json`          | Read by the `dade misc coredata` parser.                                                   |
+| `SC_Info`                            | `SC_Info.json`   | Read by the `dade misc sc-info` parser.                                                    |
+
+Mach-O images are the one thing left behind entirely: neither the executable nor the debug copy
+under `.dSYM` is read, converted, or copied. Every other file is copied unchanged, so the output is
+a complete bundle rather than a selection.
+
+A chart is drawn as a strip. _REFLEC BEAT_ is a versus game, and the two sides are separate sets of
+notes rather than one set divided, so each is drawn as a panel of its own — side 0 (pink) on the
+left, side 1 (blue) on the right — and counted on its own.
+
+Whether a note's lane is drawn from the chart or invented depends on its route selector. One naming
+a lane, 0 to 6, comes straight down into that lane and no randomness touches it: that is every
+slide and every vertical note. One naming 7, 8, or 9 is aimed at one of the three alternative
+targets, which sit beyond the seven lanes. Only a note naming nothing is laid out at run time, from
+a generator seeded with `rand()` when play starts, so that part of a chart falls differently on
+every play. Those notes are laid out here from a seed, fresh on each run unless `--seed` pins one,
+under the engine's two rules: a chain member inherits the lane of the segment before it, so a chain
+runs straight up a single lane, and notes one side strikes together cannot share a lane, so they
+take neighbouring ones. A hold keeps its lane until it is released.
+
+Time runs upward, the way the notes fall, wrapped into columns and ruled on every quarter note when
+the tune's tempo is known. A hold extends as a bar to the moment it is released, a note aimed at an
+alternative target is green, one that travels to the other side to be swiped back is half gold, a
+vertical note carries a V, each note of a chain is joined to the next by a line, a slide draws the
+track the finger takes from the note across to each of its waypoints, and a speed change rules its
+column across. Every image carries a drawn legend saying so.
+
+`--speed`, from 1.0 to 2.0 as the game offers it, spreads the notes further apart without changing
+how much time a column holds. `--scale`, from 1.0 to 3.0, writes the image larger for a display
+that would otherwise have to enlarge it.
+
+`dade rbplus dump-chart` also reads one note chart from a file of its own, either as the package
+stores it or already deciphered, in which case the difficulty is taken from the file name when it
+says one and must be named otherwise. `--key` and `--iv`, both hex, read a chart enciphered under
+neither of the game's keys.
+
+`dade rbplus extract-assets` unpacks one of the three texture archives the game downloads (`iPad`,
+`iPad2x`, and `iPhone@2x`), each holding a little over two thousand PNGs under ZipCrypto. The
+archive's own index, a second encrypted ZIP stored as its `list` entry, is written out as
+`manifest.json`. Each texture is examined and only the Apple-optimised ones go through `pngdefry`.
+
+`pngdefry` and `ffmpeg` must be on `PATH` or given with `--pngdefry-path` and `--ffmpeg-path`. Pass
+`--no-png`, `--no-audio`, or `--no-images` to skip a conversion, `-j`/`--jobs` to set the number of
+concurrent jobs (defaults to the CPU count), and `--debug` for verbose logging.
 
 ## pop'n rhythmin
 
