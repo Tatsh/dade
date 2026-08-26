@@ -9,6 +9,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.0.2] - 2026-08-26
+
+### Fixed
+
+- A release now carries every binary that was built for it. The PyInstaller workflow builds one
+  binary per platform and architecture, each under the same name, so the release job's flattening
+  download kept only one file per extension and dropped the rest: v0.0.1 advertised four platforms
+  and shipped two binaries, `dade` and `dade.exe`, neither of which said which architecture it was,
+  and both of which turned out to be the x86_64 builds. The workflow already built an archive per
+  job carrying the version and the architecture in its name, and already attested it, but nothing
+  ever uploaded it. The release job takes those archives instead, so the assets are now
+  `dade-vX.Y.Z-mac-x86_64.zip`, `dade-vX.Y.Z-mac-arm64.zip`, `dade-vX.Y.Z-win-x86_64.zip`, and
+  `dade-vX.Y.Z-win-arm64.zip`. An archive also keeps the executable bit and any macOS notarisation,
+  both of which a bare release asset loses.
+
 ## [0.0.1] - 2026-08-26
 
 ### Added
@@ -117,5 +132,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Ported the asset-format reference into the Sphinx documentation under `docs/formats/` and
   expanded the documentation into separate, well-organised pages.
 
-[unreleased]: https://github.com/Tatsh/dade/compare/v0.0.1...HEAD
+[unreleased]: https://github.com/Tatsh/dade/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/Tatsh/dade/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/Tatsh/dade/releases/tag/v0.0.1

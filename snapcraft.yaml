@@ -30,5 +30,5 @@ platforms:
 source-code: 'https://github.com/Tatsh/dade'
 summary: 'Extract and convert assets from a collection of PC and console video games.'
 title: 'dade'
-version: '0.0.1'
+version: '0.0.2'
 website: 'https://tatsh.github.io/dade/'

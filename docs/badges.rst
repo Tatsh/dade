@@ -16,8 +16,8 @@
       :target: https://github.com/Tatsh/dade/blob/master/LICENSE.txt
       :alt: License
 
-   .. image:: https://img.shields.io/github/commits-since/Tatsh/dade/v0.0.1/master
-      :target: https://github.com/Tatsh/dade/compare/v0.0.1...master
+   .. image:: https://img.shields.io/github/commits-since/Tatsh/dade/v0.0.2/master
+      :target: https://github.com/Tatsh/dade/compare/v0.0.2...master
       :alt: GitHub commits since latest release (by SemVer including pre-releases)
 
    .. image:: https://github.com/Tatsh/dade/actions/workflows/codeql.yml/badge.svg
