@@ -274,6 +274,18 @@ jobs:
         with:
           subject-path: '_out/*.zip'
           sbom-path: 'sbom.spdx.json'
+      # The archives, not the binaries, are what a release carries. Every matrix job builds a
+      # binary under the same name, so uploading those directly would collide once merged and
+      # silently drop every architecture but the last. An archive carries the version and the
+      # architecture in its own name, and keeps the executable bit and any notarisation that a
+      # bare release asset would lose.
+      - if: github.ref_type == 'tag'
+        name: 'Upload release archives'
+        uses: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a'
+        with:
+          if-no-files-found: error
+          name: dade-release-${{ matrix.suffix }}
+          path: '_out/*.zip'
     strategy:
       matrix:
         include:
@@ -305,7 +317,7 @@ jobs:
         with:
           merge-multiple: true
           path: '_release_assets'
-          pattern: dade-binaries-*
+          pattern: dade-release-*
       - name: 'Create or update draft release'
         env:
           GH_REPO: ${{ github.repository }}

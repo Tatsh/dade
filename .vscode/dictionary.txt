@@ -15,6 +15,7 @@ alcseq
 allmodsbound
 alnum
 anchore
+Ångström
 anim
 anyio
 apfn
@@ -553,8 +554,8 @@ strow
 strt
 subentities
 submesh
-submesh's
 submeshes
+submesh's
 subpredicate
 subpredicates
 substreams
@@ -675,5 +676,4 @@ zplays
 zrating
 zstr
 ztitle
-Ångström
 Яire

@@ -8,7 +8,7 @@ dev = [
   "cz-path>=0.0.7",
   "mypy>=2.3.1",
   "ruff==0.16.3",
-  "ty>=0.0.72",
+  "ty>=0.0.73",
   "yapf>=0.43.0",
 ]
 docs = [
@@ -250,6 +250,9 @@ max-complexity = 20
 
 [tool.ruff.lint.pep8-naming]
 extend-ignore-names = ["test_*"]
+
+[tool.ruff.lint.per-file-ignores]
+"dade/main.py" = ["PLR0913"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
