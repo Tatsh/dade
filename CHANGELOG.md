@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.0.1] - 2026-08-26
+
 ### Added
 
 - Merged a collection of separate game asset extractors into a single `dade` package, each exposed
@@ -115,9 +117,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Ported the asset-format reference into the Sphinx documentation under `docs/formats/` and
   expanded the documentation into separate, well-organised pages.
 
-## [0.0.1] - 2026-00-00
-
-First version.
-
-[unreleased]: https://github.com/Tatsh/dade/compare/v0.0.0...HEAD
-[0.0.1]: https://github.com/Tatsh/dade/releases/tag/v0.0.0
+[unreleased]: https://github.com/Tatsh/dade/compare/v0.0.1...HEAD
+[0.0.1]: https://github.com/Tatsh/dade/releases/tag/v0.0.1

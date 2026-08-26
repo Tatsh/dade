@@ -27,9 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DADE" "1" "Aug 15, 2026" "0.0.0" "dade"
+.TH "DADE" "1" "Aug 26, 2026" "0.0.1" "dade"
 .SH NAME
-dade \- dade v0.0.0
+dade \- dade v0.0.1
 .SH COMMAND REFERENCE
 .sp
 Every game is a sub\-group of the top\-level \fBdade\fP command, so each tool is invoked as
@@ -1265,12 +1265,6 @@ Required argument
 Build a SoundFont from the ALBankFile control bank at MELODIC_BANK in ROM.
 .sp
 Melodic instruments are written to bank 0 and the drum kit, when the bank has one, to bank 128.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If an offset is not a valid integer or the melodic bank could not be parsed.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -1538,6 +1532,90 @@ Required argument
 .B OUT
 Required argument
 .UNINDENT
+.SS ddrsplus
+.sp
+Decrypt and decode data files from the Konami game Dance Dance Revolution S+.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade ddrsplus [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-version
+Show the version and exit.
+.UNINDENT
+.SS extract\-gen
+.sp
+Unpack each FILE, a Dance Dance Revolution S+ song container, into a directory.
+.sp
+Every section is written out as stored. The banner also becomes a PNG, the metadata and note
+count tables also become JSON, and each set of step charts also becomes a StepMania simfile.
+Nothing replaces the section it came from.
+.sp
+The simfile\(aqs \fB#OFFSET\fP is measured from the audio, which needs \fBffmpeg\fP; pass \fB\-\-gap\fP
+to set it yourself.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade ddrsplus extract\-gen [OPTIONS] FILE
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-ffmpeg <ffmpeg>
+Path to the ffmpeg binary.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-g, \-\-gap <gap>
+Seconds from the start of the audio to beat 0, written as #OFFSET:\-GAP. Measured from the audio when not given.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-iv <iv>
+Initialisation vector, in hex.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-k, \-\-key <key>
+Cipher key, in hex.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-crop
+Keep the banner\(aqs transparent padding.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Write here instead of a directory named after each input.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Required argument(s)
+.UNINDENT
 .SS frequency
 .sp
 PS2 FreQuency (Harmonix) asset unpacker.
@@ -1632,12 +1710,6 @@ Assemble the horizon panorama for MISSION into OUTDIR as a PNG.
 .sp
 The mission\(aqs WRLD chunk names an \fB\&.hzd\fP strip list, whose strips are laid out left to right
 into one panorama whose horizontal axis is azimuth and whose vertical axis is height.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If the strip list, its bundle, or the palette cannot be resolved.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -1683,12 +1755,6 @@ Decode texture TEXTURE into OUTDIR as a PNG.
 .sp
 A \fB\&.map\fP is palette\-indexed and needs only the palette. A \fB\&.vqm\fP is vector\-quantised and
 additionally needs the \fB\&.cbk\fP codebook it names, which is looked up in \fB\-\-codebook\-dir\fP\&.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If the texture format is unsupported or its codebook is absent.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -1768,12 +1834,6 @@ Required argument
 Unpack bundle PAK into OUTDIR.
 .sp
 The bundle\(aqs member list comes from the sibling \fB\&.pix\fP index, which must sit beside PAK.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If PAK has no matching \fB\&.pix\fP index.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -1811,12 +1871,6 @@ Each part named by the model\(aqs SGEO chunk is looked up as a \fB\&.geo\fP memb
 bundles under the game root, transformed into world space, and merged into one mesh. Parts
 whose geometry is absent are skipped. No material library is written, because the \fB\&.geo\fP
 format carries neither texture coordinates nor material references.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If no part of MODEL resolves to geometry.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -1858,12 +1912,6 @@ Stage the Interstate \(aq82 levels under SOURCE into OUTDIR.
 SOURCE is a ZFS3 extraction tree. Every level having both an \fB\&.msa\fP world and a matching
 \fB\&.mrm\fP terrain is copied into \fBworlds/\fP and \fBterrain/\fP under OUTDIR, and every texture
 the pair references is copied into \fBtex/\fP\&.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If no level has both a world and a terrain.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -1915,12 +1963,6 @@ Stage the objects placed by the Interstate \(aq82 levels under SOURCE into OUTDI
 Static objects resolve as \fB\&.stf\fP to \fB\&.six\fP to \fB\&.sbx\fP, and vehicles as \fB\&.vdf\fP to a
 chassis \fB\&.cdf\fP to its body, wheel, and stock paint assets. Wrappers and meshes are copied
 into \fBmeshes/\fP under OUTDIR, and the textures their material tables name into \fBobjtex/\fP\&.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If no level has both a world and a terrain.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -1972,12 +2014,6 @@ Unpack packed image INPUT_FILE to OUTPUT_FILE.
 The result is a memory\-aligned dump whose file offsets equal its relative virtual addresses,
 with the original entry point restored, so a disassembler can load it at the image\(aqs preferred
 base. Base relocations are not applied.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If INPUT_FILE is not a packed PE image.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2014,12 +2050,6 @@ Unpack ZFS archive ARCHIVE into OUTDIR.
 Both the Interstate \(aq76 ZFSF format, whose records are LZO\-compressed, and the Interstate \(aq82
 ZFS3 format, whose records are stored, are accepted. Members are written under their lowercased
 names.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If ARCHIVE is not a ZFS archive.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2055,12 +2085,6 @@ List the members of ZFS archive ARCHIVE.
 .sp
 Prints the archive format, a histogram of member extensions, and one line per member giving its
 offset, stored size, and compression flags.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If ARCHIVE is not a ZFS archive.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2255,6 +2279,94 @@ Arguments
 .B SOURCE
 Required argument
 .UNINDENT
+.SS jubeatplus
+.sp
+Tools for the Konami iOS rhythm game jubeat plus.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade jubeatplus [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-version
+Show the version and exit.
+.UNINDENT
+.SS unpack
+.sp
+Unpack and convert the jubeat plus download at SOURCE.
+.sp
+SOURCE may be an \fB\&.ipa\fP, the \fB\&.app\fP bundle, the \fBPayload\fP directory, or a directory
+holding \fBPayload\fP\&. It is only read; everything is written under \-\-output\-dir, into a
+directory named after the bundle.
+.sp
+Apple\-optimised PNGs are rewritten as ordinary ones, \fB\&.tex\fP textures are deciphered and
+rewritten the same way, \fB\&.caf\fP sound effects become WAV, \fB\&.jbt\fP tune packages and the
+marker ZIPs are unpacked into directories named after themselves with every entry deciphered
+and decoded, charts become JSON, property lists and localisation tables and Core Data models
+become JSON, and the executable\(aqs properties are written out as JSON beside it. Every other
+file is copied unchanged.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade jubeatplus unpack [OPTIONS] SOURCE
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-ffmpeg\-path <ffmpeg_path>
+Path to ffmpeg, when it is not on PATH.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-jobs <jobs>
+Process\-pool size (defaults to the CPU count).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-audio
+Copy the .caf sound effects instead of converting.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-png
+Leave the PNGs Apple\-optimised.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Directory to write into (defaults to the current directory).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-pngdefry\-path <pngdefry_path>
+Path to pngdefry, when it is not on PATH.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B SOURCE
+Required argument
+.UNINDENT
 .SS marm
 .sp
 Unpack and decode Marmalade SDK game assets.
@@ -2414,13 +2526,6 @@ A \fB\&.cdm\fP is a compiled mapping model and a \fB\&.mom\fP a compiled managed
 keyed archives, and each is dispatched on the class at its root. The \fB\&.omo\fP beside a
 current\-version \fB\&.mom\fP is deliberately unsupported: it is Core Data\(aqs undocumented load\-time
 cache of that same model and carries nothing the \fB\&.mom\fP lacks.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If MODEL is not a model this understands, or \-\-sql is asked for on something that is not a
-mapping model.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2460,6 +2565,54 @@ Arguments
 .B MODEL
 Required argument
 .UNINDENT
+.SS macho
+.sp
+Read the properties of a Mach\-O executable.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade misc macho [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.SS dump
+.sp
+Write BINARY\(aqs properties as JSON.
+.sp
+BINARY is a Mach\-O image: an application\(aqs executable, a framework, or a dynamic library, thin
+or universal. Every architecture slice is read.
+.sp
+The report covers the header and its flags, the segments and their sections, the libraries the
+image links, its UUID and source version, the minimum OS it declares, the entitlements inside
+its code signature, and, for an image bought from the App Store, the LC_ENCRYPTION_INFO command
+that says its text is still enciphered. Nothing is decrypted and no code is disassembled.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade misc macho dump [OPTIONS] BINARY
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B BINARY
+Required argument
+.UNINDENT
 .SS sc\-info
 .sp
 Read the SC_Info directory of a purchased application bundle.
@@ -2490,12 +2643,6 @@ embedded Apple FairPlay certificates, and the length and digest of the key mater
 .sp
 The App Store link is regional where a storefront can be read from an iTunesMetadata.plist
 beside the bundle, and falls back to the region\-less form otherwise. Pass \-\-region to give one.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If there is no SC_Info directory at or below PATH, or nothing matches \-\-bundle.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2546,12 +2693,6 @@ Convert the localisation table STRINGS to JSON on standard output.
 .sp
 Both forms are read: the flat binary plist a compiled table ships as, and the old\-style text
 form an uncompiled one keeps.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If STRINGS is neither form of table.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2595,18 +2736,6 @@ Unpack and convert an extracted Monopoly 2008 disc ROOT in place.
 .sp
 ROOT must be the root of an extracted disc image. The platform is detected
 automatically, and every output is written next to its source file inside ROOT.
-.SS Parameters
-.INDENT 0.0
-.TP
-.B root (pathlib.Path)
-The extracted disc root.
-.TP
-.B workers (int | None)
-Process\-pool size; defaults to the CPU count.
-.TP
-.B no_movies (bool)
-Skip extracting the large movie archives.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2641,6 +2770,275 @@ Arguments
 .B ROOT
 Required argument
 .UNINDENT
+.SS rbplus
+.sp
+Tools for the Konami iOS rhythm game REFLEC BEAT plus.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade rbplus [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-\-version
+Show the version and exit.
+.UNINDENT
+.SS dump\-chart
+.sp
+Write the DIFFICULTY chart of the tune package PACKAGE as JSON.
+.sp
+PACKAGE may be a \fB\&.rb\fP tune package, or one note chart in a file of its own, either as the
+package stores it or already deciphered.
+.sp
+DIFFICULTY is \fBbas\fP, \fBmed\fP, or \fBhar\fP\&. Given a package it names which chart to read and
+defaults to \fBbas\fP\&. Given a single chart it is only needed when the file name does not already
+say, as \fBnote_har\fP and \fBhar\fP both do.
+.sp
+A chart in a file of its own is deciphered under whichever of the game\(aqs keys fits, or read as
+it stands when it is already plain. Give \-\-key, and \-\-iv if it also differs, for one enciphered
+under neither.
+.sp
+The JSON goes to standard output.
+.sp
+With \-\-image the chart is also drawn as a strip. Time runs upward, wrapped into columns, with
+the whole of side 0 in the left panel and the whole of side 1 in the right. A note aimed at an
+alternative target is green, one that travels to the other side to be swiped back is gold, a
+hold extends as a bar to its release, and each note of a chain is joined to the next by a line.
+The image carries a legend.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade rbplus dump\-chart [OPTIONS] PACKAGE DIFFICULTY
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-iv <iv>
+Initialisation vector as hex, for a chart enciphered with a different one.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-key <key>
+Key as hex, for a chart enciphered under neither of the game keys.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-image <image>
+Also render the chart as a strip image at this path.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-scale <scale>
+Write \-\-image this many times its usual size.
+.INDENT 7.0
+.TP
+.B Default
+\fB1.0\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-seed <seed>
+Pin the lane layout \-\-image draws, which is otherwise fresh each run.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-speed <speed>
+Speed modifier for \-\-image, from 1.0 to 2.0 in steps of 0.1.
+.INDENT 7.0
+.TP
+.B Default
+\fB1.0\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-summary
+Report only the header, dropping the note list.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B PACKAGE
+Required argument
+.UNINDENT
+.INDENT 0.0
+.TP
+.B DIFFICULTY
+Optional argument
+.UNINDENT
+.SS extract\-assets
+.sp
+Extract the downloadable texture archive ARCHIVE.
+.sp
+ARCHIVE is one of the three the game fetches: \fBiPad\fP, \fBiPad2x\fP, or \fBiPhone@2x\fP\&. Each is
+encrypted with ZipCrypto under a password the executable carries, and holds a little over two
+thousand PNG textures under one top\-level directory.
+.sp
+The archive\(aqs own index, a second encrypted ZIP stored as the \fBlist\fP entry, is written out as
+\fBmanifest.json\fP\&. Each texture is examined and only the Apple\-optimised ones go through
+\fBpngdefry\fP; the rest are already ordinary PNGs.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade rbplus extract\-assets [OPTIONS] ARCHIVE
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-jobs <jobs>
+Process\-pool size (defaults to the CPU count).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-png
+Leave any Apple\-optimised PNG as it is.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Directory to write into (defaults to the current directory).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-pngdefry\-path <pngdefry_path>
+Path to pngdefry, when it is not on PATH.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B ARCHIVE
+Required argument
+.UNINDENT
+.SS unpack
+.sp
+Unpack and convert the REFLEC BEAT plus download at SOURCE.
+.sp
+SOURCE may be an \fB\&.ipa\fP, the \fB\&.app\fP bundle, the \fBPayload\fP directory, or a directory
+holding \fBPayload\fP\&. It is only read; everything is written under \-\-output\-dir, into a
+directory named after the bundle.
+.sp
+Every \fB\&.rb\fP tune package becomes a directory holding its metadata as JSON, its images as
+ordinary PNGs, each note chart as both JSON and a rendered strip, and its audio as \fB\&.m4a\fP\&.
+Apple\-optimised PNGs are rewritten as ordinary ones, \fB\&.caf\fP sound effects become WAV,
+property lists and localisation tables and Core Data models become JSON, and the \fBSC_Info\fP
+bookkeeping is described in one report. Mach\-O images are left behind entirely. Every other
+file is copied unchanged.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade rbplus unpack [OPTIONS] SOURCE
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-ffmpeg\-path <ffmpeg_path>
+Path to ffmpeg, when it is not on PATH.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-j, \-\-jobs <jobs>
+Process\-pool size (defaults to the CPU count).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-audio
+Copy the .caf sound effects instead of converting.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-images
+Skip the rendered chart strips.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-png
+Leave the PNGs Apple\-optimised.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Directory to write into (defaults to the current directory).
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-scale <scale>
+Write the chart images this many times their usual size.
+.INDENT 7.0
+.TP
+.B Default
+\fB1.0\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-seed <seed>
+Pin the lane layout the chart images draw, which is otherwise fresh each run.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-speed <speed>
+Speed modifier for the chart images, from 1.0 to 2.0 in steps of 0.1.
+.INDENT 7.0
+.TP
+.B Default
+\fB1.0\fP
+.UNINDENT
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-pngdefry\-path <pngdefry_path>
+Path to pngdefry, when it is not on PATH.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B SOURCE
+Required argument
+.UNINDENT
 .SS rhythmin
 .sp
 Decrypt and decode data files from the Konami game pop\(aqn rhythmin.
@@ -2664,13 +3062,6 @@ Show the version and exit.
 .SS dump\-chara
 .sp
 Decrypt the character\-data file CHR and write it to standard output as JSON.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If CHR is not an encrypted payload, or its plaintext is not the JSON it should be, which
-usually means it belongs to another game or another key.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2703,12 +3094,6 @@ Required argument
 .SS dump\-idx
 .sp
 Decode the animation index IDX and write it to standard output as JSON.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If IDX is not an animation index, or \-\-layer names a layer it does not hold.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2755,12 +3140,6 @@ Parse the sugoroku board MAP and write it to standard output as JSON.
 The board holds one square per record, with its coordinates, kind, message text, and the
 identifiers of the squares it links to, plus the deduplicated edge list the game builds from
 those links.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If MAP is not a board file.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2812,13 +3191,6 @@ Decode the SUFFIX chart of song package PACKAGE and write it to standard output 
 PACKAGE is a \fB\&.orb\fP or \fB\&.acv\fP; the two carry completely different chart formats, and which
 one this is is detected from the decrypted payload. SUFFIX names the difficulty, so the entry
 read is \fBsheet_<SUFFIX>\fP\&.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If PACKAGE is not a song package, holds no chart of that difficulty, or the chart cannot be
-decrypted or laid out.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
@@ -2898,12 +3270,6 @@ Write the sugoroku board dialogue pools from an app binary to OUTPUT.
 The dialogue is copyrighted game content and is not shipped with this package; point \-\-binary
 at a copy of the app you own. Without it the tables are written out empty, which is what a
 build does when no binary is available.
-.SS Raises
-.INDENT 0.0
-.TP
-.B click.Abort
-If \-\-binary is not a 32\-bit Mach\-O holding the pools at the addresses this expects.
-.UNINDENT
 .sp
 Usage
 .INDENT 0.0
