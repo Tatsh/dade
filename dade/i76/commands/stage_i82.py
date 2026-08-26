@@ -47,12 +47,7 @@ def stage_i82(source: Path, outdir: Path, data_dir: Path | None, mrm_dir: Path |
     SOURCE is a ZFS3 extraction tree. Every level having both an ``.msa`` world and a matching
     ``.mrm`` terrain is copied into ``worlds/`` and ``terrain/`` under OUTDIR, and every texture
     the pair references is copied into ``tex/``.
-
-    Raises
-    ------
-    click.Abort
-        If no level has both a world and a terrain.
-    """
+    """  # noqa: DOC501
     data = data_dir or source / 'data'
     terrain = mrm_dir or source / 'mrm'
     pools = list(texture_pool) or [source / name for name in _DEFAULT_POOLS]

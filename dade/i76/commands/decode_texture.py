@@ -43,12 +43,7 @@ def decode_texture(texture: Path, outdir: Path, palette: Path, codebook_dir: Pat
 
     A ``.map`` is palette-indexed and needs only the palette. A ``.vqm`` is vector-quantised and
     additionally needs the ``.cbk`` codebook it names, which is looked up in ``--codebook-dir``.
-
-    Raises
-    ------
-    click.Abort
-        If the texture format is unsupported or its codebook is absent.
-    """
+    """  # noqa: DOC501
     data = texture.read_bytes()
     colors = load_palette(palette.read_bytes())
     match texture.suffix.lower():

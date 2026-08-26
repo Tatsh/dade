@@ -248,12 +248,7 @@ def make_sf2(rom: Path,
     Build a SoundFont from the ALBankFile control bank at MELODIC_BANK in ROM.
 
     Melodic instruments are written to bank 0 and the drum kit, when the bank has one, to bank 128.
-
-    Raises
-    ------
-    click.Abort
-        If an offset is not a valid integer or the melodic bank could not be parsed.
-    """
+    """  # noqa: DOC501
     try:
         melodic = int(melodic_bank, 0)
         drums = int(drum_bank, 0) if drum_bank is not None else None

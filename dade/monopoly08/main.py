@@ -32,15 +32,6 @@ def main(root: Path, *, workers: int | None = None, no_movies: bool = False) -> 
 
     ROOT must be the root of an extracted disc image. The platform is detected
     automatically, and every output is written next to its source file inside ROOT.
-
-    Parameters
-    ----------
-    root : pathlib.Path
-        The extracted disc root.
-    workers : int | None
-        Process-pool size; defaults to the CPU count.
-    no_movies : bool
-        Skip extracting the large movie archives.
     """
     stats = run(root, no_movies=no_movies, workers=workers)
     for step, result in stats.items():

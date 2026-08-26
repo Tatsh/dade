@@ -39,12 +39,7 @@ def extract_dialogue(output: Path, binary: Path | None, output_format: str) -> N
     The dialogue is copyrighted game content and is not shipped with this package; point --binary
     at a copy of the app you own. Without it the tables are written out empty, which is what a
     build does when no binary is available.
-
-    Raises
-    ------
-    click.Abort
-        If --binary is not a 32-bit Mach-O holding the pools at the addresses this expects.
-    """
+    """  # noqa: DOC501
     if binary is None:
         pools = empty_pools()
         log.debug('No binary given; writing empty tables to `%s`.', output)

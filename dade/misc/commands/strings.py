@@ -28,12 +28,7 @@ def strings(table: Path) -> None:
 
     Both forms are read: the flat binary plist a compiled table ships as, and the old-style text
     form an uncompiled one keeps.
-
-    Raises
-    ------
-    click.Abort
-        If STRINGS is neither form of table.
-    """
+    """  # noqa: DOC501
     log.debug('Reading `%s`.', table)
     try:
         converted = read_strings(table)

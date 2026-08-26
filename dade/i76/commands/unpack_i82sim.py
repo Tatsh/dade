@@ -26,12 +26,7 @@ def unpack_i82sim(input_file: Path, output_file: Path) -> None:
     The result is a memory-aligned dump whose file offsets equal its relative virtual addresses,
     with the original entry point restored, so a disassembler can load it at the image's preferred
     base. Base relocations are not applied.
-
-    Raises
-    ------
-    click.Abort
-        If INPUT_FILE is not a packed PE image.
-    """
+    """  # noqa: DOC501
     try:
         image = unpack(input_file.read_bytes())
     except InvalidImageError as e:

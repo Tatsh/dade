@@ -36,12 +36,7 @@ def dump_map(board_path: Path, image: Path | None, scale: float, *, as_text: boo
     The board holds one square per record, with its coordinates, kind, message text, and the
     identifiers of the squares it links to, plus the deduplicated edge list the game builds from
     those links.
-
-    Raises
-    ------
-    click.Abort
-        If MAP is not a board file.
-    """
+    """  # noqa: DOC501
     log.debug('Reading `%s`.', board_path)
     try:
         board = read_treasure_map(board_path)

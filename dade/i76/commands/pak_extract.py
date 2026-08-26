@@ -24,12 +24,7 @@ def pak_extract(pak: Path, outdir: Path) -> None:
     Unpack bundle PAK into OUTDIR.
 
     The bundle's member list comes from the sibling ``.pix`` index, which must sit beside PAK.
-
-    Raises
-    ------
-    click.Abort
-        If PAK has no matching ``.pix`` index.
-    """
+    """  # noqa: DOC501
     try:
         count = extract(pak, outdir)
     except FileNotFoundError as e:

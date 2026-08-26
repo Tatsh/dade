@@ -251,9 +251,6 @@ max-complexity = 20
 [tool.ruff.lint.pep8-naming]
 extend-ignore-names = ["test_*"]
 
-[tool.ruff.lint.per-file-ignores]
-"dade/main.py" = ["PLR0913"]
-
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 

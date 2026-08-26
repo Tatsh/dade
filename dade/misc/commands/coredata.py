@@ -37,13 +37,7 @@ def coredata(model: Path, mom: Path | None, *, archive: bool, sql: bool) -> None
     keyed archives, and each is dispatched on the class at its root. The ``.omo`` beside a
     current-version ``.mom`` is deliberately unsupported: it is Core Data's undocumented load-time
     cache of that same model and carries nothing the ``.mom`` lacks.
-
-    Raises
-    ------
-    click.Abort
-        If MODEL is not a model this understands, or --sql is asked for on something that is not a
-        mapping model.
-    """
+    """  # noqa: DOC501
     log.debug('Reading `%s`.', model)
     try:
         converted = convert(model, archive_mode=archive)

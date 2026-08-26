@@ -57,12 +57,7 @@ def dump(path: Path, bundle: str | None, region: str | None, *, as_json: bool,
 
     The App Store link is regional where a storefront can be read from an iTunesMetadata.plist
     beside the bundle, and falls back to the region-less form otherwise. Pass --region to give one.
-
-    Raises
-    ------
-    click.Abort
-        If there is no SC_Info directory at or below PATH, or nothing matches --bundle.
-    """
+    """  # noqa: DOC501
     log.debug('Reading `%s`.', path)
     try:
         infos = read_bundles(path,

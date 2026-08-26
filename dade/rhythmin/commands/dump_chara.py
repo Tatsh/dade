@@ -24,15 +24,7 @@ log = logging.getLogger(__name__)
 @click.option('--raw', is_flag=True, help='Write the decrypted bytes verbatim instead of JSON.')
 @debug_option
 def dump_chara(chara: Path, *, raw: bool) -> None:
-    """
-    Decrypt the character-data file CHR and write it to standard output as JSON.
-
-    Raises
-    ------
-    click.Abort
-        If CHR is not an encrypted payload, or its plaintext is not the JSON it should be, which
-        usually means it belongs to another game or another key.
-    """
+    """Decrypt the character-data file CHR and write it to standard output as JSON."""  # noqa: DOC501
     log.debug('Reading `%s`.', chara)
     try:
         payload = decrypt_chara(chara.read_bytes())

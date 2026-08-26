@@ -158,13 +158,7 @@ def dump_sheet(package: Path, suffix: str, buttons: Path | None, direction: str,
     PACKAGE is a ``.orb`` or ``.acv``; the two carry completely different chart formats, and which
     one this is is detected from the decrypted payload. SUFFIX names the difficulty, so the entry
     read is ``sheet_<SUFFIX>``.
-
-    Raises
-    ------
-    click.Abort
-        If PACKAGE is not a song package, holds no chart of that difficulty, or the chart cannot be
-        decrypted or laid out.
-    """
+    """  # noqa: DOC501
     log.debug('Reading `%s` (%s).', package, suffix)
     try:
         rendered = _render(package,
