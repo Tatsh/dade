@@ -58,7 +58,7 @@ debug_option = bascom.debug_option({'dade.amplitude': {}, 'dade.common': {}, 'da
               help='Delete converted intermediate files (the source is never touched).')
 def main(input_: Path,
          *,
-         output_dir: Path = Path(),
+         output_dir: Path,
          jobs: int = 0,
          no_convert: bool = False,
          no_gunzip: bool = False,
