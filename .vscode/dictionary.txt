@@ -9,6 +9,8 @@ adpcm
 agrp
 aica
 aiter
+aiueo
+aiwo
 aladpcm
 albank
 alcseq
@@ -200,6 +202,7 @@ ftyp
 fuhl
 functools
 fvmlib
+gagigugego
 gamedata
 gbix
 gbox
@@ -212,13 +215,19 @@ getpixel
 gigayears
 globaltoc
 gluvs
+gojuon
+gojūon
+gojūon's
 gputextureformat
 graphviz
+gymnopedie
 handoff
+happi
 harmonix
 hashstring
 headerless
 heightfield
+hepburn
 hhhi
 hhhiii
 hhii
@@ -226,7 +235,6 @@ hhiihh
 hhiiiii
 hier
 hira
-hiragino
 hostbuf
 hoverxref
 htmlcov
@@ -271,6 +279,7 @@ iviv
 iwgxfontbrowser
 jbsq
 jinja
+jizu
 jsonnet
 jsonschema
 jubeat
@@ -353,6 +362,8 @@ nlist
 nmip
 nocolon
 nofixprebinding
+noie
+nojekyll
 nomultidefs
 nonexistent
 nonrendered
@@ -364,7 +375,6 @@ notachart
 notarytool
 notcfs
 notjson
-noto
 notscei
 noundefs
 nrec
@@ -377,6 +387,7 @@ numblocks
 numpad
 numpages
 numpy
+nums
 nverts
 nvrtc
 objfile
@@ -392,6 +403,7 @@ paletted
 palettised
 pamc
 pamx
+papipupepo
 parallelisable
 pathlib
 pavelzw
@@ -411,6 +423,7 @@ pngdefry
 pocl
 pointsize
 popn
+popperjs
 preapproved
 prebindable
 prebound
@@ -451,6 +464,7 @@ rawptr
 rawsize
 rb'decompresscommand
 rbff
+rbpcharts
 rbplus
 rdata
 recs
@@ -468,6 +482,7 @@ ripgreprc
 rndartt
 rndobject
 rocm
+romaji
 roundtrips
 rpaths
 rpks
@@ -479,6 +494,7 @@ samplelength
 samplestart
 sanm
 sansio
+sass
 sbclaude
 sbox
 scancode
@@ -506,10 +522,12 @@ sgeo
 shdr
 shellcheck
 shellformat
+shiya
 shopt
 shpg
 shps
 shpx
+shya
 siga
 signtool
 simfile
@@ -542,6 +560,7 @@ splittable
 spvr
 srts
 ssaid
+ssha
 ssre
 sszl
 statusline
@@ -556,6 +575,7 @@ strippable
 strm
 strow
 strt
+stylesheet
 subentities
 submesh
 submeshes
@@ -581,12 +601,14 @@ tatsh
 tcllzham
 tesa
 testpaths
+tesuto
 texel
 texels
 texname
 texoff
 texsize
 textlength
+teyu
 thps
 timecents
 titletranslit
@@ -642,6 +664,7 @@ vers
 vgmstream
 virtualenv
 vsize
+wakake
 wavs
 wbits
 wdef
