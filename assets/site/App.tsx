@@ -4,7 +4,7 @@
 // site from a subdirectory, and an absolute path would look for the data at the domain's root.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ChartView, DEFAULT_VIEW, type View } from './ChartView';
+import { ChartView, defaultView, type View } from './ChartView';
 import { SongList } from './SongList';
 import { parseChart } from './chart/parse';
 import { isOneOf, useSetting } from './settings';
@@ -92,7 +92,7 @@ export const App = () => {
   // back to the list.
   const opened = useRef<{ charts: Charts; tune: Tune } | null>(null);
   const [filing, setFiling] = useSetting<Filing>('filing', 'letter', isOneOf('letter', 'row'));
-  const [view, setView] = useSetting<View>('view', DEFAULT_VIEW, isView);
+  const [view, setView] = useSetting<View>('view', defaultView(), isView);
   const [lastDifficulty, setLastDifficulty] = useSetting<Difficulty | ''>(
     'difficulty',
     '',

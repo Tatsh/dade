@@ -40,20 +40,32 @@ export interface View {
 }
 
 /**
+ * How wide a screen must be on its shorter side for fitting the chart to the window to suit it.
+ *
+ * A phone is narrow whichever way it is turned, so its shorter side is what tells it apart from a
+ * tablet or a desktop, rather than its current width, which turning it changes.
+ */
+const LARGE_VIEW_MIN = 600;
+
+/** Whether the screen is large enough that fitting to it suits — that is, not a phone. */
+const largeView = () => Math.min(screen.width, screen.height) > LARGE_VIEW_MIN;
+
+/**
  * How a chart is shown before anything has been chosen.
  *
- * Fitted, both sides, both rulings, the chart's own spacing, and the first lane layout. A chart
- * that fills the window and no more is the one that can be read without scrolling for it.
+ * Both sides, both rulings, the chart's own spacing, and the first lane layout. It is fitted to the
+ * window on a screen large enough to read a whole chart that way, and left at its natural length on
+ * a phone, where fitting would cut it into a great many short columns.
  */
-export const DEFAULT_VIEW: View = {
-  fit: true,
+export const defaultView = (): View => ({
+  fit: largeView(),
   flip: false,
   seed: 0,
   showLanes: true,
   showTimes: true,
   sides: [true, true],
   speed: 1,
-};
+});
 
 /** The room left under the last column, so it does not sit against the window's edge. */
 const FOOT = 8;
