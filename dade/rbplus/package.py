@@ -32,11 +32,12 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
     from pathlib import Path
 
-    from .typing import TuneInfoDict
+    from .typing import ChartDict, TuneInfoDict
 
-__all__ = ('AUDIO_ENTRIES', 'CHART_ENTRIES', 'INFO_ENTRY', 'EntryKind', 'PackageError',
-           'TunePackage', 'chart_difficulty', 'chart_level', 'classify_entry', 'infer_difficulty',
-           'open_package', 'read_chart_file')
+__all__ = ('AUDIO_ENTRIES', 'CHART_ENTRIES', 'INFO_ENTRY', 'SPECIAL_DIFFICULTY',
+           'SPECIAL_ID_OFFSET', 'EntryKind', 'PackageError', 'TunePackage', 'chart_difficulty',
+           'chart_level', 'classify_entry', 'extended_tune_id', 'infer_difficulty',
+           'is_extend_note', 'open_package', 'read_chart_file')
 
 INFO_ENTRY = 'info'
 """The entry holding the tune metadata, and the one the decode type is established from.
@@ -50,6 +51,20 @@ CHART_ENTRIES = ('note_bas', 'note_bas2', 'note_med', 'note_med2', 'note_har', '
 """
 AUDIO_ENTRIES = ('bgm', 'bgm_b', 'bgm_m', 'bgm_h', 'pre')
 """Every audio entry name the game knows: the tune, its per-difficulty forms, and the preview.
+
+:meta hide-value:
+"""
+SPECIAL_DIFFICULTY = 'special'
+"""What an extend note's one chart is called. It is harder than hard.
+
+:meta hide-value:
+"""
+SPECIAL_ID_OFFSET = 50000
+"""How far an extend note's identifier sits above the tune it belongs to.
+
+The catalogue tells the game which tune an extend note extends, and an offline reader has no
+catalogue. What it has is the numbering: every extend note observed is ``100050xxx`` and its tune is
+the same number less this.
 
 :meta hide-value:
 """
@@ -156,6 +171,51 @@ def chart_difficulty(name: str) -> str:
         The difficulty name, or *name* itself when it is not a known chart entry.
     """
     return _CHART_DIFFICULTIES.get(name, name)
+
+
+def is_extend_note(charts: Mapping[str, ChartDict | None]) -> bool:
+    """
+    Report whether a package holds an extend note rather than an ordinary tune.
+
+    An extend note is a SPECIAL chart sold for a tune that already exists. The game learns which
+    tune from the catalogue and reads the chart with
+    ``[[MusicData dataWithPath:… ID:ExtMusicID] sheetBasic]``, so the SPECIAL chart is stored where
+    the basic chart of an ordinary tune goes and the other two difficulties are left empty. That
+    shape is the only thing a reader without the catalogue can go on.
+
+    Parameters
+    ----------
+    charts : collections.abc.Mapping[str, ChartDict | None]
+        Each chart entry name against its parsed chart, or ``None`` where the entry is absent or
+        would not parse.
+
+    Returns
+    -------
+    bool
+        Whether the package holds one chart, in the basic entry, and nothing in the other two.
+    """
+    def filled(name: str) -> bool:
+        chart = charts.get(name)
+        return chart is not None and bool(chart['notes'])
+
+    return filled('note_bas') and not filled('note_med') and not filled('note_har')
+
+
+def extended_tune_id(tune_id: int) -> int:
+    """
+    Name the tune an extend note belongs to.
+
+    Parameters
+    ----------
+    tune_id : int
+        The extend note's own identifier.
+
+    Returns
+    -------
+    int
+        The tune's identifier, being :py:data:`SPECIAL_ID_OFFSET` lower.
+    """
+    return tune_id - SPECIAL_ID_OFFSET
 
 
 class TunePackage:

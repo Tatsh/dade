@@ -10,12 +10,15 @@ from dade.rbplus.cipher import DECODE_TYPE_COUNT
 from dade.rbplus.package import (
     AUDIO_ENTRIES,
     CHART_ENTRIES,
+    SPECIAL_ID_OFFSET,
     EntryKind,
     PackageError,
     chart_difficulty,
     chart_level,
     classify_entry,
+    extended_tune_id,
     infer_difficulty,
+    is_extend_note,
     open_package,
     read_chart_file,
 )
@@ -26,7 +29,7 @@ if TYPE_CHECKING:
 
     from pytest_mock import MockerFixture
 
-    from dade.rbplus.typing import TuneInfoDict
+    from dade.rbplus.typing import ChartDict, TuneInfoDict
 
 
 @pytest.mark.parametrize(('name', 'expected'), [
@@ -197,3 +200,39 @@ def test_a_chart_file_with_a_short_iv_reports_so(make_chart_file: Callable[..., 
 def test_a_chart_file_name_says_which_difficulty(tmp_path: Path, name: str,
                                                  expected: str | None) -> None:
     assert infer_difficulty(tmp_path / name) == expected
+
+
+def _charts(**filled: bool) -> dict[str, ChartDict | None]:
+    return {
+        name: cast('ChartDict', {'notes': [{
+            'note_id': 1
+        }] if held else []})
+        for name, held in filled.items()
+    }
+
+
+@pytest.mark.parametrize('charts', [
+    _charts(note_bas=True, note_med=False, note_har=False),
+    _charts(note_bas=True),
+])
+def test_a_lone_basic_chart_is_an_extend_note(charts: dict[str, ChartDict | None]) -> None:
+    assert is_extend_note(charts)
+
+
+@pytest.mark.parametrize('charts', [
+    _charts(note_bas=True, note_med=True, note_har=True),
+    _charts(note_bas=True, note_med=False, note_har=True),
+    _charts(note_bas=False, note_med=False, note_har=False),
+    {},
+    {
+        'note_bas': None,
+        'note_med': None,
+        'note_har': None
+    },
+])
+def test_anything_else_is_an_ordinary_tune(charts: dict[str, ChartDict | None]) -> None:
+    assert not is_extend_note(charts)
+
+
+def test_an_extend_note_sits_above_the_tune_it_extends() -> None:
+    assert extended_tune_id(100000109 + SPECIAL_ID_OFFSET) == 100000109
