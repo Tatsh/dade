@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#181820" />
+  <g
+    fill="#ff78b4"
+    font-family="Helvetica, Arial, sans-serif"
+    font-weight="700"
+    font-size="196"
+    text-anchor="middle"
+  >
+    <text x="256" y="228">RB</text>
+    <text x="256" y="430">PC</text>
+  </g>
+</svg>

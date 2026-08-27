@@ -312,6 +312,11 @@ the lanes, the holds, the chains, and the slides are worked out in the browser f
 which is also what lets a chart file of your own be opened from the page. That file is read where it
 is and sent nowhere; only a deciphered chart is read, since the key belongs to the game.
 
+The site ships as an installable app. A web app manifest, a service worker, and the icons are
+written beside the page, so a browser offers to install it and, once a tune has been looked at, opens
+it again with no network. Every address the manifest holds is relative, so it installs the same
+whether the site is served from a domain of its own or from a subdirectory under `--base`.
+
 Tunes are filed A-Z or by gojūon row, and searched by title or artist in kana or in Latin letters.
 The shipped packages leave the metadata's romanised fields empty and give the kana reading instead,
 so the reading is romanised here and that is what a Latin keyboard is matched against. How a reading

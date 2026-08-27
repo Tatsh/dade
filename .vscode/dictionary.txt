@@ -319,6 +319,7 @@ magick
 magics
 manylinux
 marm
+maskable
 maxcolors
 maxidx
 mbin
@@ -468,6 +469,7 @@ rbpcharts
 rbplus
 rdata
 recs
+rect
 reexport
 reexported
 reflec

@@ -20,6 +20,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A package holding only a basic chart, with its medium and hard entries empty, is recognised as an
   extend note: a SPECIAL chart sold for a tune that already exists. `dade rbplus site` files it
   under the tune it extends, worked out from the numbering, rather than listing it on its own.
+- The `dade rbplus site` output is an installable app: it ships a web app manifest, a service
+  worker, and icons, so a browser offers to install it and opens an already-seen tune offline. The
+  manifest's addresses are relative, so it installs the same from a domain of its own or from a
+  `--base` sub-path.
 - `dade rbplus dump-chart --flip` draws the chart with time running downward, the way the notes
   fall down the screen.
 

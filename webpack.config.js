@@ -8,7 +8,32 @@ const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const fs = require('node:fs');
 const path = require('node:path');
+
+// Copies every file in `assets/site/static` into the output verbatim. These are the files a chart
+// is never built from and webpack would otherwise never see — the web app manifest, the service
+// worker, and the icons — which have to keep their own names (the manifest and the page reference
+// them by name) and must not be hashed or minified.
+class EmitStaticPlugin {
+  apply(compiler) {
+    const dir = path.resolve(__dirname, 'assets/site/static');
+    const { Compilation, sources } = compiler.webpack;
+    compiler.hooks.thisCompilation.tap('EmitStaticPlugin', (compilation) => {
+      compilation.hooks.processAssets.tap(
+        { name: 'EmitStaticPlugin', stage: Compilation.PROCESS_ASSETS_STAGE_ADDITIONAL },
+        () => {
+          for (const name of fs.readdirSync(dir)) {
+            const full = path.join(dir, name);
+            if (fs.statSync(full).isFile()) {
+              compilation.emitAsset(name, new sources.RawSource(fs.readFileSync(full)));
+            }
+          }
+        },
+      );
+    });
+  }
+}
 
 module.exports = (_env, argv) => ({
   devtool: argv.mode === 'development' ? 'source-map' : false,
@@ -69,6 +94,7 @@ module.exports = (_env, argv) => ({
   plugins: [
     new MiniCssExtractPlugin({ filename: '[name].[contenthash:8].css' }),
     new HtmlWebpackPlugin({ minify: false, template: './assets/site/index.html' }),
+    new EmitStaticPlugin(),
   ],
   resolve: { extensions: ['.tsx', '.ts', '.js'] },
   target: 'browserslist:defaults',
