@@ -156,14 +156,9 @@ local utils = import 'utils.libjsonnet';
   pre_commit_config+: { exclude: '^dade/rbplus/site/' },
   package_json+: {
     cspell+: {
-      // Minified, so it is a solid run of identifiers no dictionary can be expected to hold. The
-      // icon and the manifest are generated beside them and are not worth spell-checking either.
-      ignorePaths+: [
-        'dade/rbplus/site/*.css',
-        'dade/rbplus/site/*.js',
-        'dade/rbplus/site/*.svg',
-        'dade/rbplus/site/*.webmanifest',
-      ],
+      // The whole built bundle is generated — a minified script and stylesheet, their source maps,
+      // and the icons and manifest beside them — so none of it is worth spell-checking.
+      ignorePaths+: ['dade/rbplus/site/**'],
     },
     devDependencies+: {
       '@popperjs/core': '^2.11.8',

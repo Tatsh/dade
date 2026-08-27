@@ -27,10 +27,7 @@
       ".git/**",
       ".yarn/**/*.cjs",
       ".vscode/extensions.json",
-      "dade/rbplus/site/*.css",
-      "dade/rbplus/site/*.js",
-      "dade/rbplus/site/*.svg",
-      "dade/rbplus/site/*.webmanifest",
+      "dade/rbplus/site/**",
       "dist/**",
       "man/**"
     ],

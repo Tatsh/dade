@@ -36,7 +36,7 @@ class EmitStaticPlugin {
 }
 
 module.exports = (_env, argv) => ({
-  devtool: argv.mode === 'development' ? 'source-map' : false,
+  devtool: 'source-map',
   entry: { site: './assets/site/index.tsx' },
   module: {
     rules: [

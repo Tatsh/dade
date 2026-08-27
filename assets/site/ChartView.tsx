@@ -58,6 +58,35 @@ export const DEFAULT_VIEW: View = {
 /** The room left under the last column, so it does not sit against the window's edge. */
 const FOOT = 8;
 
+/**
+ * How many times the fit is allowed to correct itself before it gives up.
+ *
+ * The correction converges in a pass or two on a steady window. A window that will not steady —
+ * Android Chrome retracts its address bar as the page grows and extends it as the page shrinks, so
+ * the height keeps moving under the fit — would otherwise never settle, so it is stopped after a
+ * bounded number of tries rather than left to loop until React aborts the render.
+ */
+const MAX_FIT_PASSES = 8;
+
+/**
+ * How tall the window is, taken as the small viewport rather than the current one.
+ *
+ * ``window.innerHeight`` is the *current* viewport, which on a phone grows and shrinks as the
+ * browser shows and hides its address bar — and it hides it in answer to the page's own height, so
+ * fitting against it feeds back on itself and never settles. ``100svh`` is the small viewport, the
+ * height with the address bar shown, which the page cannot move. Fitting against it means the chart
+ * fits whether the bar is shown or hidden, and the extra room the hidden bar frees is simply left
+ * under the chart.
+ */
+const viewportHeight = () => {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;top:0;height:100svh;width:0;visibility:hidden';
+  document.body.append(probe);
+  const height = probe.getBoundingClientRect().height;
+  probe.remove();
+  return height || window.innerHeight;
+};
+
 /** What the chart has to share the window with, measured from the page rather than assumed. */
 interface Room {
   /** The gap between one side and the next. */
@@ -169,7 +198,7 @@ export const ChartView = ({ chart, difficulty, heading, onView, tune, view }: Ch
       setRoom((was) => {
         const now = {
           gap: Number.parseFloat(getComputedStyle(sides.current!).rowGap) || 0,
-          height: window.innerHeight,
+          height: viewportHeight(),
           // What a side spends before its first column: its heading, and the room the second
           // labels paint into above and below the columns.
           overhead: columns
@@ -197,28 +226,37 @@ export const ChartView = ({ chart, difficulty, heading, onView, tune, view }: Ch
   });
 
   const shownSides = Math.max(1, view.sides.filter(Boolean).length);
-  // What the arithmetic above cannot know: every side rounds its own height up to a whole pixel,
-  // and a border or a hairline gap can land either side of one. Rather than guess at that, the page
-  // is measured once it is drawn and a second is given back if it still does not fit. It converges
-  // in a pass or two and only ever shortens, so it cannot oscillate.
-  const [giveBack, setGiveBack] = useState(0);
-  // `room` is among these on purpose. Before it is measured there is nothing to fit against, so
-  // that first drawing is a full-length column and overflows by a long way; correcting against it
-  // would give back most of the column and leave every second a box of its own. Forgetting the
-  // correction the moment the measurement arrives is what stops that.
-  useLayoutEffect(() => setGiveBack(0), [view.fit, view.speed, shownSides, chart, room]);
-  const seconds =
+  const fitSeconds =
     view.fit && room
       ? Math.max(
           1,
-          Math.min(SECONDS_PER_COLUMN, secondsThatFit(room, secondPx(), view.speed, shownSides)) -
-            giveBack,
+          Math.min(SECONDS_PER_COLUMN, secondsThatFit(room, secondPx(), view.speed, shownSides)),
         )
       : SECONDS_PER_COLUMN;
+  // What the arithmetic above cannot know: every side rounds its own height up to a whole pixel,
+  // and a border or a hairline gap can land either side of one. Rather than guess at that, the page
+  // is measured once it is drawn and a second is given back if it still does not fit.
+  const [giveBack, setGiveBack] = useState(0);
+  // The correction is forgotten when what is drawn changes, or when the number of seconds that fit
+  // changes — a genuine resize. A window that only wobbles by less than a second leaves `fitSeconds`
+  // untouched, so it does not restart the fit.
+  useLayoutEffect(
+    () => setGiveBack(0),
+    [view.fit, view.speed, view.flip, view.seed, shownSides, chart, fitSeconds],
+  );
+  // The number of tries is counted so the fit cannot correct for ever on a window that will not
+  // settle. It is re-armed only when the reader changes what is drawn, never on a resize, so a
+  // wobbling window stops after `MAX_FIT_PASSES` rather than looping.
+  const passes = useRef(0);
   useLayoutEffect(() => {
-    if (!view.fit || !room || seconds <= 1) return;
-    const over = document.documentElement.scrollHeight - window.innerHeight;
-    if (over > 0) {
+    passes.current = 0;
+  }, [view.fit, view.speed, view.flip, view.seed, shownSides, chart]);
+  const seconds = Math.max(1, fitSeconds - giveBack);
+  useLayoutEffect(() => {
+    if (!view.fit || !room || seconds <= 1 || passes.current >= MAX_FIT_PASSES) return;
+    const over = document.documentElement.scrollHeight - viewportHeight();
+    if (over > 1) {
+      passes.current += 1;
       setGiveBack((was) => was + Math.max(1, Math.ceil(over / (secondPx() * view.speed))));
     }
   });
