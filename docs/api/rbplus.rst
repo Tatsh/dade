@@ -42,6 +42,12 @@ nested manifest, and the pipeline that converts a whole download in one pass.
 .. automodule:: dade.rbplus.pipeline
    :members:
 
+``dade.rbplus.reading``
+-----------------------
+
+.. automodule:: dade.rbplus.reading
+   :members:
+
 ``dade.rbplus.render``
 ----------------------
 

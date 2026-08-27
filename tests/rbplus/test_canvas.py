@@ -2,21 +2,12 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import json
-import re
 import xml.etree.ElementTree as ET  # noqa: S405
 
 from PIL import Image
 import pytest
 
-from dade.rbplus.canvas import (
-    BOOTSTRAP_CSS,
-    BOOTSTRAP_JS,
-    HTMLCanvas,
-    PillowCanvas,
-    SVGCanvas,
-    canvas_for,
-)
+from dade.rbplus.canvas import PillowCanvas, SVGCanvas, canvas_for
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -32,15 +23,20 @@ def _svg_root(markup: str) -> ET.Element:
 
 
 @pytest.mark.parametrize(('suffix', 'expected'), [('.png', PillowCanvas), ('.PNG', PillowCanvas),
-                                                  ('.svg', SVGCanvas), ('.html', HTMLCanvas),
-                                                  ('.htm', HTMLCanvas)])
+                                                  ('.svg', SVGCanvas)])
 def test_canvas_for_picks_by_suffix(suffix: str, expected: type) -> None:
-    assert type(canvas_for(suffix, 10, 10, _BACKGROUND, title='t')) is expected
+    assert type(canvas_for(suffix, 10, 10, _BACKGROUND)) is expected
 
 
 def test_canvas_for_refuses_an_unknown_suffix() -> None:
     with pytest.raises(ValueError, match='No surface writes'):
-        canvas_for('.gif', 10, 10, _BACKGROUND, title='t')
+        canvas_for('.gif', 10, 10, _BACKGROUND)
+
+
+@pytest.mark.parametrize('suffix', ['.html', '.htm'])
+def test_canvas_for_sends_a_page_to_the_site_command(suffix: str) -> None:
+    with pytest.raises(ValueError, match='dade rbplus site'):
+        canvas_for(suffix, 10, 10, _BACKGROUND)
 
 
 def test_the_raster_surface_writes_a_png(tmp_path: Path) -> None:
@@ -138,6 +134,22 @@ def test_the_vector_surface_groups_a_note() -> None:
     assert [child.tag for child in group] == [f'{_SVG_NS}ellipse']
 
 
+def test_the_vector_surface_writes_no_group_for_a_note_that_drew_nothing() -> None:
+    canvas = SVGCanvas(30, 30, _BACKGROUND)
+    with canvas.note({'id': '7'}):
+        pass
+    assert _svg_root(canvas.to_svg(scale=1.0,
+                                   supersample=1)).find(f'.//{_SVG_NS}g[@class="rb-note"]') is None
+
+
+def test_the_vector_surface_writes_no_group_for_a_head_that_drew_nothing() -> None:
+    canvas = SVGCanvas(30, 30, _BACKGROUND)
+    with canvas.head():
+        pass
+    assert _svg_root(canvas.to_svg(scale=1.0,
+                                   supersample=1)).find(f'.//{_SVG_NS}g[@class="rb-head"]') is None
+
+
 def _raise_while_drawing(canvas: SVGCanvas) -> None:
     with canvas.note({'id': '1'}):
         msg = 'drawing went wrong'
@@ -159,31 +171,29 @@ def test_the_vector_surface_writes_a_file(tmp_path: Path) -> None:
     assert _svg_root(out.read_text()) is not None
 
 
-def test_the_page_embeds_the_vector_picture(tmp_path: Path) -> None:
-    canvas = HTMLCanvas(90, 60, _BACKGROUND, title='A & B')
-    with canvas.note({'id': '1', 'side': 'side 0 (pink)'}):
-        canvas.ellipse((0, 0, 10, 10), fill=_RED)
-    out = tmp_path / 'canvas.html'
-    assert canvas.save(out, scale=1.0, supersample=3) == (30, 20)
-    page = out.read_text()
-    assert '<svg xmlns="http://www.w3.org/2000/svg"' in page
-    assert 'class="rb-note"' in page
-    assert BOOTSTRAP_CSS in page
-    assert BOOTSTRAP_JS in page
-    assert '<title>A &amp; B</title>' in page
+def test_the_vector_surface_marks_ruling_by_kind() -> None:
+    canvas = SVGCanvas(90, 60, _BACKGROUND)
+    with canvas.marks('lane'):
+        canvas.line((0, 0, 0, 60), fill=_GREEN)
+    with canvas.marks('time'):
+        canvas.line((0, 0, 90, 0), fill=_GREEN)
+    markup = canvas.to_svg(scale=1.0, supersample=3)
+    assert 'class="rb-rule rb-rule-lane"' in markup
+    assert 'class="rb-rule rb-rule-time"' in markup
 
 
-def test_the_page_carries_every_note_s_details(tmp_path: Path) -> None:
-    canvas = HTMLCanvas(90, 60, _BACKGROUND)
-    for index in range(3):
-        with canvas.note({'id': str(index)}):
-            canvas.ellipse((0, 0, 10, 10), fill=_RED)
-    page = canvas.to_html(scale=1.0, supersample=3)
-    match = re.search(r'const notes = (\[.*?\]);\n', page, re.DOTALL)
-    assert match is not None
-    assert json.loads(match.group(1)) == [{'id': '0'}, {'id': '1'}, {'id': '2'}]
+def test_the_vector_surface_ties_a_shape_to_a_note() -> None:
+    canvas = SVGCanvas(90, 60, _BACKGROUND)
+    with canvas.tied(7):
+        canvas.line((0, 0, 10, 10), fill=_GREEN)
+    assert 'data-tie="7"' in canvas.to_svg(scale=1.0, supersample=3)
 
 
-def test_the_page_keeps_a_title_readable(tmp_path: Path) -> None:
-    canvas = HTMLCanvas(90, 60, _BACKGROUND, title='クシコス☆ポスト')
-    assert 'クシコス☆ポスト' in canvas.to_html(scale=1.0, supersample=3)
+@pytest.mark.parametrize('wrapper', ['marks', 'tied'])
+def test_the_vector_surface_writes_nothing_for_an_empty_group(wrapper: str) -> None:
+    canvas = SVGCanvas(90, 60, _BACKGROUND)
+    with getattr(canvas, wrapper)('lane' if wrapper == 'marks' else 0):
+        pass
+    markup = canvas.to_svg(scale=1.0, supersample=3)
+    assert 'rb-rule' not in markup
+    assert 'data-tie' not in markup

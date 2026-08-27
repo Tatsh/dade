@@ -212,7 +212,7 @@ logging.
 dade rbplus unpack "REFLEC BEAT plus.app" -o out/
 dade rbplus extract-assets iPhone@2x.zip -o out/
 dade rbplus dump-chart 100000109.rb har --image chart.png
-dade rbplus dump-chart 100000109.rb har --image chart.html
+dade rbplus site *.rb -o site/
 ```
 
 Convert a whole _REFLEC BEAT plus_ (`jp.konami.reflecbeatplus`) download to formats that open
@@ -272,16 +272,14 @@ how much time a column holds. `--scale`, from 1.0 to 3.0, writes the image large
 that would otherwise have to enlarge it.
 
 The suffix given to `--image` chooses the form the strip is written in, and the picture is the same
-in all three:
+in both:
 
 - `.png` — a raster image, drawn at three times its size and reduced once so every edge is
   smoothed.
 - `.svg` — the same drawing as vectors, which enlarges without loss.
-- `.html` — a page holding that SVG inline, styled with [Bootstrap](https://getbootstrap.com/),
-  where every note answers to a click and reports itself: its side, its kind, its hit, spawn, and
-  travel times, the lane it was laid out in, its route selector, its flags, and its chain and path
-  fields. Bootstrap is fetched from its content delivery network, so the page wants a connection
-  the first time it is opened.
+
+A chart to be read in a browser is a whole site rather than one picture; see
+[the site](#the-site) below.
 
 `dade rbplus dump-chart` also reads one note chart from a file of its own, either as the package
 stores it or already deciphered, in which case the difficulty is taken from the file name when it
@@ -296,6 +294,37 @@ archive's own index, a second encrypted ZIP stored as its `list` entry, is writt
 `pngdefry` and `ffmpeg` must be on `PATH` or given with `--pngdefry-path` and `--ffmpeg-path`. Pass
 `--no-png`, `--no-audio`, or `--no-images` to skip a conversion, `-j`/`--jobs` to set the number of
 concurrent jobs (defaults to the CPU count), and `--debug` for verbose logging.
+
+### The site
+
+```shell
+dade rbplus site *.rb -o site/
+dade rbplus site packages/ -o site/ --base /rbpcharts/
+```
+
+`dade rbplus site` builds a page that browses a whole collection: pick a tune and a difficulty and
+the chart is drawn. `SOURCES` may name `.rb` packages, directories holding them, or both, and a
+directory is searched all the way down.
+
+Each tune's charts are written as JSON under `data/` and the page draws them, so the site is static
+and needs nothing running to serve it. The drawing is the same one `--image` makes — the columns,
+the lanes, the holds, the chains, and the slides are worked out in the browser from the notes —
+which is also what lets a chart file of your own be opened from the page. That file is read where it
+is and sent nowhere; only a deciphered chart is read, since the key belongs to the game.
+
+Tunes are filed A-Z or by gojūon row, and searched by title or artist in kana or in Latin letters.
+The shipped packages leave the metadata's romanised fields empty and give the kana reading instead,
+so the reading is romanised here and that is what a Latin keyboard is matched against. How a reading
+is written and how it is typed are both accepted, so `愛を` answers to `aio` and to `aiwo`.
+
+A package holding one chart in the basic entry and nothing in the other two is an **extend note**: a
+SPECIAL chart, harder than hard, that the game sold for a tune that already exists. It is filed
+under that tune rather than listed on its own, the tune being the one whose identifier is 50000
+lower.
+
+Given `--base`, the site addresses tunes by path and writes a `404.html` beside the page, which is
+what lets a link to one tune be opened directly on GitHub Pages. Without it, tunes are addressed by
+fragment, which needs no such thing and works from any directory.
 
 ## pop'n rhythmin
 
@@ -410,3 +439,15 @@ Run the formatters and checks:
 yarn format
 yarn qa
 ```
+
+The `dade rbplus site` chart browser is written as Sass and TypeScript under `assets/site` and built
+with webpack:
+
+```shell
+yarn build
+```
+
+The result is written to `dade/rbplus/site` and is committed, since an install from PyPI has no Node
+to build it with. Rebuild and commit that alongside any change to `assets/site`; `yarn build:check`
+fails if the two have drifted apart. `yarn build:dev` builds the same thing whole, without
+minifying, and with source maps.

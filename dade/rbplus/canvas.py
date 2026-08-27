@@ -2,19 +2,22 @@
 The surfaces a chart is drawn on.
 
 :py:mod:`dade.rbplus.render` lays a chart out once and draws it through one of these, so the same
-geometry comes out as a raster image, as a vector one, or as a page that can be clicked through.
-The drawing calls follow Pillow's, since that is where they started.
+geometry comes out as a raster image or as a vector one. The drawing calls follow Pillow's, since
+that is where they started.
 
 Coordinates are always in the layout's own units, which are a whole multiple of the finished size
 so that the raster surface can be reduced once at the end and smoothed by it. A vector surface has
 no such need, and carries the same numbers as its view box instead.
+
+Nothing here writes a page. A chart read in a browser is the business of
+:py:mod:`dade.rbplus.commands.site`, which hands the chart over as data and lets the page lay it
+out for the window it is opened in.
 """
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, NamedTuple, Protocol
 import html
-import json
 import math
 
 from PIL import Image, ImageDraw
@@ -25,24 +28,20 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping, Sequence
     from pathlib import Path
 
-__all__ = ('BOOTSTRAP_CSS', 'BOOTSTRAP_JS', 'Canvas', 'HTMLCanvas', 'PillowCanvas', 'SVGCanvas',
-           'canvas_for')
+__all__ = ('Canvas', 'PillowCanvas', 'SVGCanvas', 'canvas_for')
 
-BOOTSTRAP_CSS = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css'
-"""Where the page fetches Bootstrap's stylesheet from.
-
-:meta hide-value:
-"""
-BOOTSTRAP_JS = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js'
-"""Where the page fetches Bootstrap's bundle from, which carries Popper.
-
-:meta hide-value:
-"""
-
-_FONT_STACK = ("'Noto Sans CJK JP', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', "
-               'sans-serif')
 _FULL_TURN = 360.0
 _HALF_TURN = 180.0
+
+
+class _Part(NamedTuple):
+    """One drawn shape, with the box it occupies."""
+
+    markup: str
+    left: float
+    top: float
+    right: float
+    bottom: float
 
 
 def _rgb(color: tuple[int, int, int]) -> str:
@@ -54,6 +53,18 @@ def _on_ellipse(cx: float, cy: float, rx: float, ry: float, degrees: float) -> t
     # from three o'clock, with the y axis running down the image.
     radians = math.radians(degrees)
     return cx + rx * math.cos(radians), cy + ry * math.sin(radians)
+
+
+def _paint(fill: tuple[int, int, int] | None, outline: tuple[int, int, int] | None,
+           width: float) -> str:
+    parts = [f'fill="{_rgb(fill)}"' if fill is not None else 'fill="none"']
+    if outline is not None:
+        parts.extend((f'stroke="{_rgb(outline)}"', f'stroke-width="{width:g}"'))
+    return ' '.join(parts)
+
+
+def _span(values: Sequence[float]) -> tuple[float, float]:
+    return min(values), max(values)
 
 
 class Canvas(Protocol):
@@ -165,18 +176,73 @@ class Canvas(Protocol):
         """
         Mark everything drawn inside the block as belonging to one note.
 
-        A surface that can be clicked through carries *details* so the note can report itself. One
-        that cannot ignores them.
+        A surface that reports a note carries *details* so the note can describe itself. One that
+        cannot ignores them.
 
         Parameters
         ----------
         details : collections.abc.Mapping[str, typing.Any]
-            What the note would say about itself.
+            What the note says about itself.
 
         Yields
         ------
         None
             Control while the note is drawn.
+        """
+        ...
+
+    @contextmanager
+    def marks(self, kind: str) -> Iterator[None]:
+        """
+        Mark everything drawn inside the block as ruling of one kind.
+
+        A page offers to leave a kind of ruling out, so it keeps them apart. A surface that draws
+        once ignores it.
+
+        Parameters
+        ----------
+        kind : str
+            What the ruling is, such as ``'lane'`` or ``'time'``.
+
+        Yields
+        ------
+        None
+            Control while the ruling is drawn.
+        """
+        ...
+
+    @contextmanager
+    def tied(self, index: int) -> Iterator[None]:
+        """
+        Mark everything drawn inside the block as following one note's lane.
+
+        A page lays a chart out again under another seed by moving what the seed decides, and this
+        says what moves with what. A surface that draws once ignores it.
+
+        Parameters
+        ----------
+        index : int
+            The note whose lane the drawing follows.
+
+        Yields
+        ------
+        None
+            Control while the drawing is done.
+        """
+        ...
+
+    @contextmanager
+    def head(self) -> Iterator[None]:
+        """
+        Mark a note's own disc, apart from anything that runs on from it.
+
+        A page stretches a column to spread its notes, and keeps whatever is marked here from being
+        stretched with it. A picture has nothing to do with this.
+
+        Yields
+        ------
+        None
+            Control while the disc is drawn.
         """
         ...
 
@@ -313,7 +379,7 @@ class PillowCanvas:
     @contextmanager
     def note(self, details: Mapping[str, Any]) -> Iterator[None]:  # noqa: ARG002, PLR6301
         """
-        Draw one note. A raster image cannot be clicked through, so the details are dropped.
+        Draw one note. A drawn image reports nothing, so the details are dropped.
 
         Parameters
         ----------
@@ -324,6 +390,52 @@ class PillowCanvas:
         ------
         None
             Control while the note is drawn.
+        """
+        yield
+
+    @contextmanager
+    def marks(self, kind: str) -> Iterator[None]:  # noqa: ARG002, PLR6301
+        """
+        Draw ruling of one kind, which a drawn image always shows.
+
+        Parameters
+        ----------
+        kind : str
+            What the ruling is.
+
+        Yields
+        ------
+        None
+            Control while the ruling is drawn.
+        """
+        yield
+
+    @contextmanager
+    def tied(self, index: int) -> Iterator[None]:  # noqa: ARG002, PLR6301
+        """
+        Draw what follows a note's lane, which a drawn image lays out only once.
+
+        Parameters
+        ----------
+        index : int
+            The note whose lane the drawing would follow.
+
+        Yields
+        ------
+        None
+            Control while the drawing is done.
+        """
+        yield
+
+    @contextmanager
+    def head(self) -> Iterator[None]:  # noqa: PLR6301
+        """
+        Draw a note's own disc, which a drawn image has no reason to keep apart.
+
+        Yields
+        ------
+        None
+            Control while the disc is drawn.
         """
         yield
 
@@ -356,7 +468,8 @@ class SVGCanvas:
     A vector surface.
 
     Every shape is written at the layout's own coordinates and the view box carries the same
-    numbers, so the picture is identical to the raster one and scales without loss.
+    numbers, so the picture is identical to the raster one and scales without loss. Each shape is
+    kept with the box it occupies, which is what lets the page file it under a column.
     """
     def __init__(self, width: int, height: int, background: tuple[int, int, int]) -> None:
         self.width = width
@@ -364,12 +477,16 @@ class SVGCanvas:
         self.height = height
         """The view box's height, in the layout's own units."""
         self._background = background
-        self._parts: list[str] = []
+        self._parts: list[_Part] = []
         self._notes: list[Mapping[str, Any]] = []
-        self._open = False
+        self._buffer: list[_Part] | None = None
 
-    def _add(self, markup: str) -> None:
-        self._parts.append(markup)
+    def _add(self, markup: str, box: tuple[float, float, float, float]) -> None:
+        part = _Part(markup, *box)
+        if self._buffer is None:
+            self._parts.append(part)
+        else:
+            self._buffer.append(part)
 
     def line(self,
              xy: Sequence[float],
@@ -392,10 +509,15 @@ class SVGCanvas:
             How to finish the corners between segments. ``'curve'`` rounds them, which is what the
             raster surface's own curve joint does.
         """
-        points = ' '.join(f'{x:g},{y:g}' for x, y in zip(xy[::2], xy[1::2], strict=True))
+        xs, ys = list(xy[::2]), list(xy[1::2])
+        points = ' '.join(f'{x:g},{y:g}' for x, y in zip(xs, ys, strict=True))
         rounded = ' stroke-linejoin="round" stroke-linecap="round"' if joint == 'curve' else ''
-        self._add(f'<polyline points="{points}" fill="none" stroke="{_rgb(fill)}" '
-                  f'stroke-width="{width}"{rounded}/>')
+        left, right = _span(xs)
+        top, bottom = _span(ys)
+        self._add(
+            f'<polyline points="{points}" fill="none" stroke="{_rgb(fill)}" '
+            f'stroke-width="{width}"{rounded}/>',
+            (left - width, top - width, right + width, bottom + width))
 
     def rect(self,
              xy: Sequence[float],
@@ -418,8 +540,10 @@ class SVGCanvas:
             How thick the outline is.
         """
         left, top, right, bottom = xy
-        self._add(f'<rect x="{left:g}" y="{top:g}" width="{right - left:g}" '
-                  f'height="{bottom - top:g}" {_paint(fill, outline, width)}/>')
+        self._add(
+            f'<rect x="{left:g}" y="{top:g}" width="{right - left:g}" '
+            f'height="{bottom - top:g}" {_paint(fill, outline, width)}/>',
+            (left, top, right, bottom))
 
     def ellipse(self,
                 xy: Sequence[float],
@@ -442,9 +566,10 @@ class SVGCanvas:
             How thick the outline is.
         """
         left, top, right, bottom = xy
-        self._add(f'<ellipse cx="{(left + right) / 2:g}" cy="{(top + bottom) / 2:g}" '
-                  f'rx="{(right - left) / 2:g}" ry="{(bottom - top) / 2:g}" '
-                  f'{_paint(fill, outline, width)}/>')
+        self._add(
+            f'<ellipse cx="{(left + right) / 2:g}" cy="{(top + bottom) / 2:g}" '
+            f'rx="{(right - left) / 2:g}" ry="{(bottom - top) / 2:g}" '
+            f'{_paint(fill, outline, width)}/>', (left, top, right, bottom))
 
     def pieslice(self, xy: Sequence[float], start: float, end: float, *, fill: tuple[int, int,
                                                                                      int]) -> None:
@@ -469,8 +594,10 @@ class SVGCanvas:
         end_x, end_y = _on_ellipse(cx, cy, rx, ry, end)
         # The y axis runs down, so a clockwise sweep in the caller's terms is a positive sweep here.
         large = 1 if (end - start) % _FULL_TURN > _HALF_TURN else 0
-        self._add(f'<path d="M {cx:g} {cy:g} L {start_x:g} {start_y:g} '
-                  f'A {rx:g} {ry:g} 0 {large} 1 {end_x:g} {end_y:g} Z" fill="{_rgb(fill)}"/>')
+        self._add(
+            f'<path d="M {cx:g} {cy:g} L {start_x:g} {start_y:g} '
+            f'A {rx:g} {ry:g} 0 {large} 1 {end_x:g} {end_y:g} Z" fill="{_rgb(fill)}"/>',
+            (left, top, right, bottom))
 
     def text(self, xy: Sequence[float], body: str, *, fill: tuple[int, int, int],
              size: int) -> None:
@@ -490,9 +617,11 @@ class SVGCanvas:
         """
         x, y = xy
         # Pillow anchors a string by the top of its box; text-before-edge is the same rule.
-        self._add(f'<text x="{x:g}" y="{y:g}" fill="{_rgb(fill)}" font-size="{size}" '
-                  f'font-family="{_FONT_STACK}" dominant-baseline="text-before-edge" '
-                  f'xml:space="preserve">{html.escape(body)}</text>')
+        self._add(
+            f'<text x="{x:g}" y="{y:g}" fill="{_rgb(fill)}" font-size="{size}" '
+            f'font-family="sans-serif" dominant-baseline="text-before-edge" '
+            f'xml:space="preserve">{html.escape(body)}</text>',
+            (x, y, x + size * len(body), y + size))
 
     @contextmanager
     def note(self, details: Mapping[str, Any]) -> Iterator[None]:
@@ -511,13 +640,84 @@ class SVGCanvas:
         """
         index = len(self._notes)
         self._notes.append(details)
-        self._add(f'<g class="rb-note" tabindex="0" role="button" data-note="{index}">')
-        self._open = True
-        try:
+        with self._collect() as parts:
             yield
+        if parts:
+            box = _merge(parts)
+            inner = ''.join(part.markup for part in parts)
+            tie = details.get('Index', '')
+            self._add(
+                f'<g class="rb-note" tabindex="0" data-note="{index}" data-tie="{tie}">{inner}</g>',
+                box)
+
+    @contextmanager
+    def marks(self, kind: str) -> Iterator[None]:
+        """
+        Wrap ruling of one kind, so that a page can offer to leave it out.
+
+        Parameters
+        ----------
+        kind : str
+            What the ruling is.
+
+        Yields
+        ------
+        None
+            Control while the ruling is drawn.
+        """
+        with self._collect() as parts:
+            yield
+        if parts:
+            inner = ''.join(part.markup for part in parts)
+            self._add(f'<g class="rb-rule rb-rule-{kind}">{inner}</g>', _merge(parts))
+
+    @contextmanager
+    def tied(self, index: int) -> Iterator[None]:
+        """
+        Wrap what follows one note's lane, so that laying the chart out again can move it too.
+
+        Parameters
+        ----------
+        index : int
+            The note whose lane the drawing follows.
+
+        Yields
+        ------
+        None
+            Control while the drawing is done.
+        """
+        with self._collect() as parts:
+            yield
+        if parts:
+            inner = ''.join(part.markup for part in parts)
+            self._add(f'<g data-tie="{index}">{inner}</g>', _merge(parts))
+
+    @contextmanager
+    def head(self) -> Iterator[None]:
+        """
+        Wrap a note's own disc, so a page can keep it round while it stretches everything else.
+
+        Yields
+        ------
+        None
+            Control while the disc is drawn.
+        """
+        with self._collect() as parts:
+            yield
+        if parts:
+            inner = ''.join(part.markup for part in parts)
+            self._add(f'<g class="rb-head">{inner}</g>', _merge(parts))
+
+    @contextmanager
+    def _collect(self) -> Iterator[list[_Part]]:
+        # Gather what is drawn inside the block instead of writing it out, so that it can be
+        # wrapped or filed away. Nesting is not needed and is not supported.
+        previous, self._buffer = self._buffer, []
+        collected = self._buffer
+        try:
+            yield collected
         finally:
-            self._open = False
-            self._add('</g>')
+            self._buffer = previous
 
     def to_svg(self, *, scale: float, supersample: int) -> str:
         """
@@ -539,7 +739,7 @@ class SVGCanvas:
         return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
                 f'viewBox="0 0 {self.width} {self.height}">'
                 f'<rect width="{self.width}" height="{self.height}" fill="{_rgb(self._background)}"'
-                f'/>{"".join(self._parts)}</svg>')
+                f'/>{"".join(part.markup for part in self._parts)}</svg>')
 
     def pixel_size(self, *, scale: float, supersample: int) -> tuple[int, int]:
         """
@@ -586,78 +786,12 @@ class SVGCanvas:
         return self.pixel_size(scale=scale, supersample=supersample)
 
 
-class HTMLCanvas(SVGCanvas):
-    """
-    A page holding the vector picture, with every note answering to a click.
-
-    The page is Bootstrap's, fetched from its content delivery network, and the picture is the same
-    SVG written inline so that a note's group can be clicked.
-    """
-    def __init__(self,
-                 width: int,
-                 height: int,
-                 background: tuple[int, int, int],
-                 *,
-                 title: str = 'Chart') -> None:
-        super().__init__(width, height, background)
-        self.title = title
-        """What the page calls itself."""
-
-    def to_html(self, *, scale: float, supersample: int) -> str:
-        """
-        Assemble the whole page.
-
-        Parameters
-        ----------
-        scale : float
-            How large the picture asks to be drawn.
-        supersample : int
-            The multiple the layout's units are of the finished size.
-
-        Returns
-        -------
-        str
-            The page.
-        """
-        return _PAGE.format(background=_rgb(self._background),
-                            bootstrap_css=BOOTSTRAP_CSS,
-                            bootstrap_js=BOOTSTRAP_JS,
-                            notes=json.dumps(list(self._notes), ensure_ascii=False),
-                            svg=self.to_svg(scale=scale, supersample=supersample),
-                            title=html.escape(self.title))
-
-    def save(self, path: Path, *, scale: float, supersample: int) -> tuple[int, int]:
-        """
-        Write the page out.
-
-        Parameters
-        ----------
-        path : pathlib.Path
-            Where to write.
-        scale : float
-            How large to write it.
-        supersample : int
-            The multiple the layout's units are of the finished size.
-
-        Returns
-        -------
-        tuple[int, int]
-            The picture's width and height in pixels.
-        """
-        path.write_text(self.to_html(scale=scale, supersample=supersample) + '\n', encoding='utf-8')
-        return self.pixel_size(scale=scale, supersample=supersample)
+def _merge(parts: Sequence[_Part]) -> tuple[float, float, float, float]:
+    return (min(part.left for part in parts), min(part.top for part in parts),
+            max(part.right for part in parts), max(part.bottom for part in parts))
 
 
-def _paint(fill: tuple[int, int, int] | None, outline: tuple[int, int, int] | None,
-           width: int) -> str:
-    parts = [f'fill="{_rgb(fill)}"' if fill is not None else 'fill="none"']
-    if outline is not None:
-        parts.extend((f'stroke="{_rgb(outline)}"', f'stroke-width="{width}"'))
-    return ' '.join(parts)
-
-
-def canvas_for(suffix: str, width: int, height: int, background: tuple[int, int, int], *,
-               title: str) -> Canvas:
+def canvas_for(suffix: str, width: int, height: int, background: tuple[int, int, int]) -> Canvas:
     """
     Choose the surface a file of this kind is drawn on.
 
@@ -671,8 +805,6 @@ def canvas_for(suffix: str, width: int, height: int, background: tuple[int, int,
         The layout's height in its own units.
     background : tuple[int, int, int]
         What to fill before drawing.
-    title : str
-        What a page should call itself, ignored by the other surfaces.
 
     Returns
     -------
@@ -689,72 +821,12 @@ def canvas_for(suffix: str, width: int, height: int, background: tuple[int, int,
             return PillowCanvas(width, height, background)
         case '.svg':
             return SVGCanvas(width, height, background)
-        case '.html' | '.htm':
-            return HTMLCanvas(width, height, background, title=title)
-        case _:
-            msg = (f'No surface writes `{suffix}`; expected one of .png, .svg, .html.')
+        case '.htm' | '.html':
+            # A chart read in a browser is a whole site rather than one picture, since the page
+            # lays the chart out for the window it is opened in rather than for a size chosen here.
+            msg = ('A chart is not drawn as a page. Use `dade rbplus site` to build one that can '
+                   'be read in a browser.')
             raise ValueError(msg)
-
-
-_PAGE = """<!doctype html>
-<html lang="en" data-bs-theme="dark">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{title}</title>
-<link href="{bootstrap_css}" rel="stylesheet">
-<style>
-body {{ background: {background}; }}
-.rb-chart {{ overflow-x: auto; }}
-.rb-note {{ cursor: pointer; }}
-.rb-note:hover, .rb-note:focus {{ outline: none; filter: brightness(1.6); }}
-.rb-note.rb-picked {{ filter: brightness(2); }}
-.rb-panel {{ position: sticky; top: 1rem; }}
-</style>
-</head>
-<body>
-<div class="container-fluid py-3">
-  <div class="row g-3">
-    <div class="col-12 col-xl-9">
-      <div class="rb-chart">{svg}</div>
-    </div>
-    <div class="col-12 col-xl-3">
-      <div class="card rb-panel">
-        <div class="card-header">Note</div>
-        <div class="card-body">
-          <p class="text-body-secondary mb-0" id="rb-empty">Select a note to see its details.</p>
-          <dl class="row mb-0 d-none" id="rb-details"></dl>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<script src="{bootstrap_js}"></script>
-<script>
-const notes = {notes};
-const details = document.getElementById('rb-details');
-const empty = document.getElementById('rb-empty');
-let picked = null;
-function show(index) {{
-  const note = notes[index];
-  if (!note) return;
-  details.innerHTML = Object.entries(note).map(([key, value]) =>
-    `<dt class="col-5 text-truncate">${{key}}</dt><dd class="col-7">${{value}}</dd>`).join('');
-  details.classList.remove('d-none');
-  empty.classList.add('d-none');
-}}
-for (const group of document.querySelectorAll('.rb-note')) {{
-  const select = () => {{
-    if (picked) picked.classList.remove('rb-picked');
-    picked = group;
-    group.classList.add('rb-picked');
-    show(group.dataset.note);
-  }};
-  group.addEventListener('click', select);
-  group.addEventListener('keydown', (event) => {{
-    if (event.key === 'Enter' || event.key === ' ') {{ event.preventDefault(); select(); }}
-  }});
-}}
-</script>
-</body>
-</html>"""
+        case _:
+            msg = f'No surface writes `{suffix}`; expected .png or .svg.'
+            raise ValueError(msg)

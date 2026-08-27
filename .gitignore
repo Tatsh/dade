@@ -38,11 +38,14 @@
 /.zshrc
 /HANDOFF.md
 /build/
+/charts-test/
 /dist/
 /docs/_build/
 /man/_static/
 /mypy-report*/
+/rbpcharts/
 /session-recover.yaml
+/site/
 __pycache__/
 cobertura.xml
 coverage.xml

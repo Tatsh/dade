@@ -45,7 +45,7 @@ import operator
 import random
 
 from .canvas import canvas_for
-from .chart import SLIDE_LANE_REMAP, SPEED_CHANGE_KIND
+from .chart import SLIDE_LANE_REMAP, SPEED_CHANGE_KIND, flag_names
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
@@ -170,7 +170,7 @@ SIDE_COUNT = 2
 
 :meta hide-value:
 """
-SIDE_LABELS = ('side 0 (pink)', 'side 1 (blue)')
+SIDE_LABELS = ('Pink', 'Blue')
 """
 What the game shows each side as.
 
@@ -279,6 +279,60 @@ _MILLISECONDS = 1000.0
 _SECONDS_PER_MINUTE = 60.0
 _BEATS_PER_BAR = 4
 _CHAIN_MINIMUM = 2
+_WORD = 0x1_0000_0000
+_MASK = _WORD - 1
+
+
+class _Claim(NamedTuple):
+    """One run of notes competing for a lane, and what it needs to be given one."""
+
+    start: int
+    """When the run first claims a lane."""
+    end: int
+    """When it gives the lane up."""
+    side: int
+    """Which side's lanes it draws from."""
+    width: int
+    """How many lanes it needs, being the most notes it strikes at once."""
+    at_once: tuple[tuple[int, ...], ...]
+    """The notes struck together, each group in the order they take neighbouring lanes."""
+
+
+class _Rng:
+    """
+    A small deterministic generator, seeded by a whole number.
+
+    The generator is mulberry32, chosen over the standard library's because a page has to reproduce
+    it exactly to lay a chart out again under a new seed. Which layout a given seed names is
+    arbitrary either way: the game seeds its own tracker from ``rand()``.
+    """
+    def __init__(self, seed: int) -> None:
+        self._state = seed & _MASK
+
+    def _next(self) -> float:
+        self._state = (self._state + 0x6D2B79F5) & _MASK
+        word = self._state
+        word = ((word ^ (word >> 15)) * (1 | word)) & _MASK
+        word = ((word + (((word ^ (word >> 7)) * (61 | word)) & _MASK)) & _MASK) ^ word
+        return ((word ^ (word >> 14)) & _MASK) / _WORD
+
+    def choice(self, among: Sequence[int]) -> int:
+        """
+        Take one of the candidates.
+
+        Parameters
+        ----------
+        among : collections.abc.Sequence[int]
+            The candidates, which must not be empty.
+
+        Returns
+        -------
+        int
+            The one taken.
+        """
+        return among[min(int(self._next() * len(among)), len(among) - 1)]
+
+
 _LEGEND_ITEM = 168 * _SUPERSAMPLE
 _LEGEND_GLYPH = 34 * _SUPERSAMPLE
 _LEGEND_ROW = 22 * _SUPERSAMPLE
@@ -343,18 +397,27 @@ def _draw_note_head(canvas: Canvas,
                     y: int,
                     color: tuple[int, int, int],
                     *,
+                    flip: bool = False,
                     side_object: bool = False,
                     vertical: bool = False) -> None:
     # One note's disc. A note that travels to the other side keeps its own colour on the half
     # nearest the player and takes gold on the half it leaves by, so it says both whose it is and
     # that it has to be swiped back. A note that comes straight down carries a V cut into it.
+    with canvas.head():
+        _draw_disc(canvas, center, y, color, flip=flip, side_object=side_object, vertical=vertical)
+
+
+def _draw_disc(canvas: Canvas, center: int, y: int, color: tuple[int, int, int], *, flip: bool,
+               side_object: bool, vertical: bool) -> None:
     box = (center - _NOTE_RADIUS, y - _NOTE_RADIUS, center + _NOTE_RADIUS, y + _NOTE_RADIUS)
     canvas.ellipse(box, fill=color)
     if side_object:
-        canvas.pieslice(box, _HALF_TURN, _FULL_TURN, fill=SIDE_OBJECT_COLOR)
+        # The gold half is the one the note leaves by, which is whichever way time runs.
+        start, end = ((0, _HALF_TURN) if flip else (_HALF_TURN, _FULL_TURN))
+        canvas.pieslice(box, start, end, fill=SIDE_OBJECT_COLOR)
     if vertical:
         arm = round(_NOTE_RADIUS * _VEE_WIDTH)
-        rise = round(_NOTE_RADIUS * _VEE_RISE)
+        rise = round(_NOTE_RADIUS * _VEE_RISE) * (-1 if flip else 1)
         canvas.line((center - arm, y - rise, center, y + rise, center + arm, y - rise),
                     fill=_BACKGROUND,
                     width=_VEE_STROKE,
@@ -375,11 +438,13 @@ def _playable(notes: Sequence[NoteDict], side: int) -> int:
 
 
 def _column_span(notes: Sequence[NoteDict], end_time: int) -> tuple[int, int]:
-    # The first and last millisecond the image has to cover.
+    # The first and last millisecond the image has to cover. The end is taken from the notes rather
+    # than the chart's own end time, which can fall a little past the last of them; a hold reaches
+    # past the note that starts it and is counted.
     if not notes:
         return 0, max(end_time, 1)
     first = min(*(note['hit_time'] for note in notes), 0)
-    last = max(*(note['hit_time'] for note in notes), end_time)
+    last = max(note['hit_time'] + _hold_length(note) for note in notes)
     return first, max(last, first + 1)
 
 
@@ -426,7 +491,21 @@ def _lanes(notes: Sequence[NoteDict],
     collections.abc.Mapping[int, int]
         Each note's index against its lane.
     """
-    rng = random.Random(seed)  # noqa: S311
+    fixed, plan = _lane_plan(notes, version)
+    return _assign(fixed, plan, _Rng(_pick_seed(seed)))
+
+
+def _pick_seed(seed: int | None) -> int:
+    # The seed a layout is drawn from: the one named, or a fresh one each run as the game itself
+    # takes.
+    return random.randrange(_WORD) if seed is None else seed  # noqa: S311
+
+
+def _lane_plan(notes: Sequence[NoteDict], version: int) -> tuple[dict[int, int], list[_Claim]]:
+    # Everything about the layout that the seed does not touch: which notes are pinned to a target's
+    # own slot, and, for the rest, the runs competing for a lane in the order they are dealt with.
+    # Only the choice among the lanes still free is left to the seed, so a page given this can lay
+    # the chart out again without knowing how any of it was worked out.
     # A chain claims its lane from its first note to its last, so the spans can be compared.
     spans: list[tuple[int, int, int, list[int]]] = []
     singles: dict[tuple[int, int], list[int]] = {}
@@ -445,9 +524,8 @@ def _lanes(notes: Sequence[NoteDict],
         spans.append(
             (hit_time, max(_claimed_until(notes[index]) for index in members), side, members))
     spans.sort(key=operator.itemgetter(0, 1))
-    lanes: dict[int, int] = {}
-    # taken[side] holds, per lane, the time the lane is claimed until.
-    taken = [[-math.inf] * LANE_COUNT for _ in range(SIDE_COUNT)]
+    fixed: dict[int, int] = {}
+    plan: list[_Claim] = []
     for start, end, side, members in spans:
         # A note aimed at an alternative target sits in that target's own slot, so it neither needs
         # a lane nor takes one from the notes struck beside it.
@@ -455,24 +533,39 @@ def _lanes(notes: Sequence[NoteDict],
             index: slot
             for index in members if (slot := _fixed_lane(notes[index], version)) is not None
         }
-        lanes.update(aimed)
+        fixed.update(aimed)
         if not (rest := [index for index in members if index not in aimed]):
             continue
         by_time: dict[int, list[int]] = {}
         for index in rest:
             by_time.setdefault(notes[index]['hit_time'], []).append(index)
-        width = max(len(at_once) for at_once in by_time.values())
+        plan.append(
+            _Claim(start=start,
+                   end=end,
+                   side=side,
+                   width=max(len(at_once) for at_once in by_time.values()),
+                   at_once=tuple(tuple(sorted(group)) for group in by_time.values())))
+    return fixed, plan
+
+
+def _assign(fixed: Mapping[int, int], plan: Sequence[_Claim], rng: _Rng) -> dict[int, int]:
+    # Hand each run the first lane free when it starts, choosing among those free from the seed.
+    lanes = dict(fixed)
+    # taken[side] holds, per lane, the time the lane is claimed until.
+    taken = [[-math.inf] * LANE_COUNT for _ in range(SIDE_COUNT)]
+    for claim in plan:
         free = [
-            lane for lane in range(max(LANE_COUNT - width + 1, 1)) if all(
-                taken[side][min(lane + offset, LANE_COUNT - 1)] < start for offset in range(width))
+            lane for lane in range(max(LANE_COUNT - claim.width + 1, 1))
+            if all(taken[claim.side][min(lane + offset, LANE_COUNT - 1)] < claim.start
+                   for offset in range(claim.width))
         ]
         # The engine shuffles its candidates and takes the first; so does this, from the seed.
         base = rng.choice(free) if free else 0
-        for at_once in by_time.values():
-            for offset, index in enumerate(sorted(at_once)):
+        for at_once in claim.at_once:
+            for offset, index in enumerate(at_once):
                 lanes[index] = min(base + offset, LANE_COUNT - 1)
-        for offset in range(width):
-            taken[side][min(base + offset, LANE_COUNT - 1)] = end
+        for offset in range(claim.width):
+            taken[claim.side][min(base + offset, LANE_COUNT - 1)] = claim.end
     return lanes
 
 
@@ -512,6 +605,7 @@ class _Layout(NamedTuple):
     bottom: int
     columns: int
     column_height: int
+    flip: bool
     column_width: int
     height: int
     lanes: int
@@ -525,7 +619,12 @@ class _Layout(NamedTuple):
     width: int
 
     @classmethod
-    def for_chart(cls, chart: ChartDict, seconds_per_column: int, speed: float) -> _Layout:
+    def for_chart(cls,
+                  chart: ChartDict,
+                  seconds_per_column: int,
+                  speed: float,
+                  *,
+                  flip: bool = False) -> _Layout:
         start_ms, end_ms = _column_span(chart['notes'], chart['header']['end_time'])
         span_ms = seconds_per_column * int(_MILLISECONDS)
         columns = max(1, math.ceil((end_ms - start_ms) / span_ms))
@@ -547,6 +646,7 @@ class _Layout(NamedTuple):
             bottom=top + column_height,
             columns=columns,
             column_height=column_height,
+            flip=flip,
             column_width=column_width,
             height=(_MARGIN * 2 + _HEADER + column_height + _FOOTER + legend_rows * _LEGEND_ROW),
             lanes=lanes,
@@ -579,7 +679,15 @@ class _Layout(NamedTuple):
         if not 0 <= column < self.columns:
             return None
         within = (offset % self.span_ms) / _MILLISECONDS * self.pixels_per_second
-        return int(column), self.bottom - int(within)
+        return int(column), self.top + int(within) if self.flip else self.bottom - int(within)
+
+    def later(self, y: float, distance: float) -> float:
+        # Where a moment *distance* further on lands, which is the way a hold runs from its note.
+        return y + distance if self.flip else y - distance
+
+    def limit(self) -> float:
+        # The band edge a hold is clipped to, being the one time runs towards.
+        return self.bottom if self.flip else self.top
 
 
 def _draw_beats(canvas: Canvas, layout: _Layout, bpm: float) -> None:
@@ -595,9 +703,10 @@ def _draw_beats(canvas: Canvas, layout: _Layout, bpm: float) -> None:
         color = _BAR_LINE if beat % _BEATS_PER_BAR == 0 else _BEAT_LINE
         for side in range(SIDE_COUNT):
             origin = layout.column_origin(side, column)
-            canvas.line((origin + _GUTTER, y, origin + layout.column_width, y),
-                        fill=color,
-                        width=_SUPERSAMPLE)
+            with canvas.marks('time'):
+                canvas.line((origin + _GUTTER, y, origin + layout.column_width, y),
+                            fill=color,
+                            width=_SUPERSAMPLE)
 
 
 def _draw_grid(canvas: Canvas, layout: _Layout, bpm: float | None) -> None:
@@ -613,19 +722,38 @@ def _draw_grid(canvas: Canvas, layout: _Layout, bpm: float | None) -> None:
                         fill=_TRACK_COLOR,
                         outline=_TRACK_EDGE,
                         width=_SUPERSAMPLE)
-            for lane in range(1, layout.lanes):
-                x = left + lane * _LANE_PX
-                canvas.line((x, layout.top, x, layout.bottom), fill=_LANE_LINE, width=_SUPERSAMPLE)
+    # The two rulings are drawn apart from the panels they lie on, and from each other, so that a
+    # page can leave either out without the track going with it. Each group is kept to one column,
+    # or to one line across it, because a page files a shape under the seconds its box reaches into
+    # and a group spanning the chart would be filed under all of them.
+    for side in range(SIDE_COUNT):
+        for column in range(layout.columns):
+            left = layout.column_origin(side, column) + _GUTTER
+            with canvas.marks('lane'):
+                for lane in range(1, layout.lanes):
+                    x = left + lane * _LANE_PX
+                    canvas.line((x, layout.top, x, layout.bottom),
+                                fill=_LANE_LINE,
+                                width=_SUPERSAMPLE)
     if bpm is not None and bpm > 0:
         _draw_beats(canvas, layout, bpm)
     for side in range(SIDE_COUNT):
         for column in range(layout.columns):
             origin = layout.column_origin(side, column)
             for second in range(layout.seconds_per_column + 1):
-                y = layout.bottom - second * layout.pixels_per_second
-                canvas.line((origin + _GUTTER, y, origin + layout.column_width, y),
-                            fill=_GRID_COLOR,
-                            width=_SUPERSAMPLE)
+                y = layout.later(layout.bottom if not layout.flip else layout.top,
+                                 second * layout.pixels_per_second)
+                with canvas.marks('time'):
+                    canvas.line((origin + _GUTTER, y, origin + layout.column_width, y),
+                                fill=_GRID_COLOR,
+                                width=_SUPERSAMPLE)
+    # The times themselves are not ruling and stay whether the lines they name are drawn or not.
+    for side in range(SIDE_COUNT):
+        for column in range(layout.columns):
+            origin = layout.column_origin(side, column)
+            for second in range(layout.seconds_per_column + 1):
+                y = layout.later(layout.bottom if not layout.flip else layout.top,
+                                 second * layout.pixels_per_second)
                 absolute = (layout.start_ms + column * layout.span_ms) / _MILLISECONDS + second
                 canvas.text((origin, y - _SMALL_SIZE // 2),
                             f'{absolute:.0f}s',
@@ -670,9 +798,12 @@ def _draw_chains(canvas: Canvas, layout: _Layout, notes: Sequence[NoteDict],
         for (_, before), (index, after) in itertools.pairwise(placed):
             if before is None or after is None or before[0] != after[0]:
                 continue
-            canvas.line((before[1], before[2], after[1], after[2]),
-                        fill=_note_color(notes[index], version),
-                        width=_BAR_WIDTH)
+            # Every note of a chain shares one lane, so the line between two of them stands upright
+            # and follows either of the pair wherever the lane goes.
+            with canvas.tied(index):
+                canvas.line((before[1], before[2], after[1], after[2]),
+                            fill=_note_color(notes[index], version),
+                            width=_BAR_WIDTH)
 
 
 def _slide_paths(notes: Sequence[NoteDict],
@@ -740,34 +871,37 @@ def _note_details(note: NoteDict, index: int, lane: int | None, version: int, *,
     # worked out beside it, so the page reports the chart rather than a summary of it.
     kinds = []
     if held > 0:
-        kinds.append('hold')
+        kinds.append('Hold')
     if sliding:
-        kinds.append('slide')
+        kinds.append('Slide')
     if vertical:
-        kinds.append('vertical')
+        kinds.append('Vertical')
     if note['flags'] & SIDE_OBJECT_FLAG:
-        kinds.append('swipe back')
+        kinds.append('Swipe Back')
     if _alternate_target(note, version):
-        kinds.append('alternative target')
+        kinds.append('Green')
+    # The flag word is more use read out as the names the engine gives its bits than as a number,
+    # so it is given both ways.
+    names = ' | '.join(name.upper() for name in flag_names(note['flags'])) or 'NONE'
     details = {
-        'index': str(index),
-        'id': str(note['id']),
-        'side': SIDE_LABELS[note['side']] if 0 <= note['side'] < SIDE_COUNT else str(note['side']),
-        'kind': ', '.join(kinds) if kinds else 'ordinary',
-        'hit time': f'{note["hit_time"] / _MILLISECONDS:.3f} s',
-        'spawn time': f'{note["spawn_time"] / _MILLISECONDS:.3f} s',
-        'travel time': f'{note["travel_time"] / _MILLISECONDS:.3f} s',
-        'lane': 'not laid out' if lane is None else str(lane),
-        'route selector': str(_timing_selector(note, version)),
-        'group': 'free' if note['start_time'] == FREE_NOTE_START_TIME else str(note['start_time']),
-        'flags': f'0x{note["flags"]:x}',
+        'Index': str(index),
+        'Side': SIDE_LABELS[note['side']] if 0 <= note['side'] < SIDE_COUNT else str(note['side']),
+        'Kind': ', '.join(kinds) if kinds else 'Ordinary',
+        'Hit Time': f'{note["hit_time"]} ms',
+        'Spawn Time': f'{note["spawn_time"]} ms',
+        'Travel Time': f'{note["travel_time"]} ms',
+        'Lane': 'Not laid out' if lane is None else str(lane),
+        'Route Selector': str(_timing_selector(note, version)),
+        'Group': 'Free' if note['start_time'] == FREE_NOTE_START_TIME else str(note['start_time']),
+        'Flags': names,
+        'Flag Integer': f'0x{note["flags"]:04x}',
     }
     if held > 0:
-        details['held for'] = f'{held / _MILLISECONDS:.3f} s'
+        details['Held For'] = f'{held} ms'
     if note['path_points']:
-        details['path points'] = ', '.join(str(point) for point in note['path_points'])
+        details['Path Points'] = ', '.join(str(point) for point in note['path_points'])
     if note['chain'] is not None:
-        details['chain'] = ', '.join(str(field) for field in note['chain'])
+        details['Chain'] = ', '.join(str(field) for field in note['chain'])
     return details
 
 
@@ -799,16 +933,20 @@ def _draw_notes(canvas: Canvas,
                 # A hold runs from the note up to the moment it is released, clipped to the column.
                 # It is drawn wide, with a cap at the release, so that a hold sitting at the end of
                 # a chain cannot be taken for the narrower line joining the chain.
-                top = max(y - int(held / _MILLISECONDS * layout.pixels_per_second), layout.top)
-                canvas.rect((center - _HOLD_WIDTH // 2, top, center + _HOLD_WIDTH // 2, y),
+                reach = int(held / _MILLISECONDS * layout.pixels_per_second)
+                end = (min(layout.later(y, reach), layout.limit()) if layout.flip else max(
+                    layout.later(y, reach), layout.limit()))
+                canvas.rect((center - _HOLD_WIDTH // 2, min(
+                    y, end), center + _HOLD_WIDTH // 2, max(y, end)),
                             fill=color)
-                canvas.line((center - _HOLD_WIDTH, top, center + _HOLD_WIDTH, top),
+                canvas.line((center - _HOLD_WIDTH, end, center + _HOLD_WIDTH, end),
                             fill=color,
                             width=2 * _SUPERSAMPLE)
             _draw_note_head(canvas,
                             center,
                             y,
                             color,
+                            flip=layout.flip,
                             side_object=bool(note['flags'] & SIDE_OBJECT_FLAG),
                             vertical=vertical)
 
@@ -834,7 +972,7 @@ def _draw_header(canvas: Canvas, layout: _Layout, chart: ChartDict, *, artist: s
     canvas.text(
         (_MARGIN,
          layout.height - _MARGIN - layout.legend_rows * _LEGEND_ROW - _SMALL_SIZE - _TEXT_GAP),
-        'Time runs upward. Across is where a note falls in its chain.',
+        'Time runs downward.' if layout.flip else 'Time runs upward.',
         fill=_SECOND_TEXT,
         size=_SMALL_SIZE)
 
@@ -918,15 +1056,15 @@ def _glyph_speed(canvas: Canvas, x: int, y: int) -> None:
 
 
 _LEGEND: tuple[tuple[str, Callable[[Canvas, int, int], None]], ...] = (
-    ('side 0 note', _glyph_side_0_note),
-    ('side 1 note', _glyph_side_1_note),
-    ('alternative target', _glyph_alternate),
-    ('swipe back', _glyph_side_object),
-    ('hold', _glyph_hold),
-    ('slide', _glyph_slide),
-    ('vertical', _glyph_vertical),
-    ('chain', _glyph_chain),
-    ('speed change', _glyph_speed),
+    (f'{SIDE_LABELS[0]} note', _glyph_side_0_note),
+    (f'{SIDE_LABELS[1]} note', _glyph_side_1_note),
+    ('Green', _glyph_alternate),
+    ('Swipe back', _glyph_side_object),
+    ('Hold', _glyph_hold),
+    ('Slide', _glyph_slide),
+    ('Vertical', _glyph_vertical),
+    ('Chain', _glyph_chain),
+    ('Speed change', _glyph_speed),
 )
 
 
@@ -948,6 +1086,7 @@ def render_chart_image(chart: ChartDict,
                        difficulty: str | None = None,
                        level: int | None = None,
                        seconds_per_column: int = SECONDS_PER_COLUMN,
+                       flip: bool = False,
                        scale: float = DEFAULT_SCALE,
                        seed: int | None = DEFAULT_SEED,
                        speed: float = DEFAULT_SPEED) -> tuple[int, int]:
@@ -973,6 +1112,9 @@ def render_chart_image(chart: ChartDict,
         The chart's level, drawn in the header.
     seconds_per_column : int
         How many seconds each column holds before wrapping.
+    flip : bool
+        Read each column top to bottom instead of bottom to top. The notes then fall down the page
+        the way they fall down the screen, and a hold runs down from its note rather than up.
     scale : float
         How large to write the image, as a multiple of its usual size, from 1.0 to 3.0. The layout
         is unchanged; only the number of pixels it is written at differs.
@@ -998,13 +1140,9 @@ def render_chart_image(chart: ChartDict,
     if seconds_per_column <= 0:
         msg = f'seconds_per_column must be positive, got {seconds_per_column}.'
         raise ValueError(msg)
-    layout = _Layout.for_chart(chart, seconds_per_column, speed)
-    canvas = canvas_for(path.suffix,
-                        layout.width,
-                        layout.height,
-                        _BACKGROUND,
-                        title=' - '.join(part for part in (title, difficulty) if part) or 'Chart')
+    layout = _Layout.for_chart(chart, seconds_per_column, speed, flip=flip)
     lanes = _lanes(chart['notes'], chart['header']['version'], seed)
+    canvas = canvas_for(path.suffix, layout.width, layout.height, _BACKGROUND)
     _draw_grid(canvas, layout, bpm)
     _draw_tempo_events(canvas, layout, chart['tempo_events'])
     _draw_slides(canvas, layout, chart['notes'], lanes, chart['slides'])

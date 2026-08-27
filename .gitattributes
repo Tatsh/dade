@@ -1,3 +1,4 @@
 * text=auto eol=lf
 *.lock binary
 /.yarn/**/*.cjs binary
+/dade/rbplus/site/** linguist-generated=true

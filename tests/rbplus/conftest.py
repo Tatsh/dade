@@ -254,6 +254,19 @@ def _package(path: Path,
 
 
 @pytest.fixture
+def tune_info() -> dict[str, object]:
+    """
+    Build the metadata a tune package carries, as a copy that a test may change.
+
+    Returns
+    -------
+    dict[str, object]
+        The metadata.
+    """
+    return dict(_INFO)
+
+
+@pytest.fixture
 def make_package(tmp_path: Path) -> Callable[..., Path]:
     """
     Write a ``.rb`` tune package into the temporary directory.

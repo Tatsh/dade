@@ -1,0 +1,257 @@
+// The site's stylesheet. Bootstrap is compiled in rather than fetched, so a built site needs
+// nothing from the network — which is also what lets it be opened from a file.
+//
+// Bootstrap's own partials share one global scope: `_variables.scss` calls a mixin that
+// `_functions.scss` defines without importing it. They are therefore brought in the way Bootstrap
+// supports rather than as modules, in Bootstrap's own order.
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+@import 'bootstrap/scss/root';
+@import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/type';
+@import 'bootstrap/scss/containers';
+@import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/button-group';
+@import 'bootstrap/scss/card';
+@import 'bootstrap/scss/alert';
+@import 'bootstrap/scss/nav';
+@import 'bootstrap/scss/helpers';
+@import 'bootstrap/scss/utilities/api';
+
+:root {
+  --rb-bg: rgb(24 24 32);
+  --rb-side-0: rgb(255 120 180);
+  --rb-side-1: rgb(80 220 255);
+  // How wide a column is drawn and how tall one second of it stands. The drawing is stretched to
+  // whatever these give it, so they are the one place its size is decided.
+  --rb-column: 150px;
+  --rb-second: 46px;
+  --rb-seconds-per-column: 30;
+  // The speed modifier. A column has to grow with it, or the taller layout is squeezed straight
+  // back into the same box and the notes end up exactly where they began.
+  --rb-speed: 1;
+}
+
+body {
+  background: var(--rb-bg);
+}
+
+// The tune and the controls sit on one line where there is room for both and take a line each
+// where there is not, so a wide screen spends its width and a narrow one is not squeezed. Each is
+// as wide as it needs and no wider: stretching them wastes the height the chart wants, and fitted
+// the page is wider than the window, so a full-width bar would run off the side carrying nothing.
+.rb-bar {
+  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin-block-end: 0.5rem;
+}
+
+.rb-controls,
+.rb-top {
+  inline-size: max-content;
+  max-inline-size: 100%;
+}
+
+.rb-controls {
+  gap: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
+}
+
+// The controls are a long row of switches. Below this there is no window wide enough for them to
+// stand beside the tune, so they take a line of their own and wrap within it.
+@media (width < 100em) {
+  .rb-controls {
+    inline-size: 100%;
+  }
+}
+
+// A drawn example of every mark, so the chart explains itself.
+.rb-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+
+  li {
+    align-items: center;
+    display: flex;
+    gap: 0.4rem;
+  }
+}
+
+.rb-glyph {
+  block-size: 1.1rem;
+  flex: 0 0 auto;
+  inline-size: 2.4rem;
+  overflow: visible;
+}
+
+.rb-heading {
+  border-block-end: 1px solid var(--bs-border-color);
+  padding-block-end: 0.25rem;
+  margin-block-start: 1.5rem;
+}
+
+.rb-headings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.rb-tunes {
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+
+  // A grid row is as tall as the tallest card in it, and every card fills its own cell, so a title
+  // that wraps to two lines does not leave its neighbours short.
+  > li {
+    display: grid;
+  }
+}
+
+.rb-tune {
+  block-size: 100%;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  color: var(--bs-body-color);
+  // The levels sit at the foot of the card whatever the title above them does.
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    background: var(--bs-secondary-bg);
+  }
+}
+
+.rb-tune-title {
+  font-weight: 500;
+}
+
+.rb-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  // Pushed to the foot of the card, so the levels line up across a row whatever the titles above
+  // them do.
+  margin-block-start: auto;
+  padding-block-start: 0.25rem;
+}
+
+.rb-level-special {
+  color: rgb(255 200 70);
+  font-weight: 600;
+}
+
+// A side's columns run across and wrap, so a chart reads left to right and down. Each column keeps
+// its own width, which is what stops one from being squeezed when there are many.
+.rb-columns {
+  display: flex;
+  flex-wrap: wrap;
+  // A column carries its own gutter on the left, which already separates one track from the next.
+  // This is the room on top of that, so the columns read as separate rather than as one wide field.
+  gap: 1.25rem;
+}
+
+.rb-column {
+  block-size: calc(var(--rb-second) * var(--rb-seconds-per-column) * var(--rb-speed));
+  display: block;
+  flex: 0 0 auto;
+  inline-size: var(--rb-column);
+  // The first and last second are named on the band's own edges, so half of each label sits
+  // outside the view box. Letting it paint there keeps the labels whole without moving the chart
+  // to make room, which would put every note a little off where the renderer has it.
+  overflow: visible;
+}
+
+// The room those labels paint into, so they are not cut off by whatever the columns sit in.
+.rb-columns {
+  padding-block: 0.75rem;
+}
+
+.rb-sides {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr));
+
+  > section {
+    min-inline-size: 0;
+  }
+}
+
+// Fitted, the chart is not allowed to take the page down with it. The columns stop wrapping and run
+// off the side instead, and the page is what scrolls across — one bar for the whole chart rather
+// than one per side. That is also what keeps the two sides together: scrolling the page moves both,
+// so the same moment of the tune is under the eye in each.
+.rb-fitted {
+  // As wide as the columns need, which is what gives the page something to scroll.
+  grid-template-columns: max-content;
+  inline-size: max-content;
+
+  .rb-columns {
+    flex-wrap: nowrap;
+  }
+}
+
+// A link to what is written about a tune elsewhere. It looks exactly like the text it is made of —
+// the pointer is the only thing that says it is a link, which is enough beside a heading and stops
+// the page reading as a list of links.
+.rb-remy {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.rb-note {
+  cursor: pointer;
+
+  &:is(:hover, :focus-visible) {
+    filter: brightness(1.7);
+    outline: none;
+  }
+}
+
+// Beside the pointer, never over it, and never wide enough to wrap a row.
+.rb-tip {
+  grid-template-columns: auto 1fr;
+  inline-size: max-content;
+  margin: 0;
+  max-inline-size: min(34rem, 92vw);
+  pointer-events: none;
+  position: fixed;
+  z-index: 1080;
+
+  :is(dt, dd) {
+    white-space: nowrap;
+  }
+
+  dd {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// A number or a flag word, set so that a column of them lines up digit under digit.
+.rb-mono {
+  font-family: var(--bs-font-monospace);
+  font-size: 0.85em;
+}
+
+.rb-tip-row {
+  column-gap: 0.75rem;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}

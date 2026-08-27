@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import json
 import xml.etree.ElementTree as ET  # noqa: S405
 
+import pytest
+
 from dade.rbplus.main import main, rbplus
 
 if TYPE_CHECKING:
@@ -13,7 +15,6 @@ if TYPE_CHECKING:
 
     from click.testing import CliRunner
     from pytest_mock import MockerFixture
-    import pytest
 
 
 def test_the_standalone_entry_point_runs_the_group(mocker: MockerFixture) -> None:
@@ -134,15 +135,14 @@ def test_dump_chart_renders_a_vector_image(runner: CliRunner, tune_package: Path
     assert ET.fromstring(image.read_text()).get('viewBox') is not None  # noqa: S314
 
 
-def test_dump_chart_renders_a_page(runner: CliRunner, tune_package: Path, tmp_path: Path) -> None:
-    image = tmp_path / 'chart.html'
-    # The basic chart is the one holding notes, so the page has something to be clicked through.
-    result = runner.invoke(rbplus, ('dump-chart', str(tune_package), 'bas', '--image', str(image)))
-    assert result.exit_code == 0
-    page = image.read_text()
-    assert page.startswith('<!doctype html>')
-    assert 'class="rb-note"' in page
-    assert 'bootstrap' in page
+@pytest.mark.parametrize('suffix', ['.html', '.htm'])
+def test_dump_chart_sends_a_page_to_the_site_command(runner: CliRunner, tune_package: Path,
+                                                     tmp_path: Path, suffix: str) -> None:
+    result = runner.invoke(
+        rbplus,
+        ('dump-chart', str(tune_package), 'bas', '--image', str(tmp_path / f'chart{suffix}')))
+    assert result.exit_code == 1
+    assert 'dade rbplus site' in result.output
 
 
 def test_dump_chart_refuses_an_unknown_image_form(runner: CliRunner, tune_package: Path,

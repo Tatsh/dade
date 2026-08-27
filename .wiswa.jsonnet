@@ -137,5 +137,54 @@ local utils = import 'utils.libjsonnet';
       apt_packages: ['graphviz'],
     },
   },
-  shared_ignore+: ['*.cl'],
+  shared_ignore+: [
+    '*.cl',
+    // Built by `dade rbplus site`, and a chart collection besides. What is worth keeping is the
+    // source under `assets/site` and the bundle under `dade/rbplus/site`.
+    '/charts-test/',
+    // The deployed copy of the chart collection, which is a checkout of its own.
+    '/rbpcharts/',
+    '/site/',
+  ],
+  // The chart viewer's bundle is built from `assets/site`, not written by hand, and is committed
+  // because an install from PyPI has no Node to build it with. It is committed exactly as webpack
+  // writes it, so Prettier leaves it alone rather than drifting it from a fresh build.
+  gitattributes+: ['/dade/rbplus/site/** linguist-generated=true'],
+  prettierignore+: ['/dade/rbplus/site/'],
+  // Kept out of every pre-commit hook so none of the file-normalising ones (end-of-file, byte-order
+  // mark, line ending) rewrites what webpack emits and drifts it from a fresh build.
+  pre_commit_config+: { exclude: '^dade/rbplus/site/' },
+  package_json+: {
+    cspell+: {
+      // Minified, so it is a solid run of identifiers no dictionary can be expected to hold.
+      ignorePaths+: ['dade/rbplus/site/*.css', 'dade/rbplus/site/*.js'],
+    },
+    devDependencies+: {
+      '@popperjs/core': '^2.11.8',
+      '@types/react': '^19.0.0',
+      '@types/react-dom': '^19.0.0',
+      bootstrap: '^5.3.3',
+      'css-loader': '^7.1.2',
+      'css-minimizer-webpack-plugin': '^7.0.0',
+      'html-webpack-plugin': '^5.6.3',
+      'mini-css-extract-plugin': '^2.9.2',
+      // Drives a real browser over the built site, which is the only way to check that a page
+      // lays out as it should.
+      playwright: '^1.62.1',
+      react: '^19.0.0',
+      'react-dom': '^19.0.0',
+      sass: '^1.83.0',
+      'sass-loader': '^16.0.4',
+      'terser-webpack-plugin': '^5.3.11',
+      'ts-loader': '^9.5.2',
+      typescript: '^5.7.2',
+      webpack: '^5.97.1',
+      'webpack-cli': '^6.0.1',
+    },
+    scripts+: {
+      build: 'webpack --mode production',
+      'build:check': 'webpack --mode production && git diff --exit-code -- dade/rbplus/site',
+      'build:dev': 'webpack --mode development',
+    },
+  },
 }

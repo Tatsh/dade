@@ -349,10 +349,36 @@ def test_a_longer_chart_takes_more_columns(tmp_path: Path, make_chart: Callable[
     short = parse_chart(
         make_chart(notes=(make_note(spawn_time=0, travel_time=1000),), end_time=10_000))
     long = parse_chart(
-        make_chart(notes=(make_note(spawn_time=0, travel_time=1000),), end_time=300_000))
+        make_chart(notes=(make_note(
+            spawn_time=0, travel_time=1000), make_note(spawn_time=0, travel_time=300_000)),
+                   end_time=300_000))
     short_width, _ = render_chart_image(short, tmp_path / 'short.png')
     long_width, _ = render_chart_image(long, tmp_path / 'long.png')
     assert long_width > short_width
+
+
+def test_an_end_time_past_the_last_note_adds_no_column(tmp_path: Path, make_chart: Callable[...,
+                                                                                            bytes],
+                                                       make_note: Callable[..., bytes]) -> None:
+    # The image covers the notes, not the clock. A chart whose end time falls a long way past its
+    # last note used to be drawn out to that time, which left a column of nothing at the end.
+    notes = (make_note(spawn_time=0, travel_time=1000),)
+    near = parse_chart(make_chart(notes=notes, end_time=2000))
+    far = parse_chart(make_chart(notes=notes, end_time=300_000))
+    assert (render_chart_image(near, tmp_path / 'near.png') == render_chart_image(
+        far, tmp_path / 'far.png'))
+
+
+def test_a_hold_reaching_past_its_note_is_covered(tmp_path: Path, make_chart: Callable[..., bytes],
+                                                  make_note: Callable[..., bytes]) -> None:
+    # A hold runs on from the note that starts it, so the image has to reach the release rather
+    # than the strike.
+    brief = parse_chart(make_chart(notes=(make_note(spawn_time=0, travel_time=1000),)))
+    held = parse_chart(
+        make_chart(notes=(make_note(
+            spawn_time=0, travel_time=1000, note_type=HOLD_NOTE_TYPE, target=(32_000, 0, 0, 0)),)))
+    assert (render_chart_image(held, tmp_path / 'held.png')[0] > render_chart_image(
+        brief, tmp_path / 'brief.png')[0])
 
 
 def test_an_empty_chart_still_renders(tmp_path: Path, make_chart: Callable[..., bytes]) -> None:
@@ -582,16 +608,18 @@ def test_a_slide_leg_across_two_columns_is_not_drawn(tmp_path: Path, make_chart:
                                                                                           bytes],
                                                      make_note: Callable[..., bytes],
                                                      make_slide: Callable[..., bytes]) -> None:
-    # One column holds thirty seconds, so a waypoint a minute later lands in another and there is
-    # nowhere to run the leg.
+    # One column holds thirty seconds, and the late note is what makes there be a second one for
+    # the far waypoint to land in. Its leg would have to run between the two columns, so it is left
+    # out.
     out = tmp_path / 'chart.png'
     base = tmp_path / 'base.png'
-    note = make_note(note_type=SLIDE_NOTE_TYPE, target=(0, 6, 0, 0), travel_time=0)
-    far = (make_slide(lane=0, note_index=0, value_a=60_000, value_b=0),)
+    notes = (make_note(note_type=SLIDE_NOTE_TYPE, target=(0, 6, 0, 0),
+                       travel_time=0), make_note(spawn_time=40_000, travel_time=0))
+    far = (make_slide(lane=0, note_index=0, value_a=40_000, value_b=0),)
     near = (make_slide(lane=0, note_index=0, value_a=1000, value_b=0),)
     for slides, path in ((far, out), (near, base)):
         render_chart_image(parse_chart(
-            make_chart(notes=(note,), slides=slides, version=_MODERN, end_time=90_000)),
+            make_chart(notes=notes, slides=slides, version=_MODERN, end_time=90_000)),
                            path,
                            seconds_per_column=30,
                            seed=0)

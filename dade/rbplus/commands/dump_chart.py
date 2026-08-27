@@ -93,16 +93,20 @@ def _hex(ctx: click.Context, param: click.Parameter, value: str | None) -> bytes
                 required=False,
                 type=click.Choice(tuple(_DIFFICULTIES)))
 @debug_option
+@click.option('--flip',
+              is_flag=True,
+              help='Read the chart top to bottom, the way the notes fall, rather than bottom to '
+              'top.')
+@click.option('--image',
+              type=click.Path(dir_okay=False, path_type=Path),
+              help='Also render the chart as a strip at this path. The suffix chooses the form: '
+              '.png or .svg.')
 @click.option('--iv',
               callback=_hex,
               help='Initialisation vector as hex, for a chart enciphered with a different one.')
 @click.option('--key',
               callback=_hex,
               help='Key as hex, for a chart enciphered under neither of the game keys.')
-@click.option('--image',
-              type=click.Path(dir_okay=False, path_type=Path),
-              help='Also render the chart as a strip at this path. The suffix chooses the form: '
-              '.png, .svg, or .html.')
 @click.option('--scale',
               type=click.FloatRange(*SCALE_RANGE),
               default=DEFAULT_SCALE,
@@ -127,6 +131,7 @@ def dump_chart(package: Path,
                seed: int | None,
                speed: float,
                *,
+               flip: bool = False,
                summary: bool = False) -> None:
     """
     Write the DIFFICULTY chart of the tune package PACKAGE as JSON.
@@ -148,7 +153,8 @@ def dump_chart(package: Path,
     the whole of side 0 in the left panel and the whole of side 1 in the right. A note aimed at an
     alternative target is green, one that travels to the other side to be swiped back is gold, a
     hold extends as a bar to its release, and each note of a chain is joined to the next by a line.
-    The image carries a legend.
+    The image carries a legend. With --flip time runs downward instead, so the notes fall down the
+    page the way they fall down the screen.
     """  # noqa: DOC501
     try:
         # A file named .rb is meant as a package whether or not it opens as one, so a broken one
@@ -168,6 +174,7 @@ def dump_chart(package: Path,
                                artist=info.get('ArtistName'),
                                bpm=info.get('BpmMin'),
                                difficulty=chart_difficulty(entry),
+                               flip=flip,
                                level=chart_level(info, entry),
                                scale=scale,
                                seed=seed,

@@ -9,6 +9,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- `dade rbplus site` builds a browsable, static site from a collection of `.rb` tune packages. It
+  writes every tune's charts as JSON and ships a React page that draws them in the browser, so the
+  result can be served from anywhere, GitHub Pages included. Tunes are grouped by artist and title
+  and can be filed A–Z or by gojūon row, and the search matches the Hepburn romanisation of a kana
+  reading so a Japanese title answers to a Latin keyboard. Pass `--base` for a project site served
+  from a sub-path, which also writes a `404.html` so a link to one tune opens it directly.
+- A package holding only a basic chart, with its medium and hard entries empty, is recognised as an
+  extend note: a SPECIAL chart sold for a tune that already exists. `dade rbplus site` files it
+  under the tune it extends, worked out from the numbering, rather than listing it on its own.
+- `dade rbplus dump-chart --flip` draws the chart with time running downward, the way the notes
+  fall down the screen.
+
+### Removed
+
+- `dade rbplus dump-chart --image` no longer writes an HTML page; the suffix now names
+  `dade rbplus site`, which builds a browsable site for a whole collection instead. `.png` and
+  `.svg` are unchanged.
+
 ## [0.0.2] - 2026-08-26
 
 ### Fixed
