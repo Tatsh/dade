@@ -34,13 +34,16 @@ artisttranslit
 ascontiguousarray
 asdt
 asyncio
+audo
 autodoc
 automodule
 autouse
 backslashreplace
+bada
 bascom
 bbhhh
 bbhi
+bcasino
 beatmaps
 beatplus
 beginswith
@@ -69,7 +72,9 @@ calcsize
 cand
 caplog
 capsys
+cbar
 cdda
+cdiner
 cdir
 cdrommsf
 cdtitle
@@ -209,11 +214,14 @@ gbox
 gdiextract
 gdir
 genindex
+getchannel
 getcolors
 geteuid
+getextrema
 getpixel
 gigayears
 globaltoc
+gltf
 gluvs
 gojuon
 gojūon
@@ -232,6 +240,7 @@ hhhi
 hhhiii
 hhii
 hhiihh
+hhiii
 hhiiiii
 hier
 hira
@@ -304,6 +313,7 @@ lhuf
 libaudio
 libera
 libjsonnet
+librarys
 libsg
 libsonnet
 linecap
@@ -312,6 +322,7 @@ linters
 loadtile
 loadtlut
 lproj
+lsyn
 lzham
 lzhuf
 lzss
@@ -360,6 +371,7 @@ newmtl
 newtex
 nhoriz
 nlist
+nloop
 nmip
 nocolon
 nofixprebinding
@@ -379,6 +391,7 @@ notjson
 notscei
 noundefs
 nrec
+nreg
 nsamp
 nsfr
 nsmoc
@@ -399,6 +412,7 @@ onefile
 oneline
 outofsync
 overpromised
+packetised
 pagezero
 paletted
 palettised
@@ -438,6 +452,8 @@ prodvers
 prov
 pset
 psmt
+putalpha
+putpalette
 pvrpack
 pvrt
 pybitrock
@@ -460,7 +476,10 @@ qqii
 qqiiiiiiii
 qscale
 qseq
+quadword
+quadwords
 quicktime
+rawmode
 rawptr
 rawsize
 rb'decompresscommand
@@ -478,6 +497,7 @@ refpack
 regen
 resgroup
 rgba
+rgbaq
 rhythmin
 righ
 ripgreprc
@@ -497,6 +517,7 @@ samplestart
 sanm
 sansio
 sass
+satriales
 sbclaude
 sbox
 scancode
@@ -535,6 +556,7 @@ signtool
 simfile
 simfile's
 simfiles
+simpleshadow
 sinf
 sixsec
 sjis
@@ -663,6 +685,7 @@ vanb
 vendored
 venv
 vers
+vesuvio's
 vgmstream
 virtualenv
 vsize

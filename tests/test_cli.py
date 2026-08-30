@@ -24,6 +24,7 @@ _GAMES = (
     'monopoly08',
     'rbplus',
     'rhythmin',
+    'sopranos',
     'thps2pc',
     'xg2',
 )

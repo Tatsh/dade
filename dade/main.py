@@ -27,6 +27,7 @@ from .misc.main import misc as misc_group
 from .monopoly08.main import main as monopoly_extract
 from .rbplus.main import rbplus as rbplus_group
 from .rhythmin.main import rhythmin as rhythmin_group
+from .sopranos.main import sopranos as sopranos_group
 from .thps2pc.main import cli as thps2pc_group
 from .xg2.main import cli as xg2_group
 
@@ -97,5 +98,6 @@ main.add_command(misc_group, name='misc')
 main.add_command(_monopoly08())
 main.add_command(rbplus_group, name='rbplus')
 main.add_command(rhythmin_group, name='rhythmin')
+main.add_command(sopranos_group, name='sopranos')
 main.add_command(thps2pc_group, name='thps2pc')
 main.add_command(xg2_group, name='xg2')

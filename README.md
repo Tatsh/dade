@@ -57,6 +57,7 @@ Run `dade --help` to list the games, and `dade <game> --help` to list a game's s
 | `dade monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
 | `dade rbplus`     | _REFLEC BEAT plus_ (iOS)                    | Konami                        |
 | `dade rhythmin`   | _pop'n rhythmin_ (iOS)                      | Konami                        |
+| `dade sopranos`   | _The Sopranos: Road to Respect_ (PS2)       | 7 Studios / THQ               |
 | `dade thps2pc`    | _Tony Hawk's Pro Skater 2_ (PC)             | Neversoft / Activision        |
 | `dade xg2`        | _Extreme-G_ and _Extreme-G 2_ (N64 and PC)  | Probe Entertainment / Acclaim |
 
@@ -418,6 +419,39 @@ is written without a region, which the store resolves by the reader's own storef
 Nothing is decrypted. The only things left whole are the signatures, the key blobs, and the
 encrypted `priv` body, which are reported with their length, digest, and bytes. The report lists
 the first ten `.supp` records and counts the rest; `--json` always carries all of them.
+
+## The Sopranos: Road to Respect
+
+```shell
+dade sopranos unpack SOPRANOS.ISO -o extracted --convert
+```
+
+One command takes the PlayStation 2 disc apart and converts everything it recognises. The argument
+may be a disc image, a directory (searched recursively for `.FS` archives, however they are cased),
+or any number of archives named directly:
+
+```shell
+dade sopranos unpack DATA_P.FS AUDIO_P.FS POKER_P.FS SLOTS_P.FS -o extracted --convert
+```
+
+Each archive lands in a directory named after it with the region suffix dropped, so `DATA_P.FS`
+unpacks into `extracted/data`. With `--convert`, the `.LVL` containers are split first so that the
+assets inside them are converted by the same pass, and then:
+
+| Input                         | Output                                                     |
+| ----------------------------- | ---------------------------------------------------------- |
+| `.TEX2` texture banks         | PNG, with PlayStation 2 alpha rescaled to `0..255`         |
+| `.EGP2` level geometry        | a `.glb` with the level's props placed in it, plus OBJ/MTL |
+| `.SGP2` prop libraries        | the PNGs they embed                                        |
+| `.MSH` / `.MSB` sound banks   | one WAV per sound                                          |
+| `.MIH` / `.MIB` music streams | WAV, de-interleaved back to stereo                         |
+| `.VO2` dialogue               | WAV, stitched from the `AUDO` blocks                       |
+
+The level `.glb` is the interesting one: props are read from the `.SGP2` libraries belonging to the
+level, positioned and turned according to the `.OLV` file that records where each one stands, and
+written into the same file as the level geometry. Characters that carry interchangeable wardrobe
+pieces are given one of each, rather than all of them at once. Add `--ignore-failures` to log and
+skip an asset that will not convert instead of stopping.
 
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 

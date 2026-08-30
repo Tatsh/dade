@@ -28,5 +28,6 @@ and :doc:`../utilities`.
    monopoly08
    rbplus
    rhythmin
+   sopranos
    thps2pc
    xg2
