@@ -25,7 +25,7 @@ __all__ = ('archive_directory', 'iter_sources', 'sopranos')
 
 _CONTEXT_SETTINGS = {'help_option_names': ('-h', '--help')}
 _ARCHIVE_SUFFIX = '.fs'
-_REGION_SUFFIX = '_p'
+_COOKER_SUFFIX = '_p'
 
 debug_option = bascom.debug_option({'dade.common': {}, 'dade.sopranos': {}})
 """Attach ``-d/--debug`` to a command and route it through :py:func:`bascom.setup_logging`.
@@ -247,8 +247,10 @@ def archive_directory(name: str) -> str:
     """
     Give the directory an archive's contents belong in.
 
-    The disc's archives are named for their region, ``DATA_P.FS`` and so on, and that suffix says
-    nothing about what is inside, so it is dropped: ``DATA_P.FS`` unpacks into ``data``.
+    Every archive the cooker writes carries a ``_P`` tag, ``DATA_P.FS`` and so on. It is not a
+    region code -- the NTSC-U disc, ``SLUS-21388``, uses it as well -- and it says nothing about
+    what is inside, so it is dropped: ``DATA_P.FS`` unpacks into ``data``. An archive without the
+    tag keeps its whole stem.
 
     Parameters
     ----------
@@ -261,7 +263,7 @@ def archive_directory(name: str) -> str:
         A directory name.
     """
     stem = Path(name).stem.lower()
-    return stem.removesuffix(_REGION_SUFFIX)
+    return stem.removesuffix(_COOKER_SUFFIX)
 
 
 def iter_sources(paths: Iterable[Path]) -> Iterator[tuple[Path, str, int, int | None]]:

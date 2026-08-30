@@ -7,6 +7,7 @@ import pytest
 
 from dade.common.exceptions import InvalidFormatError
 from dade.sopranos.texture import (
+    BANK_MAGIC,
     PALETTE_ENTRIES,
     convert,
     convert_geometry,
@@ -84,6 +85,20 @@ def test_iter_textures_rejects_an_offset_out_of_range() -> None:
     struct.pack_into('<I', raw, 12, 0xFFFF)
     with pytest.raises(InvalidFormatError, match='out-of-range image offset'):
         list(iter_textures(bytes(raw)))
+
+
+def test_iter_textures_passes_over_an_empty_slot() -> None:
+    # A bank reserves a slot for every image its reader may ask for by number; the build leaves a
+    # zero where it had nothing to put. The game's own HUD banks are mostly these.
+    raw = bytearray(build_bank([_rgba_image(), _rgba_image('b/two.tga')]))
+    struct.pack_into('<I', raw, 12, 0)
+    assert [texture.name for texture in iter_textures(bytes(raw))] == ['b/two.tga']
+
+
+def test_iter_textures_accepts_a_bank_that_is_nothing_but_empty_slots() -> None:
+    # Exactly a header and a table, no image data at all, which is how slots/p_hud.tex2 ships.
+    raw = struct.pack('<3I', BANK_MAGIC, 0, 5) + bytes(5 * 4)
+    assert list(iter_textures(raw)) == []
 
 
 def test_iter_textures_rejects_a_bad_image_magic() -> None:

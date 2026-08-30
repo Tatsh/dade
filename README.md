@@ -450,8 +450,10 @@ assets inside them are converted by the same pass, and then:
 The level `.glb` is the interesting one: props are read from the `.SGP2` libraries belonging to the
 level, positioned and turned according to the `.OLV` file that records where each one stands, and
 written into the same file as the level geometry. Characters that carry interchangeable wardrobe
-pieces are given one of each, rather than all of them at once. Add `--ignore-failures` to log and
-skip an asset that will not convert instead of stopping.
+pieces are given one of each, rather than all of them at once.
+
+The retail disc converts clean, so `--ignore-failures` is not needed for it; pass it to log and skip
+an asset that will not convert instead of stopping.
 
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 

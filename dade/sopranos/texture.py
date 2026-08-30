@@ -66,6 +66,11 @@ def iter_textures(data: bytes) -> Iterator[TextureInfo]:
     """
     Yield a description of every image in a ``.TEX2`` bank.
 
+    A bank reserves a slot for every image the code that reads it may ask for by number, and a slot
+    the build had nothing to put in holds a zero offset instead of an address. Those are skipped.
+    The game's own HUD banks are mostly holes -- one is nothing but a header and five empty slots,
+    32 bytes in total, with no image data at all -- so an empty slot is ordinary, not damage.
+
     Parameters
     ----------
     data : bytes
@@ -74,12 +79,13 @@ def iter_textures(data: bytes) -> Iterator[TextureInfo]:
     Yields
     ------
     TextureInfo
-        One entry per image, in the order the bank lists them.
+        One entry per image the bank actually holds, in the order it lists them.
 
     Raises
     ------
     InvalidFormatError
-        If the bank magic is wrong or an image header is malformed.
+        If the bank magic is wrong, the offset table is truncated, or a slot addresses an image
+        past the end of the bank.
     """
     if len(data) < _HEADER_SIZE:
         msg = 'Texture bank is too small.'
@@ -93,7 +99,9 @@ def iter_textures(data: bytes) -> Iterator[TextureInfo]:
                f'table is truncated.')
         raise InvalidFormatError(msg)
     for offset in struct.unpack_from(f'<{count}I', data, _HEADER_SIZE):
-        if not offset or offset + _IMAGE_HEADER_SIZE > len(data):
+        if not offset:
+            continue
+        if offset + _IMAGE_HEADER_SIZE > len(data):
             msg = f'Texture bank has an out-of-range image offset 0x{offset:x}.'
             raise InvalidFormatError(msg)
         yield _read_image(data, offset)[0]

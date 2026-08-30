@@ -565,6 +565,7 @@ skmple
 skuk
 skybox
 skyboxes
+slus
 smlt
 smpl
 snapcore
