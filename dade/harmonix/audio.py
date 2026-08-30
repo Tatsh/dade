@@ -14,6 +14,7 @@ import struct
 from dade.common.exceptions import InvalidFormatError
 from dade.common.json import write_json
 from dade.common.utils import safe_name
+from dade.common.vag import decode_vag_adpcm
 from dade.common.wav import wrap_pcm
 
 if TYPE_CHECKING:
@@ -44,11 +45,7 @@ STR_BLOCK = 512
 :meta hide-value:
 """
 
-_VAG_COEFFICIENTS = ((0, 0), (60, 0), (115, -52), (98, -55), (122, -60))
-_VAG_FRAME = 16
 _VAG_DEFAULT_RATE = 22050
-_VAG_END = 1
-_VAG_END_MUTE = 7
 
 # FreQuency SCEI sound bank chunk tags. Each 4-char tag is written as a little-endian u32, so on
 # disk the bytes read reversed: 'SCEI' -> b'IECS', 'Vers' -> b'sreV', 'Head' -> b'daeH', etc.
@@ -59,10 +56,6 @@ _SD_MAX_VAGS = 4096
 _SAMP_MIN_SIZE = 12  # SAMP header: magic plus the u32 table size.
 _SAMP_HEADER_SIZE = 8  # 'SAMP' tag plus the u32 table size.
 _NAME_MAX_LEN = 128  # Upper bound on a plausible sample-name length.
-_PCM_MIN = -32768
-_PCM_MAX = 32767
-_NIBBLE_SIGN = 8  # A 4-bit ADPCM sample of 8..15 is negative.
-_NIBBLE_SPAN = 16
 
 
 def str_to_wav(data: bytes, *, rate: int = STR_RATE, block: int = STR_BLOCK) -> bytes:
@@ -117,53 +110,6 @@ def convert(path: Path) -> Path | None:
     out = path.with_suffix('.wav')
     out.write_bytes(str_to_wav(path.read_bytes(), rate=STR_RATE, block=STR_BLOCK))
     log.debug('Stream `%s` -> `%s`.', path.name, out.name)
-    return out
-
-
-def decode_vag_adpcm(data: bytes, start: int = 0, max_bytes: int | None = None) -> array.array[int]:
-    """
-    Decode PS2 VAG-ADPCM into 16-bit mono PCM.
-
-    Parameters
-    ----------
-    data : bytes
-        The buffer containing VAG frames.
-    start : int
-        Byte offset of the first frame.
-    max_bytes : int | None
-        Stop after this many bytes (in addition to the end flag); ``None`` reads to the buffer end.
-
-    Returns
-    -------
-    array.array[int]
-        Signed 16-bit PCM samples.
-    """
-    hist1 = hist2 = 0
-    out = array.array('h')
-    end = len(data) if max_bytes is None else min(len(data), start + max_bytes)
-    frame = start
-    while frame + _VAG_FRAME <= end:
-        predictor_shift = data[frame]
-        shift = predictor_shift & 0xF
-        predictor = predictor_shift >> 4
-        if predictor >= len(_VAG_COEFFICIENTS):
-            predictor = 0
-        flag = data[frame + 1]
-        if flag == _VAG_END_MUTE:
-            break
-        c0, c1 = _VAG_COEFFICIENTS[predictor]
-        for nibble_byte in range(14):
-            packed = data[frame + 2 + nibble_byte]
-            for nibble in (packed & 0xF, packed >> 4):
-                t = nibble - _NIBBLE_SPAN if nibble >= _NIBBLE_SIGN else nibble
-                s = ((t << 12) >> shift) + ((hist1 * c0 + hist2 * c1) >> 6)
-                s = _PCM_MIN if s < _PCM_MIN else min(s, _PCM_MAX)
-                out.append(s)
-                hist2 = hist1
-                hist1 = s
-        frame += _VAG_FRAME
-        if flag == _VAG_END:
-            break
     return out
 
 
