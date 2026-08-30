@@ -38,6 +38,20 @@ def test_read_file_missing_raises_key_error(make_iso9660: Callable[..., bytes]) 
         image.read_file('NOPE.BIN')
 
 
+def test_locate_gives_the_byte_range_of_a_files_extent(make_iso9660: Callable[..., bytes]) -> None:
+    raw = make_iso9660(ark_data=b'main ark data')
+    image = Iso9660Image.from_bytes(raw)
+    offset, size = image.locate('GEN/MAIN.ARK')
+    assert size == len(b'main ark data')
+    assert raw[offset:offset + size] == b'main ark data'
+
+
+def test_locate_raises_for_a_file_that_is_not_there(make_iso9660: Callable[..., bytes]) -> None:
+    image = Iso9660Image.from_bytes(make_iso9660())
+    with pytest.raises(KeyError):
+        image.locate('NOPE.BIN')
+
+
 def test_iter_files_lists_all(make_iso9660: Callable[..., bytes]) -> None:
     image = Iso9660Image.from_bytes(make_iso9660(top_data=b'ab', ark_data=b'abcd'))
     assert list(image.iter_files()) == [('GEN/MAIN.ARK', 4), ('TOP.DAT', 2)]

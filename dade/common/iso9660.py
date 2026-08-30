@@ -153,6 +153,31 @@ class Iso9660Image:
         for path in sorted(self._files):
             yield path, self._files[path][1]
 
+    def locate(self, path: str) -> tuple[int, int]:
+        """
+        Return where a file's data starts in the image and how long it is.
+
+        This lets a caller stream a large file out of the image, or hand its byte range to another
+        reader, without materialising it first.
+
+        Parameters
+        ----------
+        path : str
+            POSIX-style, case-insensitive path such as ``DATA/AUDIO_P.FS``.
+
+        Returns
+        -------
+        tuple[int, int]
+            Byte offset of the file's extent within the image, and its size in bytes.
+
+        Raises
+        ------
+        KeyError
+            If no file exists at ``path``.
+        """  # noqa: DOC502
+        lba, size = self._files[_normalize(path)]
+        return lba * self._block_size, size
+
     def read_file(self, path: str, length: int | None = None) -> bytes:
         """
         Read the contents of a file, or a leading prefix of it.
