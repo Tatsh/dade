@@ -133,10 +133,17 @@ def read_directory(data: bytes) -> RASContents:
     Raises
     ------
     InvalidArchiveError
-        If the header will not read, or an entry names a directory the archive does not hold.
+        If the header will not read, the buffer is too short to hold both tables, or an entry
+        names a directory the archive does not hold.
     """
     header = read_header(data)
     table_start = HEADER_SIZE + header.file_table_size
+    # Slicing a short buffer silently gives back a short table, and the walk over it then fails
+    # somewhere inside a name or a field rather than saying the archive is cut off.
+    tables_end = table_start + header.directory_table_size
+    if len(data) < tables_end:
+        msg = f'The tables need {tables_end} bytes; the archive is {len(data)}.'
+        raise InvalidArchiveError(msg)
     file_table = decrypt(bytes(data[HEADER_SIZE:table_start]), header.seed)
     directory_table = decrypt(bytes(data[table_start:table_start + header.directory_table_size]),
                               header.seed)

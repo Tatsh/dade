@@ -6,6 +6,7 @@ import struct
 import pytest
 
 from dade.maxpane.ras import (
+    HEADER_SIZE,
     InvalidArchiveError,
     is_intact,
     iter_members,
@@ -115,3 +116,11 @@ def test_read_directory_rejects_an_entry_naming_a_directory_that_is_not_there(
         make_ras: Callable[..., bytes]) -> None:
     with pytest.raises(InvalidArchiveError, match='names directory'):
         read_directory(make_ras(directory=7))
+
+
+def test_read_directory_rejects_an_archive_cut_short_of_its_tables(
+        make_ras: Callable[..., bytes]) -> None:
+    # Slicing a short buffer gives back a short table rather than failing, so the walk over it used
+    # to die inside a name with `ValueError: subsection not found`.
+    with pytest.raises(InvalidArchiveError, match='The tables need'):
+        read_directory(make_ras()[:HEADER_SIZE + 10])
