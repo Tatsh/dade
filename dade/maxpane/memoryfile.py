@@ -151,6 +151,18 @@ _SIGNED_TAGS = frozenset({
     BasicType.SHORT, BasicType.SCHAR
 })
 
+_INTEGER_TAGS = frozenset({
+    BasicType.BOOL, BasicType.CHAR, BasicType.INT8, BasicType.INT16, BasicType.INT24,
+    BasicType.INT32, BasicType.LONG, BasicType.SCHAR, BasicType.SHORT, BasicType.UCHAR,
+    BasicType.UINT8, BasicType.UINT16, BasicType.UINT24, BasicType.UINT32, BasicType.ULONG,
+    BasicType.USHORT
+})
+"""Tags whose payload is a whole number, and so the only ones an integer can be read from.
+
+Every other tag in :py:data:`TAG_SIZES` has a width too, which is not the same thing: reading a
+``FLOAT`` as an integer gives its bit pattern, and reading a ``MAP``, whose width is nought, gives
+a silent zero."""
+
 
 def read_chunk_header(data: bytes, offset: int = 0) -> tuple[int, int, int]:
     """
@@ -202,7 +214,7 @@ def read_int(data: bytes, offset: int) -> tuple[int, int]:
         If the tag at *offset* is not an integer tag.
     """
     tag = data[offset]
-    if tag not in TAG_SIZES or tag in {BasicType.ARRAY, BasicType.CHUNK}:
+    if tag not in _INTEGER_TAGS:
         msg = f'Not an integer tag at offset {offset}: 0x{tag:02x}.'
         raise ValueError(msg)
     width = TAG_SIZES[tag]

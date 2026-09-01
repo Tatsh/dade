@@ -116,6 +116,60 @@ def read_header(data: bytes) -> ArchiveHeader:
                          version=version)
 
 
+def _read_tables(header: ArchiveHeader, file_table: bytes, directory_table: bytes,
+                 cursor: int) -> tuple[list[RASDirectory], list[RASEntry], int]:
+    """
+    Walk both decrypted tables.
+
+    Parameters
+    ----------
+    header : ArchiveHeader
+        The decrypted header, for its two counts.
+    file_table : bytes
+        The decrypted file table.
+    directory_table : bytes
+        The decrypted directory table.
+    cursor : int
+        Offset of the first member's payload.
+
+    Returns
+    -------
+    tuple[list[RASDirectory], list[RASEntry], int]
+        The directories, the entries, and the offset just past the last member's payload.
+
+    Raises
+    ------
+    InvalidArchiveError
+        If an entry names a directory the archive does not hold.
+    """
+    directories: list[RASDirectory] = []
+    offset = 0
+    for _ in range(header.directory_count):
+        name, offset = _read_name(directory_table, offset)
+        directories.append(RASDirectory(modified=_system_time(directory_table, offset), name=name))
+        offset += _SYSTEMTIME_SIZE
+    entries: list[RASEntry] = []
+    offset = 0
+    for _ in range(header.file_count):
+        name, offset = _read_name(file_table, offset)
+        size, stored_size, _, directory, _, _ = struct.unpack_from('<6I', file_table, offset)
+        if directory >= len(directories):
+            msg = f'`{name}` names directory {directory} of {len(directories)}.'
+            raise InvalidArchiveError(msg)
+        modified = _system_time(file_table, offset + 24)
+        offset += _FILE_FIELDS_SIZE
+        entries.append(
+            RASEntry(directory=directory,
+                     modified=modified,
+                     name=name,
+                     offset=cursor,
+                     path=(directories[directory].name + name).replace('\\', '/').lstrip('/'),
+                     size=size,
+                     stored_size=stored_size))
+        cursor += stored_size
+    return directories, entries, cursor
+
+
 def read_directory(data: bytes) -> RASContents:
     """
     Decode the header and both tables.
@@ -147,32 +201,17 @@ def read_directory(data: bytes) -> RASContents:
     file_table = decrypt(bytes(data[HEADER_SIZE:table_start]), header.seed)
     directory_table = decrypt(bytes(data[table_start:table_start + header.directory_table_size]),
                               header.seed)
-    directories: list[RASDirectory] = []
-    offset = 0
-    for _ in range(header.directory_count):
-        name, offset = _read_name(directory_table, offset)
-        directories.append(RASDirectory(modified=_system_time(directory_table, offset), name=name))
-        offset += _SYSTEMTIME_SIZE
-    entries: list[RASEntry] = []
-    offset = 0
     cursor = table_start + header.directory_table_size
-    for _ in range(header.file_count):
-        name, offset = _read_name(file_table, offset)
-        size, stored_size, _, directory, _, _ = struct.unpack_from('<6I', file_table, offset)
-        if directory >= len(directories):
-            msg = (f'`{name}` names directory {directory} of {len(directories)}.')
-            raise InvalidArchiveError(msg)
-        modified = _system_time(file_table, offset + 24)
-        offset += _FILE_FIELDS_SIZE
-        entries.append(
-            RASEntry(directory=directory,
-                     modified=modified,
-                     name=name,
-                     offset=cursor,
-                     path=(directories[directory].name + name).replace('\\', '/').lstrip('/'),
-                     size=size,
-                     stored_size=stored_size))
-        cursor += stored_size
+    # A table long enough to hold what the header promised can still be nonsense inside it: a name
+    # with no terminator, or one long enough to leave no room for the fields behind it. Those come
+    # back from the readers as `ValueError` or `struct.error`, which say nothing about archives.
+    try:
+        directories, entries, cursor = _read_tables(header, file_table, directory_table, cursor)
+    except InvalidArchiveError:
+        raise
+    except (ValueError, struct.error) as e:
+        msg = f'The tables will not read: {e}'
+        raise InvalidArchiveError(msg) from e
     return RASContents(data_end=cursor,
                        directories=tuple(directories),
                        entries=tuple(entries),

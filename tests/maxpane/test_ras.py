@@ -124,3 +124,10 @@ def test_read_directory_rejects_an_archive_cut_short_of_its_tables(
     # to die inside a name with `ValueError: subsection not found`.
     with pytest.raises(InvalidArchiveError, match='The tables need'):
         read_directory(make_ras()[:HEADER_SIZE + 10])
+
+
+def test_read_directory_reports_a_table_it_cannot_walk(make_ras: Callable[..., bytes]) -> None:
+    # The tables are as long as the header promised and still nonsense inside: no name ends. That
+    # used to surface as a bare `ValueError` from the name reader.
+    with pytest.raises(InvalidArchiveError, match='The tables will not read'):
+        read_directory(make_ras(terminate=False))

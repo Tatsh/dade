@@ -89,9 +89,9 @@ def ras_extract(source: Path, patterns: tuple[str, ...], output_dir: Path, *, ra
     count = 0
     try:
         for label, data in iter_archives(source):
-            written, members = _unpack(label, data, patterns, output_dir, raw=raw)
-            total += written
-            count += members
+            written_bytes, written_members = _unpack(label, data, patterns, output_dir, raw=raw)
+            total += written_bytes
+            count += written_members
     except (InvalidArchiveError, InvalidFormatError, NoArchivesFoundError) as e:
         click.echo(str(e), err=True)
         raise click.Abort from e

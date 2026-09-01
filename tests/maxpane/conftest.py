@@ -78,6 +78,7 @@ def make_ras() -> Callable[..., bytes]:
               directory: int | None = None,
               modified: bool = True,
               seed: int = 0x1234,
+              terminate: bool = True,
               version: float = 1.2) -> bytes:
         stamp = _SYSTEMTIME if modified else bytes(16)
         # Every member sits in the last directory unless the caller names one, which is how an
@@ -85,7 +86,8 @@ def make_ras() -> Callable[..., bytes]:
         named = len(directories) - 1 if directory is None else directory
         file_table = bytearray()
         for name, payload in members:
-            file_table += name.encode() + b'\x00'
+            # A name with no terminator is what a corrupt table looks like from the reader's side.
+            file_table += name.encode() + (b'\x00' if terminate else b'')
             file_table += struct.pack('<6I', len(payload), len(payload), 0, named, 0, _ARCHIVER_ID)
             file_table += stamp
         directory_table = bytearray()
