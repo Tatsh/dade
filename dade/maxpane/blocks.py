@@ -141,7 +141,11 @@ def unwrap(data: bytes) -> tuple[bytes, tuple[str, ...]]:
     """
     layers: list[str] = []
     while len(data) >= _COMPRESSED_HEADER_SIZE:
+        # An encrypted block's header is the longer of the two, so a buffer that is long enough to
+        # be a compressed one and starts with `RC->` is still too short to take apart.
         if is_encrypted(data):
+            if len(data) < _ENCRYPTED_HEADER_SIZE:
+                break
             data = decrypt_block(data)
             layers.append('crypt')
         elif is_compressed(data):

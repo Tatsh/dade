@@ -41,8 +41,9 @@ def inspect_tags(asset: Path, limit: int) -> None:
             shown = (repr(value.payload.decode('latin-1'))
                      if value.tag == BasicType.STRING else value.payload.hex(' '))
             click.echo(f'  0x{value.offset:08x}  {BasicType(value.tag).name:<10s} {shown}')
-    click.echo(f'{asset.name}: {len(data)} bytes, walked to {reached} '
-               f'({100.0 * reached / len(data):.2f}%).')
+    # An asset that unwrapped to nothing has been walked in full, vacuously.
+    covered = 100.0 * reached / len(data) if data else 100.0
+    click.echo(f'{asset.name}: {len(data)} bytes, walked to {reached} ({covered:.2f}%).')
     click.echo(f'By tag: {dict(histogram.most_common())}')
     if reached < len(data):
         click.echo(f'Stopped on 0x{data[reached]:02x} at offset {reached}.')

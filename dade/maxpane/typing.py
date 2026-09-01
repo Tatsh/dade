@@ -8,7 +8,10 @@ __all__ = ('ArchiveHeader', 'Corner', 'Level', 'LevelGeometry', 'Material', 'Mes
            'TextureImage', 'Vector3')
 
 Vector3: TypeAlias = 'tuple[float, float, float]'
-"""A point or direction in level space, in centimetres."""
+"""A point or direction in level space, where one unit is about a metre.
+
+Nothing in a level says so outright, but the skins settle it: ``gognitti_vinnie_l0.kfs`` is a man
+1.88 units tall, and the doors he walks through are a little over two."""
 
 
 class ArchiveHeader(NamedTuple):

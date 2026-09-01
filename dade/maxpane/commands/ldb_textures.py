@@ -29,11 +29,16 @@ def _relative(path: str) -> PurePosixPath:
     Returns
     -------
     PurePosixPath
-        The path with any drive letter and leading separator removed.
+        The path with any drive letter, leading separator and upward step removed, so it can only
+        ever name somewhere under the output directory.
     """
     windows = PureWindowsPath(path)
-    parts = [part for part in windows.parts if part not in {'\\', '/'} and ':' not in part]
-    return PurePosixPath(*parts) if parts else PurePosixPath(windows.name or 'texture')
+    # A level's texture paths are whatever the artist's machine had, so they are not to be trusted
+    # with where a file lands: `..` in one of them would write outside the directory asked for.
+    parts = [
+        part for part in windows.parts if part not in {'\\', '/', '.', '..'} and ':' not in part
+    ]
+    return PurePosixPath(*parts) if parts else PurePosixPath('texture')
 
 
 @click.command(name='ldb-textures')

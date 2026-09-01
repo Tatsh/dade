@@ -178,3 +178,22 @@ def test_read_model_ignores_a_mesh_chunk_it_does_not_know() -> None:
     mesh = _chunk(0x00010000, 1, b'\x0d\x14\x04legs\x0d\x14\x00')
     mesh += _chunk(0x0001000B, 0, b'\x14\x00')
     assert read_model(_chunk(0x00010005, 1, mesh)).meshes[0].name == 'legs'
+
+
+def test_read_model_rejects_a_chunk_header_cut_short(make_model: Callable[..., bytes]) -> None:
+    # Enough of a header to say `chunk` and not enough to say how long, which used to raise
+    # `struct.error` past the reader's own error type.
+    with pytest.raises(InvalidModelError, match='runs past the end'):
+        read_model(make_model()[:5])
+
+
+def test_read_model_drops_a_face_indexing_backwards(make_model: Callable[..., bytes]) -> None:
+    # A negative index is in range for Python and would quietly pick a vertex off the far end.
+    model = read_model(make_model(faces=((0, 1, -1),)))
+    assert model.meshes[0].faces == ()
+
+
+def test_read_model_ignores_a_negative_texture_coordinate_index(
+        make_model: Callable[..., bytes]) -> None:
+    model = read_model(make_model(coord_faces=((0, 1, -2),)))
+    assert model.meshes[0].faces[0].coords == (0, 0, 0)

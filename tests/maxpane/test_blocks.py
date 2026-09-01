@@ -90,3 +90,9 @@ def test_unwrap_peels_both(make_lzss: Callable[[bytes], bytes],
 
 def test_unwrap_leaves_plain_data_alone() -> None:
     assert unwrap(b'no wrapper here at all') == (b'no wrapper here at all', ())
+
+
+def test_unwrap_stops_on_an_encrypted_block_too_short_to_read() -> None:
+    # Long enough to be a compressed block, too short to be the encrypted one it claims to be.
+    data = b'RC->' + bytes(8)
+    assert unwrap(data) == (data, ())

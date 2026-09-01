@@ -8,8 +8,9 @@ the counts are tagged but the vertex and coordinate data are packed float arrays
 sixteen-bit index buffer draws them. The chunk identifiers are shared, so one reader handles both.
 
 Models are Z-up, the convention of the tool that exported them, while the game and glTF are both
-Y-up; positions and normals are rotated on the way out so a character stands up. Texture V runs
-negative and is flipped for the same reason.
+Y-up; positions and normals are rotated on the way out so a character stands up. Texture
+coordinates are not touched at all: V runs negative, and the game hands it to Direct3D as written
+and lets wrapping sort it out.
 
 A model does not embed its images. It carries a search path -- always ``textures`` then
 ``..\\sharedtextures`` -- and its materials name files to be found along it, so a caller that wants
@@ -25,7 +26,7 @@ from .memoryfile import CHUNK_HEADER_SIZE, TAG_SIZES, BasicType, read_int, read_
 from .typing import Model, ModelFace, ModelMesh
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, Sequence
 
     from .typing import Vector3
 
@@ -82,6 +83,9 @@ def _chunks(data: bytes, offset: int, end: int) -> Iterator[tuple[int, int, int,
     while offset < end:
         if data[offset] != BasicType.CHUNK:
             return
+        if offset + CHUNK_HEADER_SIZE > end:
+            msg = f'A chunk header at offset {offset} runs past the end of the stream.'
+            raise InvalidModelError(msg)
         identifier, version, size = struct.unpack_from('<3I', data, offset + 1)
         if size < CHUNK_HEADER_SIZE or offset + size > end:
             msg = f'Chunk 0x{identifier:08x} at offset {offset} claims {size} bytes.'
@@ -203,7 +207,7 @@ def _read_face_indices(data: bytes, offset: int, end: int) -> list[tuple[int, ..
     for identifier, _version, body, tail in _chunks(data, offset, end):
         if identifier != _FACE:
             break
-        count, cursor = read_int(data, body)
+        count, cursor = _read_count(data, body)
         indices = []
         for _ in range(count):
             value, cursor = read_int(data, cursor)
@@ -494,17 +498,23 @@ def _assemble(name: str, positions: list[Vector3], normals: list[Vector3],
     ModelMesh
         The assembled mesh.
     """
+
+    # An index has to be in range at both ends: a negative one is in range for Python and picks a
+    # vertex from the far end of the pool, which is silently wrong geometry rather than an error.
+    def holds(indices: Sequence[int], pool: Sequence[object]) -> bool:
+        return len(indices) == _TRIANGLE and all(0 <= i < len(pool) for i in indices)
+
     faces: list[ModelFace] = []
     for index, triangle in enumerate(position_faces):
-        if len(triangle) != _TRIANGLE or any(i >= len(positions) for i in triangle):
+        if not holds(triangle, positions):
             continue
         mapped = coord_faces[index] if index < len(coord_faces) else triangle
-        if len(mapped) != _TRIANGLE or any(i >= len(coords) for i in mapped):
+        if not holds(mapped, coords):
             mapped = (0, 0, 0)
         material = face_materials[index] if index < len(face_materials) else 0
         faces.append(
             ModelFace(coords=(mapped[0], mapped[1], mapped[2]),
-                      material=material if material < len(materials) else 0,
+                      material=material if 0 <= material < len(materials) else 0,
                       positions=(triangle[0], triangle[1], triangle[2])))
     return ModelMesh(coords=tuple(coords),
                      faces=tuple(faces),

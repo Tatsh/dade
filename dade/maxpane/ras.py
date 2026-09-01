@@ -93,6 +93,9 @@ def read_header(data: bytes) -> ArchiveHeader:
     if data[:4] != MAGIC:
         msg = f'Not a RAS archive: {data[:4]!r}.'
         raise InvalidArchiveError(msg)
+    if len(data) < HEADER_SIZE:
+        msg = f'A RAS archive is at least {HEADER_SIZE} bytes; this one is {len(data)}.'
+        raise InvalidArchiveError(msg)
     seed = struct.unpack_from('<i', data, 4)[0]
     raw = decrypt(bytes(data[8:HEADER_SIZE]), seed)
     file_count, directory_count, file_table_size, directory_table_size = struct.unpack_from(
@@ -126,7 +129,11 @@ def read_directory(data: bytes) -> RASContents:
     -------
     RASContents
         The header, the directory table, the file table, and the computed end of the payload.
-        :py:class:`InvalidArchiveError` propagates from :py:func:`read_header`.
+
+    Raises
+    ------
+    InvalidArchiveError
+        If the header will not read, or an entry names a directory the archive does not hold.
     """
     header = read_header(data)
     table_start = HEADER_SIZE + header.file_table_size
@@ -145,6 +152,9 @@ def read_directory(data: bytes) -> RASContents:
     for _ in range(header.file_count):
         name, offset = _read_name(file_table, offset)
         size, stored_size, _, directory, _, _ = struct.unpack_from('<6I', file_table, offset)
+        if directory >= len(directories):
+            msg = (f'`{name}` names directory {directory} of {len(directories)}.')
+            raise InvalidArchiveError(msg)
         modified = _system_time(file_table, offset + 24)
         offset += _FILE_FIELDS_SIZE
         entries.append(

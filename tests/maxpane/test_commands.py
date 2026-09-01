@@ -353,3 +353,35 @@ def test_ldb_textures_aborts_on_a_bad_level(runner: CliRunner, tmp_path: Path) -
     level = tmp_path / 'bad.ldb'
     level.write_bytes(b'\x14\x02\x14\x02')
     assert runner.invoke(ldb_textures, (str(level), '-o', str(tmp_path / 'o'))).exit_code != 0
+
+
+def test_ras_extract_refuses_to_write_outside_the_output_directory(
+        runner: CliRunner, tmp_path: Path, make_ras: Callable[..., bytes]) -> None:
+    # An archive names its own member paths, and nothing stops one naming its way back out.
+    archive = tmp_path / 'x_data.ras'
+    archive.write_bytes(make_ras(directories=('\\', '\\..\\..\\')))
+    out = tmp_path / 'out'
+    result = runner.invoke(ras_extract, (str(archive), '-o', str(out)))
+    assert result.exit_code == 0
+    assert not (tmp_path.parent / 'a.txt').exists()
+    assert not list(out.rglob('a.txt'))
+
+
+def test_ldb_textures_refuses_a_path_that_climbs_out(runner: CliRunner, tmp_path: Path,
+                                                     make_ldb: Callable[..., bytes]) -> None:
+    level = tmp_path / 'a.ldb'
+    level.write_bytes(make_ldb(textures=(('X:\\..\\..\\WALL.TGA', 0, b'\x00\x01'),)))
+    out = tmp_path / 'tex'
+    result = runner.invoke(ldb_textures, (str(level), '-o', str(out)))
+    assert result.exit_code == 0
+    # The upward steps are dropped, so the image lands directly under the output directory.
+    assert (out / 'WALL.TGA').read_bytes() == b'\x00\x01'
+    assert not (tmp_path.parent / 'WALL.TGA').exists()
+
+
+def test_inspect_tags_on_an_empty_asset(runner: CliRunner, tmp_path: Path) -> None:
+    asset = tmp_path / 'empty.bin'
+    asset.write_bytes(b'')
+    result = runner.invoke(inspect_tags, (str(asset),))
+    assert result.exit_code == 0
+    assert '0 bytes, walked to 0 (100.00%)' in result.output

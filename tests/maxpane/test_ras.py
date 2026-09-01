@@ -103,3 +103,15 @@ def test_read_header_reads_the_table_checksums(make_ras: Callable[..., bytes]) -
                 header.directory_table_size], header.seed)
     assert header.file_crc == zlib.crc32(files)
     assert header.directory_crc == zlib.crc32(directories)
+
+
+def test_read_header_rejects_a_truncated_archive() -> None:
+    # The magic is right but there is no header behind it, which used to raise `struct.error`.
+    with pytest.raises(InvalidArchiveError, match='at least'):
+        read_header(b'RAS\x00' + bytes(8))
+
+
+def test_read_directory_rejects_an_entry_naming_a_directory_that_is_not_there(
+        make_ras: Callable[..., bytes]) -> None:
+    with pytest.raises(InvalidArchiveError, match='names directory'):
+        read_directory(make_ras(directory=7))
