@@ -20,6 +20,7 @@ _GAMES = (
     'incoming',
     'jubeatplus',
     'marmalade',
+    'maxpane',
     'misc',
     'monopoly08',
     'rbplus',

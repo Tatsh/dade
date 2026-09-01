@@ -61,6 +61,7 @@ bitrock
 bmax
 bmin
 bootram
+boxalpha
 bpms
 bpps
 bsky
@@ -69,9 +70,11 @@ bsum
 byteswap
 cabdata
 calcsize
+cameracollision
 cand
 caplog
 capsys
+cardboardalpha
 cbar
 cdda
 cdiner
@@ -80,6 +83,7 @@ cdrommsf
 cdtitle
 cgbi
 chara
+charactercollision
 checkerboard
 chunksize
 cigam
@@ -88,6 +92,7 @@ ciwmodel
 clen
 clut
 cluts
+cmpheader
 cmpr
 cmpxchg
 codepoint
@@ -104,6 +109,7 @@ coredata
 coveragerc
 coverallsapp
 crdt
+cryptheader
 cryptoff
 cryptsize
 cstring
@@ -112,6 +118,7 @@ ctypes
 cuda
 cuebin
 cupy
+cutoff
 darksphere
 dashcam
 dataarray
@@ -223,6 +230,7 @@ gigayears
 globaltoc
 gltf
 gluvs
+gognitti
 gojuon
 gojūon
 gojūon's
@@ -308,6 +316,7 @@ lanczos
 lastexitcode
 launchable
 ldrsb
+lerp
 lextudio
 lhuf
 libaudio
@@ -316,6 +325,8 @@ libjsonnet
 librarys
 libsg
 libsonnet
+lightmap
+lightmaps
 linecap
 linejoin
 linters
@@ -333,11 +344,14 @@ marm
 maskable
 maxcolors
 maxidx
+maxpane
+maxpayne
 mbin
 medi
 mediump
 megayears
 memcpy
+memoryfile
 mido
 midwaydec
 minlen
@@ -374,6 +388,7 @@ nlist
 nloop
 nmip
 nocolon
+nodraw
 nofixprebinding
 noie
 nojekyll
@@ -453,6 +468,7 @@ prov
 pset
 psmt
 putalpha
+putdata
 putpalette
 pvrpack
 pvrt
@@ -495,6 +511,7 @@ reflec
 reflecbeatplus
 refpack
 regen
+renderable
 resgroup
 rgba
 rgbaq
@@ -524,6 +541,7 @@ scancode
 scancodes
 scei
 scel
+schar
 schemafile
 schi
 schl
@@ -542,6 +560,7 @@ settimg
 sevenzip
 sfbk
 sgeo
+sharedtextures
 shdr
 shellcheck
 shellformat
@@ -565,6 +584,8 @@ skmple
 skuk
 skybox
 skyboxes
+skybox's
+slerp
 slus
 smlt
 smpl
@@ -588,6 +609,7 @@ ssaid
 ssha
 ssre
 sszl
+startpoint
 statusline
 stcol
 stcycl
@@ -620,6 +642,7 @@ swizzles
 syft
 symtab
 sysex
+systemtime
 szlen
 tabindex
 tatsh
@@ -634,6 +657,7 @@ texoff
 texsize
 textlength
 teyu
+tf's
 thps
 timecents
 titletranslit
@@ -671,11 +695,13 @@ undrafted
 unframeable
 unparseable
 unshield
+unshields
 unsplittable
 unswizzle
 unswizzled
 untile
 untiled
+unwalkable
 usemtl
 userprofile
 usrdir
@@ -716,6 +742,7 @@ xform
 xmap
 xoff
 xsecond
+xyzw
 yapf
 yapfignore
 yarnrc

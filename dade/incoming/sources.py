@@ -8,7 +8,9 @@ from typing import NamedTuple
 import logging
 import subprocess as sp
 
-from .tools import run_gdiextract, run_unshield
+from dade.common.tools import run_unshield
+
+from .tools import run_gdiextract
 
 __all__ = ('PreparedSource', 'SourceError', 'prepare_source')
 

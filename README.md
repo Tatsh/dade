@@ -53,6 +53,7 @@ Run `dade --help` to list the games, and `dade <game> --help` to list a game's s
 | `dade incoming`   | _Incoming_ (PC and Dreamcast)               | Rage Software / Interplay     |
 | `dade jubeatplus` | _jubeat plus_ (iOS)                         | Konami                        |
 | `dade marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
+| `dade maxpane`    | _Max Payne_ (PC)                            | Remedy Entertainment          |
 | `dade misc`       | Formats belonging to no single game         | —                             |
 | `dade monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
 | `dade rbplus`     | _REFLEC BEAT plus_ (iOS)                    | Konami                        |
@@ -454,6 +455,85 @@ pieces are given one of each, rather than all of them at once.
 
 The retail disc converts clean, so `--ignore-failures` is not needed for it; pass it to log and skip
 an asset that will not convert instead of stopping.
+
+## Max Payne
+
+```shell
+dade maxpane ras-list MAXPAYNE.ISO
+dade maxpane ras-extract MAXPAYNE.ISO -o extracted
+```
+
+Readers for the RAS (Remedy Archive System) containers the game loads everything from. The argument
+may be a `.ras` archive, a `.mpm` mod package, a directory (searched recursively), an InstallShield
+`DATA1.CAB`, an ISO, or the `.cue` of a cue/bin pair.
+
+A retail disc needs both routes at once, which the extractor takes care of: the level archives sit
+loose on the disc, while the shared game database is inside `DATA1.CAB` and is unpacked with
+[`unshield`](https://github.com/twogood/unshield). A cabinet is skipped with a warning when
+`unshield` is missing, so the loose archives still come out.
+
+Members are stored back to back with no offset field, so the directory doubles as an integrity
+check; `ras-list` reports an archive as `intact` when the header, both tables, and every stored size
+account for the file exactly.
+
+Every member is LZSS-compressed and the archive tables are encrypted, both handled transparently.
+Pass `--raw` to `ras-extract` to keep the `RA->` and `RC->` wrappers.
+
+```shell
+dade maxpane inspect-tags extracted/data/database/levels/part1/Part1_Level6.ldb
+```
+
+`inspect-tags` decodes the tagged `R_MemoryFile` stream that every custom asset is built from,
+naming each value's type. The walk stops where a level leaves tagged territory, which is where its
+first untagged string begins.
+
+```shell
+dade maxpane ldb2glb extracted/data/database/levels -o glb
+dade maxpane ldb-textures extracted/data/database/levels -o textures
+```
+
+```shell
+dade maxpane ldb2glb extracted/data/database/levels -D extracted/data/database -o glb
+```
+
+`ldb2glb` converts levels to binary glTF, one `.glb` per `.ldb`, in parallel across every core.
+Pass `--database` and the NPCs and pickups are drawn with their own models, read from the game's
+`skins` and `level_items` directories; without it they are written as named empty nodes.
+Each file carries the level's architecture, its props, the game's own texture coordinates, and every
+embedded image.
+
+Every clip a prop can play -- a door swinging either way, a lift rising, a fan turning -- comes out
+as a named glTF animation, so a viewer can list and play them. A level stores a clip as two poses
+and two curves, one giving the distance travelled in world units and the other how far the prop has
+turned; both are baked into keyframes on the way out, and a clip that moves nothing is dropped.
+
+The baked lighting is written too: each level's atlases are embedded, each face names the one that
+lights it, and the second coordinate set addresses it. It goes in glTF's occlusion slot, which is
+the closest the format has to a lightmap, so a viewer wanting the game's own look should multiply
+that texture's colour into the base rather than treat it as ambient occlusion.
+
+The sky is written out. A level's `skybox` faces are what closes it off wherever it opens to the
+air, and leaving them out puts a hole through every street; they get a flat unlit colour, because
+the sky the game drew came from the renderer rather than from the level. Their placeholder image is
+never used, and neither is `dummy`'s, which stays dropped.
+
+Graffiti, signage and switchable surfaces come off their walls slightly. A level lays each of them
+in exactly the plane of what it covers, and nothing in the file marks which is which, because the
+engine walked its BSP and never drew both at once. A viewer draws the whole level and has only a
+depth buffer, so `dade.maxpane.decals` works the layering out from the geometry and lifts each
+covered face about eight millimetres along its normal.
+
+Four things about the format are easy to get backwards. A face's corner count is not its number of
+sides -- the editor drops extra corners along edges it shares with other faces -- so triangulating
+from corner nought can start with a straight line, and taking the winding from that turns 822 of
+the shipped faces inside out. A material's second string is the
+material's _name_, not a filename, and only the level's category table says which image it draws
+with; matching on filename instead leaves a fifth of a level's faces untextured. Level architecture
+is already in world space, keeping its transform only as the editor's pivot, while an animated prop
+is placed by its transform -- applying both the same way moves the architecture twice. And a model's
+texture coordinates are stored with V running negative and are meant to be used exactly as written,
+Direct3D's wrapping doing the rest; negating them to get a tidy `0..1` range turns every skin upside
+down, which shows on a face and nowhere else.
 
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 
