@@ -25,6 +25,7 @@ and :doc:`../utilities`.
    incoming
    jubeatplus
    marmalade
+   maxpane
    monopoly08
    rbplus
    rhythmin
