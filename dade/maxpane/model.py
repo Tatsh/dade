@@ -49,6 +49,8 @@ _COORDS = 0x0001000E
 _PACKED = 1
 """Chunk version that packs its payload instead of tagging every value."""
 _FLOAT_SIZE = 4
+_INDEX_SIZE = 2
+"""Width of one entry in a packed mesh's index buffer."""
 _TRIANGLE = 3
 _MAX_ELEMENTS = 4_000_000
 
@@ -143,7 +145,7 @@ def _upright(x: float, y: float, z: float) -> Vector3:
     return (x, -z, y)
 
 
-def _read_vectors(data: bytes, offset: int, count: int, *,
+def _read_vectors(data: bytes, offset: int, count: int, end: int, *,
                   packed: bool) -> tuple[list[Vector3], int]:
     """
     Read a run of three-component vectors, tagged or packed.
@@ -156,6 +158,8 @@ def _read_vectors(data: bytes, offset: int, count: int, *,
         Offset of the first vector.
     count : int
         How many to read.
+    end : int
+        Offset the run has to finish inside, being the end of the chunk holding it.
     packed : bool
         Read raw floats rather than tagged vectors.
 
@@ -167,10 +171,16 @@ def _read_vectors(data: bytes, offset: int, count: int, *,
     Raises
     ------
     InvalidModelError
-        If a tagged run holds something that is not a vector.
+        If the run does not fit inside its chunk, or a tagged one holds something that is not a
+        vector.
     """
     out: list[Vector3] = []
     stride = 3 * _FLOAT_SIZE
+    # The count comes out of the file, so on its own it says only how much to read, not how much
+    # there is. Unchecked it reads whatever follows the chunk and calls it geometry.
+    if offset + count * (stride if packed else 1 + stride) > end:
+        msg = f'A run of {count} vectors at offset {offset} does not fit inside its chunk.'
+        raise InvalidModelError(msg)
     if packed:
         out.extend(
             _upright(*struct.unpack_from('<3f', data, offset + index * stride))
@@ -351,9 +361,9 @@ def _read_mesh(data: bytes, offset: int, end: int) -> ModelMesh:
             name, _ = read_string(data, body)
         elif identifier == _POSITIONS:
             count, cursor = _read_count(data, body)
-            positions, cursor = _read_vectors(data, cursor, count, packed=packed)
+            positions, cursor = _read_vectors(data, cursor, count, tail, packed=packed)
             if packed:
-                normals, _ = _read_vectors(data, cursor, count, packed=True)
+                normals, _ = _read_vectors(data, cursor, count, tail, packed=True)
         elif identifier == _FACES:
             position_faces = _read_faces(data, body, tail, packed=packed)
         elif identifier == _COORDS:
@@ -383,10 +393,18 @@ def _read_faces(data: bytes, offset: int, end: int, *, packed: bool) -> list[tup
     -------
     list[tuple[int, ...]]
         One tuple of indices per face.
+
+    Raises
+    ------
+    InvalidModelError
+        If a packed index buffer does not fit inside its chunk.
     """
     count, cursor = _read_count(data, offset)
     if not packed:
         return _read_face_indices(data, cursor, end)
+    if cursor + count * _INDEX_SIZE > end:
+        msg = f'An index buffer of {count} at offset {cursor} does not fit inside its chunk.'
+        raise InvalidModelError(msg)
     indices = struct.unpack_from(f'<{count}H', data, cursor)
     return [tuple(indices[at:at + _TRIANGLE]) for at in range(0, count - 2, _TRIANGLE)]
 
@@ -423,14 +441,14 @@ def _read_coords(data: bytes, offset: int, end: int, *,
     _set, cursor = read_int(data, offset)
     count, cursor = _read_count(data, cursor)
     if packed:
-        vectors, _ = _read_vectors(data, cursor, count, packed=True)
+        vectors, _ = _read_vectors(data, cursor, count, end, packed=True)
         return [], [(u, w) for u, _v, w in vectors]
     faces = _read_face_indices(data, cursor, end)
     cursor = _skip_face_chunks(data, cursor, end)
     for _ in range(2):
         _, cursor = read_int(data, cursor)
     count, cursor = _read_count(data, cursor)
-    vectors, _ = _read_vectors(data, cursor, count, packed=False)
+    vectors, _ = _read_vectors(data, cursor, count, end, packed=False)
     return faces, [(u, w) for u, _v, w in vectors]
 
 

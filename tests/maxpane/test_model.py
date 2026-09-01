@@ -125,7 +125,8 @@ def _chunk(identifier: int, version: int, body: bytes) -> bytes:
 
 
 def test_read_model_rejects_a_vector_that_is_not_one() -> None:
-    positions = b'\x14\x01' + b'\x14\x00'
+    # One vector's worth of room, holding something that is not a vector.
+    positions = b'\x14\x01' + b'\x14' + bytes(12)
     mesh = _chunk(0x00010005, 1, _chunk(0x00010006, 0, positions))
     with pytest.raises(InvalidModelError, match='Expected a vector'):
         read_model(mesh)
@@ -197,3 +198,17 @@ def test_read_model_ignores_a_negative_texture_coordinate_index(
         make_model: Callable[..., bytes]) -> None:
     model = read_model(make_model(coord_faces=((0, 1, -2),)))
     assert model.meshes[0].faces[0].coords == (0, 0, 0)
+
+
+def test_read_model_rejects_a_run_of_vectors_past_its_chunk() -> None:
+    # The count says a thousand vectors; the chunk holds one. Reading on regardless takes whatever
+    # follows the chunk and calls it geometry.
+    positions = _chunk(0x00010006, 1, b'\x02' + struct.pack('<i', 1000) + bytes(12))
+    with pytest.raises(InvalidModelError, match='does not fit inside its chunk'):
+        read_model(_chunk(0x00010005, 1, positions))
+
+
+def test_read_model_rejects_an_index_buffer_past_its_chunk() -> None:
+    faces = _chunk(0x00010007, 1, b'\x02' + struct.pack('<i', 1000) + bytes(6))
+    with pytest.raises(InvalidModelError, match='does not fit inside its chunk'):
+        read_model(_chunk(0x00010005, 1, faces))
