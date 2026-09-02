@@ -1258,6 +1258,14 @@ def _lift_decals(level: Level, containers: Sequence[RenderMesh]) -> list[list[di
         of :py:data:`dade.maxpayne.decals.DECAL_STEP` it has to rise. Faces that stay put are left
         out.
     """
+    # A level that states which of its surfaces sit over others is believed rather than measured.
+    # Only the second game does; the first leaves every priority at nought.
+    stated = {key: m.sort_priority for key, m in level.materials.items() if m.sort_priority}
+    if stated:
+        return [[{
+            at: stated[face.material]
+            for at, face in enumerate(mesh.faces) if face.material in stated
+        } for mesh in container.meshes] for container in containers]
     surfaces: list[tuple[Vector3, list[Vector3], tuple[int, int, int]]] = []
     origins: list[tuple[int, int, int]] = []
     for group, container in enumerate(containers):

@@ -322,11 +322,13 @@ def _read_materials(reader: _Reader,
         blend = fields[0]
         sided = fields[10]
         lightmap = fields[3]
+        priority = fields[8]
         lit[index] = lightmap if isinstance(lightmap, int) else -1
         out[index] = Material(blend=_BLEND_MODES.get(blend, '') if isinstance(blend, int) else '',
                               category='',
                               dual_sided=bool(sided),
                               image=image.path if image else '',
+                              sort_priority=priority if isinstance(priority, int) else 0,
                               texture=image.path if image else '')
     return out, lit
 
@@ -695,8 +697,12 @@ def _read_props(
         if prefab >= 0:
             seen.add(prefab)
         playable = tuple(_read_animations(reader, pool))
+        # A state machine holds the pose its prop finished in, which for a door is standing open.
+        # The clip says where it starts, and that is where a level should be drawn at rest.
+        if playable:
+            transform = playable[0].start
         for at, batch in enumerate(batches):
-            meshes.append(batch)
+            meshes.append(batch._replace(transform=transform))
             names.append(f'prop{index}_{at}')
             clips.append(playable)
     return RenderMesh(corners=tuple(corners),

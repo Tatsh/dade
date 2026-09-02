@@ -624,3 +624,21 @@ def test_build_glb_keeps_a_face_with_no_side_as_written(make_ldb: Callable[..., 
     indices = document['meshes'][0]['primitives'][0]['indices']
     raw = _accessor_bytes(document, binary, indices)
     assert struct.unpack_from('<3I', raw, 0) == (0, 1, 2)
+
+
+def test_build_glb_believes_a_level_that_states_its_own_decals(
+        make_ldb: Callable[..., bytes]) -> None:
+    # A level that says which of its surfaces sit over others is taken at its word rather than
+    # measured, because working it out from the geometry separates ordinary neighbouring tiles.
+    level = read_level(make_ldb(face_materials=(7,), layout='stacked'))
+    stated = level._replace(
+        materials={
+            key: material._replace(sort_priority=2 if key == 7 else 0)
+            for key, material in level.materials.items()
+        })
+    document, binary = _parse(build_glb(stated))
+    raw = _accessor_bytes(document, binary,
+                          document['meshes'][0]['primitives'][0]['attributes']['POSITION'])
+    heights = sorted({struct.unpack_from('<3f', raw, corner * 12)[1] for corner in range(6)})
+    # Every face of the material rises by its stated priority, and none by anything else.
+    assert heights == pytest.approx([2 * DECAL_STEP])

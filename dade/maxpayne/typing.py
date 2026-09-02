@@ -163,6 +163,12 @@ class Material(NamedTuple):
     from :py:attr:`alpha` instead."""
     dual_sided: bool = False
     """Whether the material is drawn from both sides."""
+    sort_priority: int = 0
+    """How far in front of what it covers the material is drawn.
+
+    Max Payne 2 states this for the surfaces laid over other surfaces -- graffiti, signage, decals
+    -- so an exporter has no need to work it out from the geometry. Max Payne 1 stores nothing and
+    leaves it at zero, and :py:mod:`dade.maxpayne.decals` does the working out instead."""
 
 
 class Level(NamedTuple):
