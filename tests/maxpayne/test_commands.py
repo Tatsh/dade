@@ -112,7 +112,7 @@ def test_ras_extract_filters_by_pattern(runner: CliRunner, tmp_path: Path,
     archive = tmp_path / 'x_data.ras'
     archive.write_bytes(make_ras())
     out = tmp_path / 'out'
-    result = runner.invoke(ras_extract, (str(archive), '*.txt', '-o', str(out)))
+    result = runner.invoke(ras_extract, (str(archive), '-p', '*.txt', '-o', str(out)))
     assert result.exit_code == 0
     assert (out / 'data' / 'a.txt').is_file()
     assert not (out / 'data' / 'b.bin').exists()
@@ -213,7 +213,9 @@ def test_iter_archives_unshields_a_cabinet_on_an_image(tmp_path: Path, mocker: M
     image.write_bytes(b'not a ras')
     labels = [label for label, _ in iter_archives(image)]
     assert labels == ['DISK1/LEVELS/X_LEVEL1.RAS', 'x_data.ras']
-    assert staged['siblings'] == ['DATA1.CAB', 'DATA1.HDR', 'DATA2.CAB']
+    # The parts are staged under one casing, because a cabinet split across two discs can
+    # arrive with the names spelled either way and unshield has to find them all.
+    assert staged['siblings'] == ['data1.cab', 'data1.hdr', 'data2.cab']
 
 
 def test_iter_archives_skips_a_cabinet_without_unshield(tmp_path: Path,
@@ -385,3 +387,43 @@ def test_inspect_tags_on_an_empty_asset(runner: CliRunner, tmp_path: Path) -> No
     result = runner.invoke(inspect_tags, (str(asset),))
     assert result.exit_code == 0
     assert '0 bytes, walked to 0 (100.00%)' in result.output
+
+
+def test_iter_archives_stages_a_cabinet_split_across_two_discs(
+        tmp_path: Path, mocker: MockerFixture, make_ras: Callable[..., bytes]) -> None:
+    # Max Payne 2 ships this way: the header and first volumes are on the install disc and the
+    # last is on the play disc. Unpacking either alone stops part way through the cabinet.
+    staged: dict[str, list[str]] = {}
+
+    def fake_unshield(cabinet: Path, output_dir: Path) -> None:
+        staged['parts'] = sorted(path.name for path in cabinet.parent.iterdir())
+        (output_dir / 'mp2_data.ras').write_bytes(make_ras())
+
+    install = _StubImage({'DATA1.CAB': b'ISc(', 'DATA1.HDR': b'hdr', 'DATA2.CAB': b'vol'})
+    play = _StubImage({'DATA3.CAB': b'vol', 'LEVELS/X_LEVEL1.RAS': make_ras()})
+    mocker.patch('dade.maxpayne.commands.sources.run_unshield', side_effect=fake_unshield)
+    mocker.patch('dade.maxpayne.commands.sources.open_image', side_effect=[install, play])
+    first, second = tmp_path / 'install.iso', tmp_path / 'play.iso'
+    for disc in (first, second):
+        disc.write_bytes(b'not a ras')
+    labels = [label for label, _ in iter_archives(first, second)]
+    assert labels == ['LEVELS/X_LEVEL1.RAS', 'mp2_data.ras']
+    # One cabinet, unpacked once, holding every part both discs carried.
+    assert staged['parts'] == ['data1.cab', 'data1.hdr', 'data2.cab', 'data3.cab']
+
+
+def test_iter_archives_reads_several_loose_archives(tmp_path: Path,
+                                                    make_ras: Callable[..., bytes]) -> None:
+    first, second = tmp_path / 'a.ras', tmp_path / 'b.ras'
+    for archive in (first, second):
+        archive.write_bytes(make_ras())
+    assert [label for label, _ in iter_archives(first, second)] == ['a.ras', 'b.ras']
+
+
+def test_iter_archives_names_every_source_when_it_finds_nothing(tmp_path: Path) -> None:
+    empty = tmp_path / 'empty'
+    empty.mkdir()
+    other = tmp_path / 'other'
+    other.mkdir()
+    with pytest.raises(NoArchivesFoundError, match=r'empty.*other'):
+        list(iter_archives(empty, other))

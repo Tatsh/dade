@@ -77,3 +77,43 @@ def test_open_image_invalid_raises(tmp_path: Path) -> None:
     junk.write_bytes(b'this is not an ISO 9660 image')
     with pytest.raises(InvalidFormatError):
         open_image(junk)
+
+
+def test_open_image_bin_beside_its_cue(make_cuebin: Callable[..., Path],
+                                       make_iso9660: Callable[..., bytes]) -> None:
+    # Handed the binary rather than the sheet, the sheet is still what says how to read it.
+    cue = make_cuebin(make_iso9660(ark_data=b'ARK DATA'))
+    image = open_image(cue.with_suffix('.bin'))
+    assert any(path.upper().endswith('.ARK') for path, _ in image.iter_files())
+
+
+def test_open_image_bin_without_a_cue(make_cuebin: Callable[..., Path],
+                                      make_iso9660: Callable[..., bytes], tmp_path: Path) -> None:
+    # No sheet, so the layout comes from the sectors: a raw one opens with the sync pattern.
+    cue = make_cuebin(make_iso9660(ark_data=b'ARK DATA'))
+    lonely = tmp_path / 'lonely.bin'
+    lonely.write_bytes(cue.with_suffix('.bin').read_bytes())
+    cue.unlink()
+    image = open_image(lonely)
+    assert any(path.upper().endswith('.ARK') for path, _ in image.iter_files())
+
+
+def test_open_image_bin_that_is_already_user_data(make_iso9660: Callable[..., bytes],
+                                                  tmp_path: Path) -> None:
+    # A track written without its error correction is what a reader wants already.
+    plain = tmp_path / 'plain.bin'
+    plain.write_bytes(make_iso9660(ark_data=b'ARK DATA'))
+    image = open_image(plain)
+    assert any(path.upper().endswith('.ARK') for path, _ in image.iter_files())
+
+
+def test_open_image_bin_in_a_mode_it_cannot_read(make_cuebin: Callable[..., Path],
+                                                 make_iso9660: Callable[..., bytes],
+                                                 tmp_path: Path) -> None:
+    cue = make_cuebin(make_iso9660(ark_data=b'ARK DATA'))
+    raw = bytearray(cue.with_suffix('.bin').read_bytes())
+    raw[15] = 9
+    strange = tmp_path / 'strange.bin'
+    strange.write_bytes(bytes(raw))
+    with pytest.raises(InvalidFormatError, match='Unsupported sector mode'):
+        open_image(strange)

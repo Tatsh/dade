@@ -126,16 +126,22 @@ def _iso_extent(records: Iterable[bytes]) -> bytes:
 
 
 def _iso_wrap_sectors(iso: bytes, mode: str) -> bytes:
+    """
+    Wrap user data into raw sectors, the way a disc that kept its error correction holds them.
+
+    The twelve-byte sync pattern and the mode byte are real, because that is what a reader given a
+    `.bin` without its cue sheet has to recognise the layout from.
+    """
+    sync = b'\x00' + b'\xff' * 10 + b'\x00'
     match mode.upper():
         case 'MODE1/2352':
-            prefix, suffix = 16, 288
+            head, suffix = sync + b'\x00\x00\x00\x01', 288
         case 'MODE2/2352':
-            prefix, suffix = 24, 280
+            head, suffix = sync + b'\x00\x00\x00\x02' + bytes(8), 280
         case _:  # MODE1/2048.
-            prefix, suffix = 0, 0
-    return b''.join(
-        bytes(prefix) + iso[start:start + _BLOCK_SIZE] + bytes(suffix)
-        for start in range(0, len(iso), _BLOCK_SIZE))
+            head, suffix = b'', 0
+    return b''.join(head + iso[start:start + _BLOCK_SIZE] + bytes(suffix)
+                    for start in range(0, len(iso), _BLOCK_SIZE))
 
 
 @pytest.fixture

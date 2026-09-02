@@ -65,8 +65,12 @@ def _unpack(label: str, data: bytes, patterns: tuple[str, ...], output_dir: Path
 
 
 @click.command(name='ras-extract')
-@click.argument('source', type=click.Path(exists=True, path_type=Path))
-@click.argument('patterns', nargs=-1)
+@click.argument('sources', nargs=-1, required=True, type=click.Path(exists=True, path_type=Path))
+@click.option('-p',
+              '--pattern',
+              'patterns',
+              multiple=True,
+              help="Glob matched against a member's in-archive path. Repeatable.")
 @click.option('-o',
               '--output-dir',
               default='.',
@@ -74,21 +78,24 @@ def _unpack(label: str, data: bytes, patterns: tuple[str, ...], output_dir: Path
               type=click.Path(file_okay=False, path_type=Path))
 @click.option('--raw', is_flag=True, help='Keep the RA-> and RC-> wrappers.')
 @debug_option
-def ras_extract(source: Path, patterns: tuple[str, ...], output_dir: Path, *, raw: bool) -> None:
+def ras_extract(sources: tuple[Path, ...], patterns: tuple[str, ...], output_dir: Path, *,
+                raw: bool) -> None:
     """
-    Extract members of the archives named by SOURCE into the output directory.
+    Extract members of the archives named by SOURCES into the output directory.
 
-    SOURCE is a RAS archive, an MPM mod package, an ISO image, or the cue sheet of a cue/bin pair.
-    Every archive on a disc image is extracted, all into the same tree, which reproduces the layout
-    the game itself sees because the archives share one namespace.
+    SOURCES are RAS archives, MPM mod packages, directories, InstallShield cabinets, or disc
+    images -- an ISO, a cue sheet, or a bare BIN. Give every disc a game shipped on: Max
+    Payne 2 splits its cabinet across two, and the parts are gathered from all of them
+    before it is unpacked.
 
-    PATTERNS are globs matched against each member's full in-archive path. Every member is
-    extracted when none are given.
+    Every archive is extracted into the same tree, which reproduces the layout the game itself
+    sees because the archives share one namespace. Pass --pattern to take only the members whose
+    in-archive path matches a glob; every member is taken when none is given.
     """  # noqa: DOC501
     total = 0
     count = 0
     try:
-        for label, data in iter_archives(source):
+        for label, data in iter_archives(*sources):
             written_bytes, written_members = _unpack(label, data, patterns, output_dir, raw=raw)
             total += written_bytes
             count += written_members

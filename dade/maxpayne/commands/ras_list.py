@@ -42,14 +42,17 @@ def _describe(label: str, data: bytes, report: dict[str, list[dict[str, object]]
 
 
 @click.command(name='ras-list')
-@click.argument('source', type=click.Path(exists=True, path_type=Path))
+@click.argument('sources', nargs=-1, required=True, type=click.Path(exists=True, path_type=Path))
 @click.option('--json', 'as_json', is_flag=True, help='Print the directory as JSON.')
 @debug_option
-def ras_list(source: Path, *, as_json: bool) -> None:
+def ras_list(sources: tuple[Path, ...], *, as_json: bool) -> None:
     """
-    List the members of the archives named by SOURCE.
+    List the members of the archives named by SOURCES.
 
-    SOURCE is a RAS archive, an MPM mod package, an ISO image, or the cue sheet of a cue/bin pair.
+    SOURCES are RAS archives, MPM mod packages, directories, InstallShield cabinets, or disc
+    images -- an ISO, a cue sheet, or a bare BIN. Give every disc a game shipped on: Max
+    Payne 2 splits its cabinet across two, and the parts are gathered from all of them
+    before it is unpacked.
     Every archive on a disc image is listed. For each archive this prints the format version,
     member and directory counts, a histogram of member extensions, and one line per member.
 
@@ -58,7 +61,7 @@ def ras_list(source: Path, *, as_json: bool) -> None:
     """  # noqa: DOC501
     report: dict[str, list[dict[str, object]]] = {}
     try:
-        for label, data in iter_archives(source):
+        for label, data in iter_archives(*sources):
             _describe(label, data, report if as_json else None)
     except (InvalidArchiveError, InvalidFormatError, NoArchivesFoundError) as e:
         click.echo(str(e), err=True)

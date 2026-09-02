@@ -14,7 +14,7 @@ import shutil
 
 import anyio
 
-from dade.common.cuebin import cuebin_to_iso
+from dade.common.cuebin import bin_to_iso, cuebin_to_iso
 from dade.common.io import MmapReader
 from dade.common.iso9660 import Iso9660Image
 
@@ -35,15 +35,16 @@ def open_image(source: Path) -> Iso9660Image:
     """
     Open a disc-image file as an ISO 9660 image.
 
-    A ``.cue`` file is read together with its ``.bin`` track and decoded to a plain image; any other
-    file is treated as a raw ISO 9660 image and memory-mapped. A file that is neither a cue/bin pair
-    nor a valid ISO 9660 image raises
+    A ``.cue`` file is read together with its ``.bin`` track and decoded to a plain image. A
+    ``.bin`` given on its own is read through its sheet when one is sitting beside it, and read
+    from its own sectors when there is not. Any other file is treated as a raw ISO 9660 image and
+    memory-mapped. A file that is none of these raises
     :py:class:`~dade.common.exceptions.InvalidFormatError` from the underlying reader.
 
     Parameters
     ----------
     source : pathlib.Path
-        The disc-image file (an ISO image or the ``.cue`` of a cue/bin pair).
+        The disc-image file: an ISO image, the ``.cue`` of a cue/bin pair, or the ``.bin`` itself.
 
     Returns
     -------
@@ -52,6 +53,10 @@ def open_image(source: Path) -> Iso9660Image:
     """
     if source.suffix.lower() == '.cue':
         return Iso9660Image.from_bytes(cuebin_to_iso(source))
+    if source.suffix.lower() == '.bin':
+        sheet = source.with_suffix('.cue')
+        return Iso9660Image.from_bytes(
+            cuebin_to_iso(sheet) if sheet.is_file() else bin_to_iso(source))
     return Iso9660Image(MmapReader(source))
 
 
