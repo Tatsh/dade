@@ -10,7 +10,7 @@ import subprocess as sp
 
 from dade.common.disc import open_image
 from dade.common.tools import ToolNotFoundError, run_unshield
-from dade.maxpane.ras import MAGIC
+from dade.maxpayne.ras import MAGIC
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

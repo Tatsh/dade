@@ -1,4 +1,4 @@
-"""Typed data structures shared across :py:mod:`dade.maxpane`."""
+"""Typed data structures shared across :py:mod:`dade.maxpayne`."""
 from __future__ import annotations
 
 from typing import NamedTuple, TypeAlias
@@ -95,7 +95,7 @@ class Polygon(NamedTuple):
     mesh_index: int
     """Index into a smaller table that is not decoded yet, also provisionally named. It takes 5
     values on ``Part1_Level6.ldb`` and 39 on ``Part1_Level1.ldb``, splitting a level into a handful
-    of large face sets, which is what :py:func:`dade.maxpane.gltf.build_glb` groups primitives
+    of large face sets, which is what :py:func:`dade.maxpayne.gltf.build_glb` groups primitives
     by."""
     normal: Vector3
     """Outward face normal."""

@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from dade.maxpane.model import InvalidModelError, read_model
+from dade.maxpayne.model import InvalidModelError, read_model
 
 if TYPE_CHECKING:
     from collections.abc import Callable

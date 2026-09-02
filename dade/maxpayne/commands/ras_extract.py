@@ -1,4 +1,4 @@
-"""``dade maxpane ras-extract`` - unpack a RAS archive, MPM package, or disc image."""
+"""``dade maxpayne ras-extract`` - unpack a RAS archive, MPM package, or disc image."""
 from __future__ import annotations
 
 from fnmatch import fnmatch
@@ -8,7 +8,7 @@ import logging
 import click
 
 from dade.common.exceptions import InvalidFormatError
-from dade.maxpane.ras import InvalidArchiveError, member_bytes, read_directory
+from dade.maxpayne.ras import InvalidArchiveError, member_bytes, read_directory
 
 from .sources import NoArchivesFoundError, iter_archives
 from .utils import debug_option

@@ -9,7 +9,7 @@ import zlib
 
 import pytest
 
-from dade.maxpane.crypto import next_seed
+from dade.maxpayne.crypto import next_seed
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -23,7 +23,7 @@ other."""
 
 def _encrypt(data: bytes, seed: int) -> bytes:
     """
-    Invert :py:func:`dade.maxpane.crypto.decrypt` so tests can build archives.
+    Invert :py:func:`dade.maxpayne.crypto.decrypt` so tests can build archives.
 
     Parameters
     ----------

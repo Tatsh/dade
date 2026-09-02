@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from dade.maxpane.ldb import InvalidLevelError, read_geometry, read_level, read_textures
+from dade.maxpayne.ldb import InvalidLevelError, read_geometry, read_level, read_textures
 
 if TYPE_CHECKING:
     from collections.abc import Callable

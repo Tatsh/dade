@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING
 import logging
 import re
 
-from dade.maxpane.blocks import unwrap
-from dade.maxpane.model import InvalidModelError, read_model
-from dade.maxpane.typing import TextureImage
+from dade.maxpayne.blocks import unwrap
+from dade.maxpayne.model import InvalidModelError, read_model
+from dade.maxpayne.typing import TextureImage
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from dade.maxpane.typing import Level, Model
+    from dade.maxpayne.typing import Level, Model
 
 __all__ = ('load_models',)
 

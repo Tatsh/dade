@@ -7,10 +7,10 @@ import struct
 
 import pytest
 
-from dade.maxpane.decals import DECAL_STEP
-from dade.maxpane.gltf import GLB_MAGIC, build_glb
-from dade.maxpane.ldb import read_level
-from dade.maxpane.typing import Level, LevelGeometry, Model
+from dade.maxpayne.decals import DECAL_STEP
+from dade.maxpayne.gltf import GLB_MAGIC, build_glb
+from dade.maxpayne.ldb import read_level
+from dade.maxpayne.typing import Level, LevelGeometry, Model
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -324,8 +324,8 @@ def test_build_glb_reuses_one_composed_texture(make_ldb: Callable[..., bytes]) -
 
 
 def _model(make_model: Callable[..., bytes], **kwargs: object) -> Model:
-    from dade.maxpane.model import read_model
-    from dade.maxpane.typing import TextureImage
+    from dade.maxpayne.model import read_model
+    from dade.maxpayne.typing import TextureImage
     model = read_model(make_model(**kwargs))
     return model._replace(textures=tuple(
         TextureImage(data=_png((4, 4), (10, 20, 30)), kind=0, path=name)
@@ -375,7 +375,7 @@ def test_build_glb_shares_one_model_material_between_placements(
 
 def test_build_glb_falls_back_when_a_model_names_no_image(make_ldb: Callable[..., bytes],
                                                           make_model: Callable[..., bytes]) -> None:
-    from dade.maxpane.model import read_model
+    from dade.maxpayne.model import read_model
     bare = read_model(make_model())
     document, _ = _parse(build_glb(read_level(make_ldb()), models={'character:transit_cop': bare}))
     node = next(n for n in document['nodes'] if n['name'].startswith('character:'))
@@ -385,7 +385,7 @@ def test_build_glb_falls_back_when_a_model_names_no_image(make_ldb: Callable[...
 
 def test_build_glb_names_each_mesh_of_a_multipart_model(make_ldb: Callable[..., bytes],
                                                         make_model: Callable[..., bytes]) -> None:
-    from dade.maxpane.model import read_model
+    from dade.maxpayne.model import read_model
     one = read_model(make_model())
     both = one._replace(meshes=one.meshes + one.meshes)
     document, _ = _parse(build_glb(read_level(make_ldb()), models={'character:transit_cop': both}))
@@ -395,7 +395,7 @@ def test_build_glb_names_each_mesh_of_a_multipart_model(make_ldb: Callable[..., 
 
 def test_build_glb_skips_a_models_empty_mesh(make_ldb: Callable[..., bytes],
                                              make_model: Callable[..., bytes]) -> None:
-    from dade.maxpane.model import read_model
+    from dade.maxpayne.model import read_model
     one = read_model(make_model())
     hollow = read_model(make_model(faces=(), coord_faces=(), face_materials=()))
     mixed = one._replace(meshes=one.meshes + hollow.meshes)

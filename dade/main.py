@@ -23,7 +23,7 @@ from .incoming.commands.ian2obj import ian2obj as incoming_ian2obj
 from .incoming.main import main as incoming_extract
 from .jubeatplus.main import jubeatplus as jubeatplus_group
 from .marmalade.main import marm as marmalade_group
-from .maxpane.main import cli as maxpane_group
+from .maxpayne.main import cli as maxpayne_group
 from .misc.main import misc as misc_group
 from .monopoly08.main import main as monopoly_extract
 from .rbplus.main import rbplus as rbplus_group
@@ -95,7 +95,7 @@ main.add_command(i76_group, name='i76')
 main.add_command(_incoming())
 main.add_command(jubeatplus_group, name='jubeatplus')
 main.add_command(marmalade_group, name='marmalade')
-main.add_command(maxpane_group, name='maxpane')
+main.add_command(maxpayne_group, name='maxpayne')
 main.add_command(misc_group, name='misc')
 main.add_command(_monopoly08())
 main.add_command(rbplus_group, name='rbplus')
