@@ -575,6 +575,20 @@ exactly while its translation does not, the first of them reading `(-0.03, -0.51
 the state machine's `(-1.24, -4.31, -25.58)`. Pose a level from clip transforms and its doors hang
 open and its parented props collapse towards the origin.
 
+The state machine is only half of a prop's placement. Its vertices are written about their own
+midpoint — 582 of `09_Upper_East_Side`'s 594 props sit exactly on theirs — and the mesh container
+states, ahead of its batches, where that midpoint falls in the state machine's space. Both are
+needed. Take the state machine alone and `10_Police_Station`'s vending machine keeps its front panel
+out of the recess it closes, and a cell door floats 1.5 units over the floor, because the state
+machine is the hinge at the top rather than the panel hanging off it.
+
+The sequel's animation curves state a time with every sample and rarely space them evenly: 898 of
+the 2454 curves in the first six levels are uneven. They are Catmull-Rom splines, evaluated with the
+outer control values pulled onto each span so the shape survives that spacing. Read them as evenly
+spaced straight lines instead and a clip that eases hard runs at the wrong speed for most of its
+length — measured against the game's own evaluation, the worst of the first five levels is most of
+its motion out of step.
+
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 
 ```shell

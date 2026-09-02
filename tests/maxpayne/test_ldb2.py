@@ -8,7 +8,7 @@ import pytest
 from dade.maxpayne.ldb2 import InvalidLevel2Error, read_level2
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
 
 def test_read_level2_reads_a_level(make_ldb2: Callable[..., bytes]) -> None:
@@ -257,3 +257,50 @@ def test_read_level2_drops_a_clip_with_no_transform(make_ldb2: Callable[..., byt
                   props=(_ldb2_prop(animations=(_ldb2_animation(placed=False),)),)))
     assert level.props is not None
     assert level.props.animations[0] == ()
+
+
+def test_read_level2_moves_a_prop_onto_its_mesh_midpoint(make_ldb2: Callable[..., bytes]) -> None:
+    # A prop's vertices are written about their own centre, so the gap between that centre and the
+    # state machine's origin has to be added or the prop hangs off its placement.
+    from .conftest import _ldb2_machine, _ldb2_prop
+    level = read_level2(
+        make_ldb2(machines=(_ldb2_machine((5.0, 6.0, 7.0)),),
+                  props=(_ldb2_prop(midpoint=(0.5, -1.5, 0.25)),)))
+    assert level.props is not None
+    assert level.props.meshes[0].transform[9:] == pytest.approx((5.5, 4.5, 7.25))
+
+
+def test_read_level2_turns_a_mesh_midpoint_by_the_placement(
+        make_ldb2: Callable[..., bytes], bases: dict[str, Sequence[float]]) -> None:
+    # The midpoint is in the state machine's own space, so it turns with it rather than being
+    # added to the world translation as it stands.
+    from .conftest import _ldb2_machine, _ldb2_prop
+    level = read_level2(
+        make_ldb2(machines=(_ldb2_machine((5.0, 6.0, 7.0), bases['half_turn']),),
+                  props=(_ldb2_prop(midpoint=(1.0, 0.0, 0.0)),)))
+    assert level.props is not None
+    assert level.props.meshes[0].transform[9:] == pytest.approx((4.0, 6.0, 7.0))
+
+
+def test_read_level2_carries_the_midpoint_into_a_clip(make_ldb2: Callable[..., bytes]) -> None:
+    # A clip poses the same geometry, so both its ends need the same correction as the rest pose.
+    from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
+    level = read_level2(
+        make_ldb2(machines=(_ldb2_machine(),),
+                  props=(_ldb2_prop(midpoint=(0.0, 2.0, 0.0), animations=(_ldb2_animation(),)),)))
+    assert level.props is not None
+    clip = level.props.animations[0][0]
+    assert clip.start[9:] == pytest.approx((0.0, 2.0, 0.0))
+    assert clip.end[9:] == pytest.approx((1.0, 2.0, 0.0))
+
+
+def test_read_level2_keeps_the_times_a_curve_states(make_ldb2: Callable[..., bytes]) -> None:
+    # The second game states when each sample falls and rarely spaces them evenly, so assuming
+    # even spacing paces every eased clip wrongly.
+    from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
+    clip = _ldb2_animation(times=(0.0, 0.75, 1.0), values=(0.0, 0.5, 1.0))
+    level = read_level2(
+        make_ldb2(machines=(_ldb2_machine(),), props=(_ldb2_prop(animations=(clip,)),)))
+    assert level.props is not None
+    assert level.props.animations[0][0].distance_times == pytest.approx((0.0, 0.75, 1.0))
+    assert level.props.animations[0][0].turn_times == pytest.approx((0.0, 0.75, 1.0))

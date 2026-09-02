@@ -255,13 +255,18 @@ class PropAnimation(NamedTuple):
     end: tuple[float, ...]
     """The prop's transform at the end, as twelve floats."""
     distance: tuple[float, ...]
-    """How far the prop has travelled, in world units, sampled evenly across :py:attr:`duration`.
-    Its last sample is the whole distance from :py:attr:`start` to :py:attr:`end`, which holds on
-    4701 of the 4704 moving clips in the shipped levels."""
+    """How far the prop has travelled, in world units. Its last sample is the whole distance from
+    :py:attr:`start` to :py:attr:`end`, which holds on 4701 of the 4704 moving clips in the first
+    game's levels."""
     turn: tuple[float, ...]
-    """How far the prop has turned, from zero to one, sampled evenly across :py:attr:`duration`.
-    The two curves are separate channels with their own sample counts, and a prop that both slides
-    and turns eases them differently."""
+    """How far the prop has turned, from zero to one. The two curves are separate channels with
+    their own sample counts, and a prop that both slides and turns eases them differently."""
+    distance_times: tuple[float, ...] = ()
+    """When each of :py:attr:`distance`'s samples falls, as a fraction of :py:attr:`duration`.
+    Empty when the format spaces them evenly and states no times, which the first game does."""
+    turn_times: tuple[float, ...] = ()
+    """When each of :py:attr:`turn`'s samples falls, as a fraction of :py:attr:`duration`. Empty
+    when the format spaces them evenly and states no times, which the first game does."""
 
 
 class RenderMesh(NamedTuple):

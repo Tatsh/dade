@@ -59,6 +59,9 @@ _INDEX_SIZE = 2
 _TRANSFORM = 12
 """Floats in the ``M_Matrix4x3`` placing a prop: three basis rows then a translation."""
 
+_POINT = 3
+"""Floats in the ``M_Vector3`` a mesh states its midpoint as."""
+
 _CURVES = 2
 """Curves an animation carries: how far it has travelled, then how far it has turned."""
 
@@ -608,7 +611,8 @@ def _read_animations(reader: _Reader, pool: bytes) -> list[PropAnimation]:
 
     A clip is two curves sampled over its length -- how far the prop has travelled and how far it
     has turned -- between a start and an end transform, which is the same shape the first game
-    uses.
+    uses. Where the first game states only the samples, this states the times they fall at as well,
+    and 898 of the 2454 curves in the first six levels are not evenly spaced.
 
     Parameters
     ----------
@@ -627,24 +631,50 @@ def _read_animations(reader: _Reader, pool: bytes) -> list[PropAnimation]:
         name = _string_at(pool, reader.count())
         length = reader.value()
         start, end = reader.value(), reader.value()
-        curves: list[tuple[float, ...]] = []
+        curves: list[tuple[tuple[float, ...], tuple[float, ...]]] = []
         for _ in range(_CURVES):
-            _skip_values(reader, 3)
-            reader.value()  # Sample rate.
+            _skip_values(reader, 2)
+            reader.value()  # Which of the two shapes `T_GraphCurve::getCurveValue` evaluates.
+            reader.value()  # Layers, which every level's curves set to one.
             points = reader.count()
-            reader.floats(points)  # The times, which are evenly spaced.
-            curves.append(reader.floats(points))
+            times = reader.floats(points)
+            curves.append((times, reader.floats(points)))
         _skip_values(reader, 3)  # The state machines the clip starts.
         if (isinstance(start, tuple) and len(start) == _TRANSFORM and isinstance(end, tuple)
                 and len(end) == _TRANSFORM):
             out.append(
-                PropAnimation(distance=curves[0],
+                PropAnimation(distance=curves[0][1],
+                              distance_times=curves[0][0],
                               duration=float(length) if isinstance(length, (int, float)) else 0.0,
                               end=end,
                               name=name,
                               start=start,
-                              turn=curves[1]))
+                              turn=curves[1][1],
+                              turn_times=curves[1][0]))
     return out
+
+
+def _offset(transform: tuple[float, ...], midpoint: tuple[float, ...]) -> tuple[float, ...]:
+    """
+    Move a transform along to where the mesh it places keeps its own centre.
+
+    Parameters
+    ----------
+    transform : tuple[float, ...]
+        Three basis rows then a translation.
+    midpoint : tuple[float, ...]
+        The mesh's midpoint in the transform's own space.
+
+    Returns
+    -------
+    tuple[float, ...]
+        The transform, translated so that the origin lands on the midpoint.
+    """
+    a, b, c = transform[0:3], transform[3:6], transform[6:9]
+    x, y, z = midpoint
+    return (*transform[0:9], transform[9] + x * a[0] + y * b[0] + z * c[0],
+            transform[10] + x * a[1] + y * b[1] + z * c[1],
+            transform[11] + x * a[2] + y * b[2] + z * c[2])
 
 
 def _read_props(
@@ -685,13 +715,22 @@ def _read_props(
         _skip_values(reader, _PROP_FLAGS)
         prefab = reader.count()
         share = reader.value()
-        _skip_values(reader, 3)  # Bounding box.
+        _skip_values(reader, 2)  # Bounding box.
+        # The mesh's own midpoint, which the second game writes ahead of the batches. A prop's
+        # vertices are written about their centre rather than about the state machine's origin, so
+        # a pose has to carry the gap between the two or the prop hangs off it. `10_Police_Station`
+        # keeps its vending machine's front panel `(0.047, -0.078, 0.112)` off the machine's origin,
+        # and the recess the panel closes lines up with it only once that is added.
+        midpoint = reader.value()
+        origin = (midpoint if isinstance(midpoint, tuple) and len(midpoint) == _POINT else
+                  (0.0, 0.0, 0.0))
+        placement = _offset(transform, origin)
         batches: list[StaticMesh] = []
         if prefab < 0 or prefab not in seen:
-            batches = _read_mesh(reader, transform, corners, lightmap_of)
+            batches = _read_mesh(reader, placement, corners, lightmap_of)
             _skip_collisions(reader)
         elif lightmapped != 0:
-            batches = _read_mesh(reader, transform, corners, lightmap_of)
+            batches = _read_mesh(reader, placement, corners, lightmap_of)
             if not share:
                 _skip_collisions(reader)
         if prefab >= 0:
@@ -700,9 +739,11 @@ def _read_props(
         # rest. A clip is authored around that pose and may be written in a parent's space, so its
         # own transforms cannot stand in for one: a door's first clip closes it, starting from open,
         # and a prop hanging off a parent keeps a translation near the parent rather than the world.
-        playable = tuple(_read_animations(reader, pool))
+        playable = tuple(
+            clip._replace(end=_offset(clip.end, origin), start=_offset(clip.start, origin))
+            for clip in _read_animations(reader, pool))
         for at, batch in enumerate(batches):
-            meshes.append(batch._replace(transform=transform))
+            meshes.append(batch)
             names.append(f'prop{index}_{at}')
             clips.append(playable)
     return RenderMesh(corners=tuple(corners),

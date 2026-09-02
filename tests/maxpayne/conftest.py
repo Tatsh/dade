@@ -764,38 +764,53 @@ def _volume_light() -> bytes:
     return (_int(1) * 3 + _vec3(0.0, 0.0, 0.0) + _vec3(1.0, 1.0, 1.0) + _packed([1.0, 1.0, 1.0]))
 
 
-def _ldb2_machine(translation: tuple[float, float, float] = (0.0, 0.0, 0.0)) -> bytes:
+def _ldb2_machine(translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
+                  basis: Sequence[float] = _IDENTITY) -> bytes:
     """One state machine, which is what places a prop."""
-    return (_int(0) + _matrix(translation) + _int(-1) + _matrix() + _int(0) + _int(0) + b'\x00' +
-            _int(0) + _int(0) * 4 + _int(0))
+    return (_int(0) + _matrix(translation, basis) + _int(-1) + _matrix() + _int(0) + _int(0) +
+            b'\x00' + _int(0) + _int(0) * 4 + _int(0))
 
 
-def _ldb2_prop(prefab: int = -1,
-               *,
-               lightmapped: bool = False,
-               share: bool = False,
-               machine: int = 0,
-               geometry: bool = True,
-               animations: Sequence[bytes] = ()) -> bytes:
-    """One dynamic mesh, whose geometry is only written when the prefab rule says so."""
+def _ldb2_prop(
+    prefab: int = -1,
+    *,
+    lightmapped: bool = False,
+    share: bool = False,
+    machine: int = 0,
+    geometry: bool = True,
+    midpoint: tuple[float, float, float] = (0.0, 0.0, 0.0),
+    animations: Sequence[bytes] = ()
+) -> bytes:
+    """One dynamic mesh, whose geometry is only written when the prefab rule says so.
+
+    `midpoint` is the mesh's own centre, which the mesh container writes ahead of its batches and
+    which says how far the geometry sits from the state machine placing it.
+    """
     out = _int(machine) + _bool(value=lightmapped) + _int(0) * 8 + _int(prefab)
-    out += _bool(value=share) + _vec3(0.0, 0.0, 0.0) * 3
+    out += _bool(value=share) + _vec3(0.0, 0.0, 0.0) * 2 + _vec3(*midpoint)
     if geometry:
         out += _int(1) + _ldb2_batch() + _int(0)
     out += _int(len(animations)) + b''.join(animations)
     return out
 
 
-def _ldb2_animation(points: int = 2, *, placed: bool = True) -> bytes:
+def _ldb2_animation(points: int = 2,
+                    *,
+                    placed: bool = True,
+                    times: Sequence[float] | None = None,
+                    values: Sequence[float] | None = None) -> bytes:
     """One clip: a length, two transforms, then a travelled curve and a turned one.
 
     `placed` false writes a number where the start transform belongs, which is a clip that cannot
-    move anything and has to be dropped.
+    move anything and has to be dropped. `times` and `values` write a curve of a shape of their
+    own, which is how an eased clip is written.
     """
     out = _int(0) + _float(1.5) + (_matrix() if placed else _int(0)) + _matrix((1.0, 0.0, 0.0))
+    when = list(times) if times is not None else [0.0, 1.0][:points]
+    what = list(values) if values is not None else [0.0, 1.0][:points]
     for _ in range(2):
-        out += _int(0) * 3 + _int(30) + _int(points)
-        out += _packed([0.0, 1.0][:points]) + _packed([0.0, 1.0][:points])
+        out += _int(0) * 2 + _int(1) + _int(1) + _int(len(when))
+        out += _packed(when) + _packed(what)
     return out + _int(0) * 3
 
 

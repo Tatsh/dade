@@ -27,6 +27,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dade rbplus dump-chart --flip` draws the chart with time running downward, the way the notes
   fall down the screen.
 
+### Fixed
+
+- `dade maxpayne ldb2glb` places a Max Payne 2 prop on its own centre. A dynamic mesh writes its
+  vertices about their midpoint rather than about the state machine that places it, and the
+  midpoint the mesh container states ahead of its batches is the gap between the two. Reading that
+  as part of the prop's bounding box left every prop offset by it: `10_Police_Station`'s vending
+  machine had its front panel a tenth of a unit out of the recess it closes, and a cell door hung
+  1.5 units above the floor. Of the police station's 48 standing props, 4 met their floor exactly
+  before and 36 do now. The correction applies to a prop's clips as well, since they pose the same
+  geometry.
+- A Max Payne 2 prop animation is paced by the times its curves state. The second game writes a
+  time with every sample and rarely spaces them evenly -- of the 2454 curves in the first six
+  levels, 898 are uneven -- and the times were being discarded for an even spread. The curve is
+  also a Catmull-Rom spline rather than a straight line between samples, so it is read as one.
+  Against the game's own evaluation, the worst clip of the first five levels was 0.85 of its motion
+  out of step and is now 0.06, and the average is 0.002 rather than 0.114.
+
 ### Removed
 
 - `dade rbplus dump-chart --image` no longer writes an HTML page; the suffix now names

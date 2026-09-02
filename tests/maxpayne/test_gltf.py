@@ -10,6 +10,7 @@ import pytest
 from dade.maxpayne.decals import DECAL_STEP
 from dade.maxpayne.gltf import GLB_MAGIC, build_glb
 from dade.maxpayne.ldb import read_level
+from dade.maxpayne.ldb2 import read_level2
 from dade.maxpayne.typing import Level, LevelGeometry, Model
 
 if TYPE_CHECKING:
@@ -642,3 +643,31 @@ def test_build_glb_believes_a_level_that_states_its_own_decals(
     heights = sorted({struct.unpack_from('<3f', raw, corner * 12)[1] for corner in range(6)})
     # Every face of the material rises by its stated priority, and none by anything else.
     assert heights == pytest.approx([2 * DECAL_STEP])
+
+
+def test_build_glb_paces_a_clip_by_the_times_the_curve_states(
+        make_ldb2: Callable[..., bytes]) -> None:
+    # The second game states when each of a curve's samples falls. This one is half way along at
+    # three quarters of the clip, so pacing it evenly would have it half way at half the clip.
+    from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
+    clip = _ldb2_animation(times=(0.0, 0.75, 1.0), values=(0.0, 0.5, 1.0))
+    level = read_level2(
+        make_ldb2(machines=(_ldb2_machine(),), props=(_ldb2_prop(animations=(clip,)),)))
+    document, binary = _parse(build_glb(level))
+    written = document['animations'][0]
+    sampler = written['samplers'][written['channels'][0]['sampler']]
+    times = [t[0] for t in _sampler_values(document, binary, sampler['input'], 1)]
+    travel = [v[0] for v in _sampler_values(document, binary, sampler['output'], 3)]
+    assert times[-1] == pytest.approx(1.5)
+    # The clip runs 1.5 seconds, so three quarters of the way along is 1.125.
+    assert _at(times, travel, 1.125) == pytest.approx(0.5, abs=0.02)
+    assert _at(times, travel, 0.75) < 0.4
+
+
+def _at(times: list[float], values: list[float], when: float) -> float:
+    for index in range(1, len(times)):
+        if times[index] >= when:
+            span = times[index] - times[index - 1]
+            step = (when - times[index - 1]) / span if span else 0.0
+            return values[index - 1] + (values[index] - values[index - 1]) * step
+    return values[-1]
