@@ -12,6 +12,7 @@ from dade.common.workers import default_jobs
 from dade.maxpayne.blocks import unwrap
 from dade.maxpayne.gltf import build_glb
 from dade.maxpayne.ldb import InvalidLevelError, read_level
+from dade.maxpayne.ldb2 import MAGIC, InvalidLevel2Error, read_level2
 
 from .models import load_models
 from .utils import debug_option
@@ -64,10 +65,14 @@ def _convert(job: tuple[Path, Path, Path | None]) -> _Result:
     """
     level, output_dir, database = job
     try:
-        parsed = read_level(unwrap(level.read_bytes())[0])
-        models = load_models(database, parsed) if database else {}
+        data = unwrap(level.read_bytes())[0]
+        # The second game's levels say so in their first four bytes, and share nothing but the
+        # tagged values with the first game's, so the magic picks the reader.
+        second = data[:len(MAGIC)] == MAGIC
+        parsed = read_level2(data) if second else read_level(data)
+        models = {} if second or not database else load_models(database, parsed)
         payload = build_glb(parsed, models=models, name=level.stem)
-    except (IndexError, InvalidLevelError, ValueError) as e:
+    except (IndexError, InvalidLevel2Error, InvalidLevelError, ValueError) as e:
         return _Result(clips=0,
                        error=str(e),
                        faces=0,

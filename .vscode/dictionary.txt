@@ -17,7 +17,6 @@ alcseq
 allmodsbound
 alnum
 anchore
-Ångström
 anim
 anyio
 apfn
@@ -241,6 +240,7 @@ handoff
 happi
 harmonix
 hashstring
+havok
 headerless
 heightfield
 hepburn
@@ -361,6 +361,7 @@ mmesh
 modindex
 momv
 monkeypatch
+mopp
 mousedown
 mousemove
 mouseup
@@ -386,6 +387,7 @@ nhoriz
 nlist
 nloop
 nmip
+noclip
 nocolon
 nodraw
 nofixprebinding
@@ -582,8 +584,8 @@ skhan
 skmple
 skuk
 skybox
-skyboxes
 skybox's
+skyboxes
 slerp
 slus
 smlt
@@ -624,8 +626,8 @@ strt
 stylesheet
 subentities
 submesh
-submeshes
 submesh's
+submeshes
 subpredicate
 subpredicates
 substreams
@@ -748,6 +750,7 @@ yarnrc
 yomi
 yoshizaki
 ypoc
+zbuffer
 zfsf
 zizmor
 zoinkity
@@ -756,4 +759,5 @@ zplays
 zrating
 zstr
 ztitle
+Ångström
 Яire

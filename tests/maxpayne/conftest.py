@@ -657,3 +657,104 @@ def make_model() -> Callable[..., bytes]:
         return _chunk(0x0001000F, 0, library) + _chunk(0x00010005, 2 if packed else 1, mesh)
 
     return build
+
+
+def _float(value: float) -> bytes:
+    return _tag(0x09, struct.pack('<f', value))
+
+
+def _bool(*, value: bool) -> bytes:
+    return _tag(0x0E, b'\x01' if value else b'\x00')
+
+
+def _packed(values: Sequence[float]) -> bytes:
+    return struct.pack(f'<{len(values)}f', *values)
+
+
+def _ldb2_texture(path_offset: int, data: bytes, kind: int = 5) -> bytes:
+    return _int(kind) + _int(len(data)) + _int(path_offset) + data
+
+
+def _ldb2_material(first: int = 0, showing: int = 0) -> bytes:
+    """Fourteen values, two of them written as booleans the way the game writes them."""
+    return (_int(0) + _int(first) + _int(first) + _int(0) + _int(-1) + _int(-1) + _int(-1) +
+            _int(0) + _int(0) + _int(0) + _bool(value=False) + _bool(value=True) + _int(0) +
+            _int(showing))
+
+
+def _ldb2_batch(material: int = 0,
+                *,
+                lit: bool = False,
+                detailed: bool = False,
+                indices: Sequence[int] = (0, 1, 2)) -> bytes:
+    corners = 3
+    out = _int(material) + _bool(value=lit) + _bool(value=detailed)
+    out += _int(len(indices) // 3) + _int(corners)
+    out += _packed([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0])  # Positions.
+    out += _packed([0.0, 1.0, 0.0] * corners)  # Normals.
+    out += _packed([0.0, 0.0, 1.0, 0.0, 0.0, 1.0])  # Texture coordinates.
+    if lit:
+        out += _packed([0.5, 0.5] * corners)
+    if detailed:
+        out += _packed([0.25, 0.25] * corners)
+    return out + struct.pack(f'<{len(indices)}H', *indices)
+
+
+@pytest.fixture
+def make_ldb2() -> Callable[..., bytes]:
+    """
+    Build a Max Payne 2 level in memory, following `docs/MAXPAYNE2_LDB.md`.
+
+    Returns
+    -------
+    collections.abc.Callable[..., bytes]
+        A callable returning a whole ``.ldb``.
+    """
+    def build(*,
+              magic: bytes = b'LDB2',
+              version: int = 34,
+              pool: Sequence[str] = ('x:\\a.dds',),
+              textures: int = 1,
+              lightmaps: Sequence[bytes] = (b'\x00\x01',),
+              lightmaps_are_dds: bool = True,
+              materials: Sequence[bytes] | None = None,
+              rooms: Sequence[bytes] | None = None,
+              collisions: int = 0,
+              volume_lights: int = 0,
+              placed: bool = True) -> bytes:
+        blob = b''.join(s.encode('latin-1') + b'\x00' for s in pool)
+        out = bytearray(magic)
+        out += _int(version)
+        out += _int(len(blob)) + blob
+        out += _float(169.75)
+        out += _int(textures) + b''.join(_ldb2_texture(0, b'\x00\x01') for _ in range(textures))
+        out += _bool(value=lightmaps_are_dds) + _int(len(lightmaps))
+        for image in lightmaps:
+            out += _int(len(image)) + image
+        for _ in range(3):  # Detail, reflection and gloss.
+            out += _int(0)
+        shown = (_ldb2_material(),) if materials is None else materials
+        out += _int(len(shown)) + b''.join(shown)
+        walls = (_int(1) + _ldb2_batch(),) if rooms is None else rooms
+        out += _int(len(walls))
+        for room in walls:
+            # A room without its transform is what a reader has to refuse rather than place.
+            out += _string('::room') + (_matrix() if placed else _int(0)) + _int(0)
+            out += _vec3(0.0, 0.0, 0.0) * 3
+            out += room
+            out += _int(collisions) + _collision() * collisions
+            out += _int(volume_lights) + _volume_light() * volume_lights
+        return bytes(out)
+
+    return build
+
+
+def _collision() -> bytes:
+    """One Havok shape: a triangle, its material bytes, and an empty MOPP code."""
+    return (_int(3) + _int(1) + _packed([0.0] * 9) + struct.pack('<3H', 0, 1, 2) + b'\x00' +
+            _int(1) + _int(0) + _packed([0.0, 0.0, 0.0]) + bytes(4) + struct.pack('<i', 0))
+
+
+def _volume_light() -> bytes:
+    """One light: a one-cell grid holding a single colour."""
+    return (_int(1) * 3 + _vec3(0.0, 0.0, 0.0) + _vec3(1.0, 1.0, 1.0) + _packed([1.0, 1.0, 1.0]))
