@@ -910,7 +910,7 @@ class _Document:
         document: dict[str, Any] = {
             'accessors': self.accessors,
             'asset': {
-                'generator': 'dade maxpane',
+                'generator': 'dade maxpayne',
                 'version': '2.0'
             },
             'bufferViews': self.views,
@@ -1079,7 +1079,7 @@ def _add_static_mesh(
         Animations the mesh can play. A mesh with any is written so it can be animated.
     lifts : collections.abc.Mapping[int, int]
         How far off its plane each face has to sit, in steps of
-        :py:data:`dade.maxpane.decals.DECAL_STEP`, keyed by the face's index. Faces that stay put
+        :py:data:`dade.maxpayne.decals.DECAL_STEP`, keyed by the face's index. Faces that stay put
         may be left out.
     """
     positions: list[Vector3] = []
@@ -1237,7 +1237,7 @@ def _lift_decals(level: Level, containers: Sequence[RenderMesh]) -> list[list[di
 
     Whether two surfaces fight depends on where they end up in the scene, not on which mesh they
     were stored in, so every drawn face is gathered in scene space first and layered together. See
-    :py:func:`dade.maxpane.decals.layer_faces` for what the layering means.
+    :py:func:`dade.maxpayne.decals.layer_faces` for what the layering means.
 
     Parameters
     ----------
@@ -1250,7 +1250,7 @@ def _lift_decals(level: Level, containers: Sequence[RenderMesh]) -> list[list[di
     -------
     list[list[dict[int, int]]]
         One entry per container, one per mesh within it, mapping a face's index to how many steps
-        of :py:data:`dade.maxpane.decals.DECAL_STEP` it has to rise. Faces that stay put are left
+        of :py:data:`dade.maxpayne.decals.DECAL_STEP` it has to rise. Faces that stay put are left
         out.
     """
     surfaces: list[tuple[Vector3, list[Vector3], tuple[int, int, int]]] = []
@@ -1288,7 +1288,7 @@ def build_glb(level: Level,
     Parameters
     ----------
     level : Level
-        A level from :py:func:`dade.maxpane.ldb.read_level`.
+        A level from :py:func:`dade.maxpayne.ldb.read_level`.
     name : str
         Name given to the scene and its nodes.
     models : collections.abc.Mapping[str, Model] | None

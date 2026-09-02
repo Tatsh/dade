@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dade.maxpane.crypto import decrypt, next_seed
+from dade.maxpayne.crypto import decrypt, next_seed
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -1,4 +1,4 @@
-"""``dade maxpane ldb2glb`` - convert levels to binary glTF."""
+"""``dade maxpayne ldb2glb`` - convert levels to binary glTF."""
 from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor
@@ -9,9 +9,9 @@ import logging
 import click
 
 from dade.common.workers import default_jobs
-from dade.maxpane.blocks import unwrap
-from dade.maxpane.gltf import build_glb
-from dade.maxpane.ldb import InvalidLevelError, read_level
+from dade.maxpayne.blocks import unwrap
+from dade.maxpayne.gltf import build_glb
+from dade.maxpayne.ldb import InvalidLevelError, read_level
 
 from .models import load_models
 from .utils import debug_option

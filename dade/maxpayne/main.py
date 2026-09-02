@@ -12,7 +12,7 @@ from .commands.ras_list import ras_list
 __all__ = ('cli',)
 
 
-@click.group(name='maxpane', context_settings={'help_option_names': ('-h', '--help')})
+@click.group(name='maxpayne', context_settings={'help_option_names': ('-h', '--help')})
 def cli() -> None:
     """Extract and decode Max Payne (Remedy Entertainment) assets."""
 

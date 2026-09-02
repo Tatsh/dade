@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from dade.maxpane.blocks import (
+from dade.maxpayne.blocks import (
     RING_FILL,
     decompress,
     decrypt_block,

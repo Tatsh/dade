@@ -1,4 +1,4 @@
-"""``dade maxpane ras-list`` - show the directory of a RAS archive, MPM package, or disc image."""
+"""``dade maxpayne ras-list`` - show the directory of a RAS archive, MPM package, or disc image."""
 from __future__ import annotations
 
 from collections import Counter
@@ -9,7 +9,7 @@ import logging
 import click
 
 from dade.common.exceptions import InvalidFormatError
-from dade.maxpane.ras import InvalidArchiveError, read_directory
+from dade.maxpayne.ras import InvalidArchiveError, read_directory
 
 from .sources import NoArchivesFoundError, iter_archives
 from .utils import debug_option

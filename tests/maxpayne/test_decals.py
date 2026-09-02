@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dade.maxpane.decals import layer_faces
+from dade.maxpayne.decals import layer_faces
 
 _FLOOR = ((0.0, 0.0, 0.0), (8.0, 0.0, 0.0), (8.0, 0.0, 8.0), (0.0, 0.0, 8.0))
 _RUG = ((2.0, 0.0, 2.0), (5.0, 0.0, 2.0), (5.0, 0.0, 5.0), (2.0, 0.0, 5.0))

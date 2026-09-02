@@ -1,4 +1,4 @@
-"""``dade maxpane inspect-tags`` - summarise the tagged stream inside a Max Payne asset."""
+"""``dade maxpayne inspect-tags`` - summarise the tagged stream inside a Max Payne asset."""
 from __future__ import annotations
 
 from collections import Counter
@@ -7,8 +7,8 @@ import logging
 
 import click
 
-from dade.maxpane.blocks import unwrap
-from dade.maxpane.memoryfile import BasicType, iter_values
+from dade.maxpayne.blocks import unwrap
+from dade.maxpayne.memoryfile import BasicType, iter_values
 
 from .utils import debug_option
 

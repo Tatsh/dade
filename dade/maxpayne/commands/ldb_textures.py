@@ -1,4 +1,4 @@
-"""``dade maxpane ldb-textures`` - write out the images a level embeds."""
+"""``dade maxpayne ldb-textures`` - write out the images a level embeds."""
 from __future__ import annotations
 
 from pathlib import PurePosixPath, PureWindowsPath
@@ -7,8 +7,8 @@ import pathlib
 
 import click
 
-from dade.maxpane.blocks import unwrap
-from dade.maxpane.ldb import InvalidLevelError, read_textures
+from dade.maxpayne.blocks import unwrap
+from dade.maxpayne.ldb import InvalidLevelError, read_textures
 
 from .utils import debug_option
 

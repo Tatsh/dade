@@ -4,7 +4,7 @@ import struct
 
 import pytest
 
-from dade.maxpane.memoryfile import (
+from dade.maxpayne.memoryfile import (
     TAG_SIZES,
     BasicType,
     iter_values,

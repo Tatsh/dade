@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from dade.maxpane.commands.models import load_models
-from dade.maxpane.ldb import read_level
+from dade.maxpayne.commands.models import load_models
+from dade.maxpayne.ldb import read_level
 
 if TYPE_CHECKING:
     from collections.abc import Callable

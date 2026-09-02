@@ -5,7 +5,7 @@ import struct
 
 import pytest
 
-from dade.maxpane.ras import (
+from dade.maxpayne.ras import (
     HEADER_SIZE,
     InvalidArchiveError,
     is_intact,
@@ -94,7 +94,7 @@ def test_read_header_reads_the_table_checksums(make_ras: Callable[..., bytes]) -
     # on all five shipped archives.
     import zlib
 
-    from dade.maxpane.crypto import decrypt
+    from dade.maxpayne.crypto import decrypt
     archive = make_ras()
     header = read_header(archive)
     start = 0x2C

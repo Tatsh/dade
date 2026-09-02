@@ -8,14 +8,14 @@ import subprocess as sp
 import pytest
 
 from dade.common.tools import ToolNotFoundError
-from dade.maxpane.commands.inspect_tags import inspect_tags
-from dade.maxpane.commands.ldb2glb import ldb2glb
-from dade.maxpane.commands.ldb_textures import ldb_textures
-from dade.maxpane.commands.ras_extract import ras_extract
-from dade.maxpane.commands.ras_list import ras_list
-from dade.maxpane.commands.sources import NoArchivesFoundError, iter_archives
-from dade.maxpane.main import cli
-from dade.maxpane.memoryfile import BasicType
+from dade.maxpayne.commands.inspect_tags import inspect_tags
+from dade.maxpayne.commands.ldb2glb import ldb2glb
+from dade.maxpayne.commands.ldb_textures import ldb_textures
+from dade.maxpayne.commands.ras_extract import ras_extract
+from dade.maxpayne.commands.ras_list import ras_list
+from dade.maxpayne.commands.sources import NoArchivesFoundError, iter_archives
+from dade.maxpayne.main import cli
+from dade.maxpayne.memoryfile import BasicType
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping
@@ -182,7 +182,7 @@ def test_iter_archives_raises_when_nothing_is_found(tmp_path: Path) -> None:
 def test_iter_archives_reads_loose_archives_from_an_image(tmp_path: Path, mocker: MockerFixture,
                                                           make_ras: Callable[..., bytes]) -> None:
     archive = make_ras()
-    mocker.patch('dade.maxpane.commands.sources.open_image',
+    mocker.patch('dade.maxpayne.commands.sources.open_image',
                  return_value=_StubImage({
                      'DISK1/LEVELS/X_LEVEL1.RAS': archive,
                      'DISK1/SETUP.EXE': b'stub'
@@ -200,8 +200,8 @@ def test_iter_archives_unshields_a_cabinet_on_an_image(tmp_path: Path, mocker: M
         staged['siblings'] = sorted(path.name for path in cabinet.parent.iterdir())
         (output_dir / 'x_data.ras').write_bytes(make_ras())
 
-    mocker.patch('dade.maxpane.commands.sources.run_unshield', side_effect=fake_unshield)
-    mocker.patch('dade.maxpane.commands.sources.open_image',
+    mocker.patch('dade.maxpayne.commands.sources.run_unshield', side_effect=fake_unshield)
+    mocker.patch('dade.maxpayne.commands.sources.open_image',
                  return_value=_StubImage({
                      'DISK1/DATA1.CAB': b'ISc(',
                      'DISK1/DATA1.HDR': b'hdr',
@@ -218,7 +218,7 @@ def test_iter_archives_unshields_a_cabinet_on_an_image(tmp_path: Path, mocker: M
 
 def test_iter_archives_skips_a_cabinet_without_unshield(tmp_path: Path,
                                                         mocker: MockerFixture) -> None:
-    mocker.patch('dade.maxpane.commands.sources.run_unshield',
+    mocker.patch('dade.maxpayne.commands.sources.run_unshield',
                  side_effect=ToolNotFoundError('missing'))
     cabinet = tmp_path / 'data1.cab'
     cabinet.write_bytes(b'ISc(')
@@ -228,7 +228,7 @@ def test_iter_archives_skips_a_cabinet_without_unshield(tmp_path: Path,
 
 def test_iter_archives_skips_a_cabinet_unshield_cannot_read(tmp_path: Path,
                                                             mocker: MockerFixture) -> None:
-    mocker.patch('dade.maxpane.commands.sources.run_unshield',
+    mocker.patch('dade.maxpayne.commands.sources.run_unshield',
                  side_effect=sp.CalledProcessError(1, 'unshield'))
     cabinet = tmp_path / 'data1.cab'
     cabinet.write_bytes(b'ISc(')
@@ -241,7 +241,7 @@ def test_iter_archives_reads_a_cabinet(tmp_path: Path, mocker: MockerFixture,
     def fake_unshield(cabinet: Path, output_dir: Path) -> None:
         (output_dir / 'x_data.ras').write_bytes(make_ras())
 
-    mocker.patch('dade.maxpane.commands.sources.run_unshield', side_effect=fake_unshield)
+    mocker.patch('dade.maxpayne.commands.sources.run_unshield', side_effect=fake_unshield)
     cabinet = tmp_path / 'data1.cab'
     cabinet.write_bytes(b'ISc(')
     assert [label for label, _ in iter_archives(cabinet)] == ['x_data.ras']

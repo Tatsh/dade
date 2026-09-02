@@ -53,7 +53,7 @@ Run `dade --help` to list the games, and `dade <game> --help` to list a game's s
 | `dade incoming`   | _Incoming_ (PC and Dreamcast)               | Rage Software / Interplay     |
 | `dade jubeatplus` | _jubeat plus_ (iOS)                         | Konami                        |
 | `dade marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
-| `dade maxpane`    | _Max Payne_ (PC)                            | Remedy Entertainment          |
+| `dade maxpayne`   | _Max Payne_ (PC)                            | Remedy Entertainment          |
 | `dade misc`       | Formats belonging to no single game         | —                             |
 | `dade monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
 | `dade rbplus`     | _REFLEC BEAT plus_ (iOS)                    | Konami                        |
@@ -459,8 +459,8 @@ an asset that will not convert instead of stopping.
 ## Max Payne
 
 ```shell
-dade maxpane ras-list MAXPAYNE.ISO
-dade maxpane ras-extract MAXPAYNE.ISO -o extracted
+dade maxpayne ras-list MAXPAYNE.ISO
+dade maxpayne ras-extract MAXPAYNE.ISO -o extracted
 ```
 
 Readers for the RAS (Remedy Archive System) containers the game loads everything from. The argument
@@ -480,7 +480,7 @@ Every member is LZSS-compressed and the archive tables are encrypted, both handl
 Pass `--raw` to `ras-extract` to keep the `RA->` and `RC->` wrappers.
 
 ```shell
-dade maxpane inspect-tags extracted/data/database/levels/part1/Part1_Level6.ldb
+dade maxpayne inspect-tags extracted/data/database/levels/part1/Part1_Level6.ldb
 ```
 
 `inspect-tags` decodes the tagged `R_MemoryFile` stream that every custom asset is built from,
@@ -488,12 +488,12 @@ naming each value's type. The walk stops where a level leaves tagged territory, 
 first untagged string begins.
 
 ```shell
-dade maxpane ldb2glb extracted/data/database/levels -o glb
-dade maxpane ldb-textures extracted/data/database/levels -o textures
+dade maxpayne ldb2glb extracted/data/database/levels -o glb
+dade maxpayne ldb-textures extracted/data/database/levels -o textures
 ```
 
 ```shell
-dade maxpane ldb2glb extracted/data/database/levels -D extracted/data/database -o glb
+dade maxpayne ldb2glb extracted/data/database/levels -D extracted/data/database -o glb
 ```
 
 `ldb2glb` converts levels to binary glTF, one `.glb` per `.ldb`, in parallel across every core.
@@ -520,7 +520,7 @@ never used, and neither is `dummy`'s, which stays dropped.
 Graffiti, signage and switchable surfaces come off their walls slightly. A level lays each of them
 in exactly the plane of what it covers, and nothing in the file marks which is which, because the
 engine walked its BSP and never drew both at once. A viewer draws the whole level and has only a
-depth buffer, so `dade.maxpane.decals` works the layering out from the geometry and lifts each
+depth buffer, so `dade.maxpayne.decals` works the layering out from the geometry and lifts each
 covered face about eight millimetres along its normal.
 
 Four things about the format are easy to get backwards. A face's corner count is not its number of
