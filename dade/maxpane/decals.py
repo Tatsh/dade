@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
-    from collections.abc import Sequence
+    from collections.abc import Hashable, Sequence
 
     from .typing import Vector3
 
@@ -137,7 +137,7 @@ def _cells(box: Sequence[float]) -> list[tuple[int, int]]:
                            int(box[3] // _CELL) + 1)]
 
 
-def layer_faces(surfaces: Sequence[tuple[Vector3, Sequence[Vector3]]]) -> list[int]:
+def layer_faces(surfaces: Sequence[tuple[Vector3, Sequence[Vector3], Hashable]]) -> list[int]:
     """
     Work out how far off its plane each face has to sit to stop fighting the ones behind it.
 
@@ -150,10 +150,17 @@ def layer_faces(surfaces: Sequence[tuple[Vector3, Sequence[Vector3]]]) -> list[i
     Faces are considered in order of the area they cover, so the surface underneath keeps the
     plane the level gave it and only the smaller things laid over it move.
 
+    Faces are stacked only when they belong to different surfaces, which is what the key says.
+    Two faces of one mesh drawing with one material are two pieces of the same thing: a quad split
+    along its diagonal gives two triangles with the same bounding box, and lifting either off the
+    other opens a hairline crack down the middle of every table top in the level. Two copies of a
+    prop, or a tag and the wall behind it, differ in one or the other and do stack.
+
     Parameters
     ----------
-    surfaces : collections.abc.Sequence[tuple[Vector3, collections.abc.Sequence[Vector3]]]
-        Each face's outward normal and its corners, both in the space they will be drawn in.
+    surfaces : collections.abc.Sequence
+        One entry per face: its outward normal, its corners in the space they will be drawn in,
+        and a hashable key naming the surface it belongs to.
 
     Returns
     -------
@@ -163,7 +170,8 @@ def layer_faces(surfaces: Sequence[tuple[Vector3, Sequence[Vector3]]]) -> list[i
     """
     boxes: dict[int, tuple[float, ...]] = {}
     planes: defaultdict[tuple[int, ...], list[int]] = defaultdict(list)
-    for index, (normal, corners) in enumerate(surfaces):
+    drawn = [key for _normal, _corners, key in surfaces]
+    for index, (normal, corners, _key) in enumerate(surfaces):
         found = _profile(normal, corners)
         if found is not None:
             planes[found[0]].append(index)
@@ -181,7 +189,7 @@ def layer_faces(surfaces: Sequence[tuple[Vector3, Sequence[Vector3]]]) -> list[i
             below = -1
             for square in squares:
                 for other in grid[square]:
-                    if _stacked(box, boxes[other]):
+                    if drawn[other] != drawn[index] and _stacked(box, boxes[other]):
                         below = max(below, out[other])
             out[index] = below + 1
             for square in squares:
