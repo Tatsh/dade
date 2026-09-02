@@ -53,7 +53,7 @@ Run `dade --help` to list the games, and `dade <game> --help` to list a game's s
 | `dade incoming`   | _Incoming_ (PC and Dreamcast)               | Rage Software / Interplay     |
 | `dade jubeatplus` | _jubeat plus_ (iOS)                         | Konami                        |
 | `dade marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
-| `dade maxpayne`   | _Max Payne_ (PC)                            | Remedy Entertainment          |
+| `dade maxpayne`   | _Max Payne_ and _Max Payne 2_ (PC)          | Remedy Entertainment          |
 | `dade misc`       | Formats belonging to no single game         | —                             |
 | `dade monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
 | `dade rbplus`     | _REFLEC BEAT plus_ (iOS)                    | Konami                        |
@@ -456,21 +456,36 @@ pieces are given one of each, rather than all of them at once.
 The retail disc converts clean, so `--ignore-failures` is not needed for it; pass it to log and skip
 an asset that will not convert instead of stopping.
 
-## Max Payne
+## Max Payne and Max Payne 2
 
 ```shell
 dade maxpayne ras-list MAXPAYNE.ISO
 dade maxpayne ras-extract MAXPAYNE.ISO -o extracted
 ```
 
-Readers for the RAS (Remedy Archive System) containers the game loads everything from. The argument
+Readers for the RAS (Remedy Archive System) containers both games load everything from. An argument
 may be a `.ras` archive, a `.mpm` mod package, a directory (searched recursively), an InstallShield
-`DATA1.CAB`, an ISO, or the `.cue` of a cue/bin pair.
+`DATA1.CAB`, an ISO, the `.cue` of a cue/bin pair, or a bare `.bin` — a raw BIN with no cue sheet is
+unwrapped by its sector sync patterns, so a rip that lost its cue still reads.
 
 A retail disc needs both routes at once, which the extractor takes care of: the level archives sit
 loose on the disc, while the shared game database is inside `DATA1.CAB` and is unpacked with
 [`unshield`](https://github.com/twogood/unshield). A cabinet is skipped with a warning when
 `unshield` is missing, so the loose archives still come out.
+
+Both commands take as many sources as a game shipped discs, because a cabinet does not have to fit
+on one. Max Payne 2 splits its across two: `data1.cab`, `data1.hdr` and `data2.cab` are on the
+install disc and `data3.cab` is on the play disc, and `unshield` needs all four together. The parts
+are gathered from every source given before it is unpacked once, so the discs may be named in any
+order and in whatever mixture of formats they were ripped to.
+
+```shell
+dade maxpayne ras-extract "MP2 (Install).iso" "MP2 (Play).bin" -o extracted
+dade maxpayne ras-extract MAXPAYNE.ISO -p '*/levels/*' -o levels
+```
+
+`ras-extract` takes `--pattern` rather than a trailing glob, and it is repeatable; the sources are
+the variadic argument.
 
 Members are stored back to back with no offset field, so the directory doubles as an integrity
 check; `ras-list` reports an archive as `intact` when the header, both tables, and every stored size
@@ -501,6 +516,10 @@ Pass `--database` and the NPCs and pickups are drawn with their own models, read
 `skins` and `level_items` directories; without it they are written as named empty nodes.
 Each file carries the level's architecture, its props, the game's own texture coordinates, and every
 embedded image.
+
+Both games are read, and which one a level came from does not have to be given: a Max Payne 2 level
+opens with `LDB2` and is recognised by it. `--database` applies to the first game only, which is
+where those directories are — a Max Payne 2 level carries its props inside itself.
 
 Every clip a prop can play -- a door swinging either way, a lift rising, a fan turning -- comes out
 as a named glTF animation, so a viewer can list and play them. A level stores a clip as two poses
@@ -534,6 +553,27 @@ is placed by its transform -- applying both the same way moves the architecture 
 texture coordinates are stored with V running negative and are meant to be used exactly as written,
 Direct3D's wrapping doing the rest; negating them to get a tidy `0..1` range turns every skin upside
 down, which shows on a face and nowhere else.
+
+The sequel keeps the tagged stream and the archives and rearranges everything above them, so
+`dade.maxpayne.ldb2` is a separate reader feeding the same exporter. Its strings live in one pool
+addressed by byte offset, its textures are DDS in five groups rather than one, its vertices are
+packed float arrays behind a sixteen-bit index buffer, and its collision is Havok. A room carries
+the transform that puts it in the world, where the first game left that to the exit graph and had
+to be assembled by walking it. Geometry an artist placed more than once is written once and
+referred to afterwards, so a reader that always expects a mesh loses its place on the second copy
+and every byte after it.
+
+Two of the sequel's answers are better than working them out. It states each surface's draw order,
+so decals are lifted from what the level says rather than from the geometry: deriving them instead
+moves 3917 faces of `21_The_Manor` where the level marks 1761, because the sequel duplicates a
+material per lightmap and neighbouring floor tiles end up with different material IDs, which cracks
+the floor along the seams. And a prop is placed by the state machine it names, which is the only
+world-space transform it has. Its clips cannot stand in for that: a door's first clip is a `Close`,
+so it _starts_ open, and a clip belonging to a parented prop is written in the parent's space —
+props 50 to 54 of `03_First_Hospital` each carry one whose rotation matches its state machine
+exactly while its translation does not, the first of them reading `(-0.03, -0.51, -0.27)` against
+the state machine's `(-1.24, -4.31, -25.58)`. Pose a level from clip transforms and its doors hang
+open and its parented props collapse towards the origin.
 
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 

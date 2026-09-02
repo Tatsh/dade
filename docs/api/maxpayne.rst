@@ -1,9 +1,12 @@
 Max Payne
 =========
 
-Readers for the formats Remedy Entertainment built on its ``rl`` library for *Max Payne*: the RAS
-archives and MPM mod packages, the seeded stream cipher and LZSS block wrappers guarding them, the
-tagged ``R_MemoryFile`` streams every custom asset is written as, and the levels themselves.
+Readers for the formats Remedy Entertainment built on its ``rl`` library for *Max Payne* and *Max
+Payne 2*: the RAS archives and MPM mod packages, the seeded stream cipher and LZSS block wrappers
+guarding them, the tagged ``R_MemoryFile`` streams every custom asset is written as, and the levels
+themselves. Both games write the same tagged stream, so :py:mod:`dade.maxpayne.ldb` and
+:py:mod:`dade.maxpayne.ldb2` share their reader and their glTF exporter; the level layouts differ,
+and :py:mod:`dade.maxpayne.ldb2` documents where.
 
 ``dade.maxpayne.blocks``
 ------------------------

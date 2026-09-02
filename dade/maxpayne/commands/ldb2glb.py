@@ -128,14 +128,17 @@ def ldb2glb(levels: tuple[Path, ...], output_dir: Path, jobs: int, database: Pat
     Convert each LEVELS ``.ldb`` to a ``.glb`` holding its geometry.
 
     A directory is searched recursively for ``.ldb`` files. Levels are accepted loose or still
-    wrapped in a RA-> block, so a file taken straight out of an archive works.
+    wrapped in a RA-> block, so a file taken straight out of an archive works. Both games are read:
+    a level is a Max Payne 2 one when it opens with ``LDB2``, and which game it came from does not
+    have to be given.
 
     Each placed mesh becomes its own node with its own transform, keeping props separate from the
     architecture, and every face is textured with the image the game gives it. Coordinates are
     passed through unchanged because levels are already Y-up.
 
     Pass ``--database`` to draw the NPCs and pickups with their own models, read from the game's
-    ``skins`` and ``level_items`` directories.
+    ``skins`` and ``level_items`` directories. It applies to the first game only, which is where
+    those directories are; Max Payne 2 carries its props inside each level.
 
     Reading a level is processor-bound, so levels are converted in parallel processes.
     """  # noqa: DOC501

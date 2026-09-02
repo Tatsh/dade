@@ -14,7 +14,7 @@ __all__ = ('cli',)
 
 @click.group(name='maxpayne', context_settings={'help_option_names': ('-h', '--help')})
 def cli() -> None:
-    """Extract and decode Max Payne (Remedy Entertainment) assets."""
+    """Extract and decode Max Payne and Max Payne 2 (Remedy Entertainment) assets."""
 
 
 cli.add_command(inspect_tags)
