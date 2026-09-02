@@ -696,11 +696,11 @@ def _read_props(
                 _skip_collisions(reader)
         if prefab >= 0:
             seen.add(prefab)
+        # A state machine holds where its prop was placed, and that is where the level draws it at
+        # rest. A clip is authored around that pose and may be written in a parent's space, so its
+        # own transforms cannot stand in for one: a door's first clip closes it, starting from open,
+        # and a prop hanging off a parent keeps a translation near the parent rather than the world.
         playable = tuple(_read_animations(reader, pool))
-        # A state machine holds the pose its prop finished in, which for a door is standing open.
-        # The clip says where it starts, and that is where a level should be drawn at rest.
-        if playable:
-            transform = playable[0].start
         for at, batch in enumerate(batches):
             meshes.append(batch._replace(transform=transform))
             names.append(f'prop{index}_{at}')

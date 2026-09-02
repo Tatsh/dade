@@ -220,6 +220,19 @@ def test_read_level2_reads_a_props_clips(make_ldb2: Callable[..., bytes]) -> Non
     assert len(clip.distance) == 2
 
 
+def test_read_level2_leaves_an_animated_prop_where_its_state_machine_put_it(
+        make_ldb2: Callable[..., bytes]) -> None:
+    # A clip is authored around the placed pose and may be written in a parent's space, so neither
+    # of its ends belongs on the node: a door's first clip closes it, starting from open.
+    from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
+    level = read_level2(
+        make_ldb2(machines=(_ldb2_machine(), _ldb2_machine((5.0, 6.0, 7.0))),
+                  props=(_ldb2_prop(machine=1, animations=(_ldb2_animation(),)),)))
+    assert level.props is not None
+    assert level.props.meshes[0].transform[9:] == (5.0, 6.0, 7.0)
+    assert level.props.animations[0][0].end[9:] == (1.0, 0.0, 0.0)
+
+
 def test_read_level2_rejects_a_level_that_ends_early(make_ldb2: Callable[..., bytes]) -> None:
     # Cut so the file stops exactly where the prop count belongs, rather than part way through it.
     with pytest.raises(InvalidLevel2Error, match='ends at'):
