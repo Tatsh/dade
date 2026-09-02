@@ -187,8 +187,13 @@ class Corner(NamedTuple):
     """Texture coordinate, as the game itself stores it."""
     lightmap_uv: tuple[float, float]
     """Second coordinate set, addressing the level's lightmap atlases."""
-    colour: int
-    """Packed vertex colour."""
+    neighbour: int
+    """Which corner sits across the edge, packed with a crease bit.
+
+    The engine tessellates a curved surface at runtime and needs to know what it is joined to:
+    ``value & 0x7fffff`` is the neighbour, ``value >> 0x18`` the edge, ``value >> 0x17 & 1`` marks
+    a crease, and ``0xffffffff`` means no neighbour. A viewer drawing the level as it is stored has
+    no use for any of it."""
     position: int
     """Index into :py:attr:`RenderMesh.positions`."""
 

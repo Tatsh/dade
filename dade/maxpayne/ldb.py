@@ -323,7 +323,8 @@ def _read_corners(data: bytes, offset: int, count: int) -> tuple[list[Corner], i
     Read the corner array a static mesh container shares between its meshes.
 
     Each corner is written by ``FUN_005ef230``: a position index, a texture coordinate, a lightmap
-    coordinate, a packed colour and a flag.
+    coordinate, a neighbour word and a smoothing flag. The last two are the engine's, for the
+    runtime tessellation it does on a curved surface, and mean nothing to a viewer.
 
     Parameters
     ----------
@@ -344,9 +345,9 @@ def _read_corners(data: bytes, offset: int, count: int) -> tuple[list[Corner], i
         position, offset = read_int(data, offset)
         uv, offset = _read_vector2(data, offset)
         lightmap_uv, offset = _read_vector2(data, offset)
-        colour, offset = read_int(data, offset)
+        neighbour, offset = read_int(data, offset)
         offset = _expect_tag(data, offset, BasicType.BOOL) + 1
-        out.append(Corner(colour=colour, lightmap_uv=lightmap_uv, position=position, uv=uv))
+        out.append(Corner(lightmap_uv=lightmap_uv, neighbour=neighbour, position=position, uv=uv))
     return out, offset
 
 
