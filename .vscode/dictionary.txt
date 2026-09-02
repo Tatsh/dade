@@ -326,6 +326,7 @@ librarys
 libsg
 libsonnet
 lightmap
+lightmapped
 lightmaps
 linecap
 linejoin

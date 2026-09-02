@@ -7,8 +7,9 @@ nothing else: the strings are hoisted into one pool the body addresses by byte o
 arrives already triangulated in packed float arrays rather than as convex polygons over a shared
 corner array, and a room carries the transform that places it instead of leaving it to the exits.
 
-Only the head is read -- the pool, the textures, the materials and the rooms. The containers after
-them hold the lights, the scripts and the animated props, and none of it is needed to draw a level.
+The whole file is read. The rooms hold the architecture and the dynamic meshes near the end hold
+the props -- doors, lifts, breakables, vending machines -- which a level looks conspicuously empty
+without. The containers in between are walked only far enough to keep the reader's place.
 
 The result is shaped like :py:func:`dade.maxpayne.ldb.read_level`'s so that one exporter serves
 both games: each per-material batch becomes a :py:class:`StaticMesh` of three-corner faces placed
@@ -27,6 +28,7 @@ from .typing import (
     LevelGeometry,
     Material,
     MeshFace,
+    PropAnimation,
     RenderMesh,
     StaticMesh,
     TextureImage,
@@ -54,6 +56,18 @@ _VECTORS = frozenset({BasicType.VECTOR2, BasicType.VECTOR3, BasicType.VECTOR4, B
 
 _TRIANGLE = 3
 _INDEX_SIZE = 2
+_TRANSFORM = 12
+"""Floats in the ``M_Matrix4x3`` placing a prop: three basis rows then a translation."""
+
+_CURVES = 2
+"""Curves an animation carries: how far it has travelled, then how far it has turned."""
+
+_PROP_FLAGS = 8
+"""Flags between a prop's lightmap setting and its prefab identifier."""
+
+_IDENTITY = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0)
+"""A prop's vertices are already where the level wants them, so it needs no transform of its
+own. Its clips move it from there."""
 _MATERIAL_FIELDS = 14
 """Tagged values in one material: see the specification's material section."""
 
@@ -102,6 +116,9 @@ class _Reader:
         InvalidLevel2Error
             If the tag is not one the format writes.
         """
+        if self.at >= len(self.data):
+            msg = f'The level ends at {self.at}, where a value was expected.'
+            raise InvalidLevel2Error(msg)
         tag = self.data[self.at]
         if tag == BasicType.STRING:
             # Not every string went into the pool: a room's name is written here, with its own
@@ -507,6 +524,187 @@ def _read_rooms(reader: _Reader, lightmap_of: dict[int, int]) -> tuple[RenderMes
                       names=tuple(names)), tuple(names)
 
 
+def _skip_values(reader: _Reader, count: int) -> None:
+    """
+    Step over a run of tagged values whose meaning does not matter here.
+
+    Parameters
+    ----------
+    reader : _Reader
+        A cursor positioned at the first value.
+    count : int
+        How many to step over.
+    """
+    for _ in range(count):
+        reader.value()
+
+
+def _skip_records(reader: _Reader, fields: int) -> None:
+    """
+    Step over a counted run of fixed-width records.
+
+    Parameters
+    ----------
+    reader : _Reader
+        A cursor positioned at the count.
+    fields : int
+        Tagged values in one record.
+    """
+    for _ in range(reader.count()):
+        _skip_values(reader, fields)
+
+
+def _skip_to_props(reader: _Reader) -> list[tuple[float, ...]]:
+    """
+    Walk the containers between the rooms and the props, keeping the transforms on the way.
+
+    Nothing here is drawn, but a prop does not carry the transform that places it: it names a
+    state machine, and the state machine has it. So the state machines are walked for their
+    transforms and everything else only for its length.
+
+    Parameters
+    ----------
+    reader : _Reader
+        A cursor positioned at the point light count.
+
+    Returns
+    -------
+    list[tuple[float, ...]]
+        One transform per state machine, in the order a prop's identifier indexes them.
+    """
+    _skip_records(reader, 7)  # Point lights.
+    _skip_records(reader, 3)  # Flares.
+    _skip_records(reader, 4)  # Level items.
+    for _ in range(reader.count()):  # Exits, each naming the rooms it joins.
+        _skip_values(reader, 4)
+        _skip_values(reader, reader.count())
+    _skip_records(reader, 3)  # Jump points.
+    _skip_records(reader, 4)  # Waypoints.
+    reader.raw(1)
+    _skip_records(reader, 2)  # Enemy groups.
+    _skip_records(reader, 6)  # Enemies.
+    placed: list[tuple[float, ...]] = []
+    for _ in range(reader.count()):  # State machines.
+        reader.value()  # Name.
+        transform = reader.value()
+        placed.append(transform if isinstance(transform, tuple) else _IDENTITY)
+        _skip_values(reader, 4)  # Parent, local transform, room, default state.
+        reader.raw(1)
+        _skip_values(reader, reader.count())  # Custom states.
+        _skip_values(reader, 4)  # Offsets of the scripts in the pool.
+        _skip_records(reader, 5)  # Timers.
+    for _ in range(reader.count()):  # Triggers.
+        _skip_values(reader, 9)
+        if reader.value() == 1 and reader.count() == -1:
+            _skip_collisions(reader)
+    return placed
+
+
+def _read_animations(reader: _Reader, pool: bytes) -> list[PropAnimation]:
+    """
+    Read the clips one prop can play.
+
+    A clip is two curves sampled over its length -- how far the prop has travelled and how far it
+    has turned -- between a start and an end transform, which is the same shape the first game
+    uses.
+
+    Parameters
+    ----------
+    reader : _Reader
+        A cursor positioned at the clip count.
+    pool : bytes
+        The level's string pool.
+
+    Returns
+    -------
+    list[PropAnimation]
+        The clips.
+    """
+    out: list[PropAnimation] = []
+    for _ in range(reader.count()):
+        name = _string_at(pool, reader.count())
+        length = reader.value()
+        start, end = reader.value(), reader.value()
+        curves: list[tuple[float, ...]] = []
+        for _ in range(_CURVES):
+            _skip_values(reader, 3)
+            reader.value()  # Sample rate.
+            points = reader.count()
+            reader.floats(points)  # The times, which are evenly spaced.
+            curves.append(reader.floats(points))
+        _skip_values(reader, 3)  # The state machines the clip starts.
+        if (isinstance(start, tuple) and len(start) == _TRANSFORM and isinstance(end, tuple)
+                and len(end) == _TRANSFORM):
+            out.append(
+                PropAnimation(distance=curves[0],
+                              duration=float(length) if isinstance(length, (int, float)) else 0.0,
+                              end=end,
+                              name=name,
+                              start=start,
+                              turn=curves[1]))
+    return out
+
+
+def _read_props(
+        reader: _Reader, pool: bytes, lightmap_of: dict[int, int],
+        placed: list[tuple[float, ...]]) -> tuple[RenderMesh, list[tuple[PropAnimation, ...]]]:
+    """
+    Read the dynamic meshes: the doors, lifts and breakables a room's walls do not include.
+
+    A prefab is written once and referred to afterwards, so the geometry is only present the first
+    time an identifier is seen, or when a later copy carries its own lighting. A reader that always
+    expects a mesh loses its place; the specification's dynamic mesh section sets out the rule.
+
+    Parameters
+    ----------
+    reader : _Reader
+        A cursor positioned at the prop count.
+    pool : bytes
+        The level's string pool.
+    lightmap_of : dict[int, int]
+        Which lightmap each material is lit by.
+    placed : list[tuple[float, ...]]
+        One transform per state machine, which is where a prop naming it stands.
+
+    Returns
+    -------
+    tuple[RenderMesh, list[tuple[PropAnimation, ...]]]
+        The props and the clips each can play.
+    """
+    corners: list[Corner] = []
+    meshes: list[StaticMesh] = []
+    names: list[str] = []
+    clips: list[tuple[PropAnimation, ...]] = []
+    seen: set[int] = set()
+    for index in range(reader.count()):
+        machine = reader.count()  # The state machine driving it, and placing it.
+        transform = placed[machine] if 0 <= machine < len(placed) else _IDENTITY
+        lightmapped = reader.value()
+        _skip_values(reader, _PROP_FLAGS)
+        prefab = reader.count()
+        share = reader.value()
+        _skip_values(reader, 3)  # Bounding box.
+        batches: list[StaticMesh] = []
+        if prefab < 0 or prefab not in seen:
+            batches = _read_mesh(reader, transform, corners, lightmap_of)
+            _skip_collisions(reader)
+        elif lightmapped != 0:
+            batches = _read_mesh(reader, transform, corners, lightmap_of)
+            if not share:
+                _skip_collisions(reader)
+        if prefab >= 0:
+            seen.add(prefab)
+        playable = tuple(_read_animations(reader, pool))
+        for at, batch in enumerate(batches):
+            meshes.append(batch)
+            names.append(f'prop{index}_{at}')
+            clips.append(playable)
+    return RenderMesh(corners=tuple(corners),
+                      meshes=tuple(meshes),
+                      names=tuple(names),
+                      animations=tuple(clips)), clips
+
+
 def read_level2(data: bytes) -> Level:
     """
     Read a Max Payne 2 level.
@@ -544,9 +742,13 @@ def read_level2(data: bytes) -> Level:
         _read_texture_group(reader, pool)  # Detail, reflection and gloss.
     materials, lightmap_of = _read_materials(reader, diffuse)
     mesh, _names = _read_rooms(reader, lightmap_of)
-    log.debug('Read %d rooms worth of geometry, %d meshes.', len(mesh.names), len(mesh.meshes))
+    placed = _skip_to_props(reader)
+    props, _clips = _read_props(reader, pool, lightmap_of, placed)
+    log.debug('Read %d meshes of architecture and %d of props.', len(mesh.meshes),
+              len(props.meshes))
     return Level(geometry=LevelGeometry(polygons=(), vertices=()),
                  lightmaps=tuple(lightmaps),
                  materials=materials,
                  mesh=mesh,
+                 props=props,
                  textures=tuple(diffuse))

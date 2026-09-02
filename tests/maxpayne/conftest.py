@@ -721,6 +721,9 @@ def make_ldb2() -> Callable[..., bytes]:
               rooms: Sequence[bytes] | None = None,
               collisions: int = 0,
               volume_lights: int = 0,
+              machines: Sequence[bytes] = (),
+              props: Sequence[bytes] | None = None,
+              populated: bool = False,
               placed: bool = True) -> bytes:
         blob = b''.join(s.encode('latin-1') + b'\x00' for s in pool)
         out = bytearray(magic)
@@ -744,6 +747,7 @@ def make_ldb2() -> Callable[..., bytes]:
             out += room
             out += _int(collisions) + _collision() * collisions
             out += _int(volume_lights) + _volume_light() * volume_lights
+        out += _ldb2_tail(machines, () if props is None else props, populated=populated)
         return bytes(out)
 
     return build
@@ -758,3 +762,72 @@ def _collision() -> bytes:
 def _volume_light() -> bytes:
     """One light: a one-cell grid holding a single colour."""
     return (_int(1) * 3 + _vec3(0.0, 0.0, 0.0) + _vec3(1.0, 1.0, 1.0) + _packed([1.0, 1.0, 1.0]))
+
+
+def _ldb2_machine(translation: tuple[float, float, float] = (0.0, 0.0, 0.0)) -> bytes:
+    """One state machine, which is what places a prop."""
+    return (_int(0) + _matrix(translation) + _int(-1) + _matrix() + _int(0) + _int(0) + b'\x00' +
+            _int(0) + _int(0) * 4 + _int(0))
+
+
+def _ldb2_prop(prefab: int = -1,
+               *,
+               lightmapped: bool = False,
+               share: bool = False,
+               machine: int = 0,
+               geometry: bool = True,
+               animations: Sequence[bytes] = ()) -> bytes:
+    """One dynamic mesh, whose geometry is only written when the prefab rule says so."""
+    out = _int(machine) + _bool(value=lightmapped) + _int(0) * 8 + _int(prefab)
+    out += _bool(value=share) + _vec3(0.0, 0.0, 0.0) * 3
+    if geometry:
+        out += _int(1) + _ldb2_batch() + _int(0)
+    out += _int(len(animations)) + b''.join(animations)
+    return out
+
+
+def _ldb2_animation(points: int = 2, *, placed: bool = True) -> bytes:
+    """One clip: a length, two transforms, then a travelled curve and a turned one.
+
+    `placed` false writes a number where the start transform belongs, which is a clip that cannot
+    move anything and has to be dropped.
+    """
+    out = _int(0) + _float(1.5) + (_matrix() if placed else _int(0)) + _matrix((1.0, 0.0, 0.0))
+    for _ in range(2):
+        out += _int(0) * 3 + _int(30) + _int(points)
+        out += _packed([0.0, 1.0][:points]) + _packed([0.0, 1.0][:points])
+    return out + _int(0) * 3
+
+
+def _ldb2_tail(machines: Sequence[bytes],
+               props: Sequence[bytes],
+               *,
+               populated: bool = False) -> bytes:
+    """
+    Everything after the rooms, which a reader has to walk exactly to reach the props.
+
+    Empty by default. `populated` puts one of each optional record in, so the walk has to step
+    over a fixed-width record, an exit naming a room, and a trigger carrying a collision shape.
+    """
+    out = bytearray()
+    out += _int(1) + _int(0) * 7 if populated else _int(0)  # Point lights.
+    for _ in range(2):  # Flares and level items.
+        out += _int(0)
+    if populated:  # One exit, naming one room.
+        out += _int(1) + _int(0) * 4 + _int(1) + _int(0)
+    else:
+        out += _int(0)
+    for _ in range(2):  # Jump points and waypoints.
+        out += _int(0)
+    out += b'\x00' + _int(0) + _int(0)  # Enemy groups and enemies.
+    out += _int(len(machines)) + b''.join(machines)
+    if populated:  # Two triggers: one carrying a collision shape of its own, one carrying none.
+        out += _int(2)
+        out += _int(0) * 9 + _int(1) + _int(-1) + _int(1) + _collision()
+        # No collision shape, so no parent follows the flag either.
+        out += _int(0) * 9 + _int(0)
+    else:
+        out += _int(0)
+    out += _int(len(props)) + b''.join(props)
+    out += _int(0)  # Mirrors.
+    return bytes(out)
