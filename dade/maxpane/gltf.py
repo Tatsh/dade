@@ -1253,7 +1253,7 @@ def _lift_decals(level: Level, containers: Sequence[RenderMesh]) -> list[list[di
         of :py:data:`dade.maxpane.decals.DECAL_STEP` it has to rise. Faces that stay put are left
         out.
     """
-    surfaces: list[tuple[Vector3, list[Vector3]]] = []
+    surfaces: list[tuple[Vector3, list[Vector3], tuple[int, int, int]]] = []
     origins: list[tuple[int, int, int]] = []
     for group, container in enumerate(containers):
         for index, mesh in enumerate(container.meshes):
@@ -1269,7 +1269,7 @@ def _lift_decals(level: Level, containers: Sequence[RenderMesh]) -> list[list[di
                 surfaces.append((_turn(matrix, _mirror(face.normal)), [
                     _place(matrix, _mirror(mesh.positions[corner.position]))
                     for corner in container.corners[face.first_corner:end]
-                ]))
+                ], (group, index, face.material)))
                 origins.append((group, index, at))
     out: list[list[dict[int, int]]] = [[{} for _ in c.meshes] for c in containers]
     for layer, (group, index, at) in zip(layer_faces(surfaces), origins, strict=True):

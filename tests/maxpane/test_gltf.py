@@ -585,15 +585,18 @@ def test_build_glb_skips_an_undecodable_atlas(make_ldb: Callable[..., bytes]) ->
 
 
 def test_build_glb_lifts_a_face_off_the_one_it_covers(make_ldb: Callable[..., bytes]) -> None:
-    # Both triangles lie in one plane over the same ground, the way a level lays graffiti on a
-    # wall, so the second has to come off it or a depth buffer cannot tell which is in front.
-    document, binary = _parse(build_glb(read_level(make_ldb(face_materials=(7,),
-                                                            layout='stacked'))))
-    position = document['meshes'][0]['primitives'][0]['attributes']['POSITION']
-    raw = _accessor_bytes(document, binary, position)
-    heights = [struct.unpack_from('<3f', raw, corner * 12)[1] for corner in range(6)]
-    assert heights[:3] == [0.0, 0.0, 0.0]
-    assert heights[3:] == pytest.approx([DECAL_STEP] * 3)
+    # The triangles lie in one plane over the same ground, the way a level lays graffiti on a
+    # wall, and draw with different materials, so one has to come off the other or a depth buffer
+    # cannot tell which is in front.
+    document, binary = _parse(
+        build_glb(read_level(make_ldb(face_materials=(7, 9), layout='stacked'))))
+    heights: set[float] = set()
+    for primitive in document['meshes'][0]['primitives']:
+        raw = _accessor_bytes(document, binary, primitive['attributes']['POSITION'])
+        heights.update(
+            struct.unpack_from('<3f', raw, corner * 12)[1] for corner in range(len(raw) // 12))
+    # One face keeps the plane and each face laid over it rises another step.
+    assert sorted(heights)[:3] == pytest.approx([0.0, DECAL_STEP, 2 * DECAL_STEP])
 
 
 def test_build_glb_leaves_a_face_nothing_covers_alone(make_ldb: Callable[..., bytes]) -> None:
