@@ -155,6 +155,14 @@ class Material(NamedTuple):
     opaque. The colour images are JPEG or 8-bit PCX and carry no alpha channel of their own, so a
     material that needs one -- foliage, fences, neon signs, glass -- names a second image whose
     brightness is the mask."""
+    blend: str = ''
+    """glTF alpha mode the material asks for outright, or an empty string when it does not.
+
+    Max Payne 2 says how a material blends rather than naming a mask, because its images are DDS
+    and carry their own alpha channel. Max Payne 1 leaves this empty and the mode is worked out
+    from :py:attr:`alpha` instead."""
+    dual_sided: bool = False
+    """Whether the material is drawn from both sides."""
 
 
 class Level(NamedTuple):

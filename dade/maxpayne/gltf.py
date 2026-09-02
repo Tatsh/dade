@@ -824,10 +824,15 @@ class _Document:
             pbr['baseColorFactor'] = list(_FALLBACK_COLOUR)
         else:
             pbr['baseColorTexture'] = {'index': index, 'texCoord': 0}
+        # A material whose image carries its own alpha says how to blend it rather than naming a
+        # mask to composite, so there is nothing to build and the mode is taken as given.
+        if not mode and material:
+            mode = material.blend
         name = material.texture if material else f'material_{material_id}'
         entry: dict[str, Any] = {
-            # A cut-out is a flat card meant to be seen from either side, so it cannot be culled.
-            'doubleSided': bool(mode),
+            # A cut-out is a flat card meant to be seen from either side, so it cannot be culled,
+            # and a material may ask for both sides outright.
+            'doubleSided': bool(mode) or bool(material and material.dual_sided),
             'name': name,
             'pbrMetallicRoughness': pbr
         }

@@ -35,6 +35,13 @@ tagged ``R_MemoryFile`` streams every custom asset is written as, and the levels
 .. automodule:: dade.maxpayne.ldb
    :members:
 
+
+``dade.maxpayne.ldb2``
+----------------------
+
+.. automodule:: dade.maxpayne.ldb2
+   :members:
+
 ``dade.maxpayne.memoryfile``
 ----------------------------
 

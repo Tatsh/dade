@@ -60,6 +60,23 @@ _MATERIAL_FIELDS = 14
 _DDS = 5
 """The ``file_type`` accompanying DirectDraw Surface data."""
 
+_BLEND_MODES = {
+    1: 'MASK',
+    2: 'BLEND',
+    3: 'BLEND',
+    4: 'BLEND',
+    7: 'MASK',
+    8: 'BLEND',
+    10: 'MASK',
+    11: 'BLEND'
+}
+"""How each blending mode a material can ask for lands in glTF.
+
+The modes are named in the specification. Everything with `AlphaCompare` in its name is a cut-out
+and needs no sorting, so it masks; the ones that blend an edge, add, or blend outright have to be
+drawn in order and so blend. The rest draw opaque, whatever else they do with their other
+textures."""
+
 
 class InvalidLevel2Error(ValueError):
     """Raised when a buffer is not a readable Max Payne 2 level."""
@@ -252,7 +269,8 @@ def _read_lightmaps(reader: _Reader) -> list[TextureImage]:
     ]
 
 
-def _read_materials(reader: _Reader, diffuse: list[TextureImage]) -> dict[int, Material]:
+def _read_materials(reader: _Reader,
+                    diffuse: list[TextureImage]) -> tuple[dict[int, Material], dict[int, int]]:
     """
     Read the material table.
 
@@ -269,10 +287,13 @@ def _read_materials(reader: _Reader, diffuse: list[TextureImage]) -> dict[int, M
 
     Returns
     -------
-    dict[int, Material]
-        Material identifier to material, keyed by position as the meshes reference them.
+    tuple[dict[int, Material], dict[int, int]]
+        Material identifier to material, keyed by position as the meshes reference them, and the
+        lightmap each one is lit by. The lightmap belongs to the material here, where the first
+        game put it on the face.
     """
     out: dict[int, Material] = {}
+    lit: dict[int, int] = {}
     for index in range(reader.count()):
         # Not every field is a number: `dual_sided` and `writes_zbuffer` are written as booleans.
         fields = [reader.value() for _ in range(_MATERIAL_FIELDS)]
@@ -281,14 +302,20 @@ def _read_materials(reader: _Reader, diffuse: list[TextureImage]) -> dict[int, M
         frame = first + (showing if isinstance(showing, int) else 0)
         image = diffuse[frame] if 0 <= frame < len(diffuse) else None
         image = image or (diffuse[first] if 0 <= first < len(diffuse) else None)
-        out[index] = Material(category='',
+        blend = fields[0]
+        sided = fields[10]
+        lightmap = fields[3]
+        lit[index] = lightmap if isinstance(lightmap, int) else -1
+        out[index] = Material(blend=_BLEND_MODES.get(blend, '') if isinstance(blend, int) else '',
+                              category='',
+                              dual_sided=bool(sided),
                               image=image.path if image else '',
                               texture=image.path if image else '')
-    return out
+    return out, lit
 
 
-def _read_mesh(reader: _Reader, transform: tuple[float, ...],
-               corners: list[Corner]) -> list[StaticMesh]:
+def _read_mesh(reader: _Reader, transform: tuple[float, ...], corners: list[Corner],
+               lightmap_of: dict[int, int]) -> list[StaticMesh]:
     """
     Read one room's static mesh batches.
 
@@ -304,6 +331,8 @@ def _read_mesh(reader: _Reader, transform: tuple[float, ...],
         The room's transform, which places every batch in it.
     corners : list[Corner]
         The corner array being built for the whole level, appended to in place.
+    lightmap_of : dict[int, int]
+        Which lightmap each material is lit by.
 
     Returns
     -------
@@ -331,6 +360,7 @@ def _read_mesh(reader: _Reader, transform: tuple[float, ...],
             faces.append(
                 MeshFace(corner_count=_TRIANGLE,
                          first_corner=len(corners),
+                         lightmap=lightmap_of.get(material, -1),
                          material=material,
                          normal=_face_normal([positions[i] for i in triangle])))
             corners.extend(
@@ -435,7 +465,7 @@ def _skip_volume_lights(reader: _Reader) -> None:
         reader.raw(width * height * depth * 3 * 4)
 
 
-def _read_rooms(reader: _Reader) -> tuple[RenderMesh, tuple[str, ...]]:
+def _read_rooms(reader: _Reader, lightmap_of: dict[int, int]) -> tuple[RenderMesh, tuple[str, ...]]:
     """
     Read the rooms and everything they hold.
 
@@ -443,6 +473,8 @@ def _read_rooms(reader: _Reader) -> tuple[RenderMesh, tuple[str, ...]]:
     ----------
     reader : _Reader
         A cursor positioned at the room count.
+    lightmap_of : dict[int, int]
+        Which lightmap each material is lit by.
 
     Returns
     -------
@@ -466,7 +498,7 @@ def _read_rooms(reader: _Reader) -> tuple[RenderMesh, tuple[str, ...]]:
         if not isinstance(transform, tuple):
             msg = f'A room at offset {reader.at} has no transform.'
             raise InvalidLevel2Error(msg)
-        batches = _read_mesh(reader, transform, corners)
+        batches = _read_mesh(reader, transform, corners, lightmap_of)
         meshes.extend(batches)
         names.extend(f'{name}_{index}' for index in range(len(batches)))
         _skip_collisions(reader)
@@ -510,8 +542,8 @@ def read_level2(data: bytes) -> Level:
     lightmaps = _read_lightmaps(reader)
     for _ in range(3):
         _read_texture_group(reader, pool)  # Detail, reflection and gloss.
-    materials = _read_materials(reader, diffuse)
-    mesh, _names = _read_rooms(reader)
+    materials, lightmap_of = _read_materials(reader, diffuse)
+    mesh, _names = _read_rooms(reader, lightmap_of)
     log.debug('Read %d rooms worth of geometry, %d meshes.', len(mesh.names), len(mesh.meshes))
     return Level(geometry=LevelGeometry(polygons=(), vertices=()),
                  lightmaps=tuple(lightmaps),
