@@ -230,6 +230,29 @@ def test_build_glb_blends_a_translucent_texture() -> None:
     assert document(glb)['materials'][0]['alphaMode'] == 'BLEND'
 
 
+def test_build_glb_blends_a_material_that_draws_in_a_blend_pass() -> None:
+    images = [build_image('art/wall.tga', 2, 2, FORMAT_RGBA, opaque_pixels())]
+    packets = [paint(mesh_packet(_TRIANGLE), (200, 40, 40))]
+    blob = bytearray(
+        build_geometry([('art/wall.tga', 0)], [(1, packets)], {0: 0}, images, pass_sums=[0, 0, 1]))
+    table = struct.unpack_from('<I', blob, 0x50)[0]
+    found = list(iter_geometry_textures(bytes(blob)))
+    struct.pack_into('<I', blob, table + 0x10, found[0].data_offset - 0x80)
+    glb = build_glb(bytes(blob))
+    assert glb is not None
+    assert document(glb)['materials'][0]['alphaMode'] == 'BLEND'
+
+
+def test_build_prop_glb_blends_a_glow_sprite_and_an_overlay() -> None:
+    body = build_image('body.tga', 2, 2, FORMAT_RGBA, opaque_pixels())
+    glow = build_image('glow.tga', 2, 2, FORMAT_RGBA, bytes([255, 255, 255, 255]) * 4)
+    overlay = build_image('add_neon.tga', 2, 2, FORMAT_RGBA, opaque_pixels((10, 20, 30)))
+    section = build_section('lib/guy', [('body.tga',)],
+                            [('GUY_BODY', [(0, [prop_packet(_PROP_TRIANGLE)])])])
+    glb = build_prop_glb(build_library([section], [body, glow, overlay]))
+    assert glb is not None
+
+
 def _library() -> bytes:
     image = build_image('body.tga', 2, 2, FORMAT_RGBA, opaque_pixels())
     section = build_section('lib/guy', [('body.tga',)],

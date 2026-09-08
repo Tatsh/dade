@@ -361,7 +361,8 @@ def mesh_packet(vertices: Sequence[tuple[float, float, float, float, float]],
 def build_geometry(materials: Sequence[tuple[str, int]],
                    meshes: Sequence[tuple[int, Sequence[bytes]]],
                    owners: Mapping[int, int] | None = None,
-                   images: Sequence[bytes] = ()) -> bytes:
+                   images: Sequence[bytes] = (),
+                   pass_sums: Sequence[int] | None = None) -> bytes:
     """
     Build a ``.EGP2`` geometry blob.
 
@@ -375,6 +376,9 @@ def build_geometry(materials: Sequence[tuple[str, int]],
         Material index by mesh position; meshes left out are claimed by no material.
     images : Sequence[bytes]
         Records from :py:func:`build_image`, embedded after the header.
+    pass_sums : Sequence[int] | None
+        Prefix sums partitioning the material records between render passes, written as the pass
+        table the header points at; :py:obj:`None` leaves every material in pass one.
 
     Returns
     -------
@@ -427,7 +431,13 @@ def build_geometry(materials: Sequence[tuple[str, int]],
     body += struct.pack(f'<{len(blocks)}I', *blocks) if blocks else b''
     # Room past the mesh table, so a test may raise the declared count without over-reading.
     body += bytes(16)
+    pass_table_at = 0
+    if pass_sums is not None:
+        pass_table_at = base + len(body)
+        body += struct.pack(f'<{len(pass_sums)}I', *pass_sums)
     header = bytearray(IMAGES_AT)
+    struct.pack_into('<I', header, 0x30, max(len(pass_sums) - 1, 0) if pass_sums is not None else 0)
+    struct.pack_into('<I', header, 0x34, pass_table_at)
     struct.pack_into('<I', header, 0x14, len(materials))
     struct.pack_into('<I', header, 0x20, len(blocks))
     struct.pack_into('<I', header, 0x50, table_at)
