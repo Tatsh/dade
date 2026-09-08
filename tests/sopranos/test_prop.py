@@ -133,11 +133,56 @@ def test_read_items_drops_a_group_that_draws_nothing() -> None:
     assert read_items(_body(build_library([section]))) == ()
 
 
-@pytest.mark.parametrize(('name', 'alternate', 'key'), [('*BODY17', True, 'BODY'),
-                                                        ('*BODY18', True, 'BODY'),
-                                                        ('*HEAD7_Face_0', True, 'HEAD_Face_'),
-                                                        ('*HEAD08_Face_0', True, 'HEAD_Face_'),
-                                                        ('VITO_BODY', False, 'VITO_BODY')])
+@pytest.mark.parametrize(
+    ('name', 'alternate', 'key'),
+    [
+        # Alternatives for one piece share a name once the digits go.
+        ('*BODY17', True, 'BODY'),
+        ('*BODY18', True, 'BODY'),
+        ('*SHIRT4', True, 'SHIRT'),
+        ('*HANDS1', True, 'HANDS'),
+        ('VITO_BODY', False, 'VITO_BODY'),
+        # A child's `*HEAD10` and `*HEAD7_Face_0` are the one head rather than a boy's and a girl's
+        # drawn together.
+        ('*HEAD7_Face_0', True, 'head'),
+        ('*HEAD08_Face_0', True, 'head'),
+        ('*HEAD10', True, 'head'),
+        ('*HEAD8_s0_Face_0', True, 'head'),
+        # An accessory worn with a head keeps its own family.
+        ('*HEADPHONES12', True, 'HEADPHONES'),
+        # A head wears one hat and one pair of glasses however the pieces are named, so a dock
+        # hand's three hats and two pairs of glasses come down to one of each.
+        ('*HATBANDANA2', True, 'headwear'),
+        ('*HATSKULLCAP15', True, 'headwear'),
+        ('*HATCAP22', True, 'headwear'),
+        ('*OG_W_BEANIE02', True, 'headwear'),
+        ('*hairVisor08_S3', True, 'headwear'),
+        ('*GLASSES3_s1', True, 'eyewear'),
+        ('*SUNGLASSES4', True, 'eyewear'),
+        # A body has one head however the cooker names it, but headphones and a bandage go over a
+        # head rather than instead of one.
+        ('*Waiter_Head07', True, 'head'),
+        ('*HEAD_WHITEA07', True, 'head'),
+        ('*ILL_MECH_HEAD09', True, 'head'),
+        ('*bandageheadA01', True, 'bandageheadA'),
+        # A bun, a ponytail and a loose side piece are three names for the one hairstyle, and
+        # colour marks a variant of a piece the way a digit does.
+        ('*BunBlack03', True, 'hairpiece'),
+        ('*PONYTAILBLONDE06', True, 'hairpiece'),
+        ('*HAIRBLONDESIDE04', True, 'hairpiece'),
+        ('*HEAD_Black02', True, 'head'),
+        # A hairpick is a comb stuck in the hair, not a hairstyle.
+        ('*HAIRPICK7', True, 'HAIRPICK'),
+        # Most models number their shoes, but a few name them for the style.
+        ('*SHOE31', True, 'footwear'),
+        ('*SHOEHIGHHILL30', True, 'footwear'),
+        ('*Shoe_Sniker30', True, 'footwear'),
+        ('*FEETBOOTS31', True, 'footwear'),
+        # Known limitation: a waiter's torso is named for his outfit rather than his slot, so these
+        # two are one torso under two names and nothing here pairs them.
+        ('*Water_Body17', True, 'Water_Body'),
+        ('*Cook_jacket16', True, 'Cook_jacket'),
+    ])
 def test_wardrobe_grouping(*, alternate: bool, key: str, name: str) -> None:
     assert is_alternate(name) is alternate
     assert wardrobe_key(name) == key

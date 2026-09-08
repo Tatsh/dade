@@ -229,14 +229,41 @@ def is_alternate(name: str) -> bool:
     return name.startswith(_ALTERNATE_MARK)
 
 
+_HEADWEAR = ('hat', 'beanie', 'bandana', 'visor', 'helmet', 'durag', 'skullcap')
+_EYEWEAR = ('glasses', 'shades', 'goggle', 'monocle')
+_HAIR = ('hair', 'bun', 'ponytail', 'braid', 'afro', 'dread', 'pigtail')
+_FOOTWEAR = ('shoe', 'boot', 'sniker', 'sneaker', 'sandal', 'slipper', 'loafer')
+_NOT_A_HEAD = ('headphone', 'bandage')
+_COLOUR = re.compile(r'black|blonde|blond|brown|white|grey|gray|ginger|brunette|auburn',
+                     re.IGNORECASE)
+_SHADING_SUFFIX = re.compile(r'_s\d+', re.IGNORECASE)
+_FACE_SUFFIX = re.compile(r'_face_?\d*', re.IGNORECASE)
+
+
 def wardrobe_key(name: str) -> str:
     """
     Give the set an interchangeable item belongs to.
 
     ``*BODY17`` and ``*BODY18`` are two jackets for the same torso, so both answer ``BODY``. Every
     digit goes, not just the trailing ones, because a wardrobe numbers its alternatives in the
-    middle of the name as readily as at the end: a business woman offers ``*HEAD7_Face_0`` beside
-    ``*HEAD08_Face_0``, and both are the one head.
+    middle of a name as readily as at the end.
+
+    Head, headwear, eyewear, hair, and footwear each answer with the one word, since a body has a
+    single head and wears a single hat, a single pair of glasses, a single hairstyle, and a single
+    pair of shoes however the pieces are named. Headphones and a bandage go over a head rather than
+    instead of one, so they keep their own families. For example: a dock hand offers
+    ``*HATBANDANA2``, ``*HATSKULLCAP15``, and ``*HATCAP22``, three families by name and three hats
+    on one head in practice, and a dealer's ``*BunBlack03``, ``*PONYTAILBLONDE06``, and
+    ``*HAIRBLONDESIDE04`` are one hairstyle's worth of names. Colour goes the same way as a digit,
+    since ``*BunBlack03`` and ``*BunBLONDE04`` are the one bun in two shades. Otherwise an ``_s0``
+    shading suffix and a ``_Face_0`` one both mark a
+    variant of one piece rather than a different piece, so they go first. Without that,
+    ``*HEAD8_s0_Face_0`` and ``*HEAD9_Face_0`` are two families, and a character wears both heads at
+    once.
+
+    A piece named for its outfit rather than its slot still escapes this: a waiter's
+    ``*Water_Body17`` and ``*Cook_jacket16`` are one torso under two names, and nothing here pairs
+    them.
 
     Parameters
     ----------
@@ -248,7 +275,19 @@ def wardrobe_key(name: str) -> str:
     str
         A key shared by the alternatives for one piece.
     """
-    return _DIGITS.sub('', name.lstrip(_ALTERNATE_MARK))
+    bare = name.lstrip(_ALTERNATE_MARK)
+    low = bare.lower()
+    if any(word in low for word in _HEADWEAR):
+        return 'headwear'
+    if any(word in low for word in _EYEWEAR):
+        return 'eyewear'
+    if 'hairpick' not in low and any(word in low for word in _HAIR):
+        return 'hairpiece'
+    if any(word in low for word in _FOOTWEAR):
+        return 'footwear'
+    if 'head' in low and not any(word in low for word in _NOT_A_HEAD):
+        return 'head'
+    return _COLOUR.sub('', _DIGITS.sub('', _FACE_SUFFIX.sub('', _SHADING_SUFFIX.sub('', bare))))
 
 
 def read_materials(section: bytes) -> tuple[tuple[str, ...], ...]:
