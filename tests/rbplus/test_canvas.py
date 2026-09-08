@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-import xml.etree.ElementTree as ET  # noqa: S405
+import xml.etree.ElementTree as ET  # ruff: ignore[suspicious-xml-etree-import]
 
 from PIL import Image
 import pytest
@@ -19,7 +19,7 @@ _GREEN = (0, 255, 0)
 
 
 def _svg_root(markup: str) -> ET.Element:
-    return ET.fromstring(markup)  # noqa: S314
+    return ET.fromstring(markup)  # ruff: ignore[suspicious-xml-element-tree-usage]
 
 
 @pytest.mark.parametrize(('suffix', 'expected'), [('.png', PillowCanvas), ('.PNG', PillowCanvas),

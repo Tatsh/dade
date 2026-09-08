@@ -77,7 +77,7 @@ def _parse_v14_mesh(data: bytes) -> Geometry | None:
         return off
 
     # A struct error anywhere in the variable-length header means this is not a v14 mesh.
-    try:  # noqa: PLW0717
+    try:  # ruff: ignore[too-many-statements-in-try-clause]
         tver = u32(data, 4)
         off = rhl(4 + 4 + 96)  # version + 24 matrix floats + child handle list.
         if tver > 0:
@@ -112,7 +112,8 @@ def _v10_positions_finite(data: bytes, vertex_start: int, count: int) -> bool:
     step = max(1, count // _V10_POS_SAMPLES)
     for k in range(0, count, step):
         pos = struct.unpack_from('<3f', data, vertex_start + k * _VERTEX_STRIDE)
-        if not all(v == v and abs(v) < _V10_POS_LIMIT for v in pos):  # noqa: PLR0124
+        if not all(v == v and abs(v) < _V10_POS_LIMIT  # ruff: ignore[comparison-with-itself]
+                   for v in pos):
             return False
     return True
 

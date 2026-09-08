@@ -69,7 +69,7 @@ def icon_sys_to_json(data: bytes) -> IconSysMeta:
     }
 
 
-def ps2_icon_decompose(path: Path, out_dir: Path) -> Path | None:  # noqa: PLR0914
+def ps2_icon_decompose(path: Path, out_dir: Path) -> Path | None:  # ruff: ignore[too-many-locals]
     """
     Decompose a PS2 3D icon into ``out_dir/{model.obj, texture.png, model.mtl}``.
 

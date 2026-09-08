@@ -155,7 +155,7 @@ def dump_chart(package: Path,
     hold extends as a bar to its release, and each note of a chain is joined to the next by a line.
     The image carries a legend. With --flip time runs downward instead, so the notes fall down the
     page the way they fall down the screen.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     try:
         # A file named .rb is meant as a package whether or not it opens as one, so a broken one
         # says so rather than being taken for a chart.

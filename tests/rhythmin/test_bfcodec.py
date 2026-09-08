@@ -27,7 +27,7 @@ _VECTORS = (
 
 def _standard_f(cipher: Blowfish, x: int) -> int:
     """Compute the textbook Blowfish F, for the deviation test."""
-    boxes = cipher._s  # noqa: SLF001
+    boxes = cipher._s  # ruff: ignore[private-member-access]
     a, b, c, d = (x >> 24) & 0xFF, (x >> 16) & 0xFF, (x >> 8) & 0xFF, x & 0xFF
     return ((((boxes[0][a] + boxes[1][b]) & 0xFFFFFFFF) ^ boxes[2][c]) + boxes[3][d]) & 0xFFFFFFFF
 

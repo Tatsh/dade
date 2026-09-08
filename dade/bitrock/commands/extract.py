@@ -91,7 +91,7 @@ def extract_main(archive: Path, members: tuple[str, ...], output_dir: Path, pass
 
     With no MEMBERS, every member is extracted; otherwise only the named members are. Paths are
     those shown by ``--list``. Encrypted installers prompt for a password when one is not given.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     try:
         if list_:
             _list_members(archive)

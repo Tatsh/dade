@@ -205,7 +205,7 @@ def read_stream_header(data: bytes) -> tuple[int, int, int, int]:
         msg = 'Music stream header is too small.'
         raise InvalidFormatError(msg)
     channels, rate, interleave, blocks = struct.unpack_from('<4I', data, 8)
-    if not 1 <= channels <= 8 or not interleave:  # noqa: PLR2004
+    if not 1 <= channels <= 8 or not interleave:  # ruff: ignore[magic-value-comparison]
         msg = f'Music stream header declares {channels} channels and a {interleave}-byte block.'
         raise InvalidFormatError(msg)
     return channels, rate, interleave, blocks

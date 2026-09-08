@@ -37,7 +37,7 @@ def test_squares(treasure_map_bytes: bytes) -> None:
     assert squares[0].kind_name == 'start'
     assert squares[1].kind_name == 'treasure'
     # The format's line break is resolved on the way out.
-    assert squares[1].text == 'たからばこ\nだ！'  # noqa: RUF001
+    assert squares[1].text == 'たからばこ\nだ！'  # ruff: ignore[ambiguous-unicode-character-string]
     assert squares[1].links == (2, 3)
     assert squares[2].kind_name == 'warp'
     assert squares[2].slot == 5

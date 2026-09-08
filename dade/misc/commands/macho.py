@@ -38,7 +38,7 @@ def dump(path: Path) -> None:
     image links, its UUID and source version, the minimum OS it declares, the entitlements inside
     its code signature, and, for an image bought from the App Store, the LC_ENCRYPTION_INFO command
     that says its text is still enciphered. Nothing is decrypted and no code is disassembled.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', path)
     try:
         info = read_macho(path)

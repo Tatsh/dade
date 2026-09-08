@@ -50,7 +50,7 @@ async def _run(source: pathlib.Path, output: Path, *, jobs: int | None,
     -------
     int
         The process exit code (1 if any conversion failed, otherwise 0).
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     await output.mkdir(parents=True, exist_ok=True)
     concurrency = jobs if jobs and jobs > 0 else default_jobs()
     with using_tool_paths(tools), TemporaryDirectory() as work:

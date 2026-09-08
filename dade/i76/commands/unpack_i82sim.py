@@ -26,7 +26,7 @@ def unpack_i82sim(input_file: Path, output_file: Path) -> None:
     The result is a memory-aligned dump whose file offsets equal its relative virtual addresses,
     with the original entry point restored, so a disassembler can load it at the image's preferred
     base. Base relocations are not applied.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     try:
         image = unpack(input_file.read_bytes())
     except InvalidImageError as e:

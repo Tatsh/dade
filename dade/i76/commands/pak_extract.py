@@ -24,7 +24,7 @@ def pak_extract(pak: Path, outdir: Path) -> None:
     Unpack bundle PAK into OUTDIR.
 
     The bundle's member list comes from the sibling ``.pix`` index, which must sit beside PAK.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     try:
         count = extract(pak, outdir)
     except FileNotFoundError as e:

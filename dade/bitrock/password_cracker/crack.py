@@ -380,7 +380,7 @@ def _has_devices(list_devices: Callable[[], list[str]]) -> bool:  # pragma: no c
     """
     try:
         return bool(list_devices())
-    except Exception:  # noqa: BLE001  # A broken driver or missing platform means no usable device.
+    except Exception:  # ruff: ignore[blind-except]  # A broken driver or missing platform means no usable device.
         return False
 
 
@@ -395,7 +395,7 @@ def _load_cuda() -> _GpuBackend | None:
         CUDA device is available.
     """
     try:
-        from .cuda import crack_cuda, list_devices  # noqa: PLC0415
+        from .cuda import crack_cuda, list_devices  # ruff: ignore[import-outside-top-level]
     except ImportError:  # pragma: no cover
         return None
     return crack_cuda if _has_devices(list_devices) else None  # pragma: no cover
@@ -412,7 +412,7 @@ def _load_opencl() -> _GpuBackend | None:  # pragma: no cover
         usable OpenCL device is available.
     """
     try:
-        from .opencl import crack_opencl, list_devices  # noqa: PLC0415
+        from .opencl import crack_opencl, list_devices  # ruff: ignore[import-outside-top-level]
     except ImportError:  # pragma: no cover
         return None
     return crack_opencl if _has_devices(list_devices) else None  # pragma: no cover

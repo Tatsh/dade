@@ -28,13 +28,13 @@ _SMALL_Y = frozenset('ャュョ')
 _LONG_MARK = 'ーヽヾ'
 _GEMINATE = 'ッ'
 
-# yapf: disable  # noqa: ERA001
+# yapf: disable  # ruff: ignore[commented-out-code]
 _PLAIN = {
     'ア': 'a', 'イ': 'i', 'ウ': 'u', 'エ': 'e', 'オ': 'o',
     'カ': 'ka', 'キ': 'ki', 'ク': 'ku', 'ケ': 'ke', 'コ': 'ko',
     'サ': 'sa', 'シ': 'shi', 'ス': 'su', 'セ': 'se', 'ソ': 'so',
     'タ': 'ta', 'チ': 'chi', 'ツ': 'tsu', 'テ': 'te', 'ト': 'to',
-    'ナ': 'na', 'ニ': 'ni', 'ヌ': 'nu', 'ネ': 'ne', 'ノ': 'no',  # noqa: RUF001
+    'ナ': 'na', 'ニ': 'ni', 'ヌ': 'nu', 'ネ': 'ne', 'ノ': 'no',  # ruff: ignore[ambiguous-unicode-character-string]
     'ハ': 'ha', 'ヒ': 'hi', 'フ': 'fu', 'ヘ': 'he', 'ホ': 'ho',
     'マ': 'ma', 'ミ': 'mi', 'ム': 'mu', 'メ': 'me', 'モ': 'mo',
     'ヤ': 'ya', 'ユ': 'yu', 'ヨ': 'yo',
@@ -98,7 +98,7 @@ _ROW_BY_SOUND = {
     'ch': 'タ', 'ts': 'タ', 'd': 'タ', 'n': 'ナ', 'h': 'ハ', 'f': 'ハ', 'b': 'ハ', 'p': 'ハ',
     'v': 'ハ', 'm': 'マ', 'y': 'ヤ', 'r': 'ラ', 'w': 'ワ'
 }
-# yapf: enable  # noqa: ERA001
+# yapf: enable  # ruff: ignore[commented-out-code]
 
 
 def _katakana(text: str) -> str:

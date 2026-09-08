@@ -8,7 +8,7 @@ import pytest
 
 from dade.common.exceptions import InvalidFormatError
 from dade.sopranos.main import (
-    _prop_libraries,  # noqa: PLC2701
+    _prop_libraries,  # ruff: ignore[import-private-name]
     archive_directory,
     iter_sources,
     sopranos,

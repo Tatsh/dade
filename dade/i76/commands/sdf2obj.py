@@ -32,7 +32,7 @@ def sdf2obj(model: Path, outdir: Path, game_root: Path | None) -> None:
     bundles under the game root, transformed into world space, and merged into one mesh. Parts
     whose geometry is absent are skipped. No material library is written, because the ``.geo``
     format carries neither texture coordinates nor material references.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     root = model.parent if game_root is None else game_root
     index = build_bundle_index(root)
     mesh = assemble(model.read_bytes(), lambda name: load_member(index, f'{name.lower()}.geo'))

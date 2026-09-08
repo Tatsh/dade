@@ -26,7 +26,7 @@ def zfs_extract(archive: Path, outdir: Path) -> None:
     Both the Interstate '76 ZFSF format, whose records are LZO-compressed, and the Interstate '82
     ZFS3 format, whose records are stored, are accepted. Members are written under their lowercased
     names.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     try:
         count = extract(archive.read_bytes(), outdir)
     except InvalidArchiveError as e:

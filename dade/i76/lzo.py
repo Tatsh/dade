@@ -58,7 +58,7 @@ _M3_TOKEN_MIN = 32
 
 # The branch and statement counts mirror the original routine's control flow one for one.
 # Splitting the state machine up would risk changing the decoded bytes, so the limits are waived.
-def _decompress(  # noqa: C901, PLR0912, PLR0915
+def _decompress(  # ruff: ignore[complex-structure, too-many-branches, too-many-statements]
         src: bytes, dst_len: int, m1_base: int, m2_offset_mask: int, m2_offset_shift: int,
         m2_length: Callable[[int], int]) -> bytes:
     """

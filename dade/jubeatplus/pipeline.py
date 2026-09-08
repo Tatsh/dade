@@ -194,7 +194,7 @@ def _run_job(job: _Job) -> tuple[Path, bool, str]:
         _apply(job)
     # A converter may raise anything; one bad asset must not stop the other two thousand, so the
     # error is captured and returned to the caller rather than propagated.
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # ruff: ignore[blind-except]
         return job.source, False, f'{type(e).__name__}: {e}'
     return job.source, True, ''
 

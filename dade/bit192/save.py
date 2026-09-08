@@ -76,7 +76,8 @@ def dlc_token(device_id: str, dlc_name: str) -> bytes:
     bytes
         The 32-character lowercase-hex MD5 of ``device_id + dlc_name``.
     """
-    return hashlib.md5((device_id + dlc_name).encode()).hexdigest().encode()  # noqa: S324
+    return hashlib.md5(  # ruff: ignore[hashlib-insecure-hash-function]
+        (device_id + dlc_name).encode()).hexdigest().encode()
 
 
 @dataclass

@@ -83,7 +83,7 @@ def unpack(source: Path,
     property lists and localisation tables and Core Data models become JSON, and the ``SC_Info``
     bookkeeping is described in one report. Mach-O images are left behind entirely. Every other
     file is copied unchanged.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', source)
     try:
         ffmpeg = None if no_audio else locate_tool('ffmpeg', ffmpeg_path)

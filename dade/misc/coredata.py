@@ -833,8 +833,9 @@ def build_sql(model: Mapping[str, Any], mom_types: Mapping[str, Mapping[str, str
         lines.append('INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME, Z_SUPER, Z_MAX)')
         # This builds a script as text and never executes it, so the injection rule does not apply;
         # the names interpolated come from the model being converted in any case.
-        lines.append(f"  SELECT {ordinals[destination]}, '{destination}', 0, "  # noqa: S608
-                     f'COALESCE(MAX(Z_PK), 0) FROM Z{destination.upper()};')
+        lines.append(
+            f"  SELECT {ordinals[destination]}, '{destination}', 0, "  # ruff: ignore[hardcoded-sql-expression]
+            f'COALESCE(MAX(Z_PK), 0) FROM Z{destination.upper()};')
     lines += [
         '-- Z_METADATA (Z_VERSION, Z_UUID, Z_PLIST) is written by Core Data with the new',
         "-- model's version-hash plist; the blob is not reproducible here.",

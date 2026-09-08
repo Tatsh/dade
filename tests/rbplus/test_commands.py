@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import json
-import xml.etree.ElementTree as ET  # noqa: S405
+import xml.etree.ElementTree as ET  # ruff: ignore[suspicious-xml-etree-import]
 
 import pytest
 
@@ -132,7 +132,8 @@ def test_dump_chart_renders_a_vector_image(runner: CliRunner, tune_package: Path
     image = tmp_path / 'chart.svg'
     result = runner.invoke(rbplus, ('dump-chart', str(tune_package), 'har', '--image', str(image)))
     assert result.exit_code == 0
-    assert ET.fromstring(image.read_text()).get('viewBox') is not None  # noqa: S314
+    assert ET.fromstring(  # ruff: ignore[suspicious-xml-element-tree-usage]
+        image.read_text()).get('viewBox') is not None
 
 
 @pytest.mark.parametrize('suffix', ['.html', '.htm'])

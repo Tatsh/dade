@@ -141,7 +141,7 @@ def ldb2glb(levels: tuple[Path, ...], output_dir: Path, jobs: int, database: Pat
     those directories are; Max Payne 2 carries its props inside each level.
 
     Reading a level is processor-bound, so levels are converted in parallel processes.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     found: list[Path] = []
     for level in levels:
         found.extend(sorted(level.rglob('*.ldb')) if level.is_dir() else [level])

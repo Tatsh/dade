@@ -63,7 +63,7 @@ def unpack(source: Path,
     and decoded, charts become JSON, property lists and localisation tables and Core Data models
     become JSON, and the executable's properties are written out as JSON beside it. Every other
     file is copied unchanged.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', source)
     try:
         ffmpeg = None if no_audio else locate_tool('ffmpeg', ffmpeg_path)

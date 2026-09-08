@@ -61,7 +61,7 @@ def ldb_textures(levels: tuple[pathlib.Path, ...], output_dir: pathlib.Path, *, 
     saved it, so the bytes are written through untouched and keep their original extension. Images
     land under the directory tree of the path they were authored at, with the drive letter dropped;
     pass --flat to put them all in one directory instead.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     found: list[pathlib.Path] = []
     for level in levels:
         found.extend(sorted(level.rglob('*.ldb')) if level.is_dir() else [level])

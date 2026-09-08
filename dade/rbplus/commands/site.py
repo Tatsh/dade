@@ -319,7 +319,7 @@ def site(sources: tuple[Path, ...], output_dir: Path, base: str | None) -> None:
     a SPECIAL chart, harder than hard, sold for a tune that already exists. It is filed under that
     tune rather than listed on its own. Which tune is worked out from the numbering, an extend note
     sitting 50000 above the tune it extends.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     tunes = [tune for path in _packages(sources) if (tune := _read(path)) is not None]
     if not tunes:
         click.echo('No tune packages could be read.', err=True)

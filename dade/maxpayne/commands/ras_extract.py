@@ -91,7 +91,7 @@ def ras_extract(sources: tuple[Path, ...], patterns: tuple[str, ...], output_dir
     Every archive is extracted into the same tree, which reproduces the layout the game itself
     sees because the archives share one namespace. Pass --pattern to take only the members whose
     in-archive path matches a glob; every member is taken when none is given.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     total = 0
     count = 0
     try:

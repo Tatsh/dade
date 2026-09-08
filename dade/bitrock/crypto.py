@@ -123,7 +123,7 @@ def parse_payload_info(data: bytes) -> PayloadInfo:
     -------
     PayloadInfo
         The parsed header.
-    """  # noqa: D205
+    """  # ruff: ignore[missing-blank-line-after-summary]
     times, iv, password_key, encrypted_key, ivs_hash = _PAYLOAD_INFO_HEADER.unpack_from(data)
     return PayloadInfo(times=times,
                        iv=iv,
@@ -192,7 +192,7 @@ def _decompress_payload(data: bytes, algorithm: PageCompression) -> bytes:
             return lzma.LZMADecompressor(format=lzma.FORMAT_ALONE).decompress(data)
         case 'lzham':
             try:
-                import lzham  # type: ignore[import-untyped]  # noqa: PLC0415
+                import lzham  # type: ignore[import-untyped]  # ruff: ignore[import-outside-top-level]
             except ImportError as e:
                 msg = ('LZHAM-compressed installers require the optional "pylzham" package; '
                        'install it with `pip install pylzham`.')

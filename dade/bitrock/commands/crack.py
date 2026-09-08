@@ -175,7 +175,7 @@ def _format_rate(rate: float) -> str:
     str
         The rate with two decimals below 100/s, otherwise a thousands-separated integer.
     """
-    return f'{rate:,.2f}' if rate < 100 else f'{rate:,.0f}'  # noqa: PLR2004
+    return f'{rate:,.2f}' if rate < 100 else f'{rate:,.0f}'  # ruff: ignore[magic-value-comparison]
 
 
 def _progress_printer(total: int | None, start: float) -> Callable[[int, bytes], None]:
@@ -208,7 +208,7 @@ def _progress_printer(total: int | None, start: float) -> Callable[[int, bytes],
 
 
 def _print_devices(ctx: click.Context, _param: click.Parameter,
-                   value: bool) -> None:  # noqa: FBT001
+                   value: bool) -> None:  # ruff: ignore[boolean-type-hint-positional-argument]
     """
     Print each backend's devices and exit, when ``--list-devices`` is given.
 
@@ -227,7 +227,7 @@ def _print_devices(ctx: click.Context, _param: click.Parameter,
                           ('opencl', 'dade.bitrock.password_cracker.opencl')):
         try:
             names = import_module(module).list_devices()
-        except Exception as e:  # noqa: BLE001  # A missing backend or driver must not abort listing.
+        except Exception as e:  # ruff: ignore[blind-except]  # A missing backend or driver must not abort listing.
             click.echo(f'{label}: unavailable ({e})')
             continue
         if not names:
@@ -307,7 +307,7 @@ def crack_main(archive: Path, wordlist: Path | None, charset: str, min_length: i
     ``--wordlist`` the keyspace is every string over ``--charset`` from ``--min-length`` to
     ``--max-length``. With ``--wordlist`` the entries are tried directly, optionally expanded by
     ``--rule`` transforms and/or joined by ``--combinator``.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     if debug and quiet:
         msg = '--debug and --quiet are mutually exclusive.'
         raise click.UsageError(msg)

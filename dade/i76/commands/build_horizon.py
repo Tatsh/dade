@@ -44,7 +44,7 @@ def build_horizon(mission: Path, outdir: Path, game_root: Path, palette: str | N
 
     The mission's WRLD chunk names an ``.hzd`` strip list, whose strips are laid out left to right
     into one panorama whose horizontal axis is azimuth and whose vertical axis is height.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     refs = world_refs(mission.read_bytes())
     if (hzd := next((r for r in refs if r.lower().endswith('.hzd')), None)) is None:
         click.echo(f'{mission} references no .hzd strip list.', err=True)

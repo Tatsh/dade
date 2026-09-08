@@ -133,7 +133,7 @@ def _render(index_path: Path, wanted: str | None, layer: str | None, *,
 @click.option('--names', is_flag=True, help='Emit only the header and the three name blocks.')
 @debug_option
 def dump_idx(index_path: Path, wanted: str | None, layer: str | None, *, names: bool) -> None:
-    """Decode the animation index IDX and write it to standard output as JSON."""  # noqa: DOC501
+    """Decode the animation index IDX and write it to standard output as JSON."""  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', index_path)
     try:
         rendered = _render(index_path, wanted, layer, names=names)

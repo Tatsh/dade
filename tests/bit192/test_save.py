@@ -34,7 +34,8 @@ def test_device_id() -> None:
 
 
 def test_dlc_token_matches_md5() -> None:
-    assert dlc_token('abc', 'vvv') == hashlib.md5(b'abcvvv').hexdigest().encode()  # noqa: S324
+    assert dlc_token('abc', 'vvv') == hashlib.md5(  # ruff: ignore[hashlib-insecure-hash-function]
+        b'abcvvv').hexdigest().encode()
 
 
 def test_unlock_dlc_writes_token() -> None:

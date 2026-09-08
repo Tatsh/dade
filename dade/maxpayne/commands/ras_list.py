@@ -58,7 +58,7 @@ def ras_list(sources: tuple[Path, ...], *, as_json: bool) -> None:
 
     An archive is reported intact when its header, both tables, and every stored size together
     account for the file exactly.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     report: dict[str, list[dict[str, object]]] = {}
     try:
         for label, data in iter_archives(*sources):

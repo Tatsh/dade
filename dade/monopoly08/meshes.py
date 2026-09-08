@@ -484,8 +484,8 @@ def _write_obj(submeshes: Sequence[_Submesh],
             lines.append(f'usemtl {mats[min(si, len(mats) - 1)]}\n')
         for v in sm['verts']:
             x, y, z = (
-                c if c == c and abs(c) < _MAX_FINITE_COORD else 0.0  # noqa: PLR0124
-                for c in v)
+                c if c == c  # ruff: ignore[comparison-with-itself]
+                and abs(c) < _MAX_FINITE_COORD else 0.0 for c in v)
             lines.append(f'v {x:.6f} {y:.6f} {z:.6f}\n')
         lines.extend(f'f {base + t[0]} {base + t[1]} {base + t[2]}\n' for t in sm['tris'])
         base += len(sm['verts'])

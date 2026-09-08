@@ -266,7 +266,7 @@ def _parse_metadata(data: bytes, position: int) -> dict[str, bytes]:
         The metadata entries, keyed by name.
     """
     metadata: dict[str, bytes] = {}
-    if len(data) - position < 4:  # noqa: PLR2004
+    if len(data) - position < 4:  # ruff: ignore[magic-value-comparison]
         return metadata
     (count,) = struct.unpack_from('>i', data, position)
     position += 4

@@ -54,7 +54,7 @@ def _convert_asset(path: Path) -> tuple[Path, bool, str]:
         _CONVERTERS[path.suffix.lower()](path)
     # A converter may raise anything; the batch must continue past one asset's decode failure,
     # so the error is captured and returned to the caller rather than propagated.
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # ruff: ignore[blind-except]
         return path, False, f'{type(e).__name__}: {e}'
     return path, True, ''
 
@@ -64,7 +64,7 @@ def _extract_pack(path: Path) -> tuple[Path, bool, str]:
         packs.extract(path)
     # Extraction may raise anything; the batch must continue past one pack's failure, so the
     # error is captured and returned to the caller rather than propagated.
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # ruff: ignore[blind-except]
         return path, False, f'{type(e).__name__}: {e}'
     return path, True, ''
 

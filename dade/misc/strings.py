@@ -88,5 +88,5 @@ def read_strings(path: Path) -> dict[str, str]:
         msg = f'{path} is a plist but its root is not a dictionary.'
         # The complaint is about the file's contents rather than the argument's type, so this is a
         # ValueError even though the check that found it is an isinstance.
-        raise ValueError(msg)  # noqa: TRY004
+        raise ValueError(msg)  # ruff: ignore[type-check-without-type-error]
     return loaded

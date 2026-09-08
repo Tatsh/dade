@@ -27,7 +27,8 @@ def _boom(_item: Path) -> None:
 
 @pytest.mark.parametrize(('name', 'expected'), [('song.mid', True), ('tex.abm', True),
                                                 ('scene.rnd', False), ('notes.txt', False)])
-def test_has_converter(name: str, expected: bool) -> None:  # noqa: FBT001
+def test_has_converter(
+        name: str, expected: bool) -> None:  # ruff: ignore[boolean-type-hint-positional-argument]
     assert workers.has_converter(name) is expected
 
 

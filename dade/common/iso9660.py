@@ -174,7 +174,7 @@ class Iso9660Image:
         ------
         KeyError
             If no file exists at ``path``.
-        """  # noqa: DOC502
+        """  # ruff: ignore[docstring-extraneous-exception]
         lba, size = self._files[_normalize(path)]
         return lba * self._block_size, size
 

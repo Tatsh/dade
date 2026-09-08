@@ -76,7 +76,7 @@ def _parse_table(body: bytes, count: int) -> tuple[list[tuple[str, str]], int, b
     off = 8
     for _ in range(count):
         # A struct or decode error anywhere in a record means the whole table is malformed.
-        try:  # noqa: PLW0717
+        try:  # ruff: ignore[too-many-statements-in-try-clause]
             tl = struct.unpack_from('<I', body, off)[0]
             if tl > _MAX_NAME:
                 return table, off, False
@@ -117,7 +117,7 @@ def _parse_v6_table(body: bytes, count: int) -> tuple[list[tuple[str, str]], int
     return table, off, True
 
 
-def convert(path: Path) -> Path | None:  # noqa: PLR0914
+def convert(path: Path) -> Path | None:  # ruff: ignore[too-many-locals]
     """
     Decompose a ``.rnd`` Milo archive into a ``<name>/`` folder of objects plus a manifest.
 

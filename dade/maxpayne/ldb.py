@@ -1360,7 +1360,7 @@ def _room_of(name: str) -> str:
         The room's name, or an empty string when the name does not carry one.
     """
     parts = name.split('::')
-    return f'::{parts[1]}' if len(parts) > 2 else ''  # noqa: PLR2004
+    return f'::{parts[1]}' if len(parts) > 2 else ''  # ruff: ignore[magic-value-comparison]
 
 
 class _Tail(NamedTuple):

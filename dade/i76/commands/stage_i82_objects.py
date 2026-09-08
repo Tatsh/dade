@@ -93,7 +93,7 @@ def stage_i82_objects(source: Path, outdir: Path, data_dir: Path | None, mrm_dir
     Static objects resolve as ``.stf`` to ``.six`` to ``.sbx``, and vehicles as ``.vdf`` to a
     chassis ``.cdf`` to its body, wheel, and stock paint assets. Wrappers and meshes are copied
     into ``meshes/`` under OUTDIR, and the textures their material tables name into ``objtex/``.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     data = data_dir or source / 'data'
     terrain = mrm_dir or source / 'mrm'
     pools = list(texture_pool) or [source / name for name in _DEFAULT_POOLS]

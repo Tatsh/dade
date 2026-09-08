@@ -242,7 +242,7 @@ def read_directory(path: Path, base: int = 0, length: int | None = None) -> tupl
     InvalidFormatError
         If the file is too short, holds only zero bytes, has a table of contents offset out of
         range, or has no directory chunk.
-    """  # noqa: DOC502
+    """  # ruff: ignore[docstring-extraneous-exception]
     names, rows = _read_chunks(path, base, length)
     by_hash = {entry_hash: (sector, size) for sector, size, entry_hash in rows}
     entries = []

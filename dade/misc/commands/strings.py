@@ -28,7 +28,7 @@ def strings(table: Path) -> None:
 
     Both forms are read: the flat binary plist a compiled table ships as, and the old-style text
     form an uncompiled one keeps.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', table)
     try:
         converted = read_strings(table)

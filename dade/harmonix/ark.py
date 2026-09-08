@@ -157,7 +157,7 @@ def parse_directory(data: bytes, *, layout: ArkLayout | None = None) -> ARKDirec
             return _parse_amplitude_directory(data)
 
 
-def _parse_freq_directory(data: bytes) -> ARKDirectory:  # noqa: PLR0914
+def _parse_freq_directory(data: bytes) -> ARKDirectory:  # ruff: ignore[too-many-locals]
     r"""
     Parse the FreQuency ``ARK\\0`` layout (see the module docstring).
 

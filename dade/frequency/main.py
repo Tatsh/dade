@@ -65,7 +65,7 @@ def main(input_: Path,
          keep_gz: bool = False,
          ignore_failures: bool = False,
          delete: bool = False) -> None:
-    """Unpack a PS2 FreQuency disc and convert its assets."""  # noqa: DOC501
+    """Unpack a PS2 FreQuency disc and convert its assets."""  # ruff: ignore[docstring-missing-exception]
     unpacker = FrequencyUnpacker(input_)
 
     async def run(on_status: Callable[[str], None] | None) -> dict[str, str]:

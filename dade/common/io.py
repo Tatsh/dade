@@ -95,7 +95,7 @@ class MmapReader:
         Path to the file.
     """
     def __init__(self, path: str | Path) -> None:
-        self._file = Path(path).open('rb')  # noqa: SIM115
+        self._file = Path(path).open('rb')  # ruff: ignore[open-file-with-context-handler]
         try:
             self._mmap = mmap.mmap(self._file.fileno(), 0, access=mmap.ACCESS_READ)
         except (ValueError, OSError):

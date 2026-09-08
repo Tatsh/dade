@@ -54,7 +54,7 @@ def extract_gen(files: tuple[Path, ...],
 
     The simfile's ``#OFFSET`` is measured from the audio, which needs ``ffmpeg``; pass ``--gap``
     to set it yourself.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     if ffmpeg is None and gap is None:
         try:
             ffmpeg = locate_tool('ffmpeg')

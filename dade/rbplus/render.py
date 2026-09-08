@@ -498,7 +498,8 @@ def _lanes(notes: Sequence[NoteDict],
 def _pick_seed(seed: int | None) -> int:
     # The seed a layout is drawn from: the one named, or a fresh one each run as the game itself
     # takes.
-    return random.randrange(_WORD) if seed is None else seed  # noqa: S311
+    return (random.randrange(_WORD)  # ruff: ignore[suspicious-non-cryptographic-random-usage]
+            if seed is None else seed)
 
 
 def _lane_plan(notes: Sequence[NoteDict], version: int) -> tuple[dict[int, int], list[_Claim]]:

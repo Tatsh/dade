@@ -27,7 +27,7 @@ def zfs_list(archive: Path, *, as_json: bool) -> None:
 
     Prints the archive format, a histogram of member extensions, and one line per member giving its
     offset, stored size, and compression flags.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     data = archive.read_bytes()
     try:
         name = archive_format(data)

@@ -136,7 +136,7 @@ def test_dump_sheet_standard(runner: CliRunner, orb_package: Path) -> None:
     rendered = json.loads(result.output)
     assert rendered['format'] == 'standard'
     assert rendered['title'] == 'テスト'
-    assert rendered['artist'] == 'ピノキオP'  # noqa: RUF001
+    assert rendered['artist'] == 'ピノキオP'  # ruff: ignore[ambiguous-unicode-character-string]
     assert rendered['level'] == 3
 
 

@@ -183,7 +183,8 @@ def treasure_map_bytes() -> bytes:
     struct.pack_into('<i', header, 0x44, 3)
     squares = (
         ((0, 0, 0, 0, 0, -1, 1, -1, -1), 'スタート'),
-        ((1, 100, 0, 4, 0, 0, 2, 3, -1), 'たからばこ<br>だ！'),  # noqa: RUF001
+        ((1, 100, 0, 4, 0, 0, 2, 3, -1),
+         'たからばこ<br>だ！'),  # ruff: ignore[ambiguous-unicode-character-string]
         ((2, 200, 0, 8, 5, 1, 3, -1, -1), 'ワープ'),
         ((3, 200, 50, 8, 5, 1, 2, -1, -1), ''),
     )
@@ -312,7 +313,7 @@ def orb_package(tmp_path: Path, standard_chart_bytes: bytes) -> Path:
         standard_chart_bytes,
         {
             'MusicName': 'テスト',
-            'ArtistName': 'ピノキオP',  # noqa: RUF001
+            'ArtistName': 'ピノキオP',  # ruff: ignore[ambiguous-unicode-character-string]
             'Normal': 3,
             'Ex': 9,
         })

@@ -57,7 +57,7 @@ def dump(path: Path, bundle: str | None, region: str | None, *, as_json: bool,
 
     The App Store link is regional where a storefront can be read from an iTunesMetadata.plist
     beside the bundle, and falls back to the region-less form otherwise. Pass --region to give one.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', path)
     try:
         infos = read_bundles(path,

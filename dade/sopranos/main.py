@@ -233,7 +233,7 @@ def sopranos() -> None:
 @click.argument('archive', type=click.Path(dir_okay=False, exists=True, path_type=Path))
 @debug_option
 def list_(archive: Path) -> None:
-    """List the contents of a .FS archive."""  # noqa: DOC501
+    """List the contents of a .FS archive."""  # ruff: ignore[docstring-missing-exception]
     try:
         entries = read_directory(archive)
     except InvalidFormatError as e:
@@ -320,7 +320,7 @@ def unpack(sources: tuple[Path, ...],
 
     Each archive lands in its own directory named after it, so unpacking a disc image gives the
     whole game in one command.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     found = list(iter_sources(sources))
     if not found:
         msg = 'Nothing to unpack: no .FS archives were found.'
@@ -351,7 +351,7 @@ def unpack(sources: tuple[Path, ...],
               default=None,
               help='Output directory (defaults to a directory beside each input).')
 def level(files: tuple[Path, ...], *, output_dir: Path | None = None) -> None:
-    """Split .LVL containers into their cooked sub-assets."""  # noqa: DOC501
+    """Split .LVL containers into their cooked sub-assets."""  # ruff: ignore[docstring-missing-exception]
     for path in files:
         try:
             written = extract_level(path, output_dir or path.with_suffix(''))
@@ -369,7 +369,7 @@ def level(files: tuple[Path, ...], *, output_dir: Path | None = None) -> None:
               default=None,
               help='Output directory (defaults to beside each input).')
 def texture(files: tuple[Path, ...], *, output_dir: Path | None = None) -> None:
-    """Convert .TEX2 texture banks to PNG."""  # noqa: DOC501
+    """Convert .TEX2 texture banks to PNG."""  # ruff: ignore[docstring-missing-exception]
     for path in files:
         try:
             written = convert_texture(path, output_dir or path.parent)
@@ -418,7 +418,7 @@ def gltf(files: tuple[Path, ...], *, output_dir: Path | None = None) -> None:
               default=None,
               help='Output directory (defaults to beside each input).')
 def audio(headers: tuple[Path, ...], *, output_dir: Path | None = None) -> None:
-    """Convert .MSH sound banks or .MIH music streams to WAV."""  # noqa: DOC501
+    """Convert .MSH sound banks or .MIH music streams to WAV."""  # ruff: ignore[docstring-missing-exception]
     for path in headers:
         target = output_dir or path.parent
         try:

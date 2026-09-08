@@ -377,7 +377,10 @@ class PillowCanvas:
         self._draw.text((x, y), body, fill=fill, font=load_font(size))
 
     @contextmanager
-    def note(self, details: Mapping[str, Any]) -> Iterator[None]:  # noqa: ARG002, PLR6301
+    def note(  # ruff: ignore[no-self-use]
+            self,
+            details: Mapping[str, Any]  # ruff: ignore[unused-method-argument]
+    ) -> Iterator[None]:
         """
         Draw one note. A drawn image reports nothing, so the details are dropped.
 
@@ -394,7 +397,10 @@ class PillowCanvas:
         yield
 
     @contextmanager
-    def marks(self, kind: str) -> Iterator[None]:  # noqa: ARG002, PLR6301
+    def marks(  # ruff: ignore[no-self-use]
+            self,
+            kind: str  # ruff: ignore[unused-method-argument]
+    ) -> Iterator[None]:
         """
         Draw ruling of one kind, which a drawn image always shows.
 
@@ -411,7 +417,10 @@ class PillowCanvas:
         yield
 
     @contextmanager
-    def tied(self, index: int) -> Iterator[None]:  # noqa: ARG002, PLR6301
+    def tied(  # ruff: ignore[no-self-use]
+            self,
+            index: int  # ruff: ignore[unused-method-argument]
+    ) -> Iterator[None]:
         """
         Draw what follows a note's lane, which a drawn image lays out only once.
 
@@ -428,7 +437,7 @@ class PillowCanvas:
         yield
 
     @contextmanager
-    def head(self) -> Iterator[None]:  # noqa: PLR6301
+    def head(self) -> Iterator[None]:  # ruff: ignore[no-self-use]
         """
         Draw a note's own disc, which a drawn image has no reason to keep apart.
 

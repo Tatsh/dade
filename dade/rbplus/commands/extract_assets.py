@@ -57,7 +57,7 @@ def extract_assets(archive: Path,
     The archive's own index, a second encrypted ZIP stored as the ``list`` entry, is written out as
     ``manifest.json``. Each texture is examined and only the Apple-optimised ones go through
     ``pngdefry``; the rest are already ordinary PNGs.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', archive)
     try:
         pngdefry = None if no_png else locate_tool('pngdefry', pngdefry_path)
