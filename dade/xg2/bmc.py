@@ -73,7 +73,7 @@ def _channel(payload: bytes, at: int, size: int, frames: int) -> tuple[list[floa
     """
     quantised = at + CHANNEL_HEADER_SIZE + frames <= at + size
     if quantised:
-        if at + CHANNEL_HEADER_SIZE + frames > len(payload):
+        if at + CHANNEL_HEADER_SIZE + frames > len(payload):  # pragma: no cover
             return [], False
         low, high = struct.unpack_from('>2h', payload, at + _LENGTH_SIZE)
         body = payload[at + CHANNEL_HEADER_SIZE:at + CHANNEL_HEADER_SIZE + frames]

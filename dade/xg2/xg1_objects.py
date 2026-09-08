@@ -402,7 +402,7 @@ def _decode_model(segment: bytes, vram: int, depth: int = 0) -> ObjectModel | No
                 indices += [len(positions), len(positions) + 1, len(positions) + 2]
                 for slot in slots:
                     corner = buffer[slot]
-                    if corner is None:
+                    if corner is None:  # pragma: no cover
                         msg = f'Vertex slot {slot} is empty, but the check above ruled that out.'
                         raise UnreachableState(msg)
                     positions.append(corner)

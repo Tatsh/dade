@@ -319,21 +319,22 @@ def demo() -> None:
             msg = f'Byte {byte} has a {length}-bit code whose run is the wrong length.'
             raise SelfCheckFailed(msg)
     freq, prnt, son = _start_tree()
-    if freq[_ROOT] != _SYMBOLS:
+    if freq[_ROOT] != _SYMBOLS:  # pragma: no cover
         msg = f'Fresh tree roots at weight {freq[_ROOT]}, expected {_SYMBOLS}.'
         raise SelfCheckFailed(msg)
-    if (total := sum(freq[i] for i in range(_SYMBOLS))) != _SYMBOLS:
+    if (total := sum(freq[i] for i in range(_SYMBOLS))) != _SYMBOLS:  # pragma: no cover
         msg = f'Fresh leaf weights sum to {total}, expected {_SYMBOLS}.'
         raise SelfCheckFailed(msg)
     for symbol in (0, 255, _SYMBOLS - 1):
-        if son[prnt[symbol + _TABLE_SIZE]] not in {symbol + _TABLE_SIZE, symbol + _TABLE_SIZE - 1}:
+        owner = son[prnt[symbol + _TABLE_SIZE]]
+        if owner not in {symbol + _TABLE_SIZE, symbol + _TABLE_SIZE - 1}:  # pragma: no cover
             msg = f'Symbol {symbol} is not a child of its own parent.'
             raise SelfCheckFailed(msg)
     # Weighting one symbol repeatedly must keep the array sorted by frequency and must survive the
     # rebuild that halving triggers.
     for _ in range(_MAX_FREQ):
         _update(65, freq, prnt, son)
-    if not all(freq[i] <= freq[i + 1] for i in range(_TABLE_SIZE - 1)):
+    if not all(freq[i] <= freq[i + 1] for i in range(_TABLE_SIZE - 1)):  # pragma: no cover
         msg = 'The adaptive tree is no longer sorted by frequency after rebuilding.'
         raise SelfCheckFailed(msg)
     # An empty stream cannot satisfy a non-zero size and must say so rather than loop.

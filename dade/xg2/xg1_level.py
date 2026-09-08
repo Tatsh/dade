@@ -716,7 +716,7 @@ def demo() -> None:
     # The loader forms each corner as ((word >> n) & 0x1F) * 2, so the halves must line up.
     for word, expected in ((0x0000, (0, 0, 0)), (0x7FFF, (31, 31, 31)), (0x0421, (1, 1, 1)),
                            ((5 << 10) | (9 << 5) | 17, (5, 9, 17))):
-        if _triangle(word) != expected:
+        if _triangle(word) != expected:  # pragma: no cover
             msg = f'Word {word:#06x} unpacked to {_triangle(word)}, expected {expected}.'
             raise SelfCheckFailed(msg)
     # Every opcode the jump table dispatches must have a known operand length, or the stream
@@ -725,7 +725,7 @@ def demo() -> None:
     handled = {_OP_VERTICES, _OP_TRI1, _OP_TRI2, _OP_NORMALS}
     for dialect in (XG1, XG2):
         for opcode in range(1, dialect.max_opcode + 1):
-            if opcode not in handled and opcode not in dialect.operands:
+            if opcode not in handled and opcode not in dialect.operands:  # pragma: no cover
                 msg = f'Opcode {opcode:#04x} has no operand length in the {dialect} table.'
                 raise SelfCheckFailed(msg)
     print('xg1_level: triangle unpacking and operand table hold.')  # ruff: ignore[print]

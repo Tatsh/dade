@@ -226,7 +226,7 @@ class VertexBuffer:
         vertices, seen, triangles = self._meshes.setdefault((texture, lit), ([], {}, []))
         indices = []
         for vertex in picked:
-            if vertex is None:
+            if vertex is None:  # pragma: no cover
                 msg = 'A picked corner is empty, but every empty slot was filtered out above.'
                 raise UnreachableState(msg)
             found = seen.get(vertex)
@@ -542,20 +542,20 @@ def demo() -> None:
         If a command decodes to something other than what the encoding dictates.
     """
     # G_TRI2 06000204 00040600 must give (0, 1, 2) and (2, 3, 0): the two halves of a quad.
-    if _corners(0x06000204) != (0, 1, 2):
+    if _corners(0x06000204) != (0, 1, 2):  # pragma: no cover
         msg = f'First half of the quad unpacked to {_corners(0x06000204)}, expected (0, 1, 2).'
         raise SelfCheckFailed(msg)
-    if _corners(0x00040600 | 0x06000000) != (2, 3, 0):
+    if _corners(0x00040600 | 0x06000000) != (2, 3, 0):  # pragma: no cover
         msg = (f'Second half of the quad unpacked to {_corners(0x00040600 | 0x06000000)}, '
                'expected (2, 3, 0).')
         raise SelfCheckFailed(msg)
     # G_VTX 0100F01E loads 15 vertices ending at slot 15, so it starts at slot 0.
     w0 = 0x0100F01E
     count = (w0 >> 12) & 0xFF
-    if count != _DEMO_COUNT:
+    if count != _DEMO_COUNT:  # pragma: no cover
         msg = f'G_VTX loads {count} vertices, expected {_DEMO_COUNT}.'
         raise SelfCheckFailed(msg)
-    if ((w0 >> 1) & 0x7F) - count != 0:
+    if ((w0 >> 1) & 0x7F) - count != 0:  # pragma: no cover
         msg = f'G_VTX ends at slot {(w0 >> 1) & 0x7F}, expected it to start at slot 0.'
         raise SelfCheckFailed(msg)
 
@@ -575,7 +575,7 @@ def demo() -> None:
     body = struct.pack('>2I', 0x01004008, 0x05000000 | at)
     body += b''.join(struct.pack('>2I', w0, w1) for w0, w1 in commands)
     blob = header + body + vertices
-    if len(header + body) != at:
+    if len(header + body) != at:  # pragma: no cover
         msg = f'Vertices start at {len(header + body)}, but the command points at {at}.'
         raise SelfCheckFailed(msg)
     meshes = parse_display_lists(blob)

@@ -499,7 +499,7 @@ def build_clip_glb(clip: BmcClip,
         for index, bone in enumerate(skeleton.bones):
             parent = 0 if bone.parent < 0 else bone.parent + 1
             children = document.nodes[parent]['children']
-            if not isinstance(children, list):
+            if not isinstance(children, list):  # pragma: no cover
                 msg = f"Node {parent} has a {type(children).__name__} for 'children', not a list."
                 raise UnreachableState(msg)
             children.append(index + 1)
