@@ -143,10 +143,21 @@ def test_build_glb_names_the_generator() -> None:
     assert document(glb)['asset']['generator'] == 'thing'
 
 
-def test_build_glb_can_draw_both_faces() -> None:
-    glb = build_glb(level(), double_sided=True)
+def test_build_glb_draws_every_material_from_both_sides() -> None:
+    # The console never culls a back face, so winding is not load-bearing and there is no opt-in.
+    glb = build_glb(level())
     assert glb is not None
-    assert document(glb)['materials'][0]['doubleSided'] is True
+    materials = document(glb)['materials']
+    assert materials
+    assert all(material['doubleSided'] is True for material in materials)
+
+
+def test_build_prop_glb_draws_every_material_from_both_sides() -> None:
+    glb = build_prop_glb(_library())
+    assert glb is not None
+    materials = document(glb)['materials']
+    assert materials
+    assert all(material['doubleSided'] is True for material in materials)
 
 
 def test_build_glb_gives_up_without_meshes() -> None:

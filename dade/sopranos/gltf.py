@@ -6,17 +6,36 @@ triangle indices, the material list, and the PNG for each material's texture, al
 GLB binary chunk.
 
 The game stores geometry Z-up while glTF is Y-up, so positions are rewritten as ``(x, z, -y)``.
+
+Every material is written double-sided, because the console never culls a back face. The Graphics
+Synthesizer has no such hardware, and the engine's own cull test -- ``ss_MiniGL_v1``'s
+``mCullFace``/``mFrontFace`` state, read by one function at ``0x001D9AF0`` -- is reachable only from
+the immediate-mode ``mBegin``/``mEnd`` path. Neither the level renderer (``t_EnvMesh``) nor the prop
+renderer uses it: both build DMA chains straight to VIF1 and run a VU1 microprogram whose only
+rejection is a whole packet failing an eight-corner bounding-box frustum test. Winding was therefore
+never load-bearing, and the cooker left plenty of it inconsistent, so culling on export drops
+surfaces the game genuinely draws.
 """
 from __future__ import annotations
 
 from math import cos, isfinite, sin
 from typing import TYPE_CHECKING, Any
 import io
-import json
 import logging
 import struct
 
 from PIL.Image import new as new_image
+
+from dade.common.gltf import (
+    ARRAY_BUFFER,
+    ELEMENT_ARRAY_BUFFER,
+    FLOAT,
+    TRIANGLES,
+    UNSIGNED_BYTE,
+    UNSIGNED_INT,
+    UNSIGNED_SHORT,
+    GLBDocument,
+)
 
 from .model import read_materials, read_meshes, triangles
 from .prop import (
@@ -48,13 +67,6 @@ GLB_MAGIC = 0x46546C67
 :meta hide-value:
 """
 
-_JSON_CHUNK = 0x4E4F534A
-_BIN_CHUNK = 0x004E4942
-_FLOAT = 5126
-_UNSIGNED_BYTE = 5121
-_UNSIGNED_SHORT = 5123
-_UNSIGNED_INT = 5125
-_TRIANGLES = 4
 _IMAGE_RECORD_BIAS = 0x80
 _GLOW_STRENGTH = 0.14
 _SHADOW_ALPHA = 115
@@ -63,42 +75,6 @@ _ALPHA_CLEAR = 0.02
 _ALPHA_PARTIAL = 0.20
 _TRIANGLE_CORNERS = 3
 _SHORT_INDEX_LIMIT = 0xFFFF
-
-
-class _Buffer:
-    """Accumulates the GLB binary chunk and records a buffer view for each block added."""
-    def __init__(self) -> None:
-        self.data = bytearray()
-        self.views: list[dict[str, Any]] = []
-
-    def add(self, payload: bytes, target: int | None = None) -> int:
-        """
-        Append a block and return its buffer view index.
-
-        Parameters
-        ----------
-        payload : bytes
-            The bytes to append.
-        target : int | None
-            Optional glTF buffer target hint.
-
-        Returns
-        -------
-        int
-            Index of the new buffer view.
-        """
-        while len(self.data) % 4:
-            self.data.append(0)
-        view: dict[str, Any] = {
-            'buffer': 0,
-            'byteOffset': len(self.data),
-            'byteLength': len(payload)
-        }
-        if target is not None:
-            view['target'] = target
-        self.data += payload
-        self.views.append(view)
-        return len(self.views) - 1
 
 
 def _finite(value: float) -> float:
@@ -404,7 +380,6 @@ def build_glb(  # noqa: C901, PLR0914
     data: bytes,
     *,
     generator: str = 'dade',
-    double_sided: bool = False,
     libraries: Sequence[bytes] = (),
     placements: Sequence[Placement] = ()) -> bytes | None:
     """
@@ -424,10 +399,6 @@ def build_glb(  # noqa: C901, PLR0914
         The whole geometry blob.
     generator : str
         Value recorded in the glTF ``asset.generator`` field.
-    double_sided : bool
-        Draw both faces of every triangle. Off by default so viewers cull back faces, which is what
-        the game does: interiors are built without the faces the player never sees, and drawing them
-        makes ceilings and outer walls block the view from outside.
     libraries : Sequence[bytes]
         The level's ``.SGP2`` prop and character libraries, when their objects are to be placed.
     placements : Sequence[Placement]
@@ -443,38 +414,21 @@ def build_glb(  # noqa: C901, PLR0914
         return None
     materials = read_materials(data)
     images = _material_images(data)
-    buffer = _Buffer()
-    accessors: list[dict[str, Any]] = []
-    gltf_meshes: list[dict[str, Any]] = []
-    nodes: list[dict[str, Any]] = []
-
-    def accessor(view: int, component: int, count: int, kind: str, **extra: Any) -> int:
-        accessors.append({
-            'bufferView': view,
-            'componentType': component,
-            'count': count,
-            'type': kind,
-            **extra
-        })
-        return len(accessors) - 1
-
+    document = GLBDocument(generator)
+    gltf_meshes = document.meshes
+    nodes = document.nodes
     used: dict[int, int] = {}
     glowing: set[int] = set()
-    gltf_materials: list[dict[str, Any]] = []
-    gltf_textures: list[dict[str, Any]] = []
-    gltf_images: list[dict[str, Any]] = []
+    gltf_materials = document.materials
     for index, material in enumerate(materials):
         found = images.get(material.texture_offset) if material.texture_offset else None
         png, mode = found if found is not None else (None, 'OPAQUE')
         pbr: dict[str, Any] = {'baseColorFactor': [1.0, 1.0, 1.0, 1.0], 'metallicFactor': 0.0}
         if png is not None:
-            gltf_images.append({
-                'bufferView': buffer.add(png),
-                'mimeType': 'image/png',
-                'name': material.name.rsplit('/', 1)[-1]
-            })
-            gltf_textures.append({'source': len(gltf_images) - 1, 'sampler': 0})
-            pbr['baseColorTexture'] = {'index': len(gltf_textures) - 1}
+            pbr['baseColorTexture'] = {
+                'index': document.add_image(png, 'image/png',
+                                            material.name.rsplit('/', 1)[-1])
+            }
         if mode == 'GLOW':
             glowing.add(index)
             mode = 'BLEND'
@@ -483,7 +437,7 @@ def build_glb(  # noqa: C901, PLR0914
             'name': material.name.rsplit('/', 1)[-1] or f'material_{index}',
             'pbrMetallicRoughness': pbr,
             'alphaMode': mode,
-            'doubleSided': double_sided
+            'doubleSided': True
         })
 
     shadow_material: int | None = None
@@ -502,7 +456,7 @@ def build_glb(  # noqa: C901, PLR0914
                     'metallicFactor': 0.0
                 },
                 'alphaMode': 'BLEND',
-                'doubleSided': double_sided
+                'doubleSided': True
             })
             shadow_material = len(gltf_materials) - 1
         floats = struct.unpack(f'<{count * 3}f', positions)
@@ -512,26 +466,35 @@ def build_glb(  # noqa: C901, PLR0914
         primitive = {
             'attributes': {
                 'POSITION':
-                    accessor(buffer.add(positions, 34962),
-                             _FLOAT,
-                             count,
-                             'VEC3',
-                             min=[min(a) for a in axes],
-                             max=[max(a) for a in axes]),
+                    document.accessor(positions,
+                                      ARRAY_BUFFER,
+                                      componentType=FLOAT,
+                                      count=count,
+                                      type='VEC3',
+                                      min=[min(a) for a in axes],
+                                      max=[max(a) for a in axes]),
                 'TEXCOORD_0':
-                    accessor(buffer.add(texcoords, 34962), _FLOAT, count, 'VEC2'),
+                    document.accessor(texcoords,
+                                      ARRAY_BUFFER,
+                                      componentType=FLOAT,
+                                      count=count,
+                                      type='VEC2'),
                 'COLOR_0':
-                    accessor(buffer.add(colors, 34962),
-                             _UNSIGNED_BYTE,
-                             count,
-                             'VEC4',
-                             normalized=True)
+                    document.accessor(colors,
+                                      ARRAY_BUFFER,
+                                      componentType=UNSIGNED_BYTE,
+                                      count=count,
+                                      type='VEC4',
+                                      normalized=True)
             },
             'indices':
-                accessor(buffer.add(packed, 34963), _UNSIGNED_INT if wide else _UNSIGNED_SHORT,
-                         len(indices), 'SCALAR'),
+                document.accessor(packed,
+                                  ELEMENT_ARRAY_BUFFER,
+                                  componentType=UNSIGNED_INT if wide else UNSIGNED_SHORT,
+                                  count=len(indices),
+                                  type='SCALAR'),
             'mode':
-                _TRIANGLES
+                TRIANGLES
         }
         if shadow and shadow_material is not None:
             primitive['material'] = shadow_material
@@ -557,26 +520,16 @@ def build_glb(  # noqa: C901, PLR0914
                 if found is None:
                     return None
                 png, mode = found
-                gltf_images.append({
-                    'bufferView': buffer.add(png),
-                    'mimeType': 'image/png',
-                    'name': name
-                })
-                gltf_textures.append({'source': len(gltf_images) - 1, 'sampler': 0})
                 gltf_materials.append({
                     'name': name,
                     'pbrMetallicRoughness': {
                         'baseColorFactor': [1.0, 1.0, 1.0, 1.0],
                         'metallicFactor': 0.0,
                         'baseColorTexture': {
-                            'index': len(gltf_textures) - 1
+                            'index': document.add_image(png, 'image/png', name)
                         }
                     },
                     'alphaMode': 'BLEND' if mode == 'GLOW' else mode,
-                    # Props are drawn from both sides. A level is a shell built without the faces
-                    # the player never reaches, so culling it is right, but a prop is a thin thing
-                    # seen from anywhere: a tablecloth, a door, a chair back. Culling those leaves
-                    # angular holes wherever a surface happens to face away.
                     'doubleSided': True
                 })
                 prop_materials[number, name] = len(gltf_materials) - 1
@@ -596,21 +549,28 @@ def build_glb(  # noqa: C901, PLR0914
                 entry: dict[str, Any] = {
                     'attributes': {
                         'POSITION':
-                            accessor(buffer.add(positions, 34962),
-                                     _FLOAT,
-                                     count,
-                                     'VEC3',
-                                     min=[min(a) for a in axes],
-                                     max=[max(a) for a in axes]),
+                            document.accessor(positions,
+                                              ARRAY_BUFFER,
+                                              componentType=FLOAT,
+                                              count=count,
+                                              type='VEC3',
+                                              min=[min(a) for a in axes],
+                                              max=[max(a) for a in axes]),
                         'TEXCOORD_0':
-                            accessor(buffer.add(texcoords, 34962), _FLOAT, count, 'VEC2')
+                            document.accessor(texcoords,
+                                              ARRAY_BUFFER,
+                                              componentType=FLOAT,
+                                              count=count,
+                                              type='VEC2')
                     },
                     'indices':
-                        accessor(buffer.add(packed,
-                                            34963), _UNSIGNED_INT if wide else _UNSIGNED_SHORT,
-                                 len(indices), 'SCALAR'),
+                        document.accessor(packed,
+                                          ELEMENT_ARRAY_BUFFER,
+                                          componentType=UNSIGNED_INT if wide else UNSIGNED_SHORT,
+                                          count=len(indices),
+                                          type='SCALAR'),
                     'mode':
-                        _TRIANGLES
+                        TRIANGLES
                 }
                 chosen = next((m for m in (prop_material(number, n.lower())
                                            for n in names) if m is not None), None)
@@ -644,63 +604,10 @@ def build_glb(  # noqa: C901, PLR0914
 
     if not gltf_meshes:
         return None
-    document: dict[str, Any] = {
-        'asset': {
-            'version': '2.0',
-            'generator': generator
-        },
-        'scene': 0,
-        'scenes': [{
-            'nodes': list(range(len(nodes)))
-        }],
-        'nodes': nodes,
-        'meshes': gltf_meshes,
-        'accessors': accessors,
-        'bufferViews': buffer.views,
-        'buffers': [{
-            'byteLength': len(buffer.data)
-        }],
-        'materials': gltf_materials,
-        'samplers': [{
-            'wrapS': 10497,
-            'wrapT': 10497
-        }]
-    }
-    if gltf_textures:
-        document['textures'] = gltf_textures
-        document['images'] = gltf_images
-    return _pack_glb(document, bytes(buffer.data))
+    return document.finish('scene')
 
 
-def _pack_glb(document: dict[str, Any], binary: bytes) -> bytes:
-    """
-    Wrap a glTF document and its binary payload in the GLB container.
-
-    Parameters
-    ----------
-    document : dict[str, Any]
-        The glTF JSON.
-    binary : bytes
-        The binary chunk the document's buffer views index into.
-
-    Returns
-    -------
-    bytes
-        The complete ``.glb`` file.
-    """
-    payload = json.dumps(document, separators=(',', ':')).encode()
-    payload += b' ' * (-len(payload) % 4)
-    binary += b'\0' * (-len(binary) % 4)
-    total = 12 + 8 + len(payload) + 8 + len(binary)
-    return b''.join((struct.pack('<III', GLB_MAGIC, 2,
-                                 total), struct.pack('<II', len(payload), _JSON_CHUNK), payload,
-                     struct.pack('<II', len(binary), _BIN_CHUNK), binary))
-
-
-def build_prop_glb(data: bytes,
-                   *,
-                   generator: str = 'dade',
-                   double_sided: bool = False) -> bytes | None:
+def build_prop_glb(data: bytes, *, generator: str = 'dade') -> bytes | None:
     """
     Build a binary glTF for a ``.SGP2`` prop and character library.
 
@@ -716,8 +623,6 @@ def build_prop_glb(data: bytes,
         The whole ``.SGP2`` file.
     generator : str
         Value recorded in the glTF ``asset.generator`` field.
-    double_sided : bool
-        Draw both faces of every triangle.
 
     Returns
     -------
@@ -725,24 +630,11 @@ def build_prop_glb(data: bytes,
         The ``.glb`` file, or ``None`` when the library holds no decodable geometry.
     """
     by_name = _prop_images(data)
-    buffer = _Buffer()
-    accessors: list[dict[str, Any]] = []
-    gltf_meshes: list[dict[str, Any]] = []
-    nodes: list[dict[str, Any]] = []
-    gltf_materials: list[dict[str, Any]] = []
-    gltf_textures: list[dict[str, Any]] = []
-    gltf_images: list[dict[str, Any]] = []
+    document = GLBDocument(generator)
+    gltf_meshes = document.meshes
+    nodes = document.nodes
+    gltf_materials = document.materials
     material_for: dict[str, int] = {}
-
-    def accessor(view: int, component: int, count: int, kind: str, **extra: Any) -> int:
-        accessors.append({
-            'bufferView': view,
-            'componentType': component,
-            'count': count,
-            'type': kind,
-            **extra
-        })
-        return len(accessors) - 1
 
     def material(name: str) -> int | None:
         if name in material_for:
@@ -751,19 +643,17 @@ def build_prop_glb(data: bytes,
         if found is None:
             return None
         png, mode = found
-        gltf_images.append({'bufferView': buffer.add(png), 'mimeType': 'image/png', 'name': name})
-        gltf_textures.append({'source': len(gltf_images) - 1, 'sampler': 0})
         gltf_materials.append({
             'name': name,
             'pbrMetallicRoughness': {
                 'baseColorFactor': [1.0, 1.0, 1.0, 1.0],
                 'metallicFactor': 0.0,
                 'baseColorTexture': {
-                    'index': len(gltf_textures) - 1
+                    'index': document.add_image(png, 'image/png', name)
                 }
             },
             'alphaMode': 'BLEND' if mode == 'GLOW' else mode,
-            'doubleSided': double_sided
+            'doubleSided': True
         })
         material_for[name] = len(gltf_materials) - 1
         return material_for[name]
@@ -779,23 +669,31 @@ def build_prop_glb(data: bytes,
             packed = struct.pack(f'<{len(indices)}{"I" if wide else "H"}', *indices)
             attributes = {
                 'POSITION':
-                    accessor(buffer.add(positions, 34962),
-                             _FLOAT,
-                             base,
-                             'VEC3',
-                             min=[min(a) for a in axes],
-                             max=[max(a) for a in axes]),
+                    document.accessor(positions,
+                                      ARRAY_BUFFER,
+                                      componentType=FLOAT,
+                                      count=base,
+                                      type='VEC3',
+                                      min=[min(a) for a in axes],
+                                      max=[max(a) for a in axes]),
                 'TEXCOORD_0':
-                    accessor(buffer.add(texcoords, 34962), _FLOAT, base, 'VEC2')
+                    document.accessor(texcoords,
+                                      ARRAY_BUFFER,
+                                      componentType=FLOAT,
+                                      count=base,
+                                      type='VEC2')
             }
             primitive_entry: dict[str, Any] = {
                 'attributes':
                     attributes,
                 'indices':
-                    accessor(buffer.add(packed, 34963), _UNSIGNED_INT if wide else _UNSIGNED_SHORT,
-                             len(indices), 'SCALAR'),
+                    document.accessor(packed,
+                                      ELEMENT_ARRAY_BUFFER,
+                                      componentType=UNSIGNED_INT if wide else UNSIGNED_SHORT,
+                                      count=len(indices),
+                                      type='SCALAR'),
                 'mode':
-                    _TRIANGLES
+                    TRIANGLES
             }
             chosen = next((m for m in (material(n.lower()) for n in names) if m is not None), None)
             if chosen is not None:
@@ -808,32 +706,7 @@ def build_prop_glb(data: bytes,
 
     if not gltf_meshes:
         return None
-    document: dict[str, Any] = {
-        'asset': {
-            'version': '2.0',
-            'generator': generator
-        },
-        'scene': 0,
-        'scenes': [{
-            'nodes': list(range(len(nodes)))
-        }],
-        'nodes': nodes,
-        'meshes': gltf_meshes,
-        'accessors': accessors,
-        'bufferViews': buffer.views,
-        'buffers': [{
-            'byteLength': len(buffer.data)
-        }],
-        'materials': gltf_materials,
-        'samplers': [{
-            'wrapS': 10497,
-            'wrapT': 10497
-        }]
-    }
-    if gltf_textures:
-        document['textures'] = gltf_textures
-        document['images'] = gltf_images
-    return _pack_glb(document, bytes(buffer.data))
+    return document.finish('scene')
 
 
 def write_prop_glb(path: Path, output_dir: Path) -> tuple[Path, ...]:
