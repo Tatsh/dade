@@ -132,7 +132,8 @@ def build_image(name: str,
                 height: int,
                 pixel_format: int,
                 pixels: bytes,
-                palette: bytes = b'') -> bytes:
+                palette: bytes = b'',
+                blend_mode: int = 0) -> bytes:
     """
     Build one image record as embedded in a bank or geometry blob.
 
@@ -150,6 +151,8 @@ def build_image(name: str,
         The pixel data.
     palette : bytes
         The CLUT, for a paletted image.
+    blend_mode : int
+        The cooker's blend mode, as stored in byte ``0x1B``.
 
     Returns
     -------
@@ -165,6 +168,7 @@ def build_image(name: str,
     struct.pack_into('<4I', header, 0, 0x65, total, IMAGE_HEADER_SIZE, name_hash(name))
     struct.pack_into('<2H', header, 0x14, width, height)
     header[0x1A] = pixel_format
+    header[0x1B] = blend_mode
     struct.pack_into('<2I', header, 0x24, data_at, palette_at)
     padding = bytes(data_at - IMAGE_HEADER_SIZE - len(encoded))
     return bytes(header) + encoded + padding + pixels + palette

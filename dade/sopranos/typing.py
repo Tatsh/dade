@@ -1,9 +1,11 @@
 """Typing helpers for the Sopranos submodule."""
 from __future__ import annotations
 
+from enum import IntEnum
 from typing import Literal, NamedTuple, TypeAlias
 
-__all__ = ('FSEntry', 'LevelEntry', 'PixelFormat', 'Primitive', 'SoundEntry', 'TextureInfo')
+__all__ = ('BlendMode', 'FSEntry', 'LevelEntry', 'PixelFormat', 'Primitive', 'SoundEntry',
+           'TextureInfo')
 
 Primitive: TypeAlias = Literal[3, 4]
 """GS primitive type: ``3`` is an independent triangle list, ``4`` a triangle strip.
@@ -16,6 +18,28 @@ PixelFormat: TypeAlias = Literal[2, 4, 5]
 
 :meta hide-value:
 """
+
+
+class BlendMode(IntEnum):
+    """How the engine draws a surface using a texture, cooked into byte ``0x1B`` of its record.
+
+    The engine passes a texture's handle to the texture manager, takes the flags back, and turns
+    them into a GS ``TEST_1`` and ``ALPHA_1`` pair per material in ``FUN_001E8810``. Reading the
+    byte gives the same answer without having to recognise a texture by name or by content: across
+    all 133 levels, :py:attr:`ADDITIVE` is exactly the 171 ``add_`` textures and
+    :py:attr:`SUBTRACTIVE` exactly the 262 ``sub_`` ones, with nothing else in either.
+    """
+
+    DEFAULT = 0
+    """No override; the render pass decides, which for a level means opaque."""
+    CUTOUT = 1
+    """``TEST_1`` with ATE set, ATST ``GEQUAL`` and AREF 8 on the PS2's 0..128 alpha scale."""
+    BLEND = 2
+    """``ALPHA_1`` 0x44: ``(Cs - Cd) * As + Cd``."""
+    ADDITIVE = 3
+    """``ALPHA_1`` 0x68 with FIX 0x80: ``Cs + Cd``. Drawn without depth writes."""
+    SUBTRACTIVE = 4
+    """``ALPHA_1`` 0xA1 with FIX 0x80: ``Cd - Cs``. Drawn without depth writes."""
 
 
 class FSEntry(NamedTuple):
@@ -53,6 +77,8 @@ class TextureInfo(NamedTuple):
     """Height in pixels."""
     pixel_format: PixelFormat
     """Stored pixel format."""
+    blend_mode: BlendMode
+    """How the engine blends a surface drawn with this texture."""
     data_offset: int
     """Absolute byte offset of the pixel data."""
     palette_offset: int

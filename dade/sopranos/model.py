@@ -32,8 +32,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from pathlib import Path
 
-__all__ = ('GROUP_SIZE', 'TRIANGLE_LIST', 'TRIANGLE_STRIP', 'Material', 'Mesh', 'MeshPacket',
-           'Vertex', 'read_materials', 'read_meshes', 'to_mtl', 'to_obj', 'triangles',
+__all__ = ('BLEND_PASSES', 'GROUP_SIZE', 'TRIANGLE_LIST', 'TRIANGLE_STRIP', 'Material', 'Mesh',
+           'MeshPacket', 'Vertex', 'read_materials', 'read_meshes', 'to_mtl', 'to_obj', 'triangles',
            'write_model')
 
 log = logging.getLogger(__name__)
@@ -53,6 +53,17 @@ _STRING_TABLE_AT = 0x54
 _MATERIAL_SIZE = 84
 _MATERIAL_TEXTURE_AT = 0x10
 _MATERIAL_MESHES_AT = 0x58
+_PASS_COUNT_AT = 0x30
+_PASS_TABLE_AT = 0x34
+BLEND_PASSES = frozenset({2, 6})
+"""Passes the engine draws blended.
+
+``t_EnvMesh``'s pass setup calls ``mBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)`` for these and
+``mBlendFunc(GL_ONE, GL_ZERO)`` for every other one, with no per-material override. Levels only ever
+fill passes 1 and 2, so pass 2 is the decal pass: shadows, stains, ivy, and road detail.
+
+:meta hide-value:
+"""
 _PASS_SIZE = 8
 _OPAQUE_ALPHA = 0x80
 _NLOOP_MASK = 0x7FFF
@@ -116,6 +127,8 @@ class Mesh(NamedTuple):
     """Packets making up the mesh."""
     material: int
     """Index of the material this mesh uses, or ``-1`` when no material claims it."""
+    render_pass: int
+    """Pass the engine draws this mesh in, counted from 1. See :py:data:`BLEND_PASSES`."""
 
 
 class Material(NamedTuple):
@@ -257,11 +270,12 @@ def read_meshes(data: bytes) -> tuple[Mesh, ...]:
             log.warning('The block at 0x%x does not follow its own data.', block)
             continue
         if packets := tuple(_read_packets(data, start, quadwords)):
-            meshes.append(Mesh(number, packets, by_block.get(block, -1)))
+            material, render_pass = by_block.get(block, (-1, 1))
+            meshes.append(Mesh(number, packets, material, render_pass))
     return tuple(meshes)
 
 
-def _material_by_mesh(data: bytes) -> dict[int, int]:
+def _material_by_mesh(data: bytes) -> dict[int, tuple[int, int]]:
     """
     Map each mesh block address to the material that claims it.
 
@@ -285,21 +299,31 @@ def _material_by_mesh(data: bytes) -> dict[int, int]:
 
     Returns
     -------
-    dict[int, int]
-        Mesh block address to material index.
+    dict[int, tuple[int, int]]
+        Mesh block address to material index and render pass.
     """
     table, count, meshes = (struct.unpack_from('<I', data, at)[0]
                             for at in (_MATERIAL_MESHES_AT, _MATERIAL_COUNT_AT, _MESH_COUNT_AT))
+    # The file partitions the records between passes with its own prefix sums: pass p owns the
+    # records [sums[p - 1], sums[p]).
+    passes, sums_at = (struct.unpack_from('<I', data, at)[0]
+                       for at in (_PASS_COUNT_AT, _PASS_TABLE_AT))
+    pass_of = [1] * count
+    if sums_at and sums_at + (passes + 1) * 4 <= len(data):
+        for p in range(1, passes + 1):
+            first, last = struct.unpack_from('<2I', data, sums_at + (p - 1) * 4)
+            for i in range(first, min(last, count)):
+                pass_of[i] = p
     entries = []
     for i in range(count):
         record = table + i * 16
         if record + 16 > len(data):
             break
         material, _pad, pointer = struct.unpack_from('<3I', data, record)
-        entries.append((material, pointer))
-    ordered = sorted({p for _m, p in entries if p})
-    out: dict[int, int] = {}
-    for i, pointer in entries:
+        entries.append((material, pointer, pass_of[i]))
+    ordered = sorted({p for _m, p, _q in entries if p})
+    out: dict[int, tuple[int, int]] = {}
+    for i, pointer, render_pass in entries:
         if not pointer:
             continue
         after = bisect_right(ordered, pointer)
@@ -310,7 +334,7 @@ def _material_by_mesh(data: bytes) -> dict[int, int]:
             if owned > meshes or start + owned * 8 > len(data):
                 break
             for k in range(owned):
-                out.setdefault(struct.unpack_from('<I', data, start + k * 8)[0], i)
+                out.setdefault(struct.unpack_from('<I', data, start + k * 8)[0], (i, render_pass))
     return out
 
 

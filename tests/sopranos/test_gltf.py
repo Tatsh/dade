@@ -195,36 +195,39 @@ def test_build_glb_blends_a_plain_white_glow_sprite() -> None:
 
 @pytest.mark.parametrize('name', ['art/add_neon.tga', 'art/sub_shade.tga'])
 def test_build_glb_blends_an_overlay_decal(*, name: str) -> None:
-    overlay = build_image(name, 2, 2, FORMAT_RGBA, opaque_pixels((10, 20, 30)))
+    # The cooked mode decides, not the name: 3 is additive and 4 subtractive.
+    mode = 4 if name.rsplit('/', 1)[-1].startswith('sub_') else 3
+    overlay = build_image(name, 2, 2, FORMAT_RGBA, opaque_pixels((10, 20, 30)), blend_mode=mode)
     glb = build_glb(level(images=[overlay]))
     assert glb is not None
     assert document(glb)['materials'][0]['alphaMode'] == 'BLEND'
 
 
+def test_build_glb_leaves_an_overlay_named_decal_opaque_without_the_cooked_mode() -> None:
+    # Naming alone must not turn a texture into an overlay; the record's mode is what counts.
+    overlay = build_image('art/add_neon.tga', 2, 2, FORMAT_RGBA, opaque_pixels((10, 20, 30)))
+    glb = build_glb(level(images=[overlay]))
+    assert glb is not None
+    assert document(glb)['materials'][0]['alphaMode'] == 'OPAQUE'
+
+
 def test_build_glb_masks_a_cut_out_texture() -> None:
     pixels = bytes([200, 40, 40, 0x80, 200, 40, 40, 0x00, 200, 40, 40, 0x00, 200, 40, 40, 0x00])
-    cut = build_image('art/fence.tga', 2, 2, FORMAT_RGBA, pixels)
+    cut = build_image('art/fence.tga', 2, 2, FORMAT_RGBA, pixels, blend_mode=1)
     glb = build_glb(level(images=[cut]))
     assert glb is not None
-    assert document(glb)['materials'][0]['alphaMode'] == 'MASK'
+    material = document(glb)['materials'][0]
+    assert material['alphaMode'] == 'MASK'
+    # GS TEST_1 uses ATST GEQUAL with AREF 8 on the console's 0..128 alpha scale.
+    assert material['alphaCutoff'] == pytest.approx(16 / 255)
 
 
 def test_build_glb_blends_a_translucent_texture() -> None:
     pixels = bytes([200, 40, 40, 0x40] * 4)
-    glass = build_image('art/glass.tga', 2, 2, FORMAT_RGBA, pixels)
+    glass = build_image('art/glass.tga', 2, 2, FORMAT_RGBA, pixels, blend_mode=2)
     glb = build_glb(level(images=[glass]))
     assert glb is not None
     assert document(glb)['materials'][0]['alphaMode'] == 'BLEND'
-
-
-def test_build_glb_gives_a_black_mesh_its_own_shadow_material() -> None:
-    black = [(0.0, 0.0, 0.0, 0.0, 0.0), (0.0, 1.0, 0.0, 0.0, 0.0), (0.0, 2.0, 0.0, 0.0, 0.0)]
-    glb = build_glb(level(packets=[mesh_packet(black)]))
-    assert glb is not None
-    doc = document(glb)
-    material = doc['materials'][doc['meshes'][0]['primitives'][0]['material']]
-    assert material['name'] == 'shadow'
-    assert material['alphaMode'] == 'BLEND'
 
 
 def _library() -> bytes:

@@ -37,7 +37,7 @@ from dade.common.gltf import (
     GLBDocument,
 )
 
-from .model import read_materials, read_meshes, triangles
+from .model import BLEND_PASSES, read_materials, read_meshes, triangles
 from .prop import (
     is_alternate,
     read_items,
@@ -46,6 +46,7 @@ from .prop import (
     wardrobe_key,
 )
 from .texture import decode, iter_geometry_textures
+from .typing import BlendMode
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -69,11 +70,12 @@ GLB_MAGIC = 0x46546C67
 
 _IMAGE_RECORD_BIAS = 0x80
 _GLOW_STRENGTH = 0.14
-_SHADOW_ALPHA = 115
 _SKIN_HINTS = ('body', 'suit', 'torso', 'head', 'face')
 _ALPHA_CLEAR = 0.02
 _ALPHA_PARTIAL = 0.20
 _TRIANGLE_CORNERS = 3
+# GS TEST_1 alpha test: ATST GEQUAL with AREF 8 on the PS2's 0..128 scale, so 16 of 255 here.
+_CUTOUT_REF = 16 / 255
 _SHORT_INDEX_LIMIT = 0xFFFF
 
 
@@ -97,34 +99,7 @@ def _finite(value: float) -> float:
     return value if isfinite(value) else 0.0
 
 
-def _is_shadow(mesh: Mesh) -> bool:
-    """
-    Report whether a mesh is one of the baked shadow decals.
-
-    A handful of meshes -- a twentieth of one percent of a level's vertices -- carry a vertex colour
-    of pure black throughout. Vertex colour multiplies the texture, so whatever map they name
-    contributes nothing and the game must be blending them to darken what is behind. Drawn as
-    ordinary opaque geometry they become black holes in the floor, which is what the shadows under
-    Vesuvio's bathroom fixtures were.
-
-    Parameters
-    ----------
-    mesh : Mesh
-        The mesh to test.
-
-    Returns
-    -------
-    bool
-        ``True`` when every vertex is black.
-    """
-    return all(not v.red and not v.green and not v.blue for packet in mesh.packets
-               for v in packet.vertices)
-
-
-def _mesh_arrays(mesh: Mesh,
-                 *,
-                 glow: bool = False,
-                 shadow: bool = False) -> tuple[bytes, bytes, bytes, list[int], int]:
+def _mesh_arrays(mesh: Mesh, *, glow: bool = False) -> tuple[bytes, bytes, bytes, list[int], int]:
     """
     Flatten one mesh's packets into glTF attribute buffers.
 
@@ -138,9 +113,6 @@ def _mesh_arrays(mesh: Mesh,
         Whether the mesh uses a plain white glow sprite, in which case vertex alpha is taken from
         vertex brightness so the sprite fades out where the hardware's additive blend would have
         contributed nothing.
-    shadow : bool
-        Whether the mesh is a baked shadow decal, in which case it is given a fixed partial alpha so
-        it darkens the floor instead of punching a black hole in it.
 
     Returns
     -------
@@ -161,12 +133,7 @@ def _mesh_arrays(mesh: Mesh,
             # Ordinary blending cannot brighten, only cover, so the strength is held well down to
             # keep it a haze over whatever it lights rather than a wash that hides it.
             luminance = (red * 2 + green * 5 + blue) // 8
-            if glow:
-                alpha = int(luminance * _GLOW_STRENGTH)
-            elif shadow:
-                alpha = _SHADOW_ALPHA
-            else:
-                alpha = 255
+            alpha = int(luminance * _GLOW_STRENGTH) if glow else 255
             colors += bytes((red, green, blue, alpha))
         for a, b, c in triangles(len(packet.vertices), packet.primitive):
             pa, pb, pc = (packet.vertices[a][:3], packet.vertices[b][:3], packet.vertices[c][:3])
@@ -176,7 +143,42 @@ def _mesh_arrays(mesh: Mesh,
     return bytes(positions), bytes(texcoords), bytes(colors), indices, base
 
 
-def _material_images(data: bytes) -> dict[int, tuple[bytes, str]]:
+def _cooked_mode(image: Image, blend_mode: BlendMode) -> tuple[str, Image]:
+    """
+    Turn the cooker's blend mode into the nearest glTF alpha mode.
+
+    glTF has neither the engine's additive ``Cs + Cd`` nor its subtractive ``Cd - Cs``, so both are
+    recast as ordinary alpha blending with alpha taken from luminance, which is right in direction
+    because a black texel neither adds nor subtracts and so must be transparent. A subtractive
+    texture additionally goes black, so blending toward black by luminance darkens as intended.
+
+    Parameters
+    ----------
+    image : Image
+        The decoded texture, modified for the overlay modes.
+    blend_mode : BlendMode
+        The mode cooked into the texture's record.
+
+    Returns
+    -------
+    tuple[str, Image]
+        The glTF ``alphaMode`` and the image to store, which the overlay modes rewrite.
+    """
+    match blend_mode:
+        case BlendMode.CUTOUT:
+            return 'MASK', image
+        case BlendMode.BLEND:
+            return 'BLEND', image
+        case BlendMode.ADDITIVE | BlendMode.SUBTRACTIVE:
+            return 'BLEND', _as_overlay(image, darkening=blend_mode is BlendMode.SUBTRACTIVE)
+        case _:
+            # A pure white glow sprite is cooked as DEFAULT, and drawn as-is it is an opaque white
+            # slab over whatever it was meant to light, so it keeps the treatment the pass alone
+            # cannot give it.
+            return ('GLOW' if _is_glow(image) else 'OPAQUE'), image
+
+
+def _material_images(data: bytes, *, cooked: bool = False) -> dict[int, tuple[bytes, str]]:
     """
     Render every embedded texture that a material references to PNG bytes.
 
@@ -184,6 +186,9 @@ def _material_images(data: bytes) -> dict[int, tuple[bytes, str]]:
     ----------
     data : bytes
         The whole geometry blob.
+    cooked : bool
+        Take each texture's alpha mode from the cooker's blend mode rather than inferring it from
+        the image and its name.
 
     Returns
     -------
@@ -194,12 +199,15 @@ def _material_images(data: bytes) -> dict[int, tuple[bytes, str]]:
     for texture in iter_geometry_textures(data):
         image = decode(data, texture)
         stem = texture.name.rsplit('/', 1)[-1].lower()
-        mode = _alpha_mode(image)
-        if _is_glow(image):
-            mode = 'GLOW'
-        elif stem.startswith(('add_', 'sub_')):
-            image = _as_overlay(image, darkening=stem.startswith('sub_'))
-            mode = 'BLEND'
+        if cooked:
+            mode, image = _cooked_mode(image, texture.blend_mode)
+        else:
+            mode = _alpha_mode(image)
+            if _is_glow(image):
+                mode = 'GLOW'
+            elif stem.startswith(('add_', 'sub_')):
+                image = _as_overlay(image, darkening=stem.startswith('sub_'))
+                mode = 'BLEND'
         buffer = io.BytesIO()
         image.save(buffer, format='PNG')
         out[texture.data_offset - _IMAGE_RECORD_BIAS] = (buffer.getvalue(), mode)
@@ -376,7 +384,7 @@ def _alpha_mode(image: Image) -> str:
     return 'BLEND' if partial >= _ALPHA_PARTIAL else 'MASK'
 
 
-def build_glb(  # noqa: C901, PLR0914
+def build_glb(  # ruff: ignore[complex-structure, too-many-locals]
     data: bytes,
     *,
     generator: str = 'dade',
@@ -413,7 +421,9 @@ def build_glb(  # noqa: C901, PLR0914
     if not meshes:
         return None
     materials = read_materials(data)
-    images = _material_images(data)
+    images = _material_images(data, cooked=True)
+    # A material belongs to exactly one pass, so the meshes give each one its pass.
+    pass_of = {m.material: m.render_pass for m in meshes if m.material >= 0}
     document = GLBDocument(generator)
     gltf_meshes = document.meshes
     nodes = document.nodes
@@ -432,33 +442,25 @@ def build_glb(  # noqa: C901, PLR0914
         if mode == 'GLOW':
             glowing.add(index)
             mode = 'BLEND'
+        elif mode == 'OPAQUE' and pass_of.get(index, 1) in BLEND_PASSES:
+            # The mode left it open, so the pass decides, and the pass this material sits in blends.
+            mode = 'BLEND'
         used[index] = len(gltf_materials)
-        gltf_materials.append({
+        entry: dict[str, Any] = {
             'name': material.name.rsplit('/', 1)[-1] or f'material_{index}',
             'pbrMetallicRoughness': pbr,
             'alphaMode': mode,
             'doubleSided': True
-        })
+        }
+        if mode == 'MASK':
+            entry['alphaCutoff'] = _CUTOUT_REF
+        gltf_materials.append(entry)
 
-    shadow_material: int | None = None
     for mesh in meshes:
-        shadow = _is_shadow(mesh)
         positions, texcoords, colors, indices, count = _mesh_arrays(mesh,
-                                                                    glow=mesh.material in glowing,
-                                                                    shadow=shadow)
+                                                                    glow=mesh.material in glowing)
         if not indices:
             continue
-        if shadow and shadow_material is None:
-            gltf_materials.append({
-                'name': 'shadow',
-                'pbrMetallicRoughness': {
-                    'baseColorFactor': [0.0, 0.0, 0.0, 1.0],
-                    'metallicFactor': 0.0
-                },
-                'alphaMode': 'BLEND',
-                'doubleSided': True
-            })
-            shadow_material = len(gltf_materials) - 1
         floats = struct.unpack(f'<{count * 3}f', positions)
         axes = [floats[i::3] for i in range(3)]
         wide = count > _SHORT_INDEX_LIMIT
@@ -496,9 +498,7 @@ def build_glb(  # noqa: C901, PLR0914
             'mode':
                 TRIANGLES
         }
-        if shadow and shadow_material is not None:
-            primitive['material'] = shadow_material
-        elif mesh.material in used:
+        if mesh.material in used:
             primitive['material'] = used[mesh.material]
         gltf_meshes.append({'name': f'mesh_{len(gltf_meshes)}', 'primitives': [primitive]})
         nodes.append({'mesh': len(gltf_meshes) - 1})

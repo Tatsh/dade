@@ -20,7 +20,9 @@ from PIL import Image
 from dade.common.exceptions import InvalidFormatError
 from dade.common.image import double_ps2_alpha, ps2_clut_swizzle_index
 
-from .typing import PixelFormat, TextureInfo
+from .typing import BlendMode, PixelFormat, TextureInfo
+
+_BLEND_MODES = frozenset(m.value for m in BlendMode)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -137,10 +139,14 @@ def _read_image(data: bytes, offset: int) -> tuple[TextureInfo, int]:
     if (pixel_format := _PIXEL_FORMATS.get(stored)) is None:
         msg = f'Image at 0x{offset:x} has unsupported pixel format {stored}.'
         raise InvalidFormatError(msg)
+    # Byte 0x1B is the cooker's blend mode. A value the enum does not name means the record is not
+    # one of the cooked kinds, so it falls back to letting the render pass decide.
+    stored_blend = data[offset + 0x1B]
+    blend_mode = (BlendMode(stored_blend) if stored_blend in _BLEND_MODES else BlendMode.DEFAULT)
     data_offset, palette_offset = struct.unpack_from('<2I', data, offset + 0x24)
     name_at = offset + name_offset
     return TextureInfo(data[name_at:data.index(b'\0', name_at)].decode(), width, height,
-                       pixel_format, offset + data_offset,
+                       pixel_format, blend_mode, offset + data_offset,
                        offset + palette_offset if palette_offset else 0, name_hash), total
 
 
@@ -202,7 +208,7 @@ def decode(data: bytes, texture: TextureInfo) -> Image.Image:
     ------
     InvalidFormatError
         If the image's pixel data or palette runs past the end of the bank.
-    """  # noqa: DOC502
+    """  # ruff: ignore[docstring-extraneous-exception]
     return _decode_stored(data, texture).transpose(Image.Transpose.FLIP_TOP_BOTTOM)
 
 
