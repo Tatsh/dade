@@ -244,6 +244,68 @@ def test_glow_model_of_a_list_that_loads_nothing() -> None:
     assert glow_model(bytes(segment)) is None
 
 
+def test_glow_model_stops_at_maximum_nesting_depth() -> None:
+    segment = bytearray(_SEGMENT_SIZE)
+    addresses = [_GLOW_LIST, 0x80108000, 0x80108100, 0x80108200, 0x80108300, 0x80108400]
+    for index in range(len(addresses) - 1):
+        _place(
+            segment, addresses[index],
+            struct.pack('>2I', 0x06000000, addresses[index + 1]) +
+            struct.pack('>2I', 0xB8000000, 0))
+    assert glow_model(bytes(segment)) is None
+
+
+def test_glow_model_runs_the_whole_command_budget() -> None:
+    segment = bytearray(_SEGMENT_SIZE)
+    _place(segment, _GLOW_LIST, struct.pack('>2I', 0xFA000000, 0) * 512)
+    assert glow_model(bytes(segment)) is None
+
+
+def test_glow_model_ignores_a_nested_list_that_draws_nothing() -> None:
+    segment = bytearray(_SEGMENT_SIZE)
+    nested = 0x80108000
+    _place(
+        segment, nested,
+        struct.pack('>2I', 0x04000C2F, 0) + struct.pack('>2I', 0xBF000000, 0x00000204) +
+        struct.pack('>2I', 0xB8000000, 0))
+    _place(segment, _GLOW_LIST,
+           struct.pack('>2I', 0x06000000, nested) + struct.pack('>2I', 0xB8000000, 0))
+    assert glow_model(bytes(segment)) is None
+
+
+def test_glow_model_steps_over_an_unknown_command() -> None:
+    segment = bytearray(_SEGMENT_SIZE)
+    _place(segment, _GLOW_LIST,
+           struct.pack('>2I', 0x00000000, 0) + struct.pack('>2I', 0xB8000000, 0))
+    assert glow_model(bytes(segment)) is None
+
+
+def test_read_object_models_of_a_short_segment() -> None:
+    assert read_object_models(b'\x00' * 16) == [()] * 96
+
+
+def test_read_object_models_cycles_a_full_length_list() -> None:
+    segment = _segment_with_model()
+    _place(segment, _LIST_VRAM, struct.pack('>8h', *([0] * 8)))
+    assert len(read_object_models(bytes(segment))[0]) == 8
+
+
+def test_read_object_models_stops_at_a_list_running_off_the_end() -> None:
+    size = _MODEL_TABLE - SEGMENT_BASE + 8
+    segment = bytearray(size)
+    _place(segment, _SUBTYPE_LISTS, struct.pack('>I', SEGMENT_BASE + size - 2))
+    struct.pack_into('>h', segment, size - 2, 0)
+    assert read_object_models(bytes(segment))[0] == ()
+
+
+def test_read_object_models_stops_at_a_model_record_past_the_end() -> None:
+    size = _MODEL_TABLE - SEGMENT_BASE + 4
+    segment = bytearray(size)
+    _place(segment, _SUBTYPE_LISTS, struct.pack('>I', _LIST_VRAM))
+    struct.pack_into('>2h', segment, _LIST_VRAM - SEGMENT_BASE, 1, -1)
+    assert read_object_models(bytes(segment))[0] == ()
+
+
 def test_read_code_segment_decompresses(mocker: MockerFixture) -> None:
     mocker.patch('dade.xg2.xg1_objects.decompress_lzhuf', return_value=b'segment')
     assert read_code_segment(b'\x00' * 0x100) == b'segment'

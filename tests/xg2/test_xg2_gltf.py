@@ -102,6 +102,38 @@ def test_pc_bank_size_reports_the_furthest_load() -> None:
     assert pc_bank_size(model) == 3 * 16
 
 
+def test_pc_bank_size_skips_a_data_entry() -> None:
+    model = struct.pack('<I', 0x05000004) + struct.pack('<4I', 0, 0, 0, 0)
+    assert pc_bank_size(model) == 0
+
+
+def test_build_level_glb_of_a_zero_length_normal() -> None:
+    vertices = [
+        Vertex(0, 0, 0, 0, 0, 0, 0, 0, 255),
+        Vertex(1, 0, 0, 0, 0, 0, 0, 0, 255),
+        Vertex(0, 1, 0, 0, 0, 0, 0, 0, 255),
+    ]
+    glb = build_level_glb([Mesh(None, lit=True, vertices=vertices, triangles=[(0, 1, 2)])], [],
+                          'lvl')
+    assert glb is not None
+
+
+def test_build_clip_glb_aligns_opposed_rotations() -> None:
+    skeleton = Skeleton(6, [Bone('root', -1, 0, 6, (0.0, 1.0, 0.0), ())])
+    # The root spins a full turn about Z (65536 binary-angle units), whose quaternion changes sign
+    # between the two frames.
+    channels = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 65536.0]]
+    glb = build_clip_glb(BmcClip('walk.asf', 2, channels), 'anim', skeleton)
+    assert glb is not None
+
+
+def test_build_track_glb_without_a_glow_model() -> None:
+    flame = ObjectPlacement(40, 50, 60, (), (0xF0, 0x3C, 0x3C))
+    glb = build_track_glb([_triangle_mesh(lit=False)], [_translucent_texture()], [flame], None,
+                          'track')
+    assert glb is not None
+
+
 def test_iter_models_yields_a_flat_model() -> None:
     model = _lit_model()
     assert [suffix for suffix, _blob in iter_models(model)] == ['']

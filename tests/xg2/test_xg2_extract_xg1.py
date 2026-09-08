@@ -7,6 +7,7 @@ import struct
 import pytest
 
 from dade.xg2.extract_xg1 import LEVEL_SUB_BLOBS, RunLog, run, unpack
+from dade.xg2.lzhuf import LzhufError
 from dade.xg2.mfs import MfsCalibrationError
 
 from .conftest import XG1_LEVEL_BASES
@@ -77,6 +78,16 @@ def test_run_decompresses_the_level_sub_blobs(make_xg1_rom: Callable[..., bytes]
     # A raw slice is kept only for a stream that runs out before its declared size, which none of
     # these do.
     assert not list(level.glob('*.lzhuf.raw'))
+
+
+def test_run_keeps_a_raw_slice_for_a_truncated_sub_blob(make_xg1_rom: Callable[..., bytes],
+                                                        tmp_path: Path,
+                                                        mocker: MockerFixture) -> None:
+    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', side_effect=LzhufError(0, 1))
+    run(make_xg1_rom(), tmp_path)
+    level = tmp_path / 'levels' / f'00_{XG1_LEVEL_BASES[0]:07X}'
+    assert list(level.glob('*.lzhuf.raw'))
+    assert 'Wrote the raw slice' in (tmp_path / 'extract.log').read_text()
 
 
 def test_run_writes_the_object_table(make_xg1_rom: Callable[..., bytes], tmp_path: Path) -> None:

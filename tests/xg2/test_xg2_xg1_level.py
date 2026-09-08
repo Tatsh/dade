@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import runpy
 import struct
+
+import pytest
 
 from dade.xg2.lzhuf import LzhufError
 from dade.xg2.typing import Texture
 from dade.xg2.xg1_level import (
     XG1,
+    XG2,
     bank_texture_key,
     decode_level_geometry,
     decode_level_textures,
@@ -15,6 +19,7 @@ from dade.xg2.xg1_level import (
     read_bank_descriptors,
     read_header,
     read_texture_bank,
+    read_textures,
 )
 
 if TYPE_CHECKING:
@@ -91,8 +96,132 @@ def _dispatch(mocker: MockerFixture) -> None:
     mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', side_effect=fake)
 
 
+def _descriptor() -> bytes:
+    return struct.pack('>4B2I', 4, 4, 1, 0, 0x10, 0x40)
+
+
+def _dispatch_stream(mocker: MockerFixture, code: bytes) -> None:
+    payloads = {
+        _BASE + _STREAM: code,
+        _BASE + _COORDS: struct.pack('>4h', 0, 0, 16, 16),
+        _BASE + _TEXTURES: _descriptor(),
+        _BASE + _PIXELS: bytes(0x240),
+    }
+
+    def fake(_data: bytes, start: int, _size: int, **_kw: object) -> bytes:
+        return payloads[start]
+
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', side_effect=fake)
+
+
 def test_demo_holds() -> None:
     demo()
+
+
+def test_module_entry_point_runs(capsys: pytest.CaptureFixture[str]) -> None:
+    runpy.run_module('dade.xg2.xg1_level', run_name='__main__')
+    assert 'triangle unpacking and operand table hold' in capsys.readouterr().out
+
+
+def test_read_textures_ignores_an_out_of_range_count() -> None:
+    header = read_header(bytes(_rom()), _BASE, XG1)._replace(texture_count=0)
+    assert read_textures(bytes(_rom()), _BASE, header, XG1) == []
+
+
+def test_read_textures_survives_a_truncated_table(mocker: MockerFixture) -> None:
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', side_effect=LzhufError(0, 1))
+    header = read_header(bytes(_rom()), _BASE, XG1)
+    assert read_textures(bytes(_rom()), _BASE, header, XG1) == []
+
+
+def test_decode_level_geometry_without_coordinates(mocker: MockerFixture) -> None:
+    rom = _rom()
+    struct.pack_into('>I', rom, _BASE + 14 * 4, 0)  # coords_count = 0
+    _dispatch_stream(mocker, bytes([0]))
+    assert decode_level_geometry(bytes(rom), _BASE, XG1) == []
+
+
+def test_decode_level_geometry_survives_truncated_coordinates(mocker: MockerFixture) -> None:
+    def fake(_data: bytes, start: int, _size: int, **_kw: object) -> bytes:
+        if start == _BASE + _COORDS:
+            raise LzhufError(0, 1)
+        return {_BASE + _STREAM: bytes([0]), _BASE + _TEXTURES: _descriptor()}[start]
+
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', side_effect=fake)
+    assert decode_level_geometry(bytes(_rom()), _BASE, XG1) == []
+
+
+def test_decode_level_geometry_runs_two_objects(mocker: MockerFixture) -> None:
+    rom = _rom()
+    struct.pack_into('>I', rom, _BASE + 1 * 4, 2)  # object_count = 2
+    struct.pack_into('>9i', rom, _BASE + 0x800 + 0x28, 0, 0, 0, -1, -1, -1, 0, 0, 0)
+    _dispatch_stream(mocker, bytes([10, 0, 10, 0]))
+    assert decode_level_geometry(bytes(rom), _BASE, XG1) == []
+
+
+def test_decode_level_geometry_with_an_object_past_the_end(mocker: MockerFixture) -> None:
+    rom = _rom()
+    struct.pack_into('>I', rom, _BASE, len(rom) - _BASE)  # objects offset lands at the ROM end
+    _dispatch_stream(mocker, bytes([0]))
+    assert decode_level_geometry(bytes(rom), _BASE, XG1) == []
+
+
+@pytest.mark.parametrize(
+    'code',
+    [
+        bytes([0, 0
+               ]),  # An object that ends before the bytecode does, so the loop runs on to the next.
+        bytes([1, 4]) + _vertex(0, 0, 0, 0, (1, 1, 1)) * 2,
+        bytes([1, 40]) + _vertex(0, 0, 0, 0, (1, 1, 1)) * 40,
+        bytes([3, 0x11]),
+        bytes([4, 0]),
+        bytes([5, 0, 0]),
+        bytes([9, 0]),
+        bytes([9, 5, 0]),
+        bytes([10, 10, 10]),
+    ])
+def test_decode_level_geometry_tolerates_truncated_bytecode(mocker: MockerFixture,
+                                                            code: bytes) -> None:
+    _dispatch_stream(mocker, code)
+    decode_level_geometry(bytes(_rom()), _BASE, XG1)
+
+
+def test_decode_level_textures_for_a_dialect_without_banks(mocker: MockerFixture) -> None:
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', side_effect=LzhufError(0, 1))
+    assert decode_level_textures(bytes(_rom()), _BASE, XG2) == []
+
+
+def test_read_texture_bank_survives_a_truncated_bank(mocker: MockerFixture) -> None:
+    rom = bytearray(0x1000)
+    struct.pack_into('>I', rom, 0x100, 0x240)
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', side_effect=LzhufError(0, 1))
+    assert read_texture_bank(bytes(rom), 0x100) == []
+
+
+def test_decode_level_textures_survives_a_truncated_pool(mocker: MockerFixture) -> None:
+    def fake(_data: bytes, start: int, _size: int, **_kw: object) -> bytes:
+        if start == _BASE + _PIXELS:
+            raise LzhufError(0, 1)
+        return _descriptor()
+
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', side_effect=fake)
+    assert decode_level_textures(bytes(_rom()), _BASE, XG1) == []
+
+
+@pytest.mark.parametrize(
+    'descriptor',
+    [
+        struct.pack('>4B2I', 4, 4, 5, 0, 0, 0x40),  # A format the decoder does not know.
+        struct.pack('>4B2I', 100, 100, 1, 0, 0, 0x40),  # Pixels that run past the pool.
+        struct.pack('>4B2I', 4, 4, 1, 0, 0, 0x1000),  # A palette that runs past the pool.
+    ])
+def test_decode_level_textures_skips_an_unusable_descriptor(mocker: MockerFixture,
+                                                            descriptor: bytes) -> None:
+    def fake(_data: bytes, start: int, _size: int, **_kw: object) -> bytes:
+        return {_BASE + _TEXTURES: descriptor, _BASE + _PIXELS: bytes(0x240)}[start]
+
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', side_effect=fake)
+    assert decode_level_textures(bytes(_rom()), _BASE, XG1) == []
 
 
 def test_read_header_reads_the_region_fields() -> None:
@@ -156,6 +285,22 @@ def _bank(*, palette: bool = True) -> bytes:
 
 def test_read_bank_descriptors_stops_at_the_first_bad_record() -> None:
     assert read_bank_descriptors(_bank()) == [(0x20, 4, 4), (0x30, 4, 4)]
+
+
+def test_read_bank_descriptors_of_an_empty_table() -> None:
+    assert read_bank_descriptors(b'\x00' * 8) == []
+
+
+def test_read_texture_bank_without_a_palette(mocker: MockerFixture) -> None:
+    # The palette offset does not close the bank, so no palette is read, and the sole record's
+    # pixels run past the end and are skipped.
+    bank = bytearray(0x30)
+    struct.pack_into('>I', bank, 0, 0x99)
+    struct.pack_into('>IHH', bank, 8, 40, 4, 4)
+    rom = bytearray(0x1000)
+    struct.pack_into('>I', rom, 0x100, 0x30)
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', return_value=bytes(bank))
+    assert read_texture_bank(bytes(rom), 0x100) == []
 
 
 def test_read_texture_bank_decodes_every_record(mocker: MockerFixture) -> None:

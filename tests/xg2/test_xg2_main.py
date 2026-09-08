@@ -208,6 +208,21 @@ def test_xg2_to_glb(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) ->
     assert list(out.glob('anim_*.glb'))
 
 
+def test_xg2_to_glb_skips_an_empty_clip(runner: CliRunner, tmp_path: Path,
+                                        mocker: MockerFixture) -> None:
+    rom = tmp_path / 'game.z64'
+    rom.write_bytes(_rom())
+    empty = b'BMC\x80' + b'walk.asf'.ljust(12, b'\x00') + struct.pack('>4H', 0, 0, 0x7800, 0)
+    mocker.patch('dade.xg2.main.xg2_level_bases', return_value=[])
+    mocker.patch('dade.xg2.main.iter_n64_model_blobs', return_value=[('mfs/empty', empty)])
+    mocker.patch('dade.xg2.main.parse_skeleton', return_value=None)
+    mocker.patch('dade.xg2.main.collect_textures', return_value=[])
+    out = tmp_path / 'glb'
+    result = runner.invoke(cli, ['xg2-to-glb', str(rom), str(out)])
+    assert result.exit_code == 0
+    assert '0 animations' in result.output
+
+
 def test_xg1_to_glb_when_a_container_draws_nothing(runner: CliRunner, tmp_path: Path,
                                                    mocker: MockerFixture) -> None:
     rom = tmp_path / 'game.z64'
