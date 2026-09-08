@@ -664,6 +664,21 @@ def test_build_glb_paces_a_clip_by_the_times_the_curve_states(
     assert _at(times, travel, 0.75) < 0.4
 
 
+@pytest.mark.parametrize(('times', 'values'), [
+    ((0.0,), (0.0,)),
+    ((0.0, 1.0), (0.0, 1.0)),
+    (tuple(index / 25 for index in range(26)), tuple(index / 25 for index in range(26))),
+])
+def test_build_glb_resamples_a_curve_of_any_length(make_ldb2: Callable[..., bytes],
+                                                   times: tuple[float, ...],
+                                                   values: tuple[float, ...]) -> None:
+    from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
+    clip = _ldb2_animation(times=times, values=values)
+    level = read_level2(
+        make_ldb2(machines=(_ldb2_machine(),), props=(_ldb2_prop(animations=(clip,)),)))
+    assert build_glb(level)[:4] == GLB_MAGIC
+
+
 def _at(times: list[float], values: list[float], when: float) -> float:
     for index in range(1, len(times)):
         if times[index] >= when:
