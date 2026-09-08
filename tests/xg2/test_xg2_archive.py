@@ -13,7 +13,7 @@ from dade.xg2.archive import (
     parse_archive,
     try_sized_lzss,
 )
-from dade.xg2.lzhuf import LzhufUnavailableError
+from dade.xg2.lzhuf import LzhufError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -59,10 +59,20 @@ def test_decode_entry_lzss(make_archive: Callable[..., bytes], make_lzss: Callab
     assert decode_entry(blob, entry) == b'hello world'
 
 
-def test_decode_entry_lzhuf_raises(make_archive: Callable[..., bytes]) -> None:
+def test_decode_entry_lzhuf(make_archive: Callable[..., bytes]) -> None:
+    # LZHUF carries no checksum and no end marker, so any input decodes to the declared size. What
+    # this pins down is that an LHUF entry is decoded rather than refused.
     blob = make_archive([(b'LHUF', b'payload')])
-    with pytest.raises(LzhufUnavailableError):
-        decode_entry(blob, parse_archive(blob)[0])
+    assert len(decode_entry(blob, parse_archive(blob)[0])) == len(b'payload')
+
+
+def test_decode_entry_lzhuf_raises_when_the_stream_runs_out(
+        make_archive: Callable[..., bytes]) -> None:
+    blob = make_archive([(b'LHUF', b'\x00')])
+    entry = parse_archive(blob)[0]
+    entry['decompressed_size'] = 4096  # Far more than one byte of input can code.
+    with pytest.raises(LzhufError):
+        decode_entry(blob, entry)
 
 
 def test_decode_entry_rejects_unknown_codec(make_archive: Callable[..., bytes]) -> None:
@@ -71,18 +81,20 @@ def test_decode_entry_rejects_unknown_codec(make_archive: Callable[..., bytes]) 
         decode_entry(blob, parse_archive(blob)[0])
 
 
-def test_decode_entries_skips_lzhuf(make_archive: Callable[..., bytes]) -> None:
-    blob = make_archive([(b'COPY', b'kept'), (b'LHUF', b'lost'), (b'COPY', b'also')])
+def test_decode_entries_no_longer_skips_lzhuf(make_archive: Callable[..., bytes]) -> None:
+    blob = make_archive([(b'COPY', b'kept'), (b'LHUF', b'also'), (b'COPY', b'third')])
     decoded = [(e['index'], b) for e, b in decode_entries(blob, parse_archive(blob))]
-    assert decoded == [(0, b'kept'), (2, b'also')]
+    assert [index for index, _ in decoded] == [0, 1, 2]
+    assert decoded[0][1] == b'kept'
+    assert decoded[2][1] == b'third'
 
 
 def test_decode_entries_logs_the_skip(make_archive: Callable[..., bytes],
                                       caplog: pytest.LogCaptureFixture) -> None:
-    blob = make_archive([(b'LHUF', b'lost')])
+    blob = make_archive([(b'ZZZZ', b'lost')])
     with caplog.at_level('WARNING'):
         assert list(decode_entries(blob, parse_archive(blob))) == []
-    assert 'LHUF codec is not implemented' in caplog.text
+    assert 'Skipping undecodable entry' in caplog.text
 
 
 def test_decode_entries_skips_undecodable(make_archive: Callable[..., bytes]) -> None:

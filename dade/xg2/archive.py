@@ -24,7 +24,7 @@ import struct
 
 from dade.common.lz import decompress_lzss0
 
-from .lzhuf import LzhufUnavailableError, decompress_lzhuf
+from .lzhuf import decompress_lzhuf
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -112,7 +112,7 @@ def decode_entry(data: bytes, entry: ArchEntry) -> bytes:
     -------
     bytes
         The decoded entry, truncated to its declared decompressed size. A
-        :py:class:`~dade.xg2.lzhuf.LzhufUnavailableError` propagates for an ``LHUF`` entry.
+        :py:class:`~dade.xg2.lzhuf.LzhufError` propagates for a truncated ``LHUF`` entry.
 
     Raises
     ------
@@ -142,9 +142,6 @@ def _try_decode(data: bytes, entry: ArchEntry) -> bytes | None:
     """
     try:
         return decode_entry(data, entry)
-    except LzhufUnavailableError:
-        log.warning('Skipping entry %d at 0x%X: the LHUF codec is not implemented.', entry['index'],
-                    entry['absolute'])
     except (IndexError, ValueError, struct.error):
         log.warning('Skipping undecodable entry %d at 0x%X.', entry['index'], entry['absolute'])
     return None
