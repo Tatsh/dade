@@ -1,52 +1,92 @@
 r"""
-The ``BMC`` named sound effect container used by the Extreme-G XG2 ``mfs`` archive.
+The ``BMC`` skeletal animation container in the Extreme-G XG2 ``mfs`` archive.
 
-Layout: the magic ``BMC\\x80``, a twelve-byte NUL-padded name, then a 0x18-byte header followed by
-the samples. The audio is 8-bit differential PCM where each byte is a signed delta added to an
-accumulator that saturates at the 8-bit signed bounds; the clamp is what keeps the signal bounded
-rather than wrapping into noise.
+Every ``BMC`` blob in the ROM is named after a skeleton file: ``man2sk.asf`` thirteen times,
+``ivask.bsf`` three times, and ``albeanosk.bs`` once. ``.asf`` is Acclaim's own Skeleton File
+format, and Iva and Albeano are two of the game's riders, who also appear as ``bulk/data/iva.cmp``
+and ``bulk/data/albeano.cmp`` in the Windows executable. These are motion clips, not sounds.
 
-The playback rate is not stored and has not been confirmed against the game, so callers supply it.
+Layout: the magic ``BMC\\x80``, a twelve-byte NUL-padded name, the frame count twice, a constant
+``0x7800``, and a channel count that is always 67 -- the degrees of freedom of a human skeleton, a
+root with six and the joints with one to three each. The payload is then one length-prefixed curve
+per channel, each holding one value per frame:
+
+* ``[u16 length][s16 low][s16 high][frames x u8]`` -- eight-bit, rescaled from *low* to *high*;
+* ``[u16 length][frames x s16]`` -- stored outright, when eight bits will not do.
+
+Which one a record is follows from its length, and records are padded to an even boundary. The
+final record carries a length of zero and simply runs to the end of the payload, which is where
+that padding is dropped.
+
+Verified against the ROM: all seventeen clips parse to exactly 67 channels and consume every byte.
+That is the check that matters, because a wrong record size desynchronises the rest of the clip.
 """
 from __future__ import annotations
 
 from typing import NamedTuple
+import struct
 
-__all__ = ('BMC_HEADER_SIZE', 'BMC_MAGIC', 'DEFAULT_SAMPLE_RATE', 'BmcSound', 'decode_bmc_dpcm',
-           'parse_bmc')
+from dade.common.exceptions import SelfCheckFailed
+
+__all__ = ('BMC_HEADER_SIZE', 'BMC_MAGIC', 'CHANNEL_HEADER_SIZE', 'BmcClip', 'parse_bmc')
 
 BMC_MAGIC = b'BMC\x80'
-"""Magic introducing a ``BMC`` sound.
+"""Magic introducing a ``BMC`` clip.
 
 :meta hide-value:
 """
 BMC_HEADER_SIZE = 0x18
-"""Size of the header preceding the samples.
+"""Size of the header preceding the channels.
 
 :meta hide-value:
 """
-_MAX_POSITIVE = 127
-_MIN_SAMPLE = -128
-
-DEFAULT_SAMPLE_RATE = 22050
-"""Assumed playback rate in Hz. This has not been confirmed against the game.
+CHANNEL_HEADER_SIZE = 6
+"""Bytes an eight-bit channel spends on its length and its two bounds.
 
 :meta hide-value:
 """
 
+_QUANTISED_STEPS = 255.0
+_NAME_SIZE = 12
+_LENGTH_SIZE = 2
 
-class BmcSound(NamedTuple):
-    """A parsed ``BMC`` sound effect."""
+
+class BmcClip(NamedTuple):
+    """A parsed ``BMC`` motion clip."""
 
     name: str
-    """Name stored in the header, which may be empty."""
-    data: bytes
-    """The differential PCM payload."""
+    """Skeleton the clip animates, as stored in the header."""
+    frames: int
+    """Number of frames, which every channel has one value per."""
+    channels: list[list[float]]
+    """One curve per degree of freedom, each *frames* values long."""
 
 
-def parse_bmc(blob: bytes) -> BmcSound | None:
+def _channel(payload: bytes, at: int, size: int, frames: int) -> tuple[list[float], bool]:
     """
-    Parse a ``BMC`` container.
+    Read one channel's curve.
+
+    Returns
+    -------
+    tuple[list[float], bool]
+        The values, and whether the record was well formed.
+    """
+    quantised = at + CHANNEL_HEADER_SIZE + frames <= at + size
+    if quantised:
+        if at + CHANNEL_HEADER_SIZE + frames > len(payload):
+            return [], False
+        low, high = struct.unpack_from('>2h', payload, at + _LENGTH_SIZE)
+        body = payload[at + CHANNEL_HEADER_SIZE:at + CHANNEL_HEADER_SIZE + frames]
+        span = (high - low) / _QUANTISED_STEPS
+        return [low + value * span for value in body], True
+    if at + _LENGTH_SIZE + frames * 2 > len(payload):
+        return [], False
+    return [float(v) for v in struct.unpack_from(f'>{frames}h', payload, at + _LENGTH_SIZE)], True
+
+
+def parse_bmc(blob: bytes) -> BmcClip | None:
+    """
+    Parse a ``BMC`` motion clip.
 
     Parameters
     ----------
@@ -55,34 +95,80 @@ def parse_bmc(blob: bytes) -> BmcSound | None:
 
     Returns
     -------
-    BmcSound | None
-        The parsed sound, or ``None`` when *blob* is not a ``BMC`` container.
+    BmcClip | None
+        The parsed clip, or :py:obj:`None` when *blob* is not one or its channels do not add up.
     """
     if blob[:4] != BMC_MAGIC:
         return None
-    name = blob[4:16].split(b'\x00')[0].decode('ascii', 'replace')
-    return BmcSound(name, bytes(blob[BMC_HEADER_SIZE:]))
+    name = blob[4:4 + _NAME_SIZE].split(b'\x00')[0].decode('ascii', 'replace')
+    frames, _repeat, _constant, _channels = struct.unpack_from('>4H', blob, 0x10)
+    payload = blob[BMC_HEADER_SIZE:]
+    if not frames:
+        return BmcClip(name, 0, [])
+    channels: list[list[float]] = []
+    at = 0
+    while at + _LENGTH_SIZE <= len(payload):
+        length = struct.unpack_from('>H', payload, at)[0]
+        size = (len(payload) - at) if length == 0 else length
+        if size < CHANNEL_HEADER_SIZE or at + size > len(payload):
+            return None
+        values, ok = _channel(payload, at, size, frames)
+        if not ok:
+            return None
+        channels.append(values)
+        at += size
+    return BmcClip(name, frames, channels)
 
 
-def decode_bmc_dpcm(data: bytes) -> list[int]:
+_DEMO_FRAMES = 4
+_DEMO_CHANNELS = 2
+_DEMO_LOW = -100
+_DEMO_HIGH = 100
+
+
+def demo() -> None:
     """
-    Decode clamped 8-bit differential PCM to 16-bit samples.
+    Check both channel encodings round-trip through the parser.
 
-    Parameters
-    ----------
-    data : bytes
-        The differential payload, one signed delta per byte.
-
-    Returns
-    -------
-    list[int]
-        Signed 16-bit samples, one per input byte.
+    Raises
+    ------
+    SelfCheckFailed
+        If a clip built here does not read back the way it was written.
     """
-    out = []
-    accumulator = 0
-    for byte in data:
-        accumulator += byte - 256 if byte > _MAX_POSITIVE else byte
-        accumulator = (_MIN_SAMPLE if accumulator < _MIN_SAMPLE else min(
-            accumulator, _MAX_POSITIVE))
-        out.append(accumulator * 256)
-    return out
+    header = BMC_MAGIC + b'walk.asf'.ljust(_NAME_SIZE, b'\x00')
+    header += struct.pack('>4H', _DEMO_FRAMES, _DEMO_FRAMES, 0x7800, _DEMO_CHANNELS)
+    # An eight-bit channel spanning 0 to 255 maps its bytes straight onto that range.
+    first = struct.pack('>H2h', CHANNEL_HEADER_SIZE + _DEMO_FRAMES, 0, 255)
+    first += bytes((0, 85, 170, 255))
+    # The last channel carries a zero length and runs to the end.
+    second = struct.pack('>H2h', 0, _DEMO_LOW, _DEMO_HIGH) + bytes((0, 128, 255, 0))
+    clip = parse_bmc(header + first + second)
+    if clip is None:
+        msg = 'A well-formed clip did not parse.'
+        raise SelfCheckFailed(msg)
+    if clip.name != 'walk.asf':
+        msg = f'Clip name is {clip.name!r}, expected walk.asf.'
+        raise SelfCheckFailed(msg)
+    if clip.frames != _DEMO_FRAMES:
+        msg = f'Clip has {clip.frames} frames, expected {_DEMO_FRAMES}.'
+        raise SelfCheckFailed(msg)
+    if len(clip.channels) != _DEMO_CHANNELS:
+        msg = f'Clip has {len(clip.channels)} channels, expected {_DEMO_CHANNELS}.'
+        raise SelfCheckFailed(msg)
+    if [round(v) for v in clip.channels[0]] != [0, 85, 170, 255]:
+        msg = f'Eight-bit channel decoded as {clip.channels[0]}, expected 0, 85, 170, 255.'
+        raise SelfCheckFailed(msg)
+    if round(clip.channels[1][0]) != _DEMO_LOW:
+        msg = f'Scaled channel starts at {clip.channels[1][0]}, expected {_DEMO_LOW}.'
+        raise SelfCheckFailed(msg)
+    if round(clip.channels[1][2]) != _DEMO_HIGH:
+        msg = f'Scaled channel peaks at {clip.channels[1][2]}, expected {_DEMO_HIGH}.'
+        raise SelfCheckFailed(msg)
+    if parse_bmc(b'shaw' + b'\x00' * 32) is not None:
+        msg = 'A file with the wrong magic parsed as a clip.'
+        raise SelfCheckFailed(msg)
+    print('bmc: both channel encodings decode.')  # ruff: ignore[print]
+
+
+if __name__ == '__main__':
+    demo()

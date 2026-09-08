@@ -86,7 +86,7 @@ def test_decode_rgba16_leaves_missing_texels_transparent() -> None:
     assert decode_rgba16(b'', 0, 2, 1, 4) == b'\x00' * 8
 
 
-def test_decode_i8_is_opaque_grey() -> None:
+def test_decode_i8_is_opaque_gray() -> None:
     assert decode_i8(b'\x00\x80', 2, 1) == b'\x00\x00\x00\xff\x80\x80\x80\xff'
 
 

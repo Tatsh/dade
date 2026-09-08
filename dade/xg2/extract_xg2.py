@@ -20,7 +20,7 @@ import struct
 from .albank import parse_bank
 from .alcseq import to_midi
 from .archive import decode_entries, parse_archive
-from .bmc import DEFAULT_SAMPLE_RATE, decode_bmc_dpcm, parse_bmc
+from .bmc import parse_bmc
 from .fluidsynth import render_directory
 from .images import write_png
 from .models import collect_textures
@@ -138,23 +138,20 @@ def _extract_shaw(blob: bytes, directory: Path) -> int:
     return dumped
 
 
-def _extract_mfs(rom: bytes, out: Path, *, convert: bool, rate: int) -> dict[str, int]:
+def _extract_mfs(rom: bytes, out: Path) -> dict[str, int]:
     root = out / 'mfs'
     root.mkdir(parents=True, exist_ok=True)
-    counts = {'bmc': 0, 'shaw': 0, 'other': 0, 'wav': 0}
+    counts = {'bmc': 0, 'shaw': 0, 'other': 0}
     manifest = ['# index  rom_offset  codec  kind   detail']
     for entry, blob in decode_entries(rom, parse_archive(rom, XG2_MFS_ARCHIVE)):
         index = entry['index']
-        sound = parse_bmc(blob)
-        if sound is not None:
+        clip = parse_bmc(blob)
+        if clip is not None:
             counts['bmc'] += 1
-            stem = f'aud{index:03d}_{_sanitise(sound.name, index)}'
+            stem = f'anim{index:03d}_{_sanitise(clip.name, index)}'
             (root / f'{stem}.bin').write_bytes(blob)
-            if convert and sound.data:
-                write_wav16(root / f'{stem}.wav', decode_bmc_dpcm(sound.data), rate)
-                counts['wav'] += 1
             manifest.append(f'{index:5d}  0x{entry["absolute"]:07X}  {entry["codec"]:<5s}  BMC    '
-                            f'{sound.name!r} pcm={len(sound.data)}')
+                            f'{clip.name!r} {len(clip.channels)} channels x {clip.frames} frames')
         elif blob[:4] == SHAW_MAGIC:
             counts['shaw'] += 1
             dumped = _extract_shaw(blob, root / f'shaw{index:03d}')
@@ -221,7 +218,6 @@ def run(rom: bytes,
         out: Path,
         *,
         convert: bool = False,
-        rate: int = DEFAULT_SAMPLE_RATE,
         fluidsynth_path: Path | None = None) -> dict[str, int]:
     """
     Extract every Extreme-G XG2 asset into an output directory.
@@ -235,8 +231,6 @@ def run(rom: bytes,
     convert : bool
         Also decode audio to WAV, build SoundFonts, decode textures to PNG, and render the
         sequences when FluidSynth is available.
-    rate : int
-        Playback rate assumed for the ``BMC`` sound effects.
     fluidsynth_path : pathlib.Path | None
         Explicit path to the FluidSynth binary.
 
@@ -248,12 +242,12 @@ def run(rom: bytes,
     out.mkdir(parents=True, exist_ok=True)
     sequences, midis = _extract_sequences(rom, out, convert=convert)
     wavs, soundfonts = _extract_soundbanks(rom, out, convert=convert)
-    mfs = _extract_mfs(rom, out, convert=convert, rate=rate)
+    mfs = _extract_mfs(rom, out)
     counts = {
         'levels': _extract_levels(rom, out),
         'sequences': sequences,
         'midis': midis,
-        'wavs': wavs + mfs['wav'],
+        'wavs': wavs,
         'soundfonts': soundfonts,
         'bmc': mfs['bmc'],
         'shaw': mfs['shaw'],

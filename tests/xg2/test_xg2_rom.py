@@ -1,6 +1,7 @@
 """Tests for :mod:`dade.xg2.rom`."""
 from __future__ import annotations
 
+from array import array
 from typing import TYPE_CHECKING
 import struct
 
@@ -20,8 +21,10 @@ from dade.xg2.offsets import (
 from dade.xg2.rom import (
     BootSanityError,
     game_code,
+    normalize_rom,
     read_u32,
     xg1_boot,
+    xg1_level_banks,
     xg1_level_bases,
     xg1_texture_banks,
     xg2_boot,
@@ -35,6 +38,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 _MAX_LEVELS = 48
+# Pinned here rather than imported, so the test is an independent oracle for the header magic.
+_Z64_MAGIC = b'\x80\x37\x12\x40'
+_XG1_LEVELS = (XG1_LEVEL_TEXTURE_BANK_TABLE - XG1_LEVEL_TABLE) // 4
 
 
 def _xg1_boot_rom(make_lzss: Callable[[bytes], bytes],
@@ -155,19 +161,28 @@ def test_xg1_level_bases_stops_outside_the_range() -> None:
     assert xg1_level_bases(bytes(rom)) == [0x30000]
 
 
-def test_xg1_level_bases_stops_at_the_table_limit() -> None:
+def test_xg1_level_bases_stops_where_the_bank_table_begins() -> None:
+    """The two tables are adjacent, so reading past the level table yields bank offsets."""
     rom = bytearray(0x10000)
     for i in range(_MAX_LEVELS):
         struct.pack_into('>I', rom, XG1_LEVEL_TABLE + i * 4, 0x30000 + i * 0x100)
-    assert len(xg1_level_bases(bytes(rom))) == _MAX_LEVELS
+    assert len(xg1_level_bases(bytes(rom))) == _XG1_LEVELS
 
 
-def test_xg1_texture_banks_stops_at_the_table_limit() -> None:
+def test_xg1_texture_banks_covers_every_listed_level() -> None:
     rom = bytearray(0x10000)
     struct.pack_into('>I', rom, XG1_GLOBAL_TEXTURE_BANK_POINTER, 0x300000)
-    for i in range(_MAX_LEVELS):
+    for i in range(_XG1_LEVELS):
+        struct.pack_into('>I', rom, XG1_LEVEL_TABLE + i * 4, 0x30000 + i * 0x100)
         struct.pack_into('>I', rom, XG1_LEVEL_TEXTURE_BANK_TABLE + i * 4, 0x400000 + i * 0x100)
-    assert len(xg1_texture_banks(bytes(rom))) == _MAX_LEVELS + 1
+    assert len(xg1_texture_banks(bytes(rom))) == _XG1_LEVELS + 1
+
+
+def test_xg1_level_banks_maps_each_level_to_its_bank() -> None:
+    rom = bytearray(0x10000)
+    struct.pack_into('>2I', rom, XG1_LEVEL_TABLE, 0x30000, 0x40000)
+    struct.pack_into('>2I', rom, XG1_LEVEL_TEXTURE_BANK_TABLE, 0x400000, 0x410000)
+    assert xg1_level_banks(bytes(rom)) == {0x30000: 0x400000, 0x40000: 0x410000}
 
 
 def test_xg1_texture_banks_names_the_global_bank(make_xg1_rom: Callable[..., bytes]) -> None:
@@ -207,3 +222,26 @@ def test_xg2_resource_archives_rejects_an_implausible_header(
     rom = bytearray(make_xg2_rom())
     struct.pack_into('>I', rom, XG2_MODEL_ARCHIVE + 0x0C, 0)  # Blank the codec tag.
     assert XG2_MODEL_ARCHIVE not in xg2_resource_archives(bytes(rom))
+
+
+def _swapped(data: bytes, code: str) -> bytes:
+    words = array(code, data)
+    words.byteswap()
+    return words.tobytes()
+
+
+def test_normalize_rom_passes_a_big_endian_image_through() -> None:
+    rom = _Z64_MAGIC + bytes(0x3C)
+    assert normalize_rom(rom) is rom
+
+
+@pytest.mark.parametrize('code', ['H', 'I'])
+def test_normalize_rom_reorders_the_other_two_layouts(code: str) -> None:
+    """A .v64 has each halfword swapped and a .n64 each word reversed."""
+    expected = _Z64_MAGIC + bytes(range(0x3C))
+    assert normalize_rom(_swapped(expected, code)) == expected
+
+
+def test_normalize_rom_leaves_a_foreign_file_alone() -> None:
+    data = b'MZ\x90\x00' + bytes(60)
+    assert normalize_rom(data) == data

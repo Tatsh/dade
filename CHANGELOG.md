@@ -26,6 +26,71 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `--base` sub-path.
 - `dade rbplus dump-chart --flip` draws the chart with time running downward, the way the notes
   fall down the screen.
+- `dade xg2 xg1-to-glb`, `dade xg2 xg2-to-glb`, and `dade xg2 xg2-pc-to-glb` convert Extreme-G and
+  Extreme-G 2 levels, models, and track objects to binary glTF. A level is not a display list: it
+  is an LZHUF-compressed bytecode that the loader at `0x8004FDB8` walks once to build the display
+  lists the hardware then draws, so the geometry comes out by running the same interpreter,
+  dispatched through the jump table at `0x8004BA98`. Every opcode is decoded whether or not it
+  carries geometry, since each consumes a fixed number of bytes and skipping one by the wrong
+  amount desynchronises everything after it. Extreme-G 2's dialect has twenty opcodes rather than
+  fifteen and a visibility byte in front of every triangle, and the Windows port's tracks are the
+  console's levels with their multi-byte fields swapped, so one interpreter serves all three
+  builds. Models are ordinary display lists and are read straight off. A track's power-up pads and
+  flame columns are placed from the entity stream the track region's `+0x40` pointer names, their
+  models read from a second code segment the ROM keeps compressed. The port's bikes are not
+  converted: they take their vertices from segment 8, which the engine fills at run time, so those
+  vertices are not in the game's files at all.
+- `dade xg2 xg2-to-glb` also writes each `BMC` motion clip as an animation. The skeleton they drive
+  has no file of its own -- it is a region inside every rider model, named by the seventh of the
+  eight segment pointers in the model's header -- and its 27 bones carry 61 degrees of freedom
+  which, with the root's six, are exactly the 67 curves every clip has. A curve is a binary angle,
+  a full turn to 65536, which anatomy confirms rather than assumption: across the seventeen clips
+  that scale bends the knees 130 and 122 degrees and the elbows 136 and 145, against roughly 135
+  and 150 for a real one.
+- The LZHUF (`LHUF`/`HUFF`) codec is implemented, so the archive entries that used to be dropped
+  now decode. It was a placeholder that raised, and every `LHUF` entry was logged and skipped:
+  `dade xg2 extract-xg1` wrote its level containers as raw compressed slices and skipped the
+  texture banks altogether, and both now come out decoded, the banks as PNG. It is the Okumura and
+  Yoshizaki lineage, with the ring buffer zero-filled rather than space-filled and the decompressed
+  size taken from the archive header rather than from a prefix on the stream, both as the game's
+  own decompressor at `FUN_80057698` does it.
+- The `dade xg2` commands that take the Windows port's `DATA1` directory -- `extract-xg2-pc`,
+  `xg2-pc-to-glb`, and `montage-pc` -- now also accept the disc it came on, as an ISO image or as
+  the `.cue` or `.bin` of a cue/bin pair, which is extracted to a temporary directory and read from
+  there. File names are matched without regard to case, since ISO 9660 stores them upper-cased
+  where an installation holds them lower-cased.
+- An N64 ROM is accepted in any of the three byte orders, and is put into big-endian order before
+  anything reads it. A `.v64` has each halfword swapped and an `.n64` each word reversed, and since
+  every offset in the package is a big-endian `.z64` offset, a wrongly ordered image would not have
+  failed loudly -- it would have decompressed into noise.
+
+### Changed
+
+- The `BMC` entries in the Extreme-G 2 `mfs` archive are skeletal motion clips rather than sound
+  effects, and are no longer decoded to WAV as eight-bit differential PCM. Each is named after a
+  skeleton file -- `man2sk.asf` thirteen times, `ivask.bsf` three times, and `albeanosk.bs` once --
+  and all seventeen parse to exactly 67 channels and consume every byte. They are written out as
+  they stand, described in the manifest by their channel and frame counts, and converted to
+  animations by `dade xg2 xg2-to-glb`. Files in the `mfs` output are named `anim%03d_*` rather than
+  `aud%03d_*`.
+- `dade sopranos unpack --convert` takes a texture's blend mode from byte `0x1B` of its own record
+  rather than guessing it from the texture's file name, so cutout, blended, additive, and
+  subtractive surfaces are recognised outright. The byte is what the engine turns into a surface's
+  GS `TEST_1` and `ALPHA_1` pair, and across all 133 levels it marks additive exactly the 171
+  `add_` textures and subtractive exactly the 262 `sub_` ones, with nothing else in either. A
+  `MASK` material now carries the console's own alpha cutoff, `ATST` `GEQUAL` with `AREF` 8 on the
+  PS2's 0..128 alpha scale.
+- A Sopranos surface whose cooked mode leaves the question open is drawn the way its own render
+  pass is drawn. The level partitions its material records between passes with its own prefix sums,
+  the engine blends passes 2 and 6 and draws every other one opaque, and a level fills only passes
+  1 and 2, which makes pass 2 the decal pass: shadows, stains, ivy, and road detail. The baked
+  shadow decals are therefore no longer picked out by their all-black vertex colour and given a
+  black material at a fixed partial alpha.
+- A Sopranos wardrobe piece is grouped the way a character wears it. An `_s0` shading suffix and a
+  `_Face_0` suffix each mark a variant of one piece rather than a piece of its own, so
+  `*HEAD8_s0_Face_0` and `*HEAD9_Face_0` are one head rather than two worn at once. Headwear and
+  eyewear each answer to one key however the pieces are named, so a dock hand's bandana, skull cap,
+  and cap are one hat rather than three stacked on one head.
 
 ### Fixed
 
@@ -49,6 +114,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dade rbplus dump-chart --image` no longer writes an HTML page; the suffix now names
   `dade rbplus site`, which builds a browsable site for a whole collection instead. `.png` and
   `.svg` are unchanged.
+- `dade xg2 extract-xg2 -r/--rate` is gone, since the `BMC` entries whose playback rate it set are
+  not audio.
 
 ## [0.0.2] - 2026-08-26
 

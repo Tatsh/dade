@@ -67,16 +67,16 @@ def test_run_writes_the_master_directory(make_xg1_rom: Callable[..., bytes],
     assert (tmp_path / 'dir' / 'directory_0002000.bin').stat().st_size == 0x100
 
 
-def test_run_keeps_compressed_level_slices(make_xg1_rom: Callable[..., bytes],
-                                           tmp_path: Path) -> None:
+def test_run_decompresses_the_level_sub_blobs(make_xg1_rom: Callable[..., bytes],
+                                              tmp_path: Path) -> None:
     counts = run(make_xg1_rom(), tmp_path)
     assert counts['containers'] == len(XG1_LEVEL_BASES)
     level = tmp_path / 'levels' / f'00_{XG1_LEVEL_BASES[0]:07X}'
-    assert (level / 't1_desc.lzhuf.raw').is_file()
-    assert (level / 'r2.lzhuf.raw').is_file()
-    assert not (level / 'r3.lzhuf.raw').exists()
-    assert not (level / 't4.lzhuf.raw').exists()
-    assert 'LZHUF is not implemented' in (tmp_path / 'extract.log').read_text()
+    assert (level / 't1_desc.bin').is_file()
+    assert (level / 'r2.bin').is_file()
+    # A raw slice is kept only for a stream that runs out before its declared size, which none of
+    # these do.
+    assert not list(level.glob('*.lzhuf.raw'))
 
 
 def test_run_writes_the_object_table(make_xg1_rom: Callable[..., bytes], tmp_path: Path) -> None:
@@ -111,28 +111,27 @@ def test_run_records_a_skipped_texture_bank(make_xg1_rom: Callable[..., bytes],
 
 def test_run_writes_texture_bank_pngs(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                       mocker: MockerFixture) -> None:
-    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', return_value=_texture_bank())
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', return_value=_texture_bank())
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 4
     assert (tmp_path / 'textures' / 'global' / 'tex000_4x4.png').is_file()
 
 
-def test_run_falls_back_to_greyscale_without_a_palette(make_xg1_rom: Callable[..., bytes],
+def test_run_falls_back_to_grayscale_without_a_palette(make_xg1_rom: Callable[..., bytes],
                                                        tmp_path: Path,
                                                        mocker: MockerFixture) -> None:
-    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', return_value=_texture_bank(palette=False))
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', return_value=_texture_bank(palette=False))
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 4
 
 
 def test_run_skips_a_truncated_texture(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                        mocker: MockerFixture) -> None:
-    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf',
-                 return_value=_texture_bank(truncated=True))
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', return_value=_texture_bank(truncated=True))
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 2
 
 
 def test_run_records_a_bank_without_descriptors(make_xg1_rom: Callable[..., bytes], tmp_path: Path,
                                                 mocker: MockerFixture) -> None:
-    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', return_value=b'\x00' * 0x100)
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', return_value=b'\x00' * 0x100)
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 0
     assert 'no valid descriptor table' in (tmp_path / 'extract.log').read_text()
 
@@ -152,7 +151,7 @@ def test_run_writes_a_bank_whose_table_runs_to_the_end(make_xg1_rom: Callable[..
                                                        mocker: MockerFixture) -> None:
     bank = bytearray(0x10)
     struct.pack_into('>IHH', bank, 8, 0x0C, 1, 1)
-    mocker.patch('dade.xg2.extract_xg1.decompress_lzhuf', return_value=bytes(bank))
+    mocker.patch('dade.xg2.xg1_level.decompress_lzhuf', return_value=bytes(bank))
     assert run(make_xg1_rom(), tmp_path, convert=True)['textures'] == 0
 
 

@@ -57,8 +57,7 @@ def test_parse_dl_textures_decodes_a_four_bit_tile(make_dl_model: Callable[..., 
     assert [(t.pixel_format, t.width, t.height) for t in textures] == [('ci4', 8, 8)]
 
 
-def test_parse_dl_textures_decodes_a_direct_colour_tile(
-        make_dl_model: Callable[..., bytes]) -> None:
+def test_parse_dl_textures_decodes_a_direct_color_tile(make_dl_model: Callable[..., bytes]) -> None:
     commands = (_settile(_SIZ_RGBA16), _settimg(_PIXELS), _settilesize(8, 8))
     textures = parse_dl_textures(make_dl_model(commands))
     assert [(t.pixel_format, t.width, t.height) for t in textures] == [('rgba16', 8, 8)]

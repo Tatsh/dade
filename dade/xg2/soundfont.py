@@ -43,7 +43,7 @@ _GEN_TUNE = 52
 _GEN_SAMPLE_ID = 53
 _GEN_SAMPLE_MODES = 54
 _GEN_ROOT_KEY = 58
-_CENTRE_PAN = 64
+_CENTER_PAN = 64
 _MAX_VOLUME = 127
 _MAX_KEY = 127
 
@@ -86,8 +86,8 @@ def _zone_generators(zone: Sf2Zone) -> bytes:
     out += _generator(_GEN_ROOT_KEY, zone['root'])
     if zone['detune']:
         out += _generator(_GEN_TUNE, zone['detune'])
-    if zone['pan'] != _CENTRE_PAN:
-        out += _generator(_GEN_PAN, int((zone['pan'] - _CENTRE_PAN) / 64.0 * 500))
+    if zone['pan'] != _CENTER_PAN:
+        out += _generator(_GEN_PAN, int((zone['pan'] - _CENTER_PAN) / 64.0 * 500))
     attenuation = int((_MAX_VOLUME - zone['volume']) * 0.375 * 10)
     if attenuation:
         out += _generator(_GEN_ATTENUATION, attenuation)

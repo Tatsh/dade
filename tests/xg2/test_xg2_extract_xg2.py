@@ -89,7 +89,8 @@ def test_run_writes_the_raw_samples(make_xg2_rom: Callable[..., bytes], tmp_path
 
 def test_run_converts_the_samples(make_xg2_rom: Callable[..., bytes], tmp_path: Path) -> None:
     counts = run(make_xg2_rom(), tmp_path, convert=True)
-    assert counts['wavs'] == len(XG2_SOUNDBANKS) + 1
+    # Only the sound banks produce WAV now; the BMC entries turned out to be motion clips.
+    assert counts['wavs'] == len(XG2_SOUNDBANKS)
     assert counts['soundfonts'] == 1
     assert (tmp_path / 'audio' / f'bank_{XG2_MELODIC_BANK:07X}.sf2').read_bytes()[:4] == b'RIFF'
 
@@ -129,16 +130,16 @@ def test_run_sorts_the_mfs_entries_by_kind(make_xg2_rom: Callable[..., bytes],
     counts = run(make_xg2_rom(), tmp_path)
     assert (counts['bmc'], counts['shaw'], counts['other']) == (2, 2, 1)
     root = tmp_path / 'mfs'
-    assert (root / 'aud000_engine.bin').is_file()
-    assert (root / 'aud003_unnamed_003.bin').is_file()
+    assert (root / 'anim000_engine.bin').is_file()
+    assert (root / 'anim003_unnamed_003.bin').is_file()
     assert (root / 'data002_01020304.bin').is_file()
     assert 'BMC' in (root / 'manifest.txt').read_text()
 
 
-def test_run_converts_the_bmc_sounds(make_xg2_rom: Callable[..., bytes], tmp_path: Path) -> None:
+def test_run_does_not_write_wav_for_motion_clips(make_xg2_rom: Callable[..., bytes],
+                                                 tmp_path: Path) -> None:
     run(make_xg2_rom(), tmp_path, convert=True)
-    assert (tmp_path / 'mfs' / 'aud000_engine.wav').is_file()
-    assert not (tmp_path / 'mfs' / 'aud003_unnamed_003.wav').exists()
+    assert not list((tmp_path / 'mfs').glob('*.wav'))
 
 
 def test_run_dumps_the_shaw_resources(make_xg2_rom: Callable[..., bytes], tmp_path: Path) -> None:
@@ -149,12 +150,10 @@ def test_run_dumps_the_shaw_resources(make_xg2_rom: Callable[..., bytes], tmp_pa
     assert '1 resources' in (tmp_path / 'mfs' / 'manifest.txt').read_text()
 
 
-def test_run_skips_undecodable_mfs_entries(make_xg2_rom: Callable[..., bytes], tmp_path: Path,
-                                           caplog: pytest.LogCaptureFixture) -> None:
-    with caplog.at_level('WARNING'):
-        counts = run(make_xg2_rom(lhuf=True), tmp_path)
-    assert counts['other'] == 1
-    assert 'LHUF codec is not implemented' in caplog.text
+def test_run_decodes_lhuf_mfs_entries(make_xg2_rom: Callable[..., bytes], tmp_path: Path) -> None:
+    # An LHUF entry used to be skipped for want of a codec; it is now decoded like any other, so it
+    # is counted alongside the entry that was already being written.
+    assert run(make_xg2_rom(lhuf=True), tmp_path)['other'] == 2
 
 
 def test_run_decodes_the_textures(make_xg2_rom: Callable[..., bytes], tmp_path: Path) -> None:

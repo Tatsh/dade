@@ -4,9 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
-import pytest
-
-from dade.xg2.bmc import BMC_HEADER_SIZE, BMC_MAGIC, decode_bmc_dpcm, parse_bmc
+from dade.xg2.bmc import BMC_HEADER_SIZE, BMC_MAGIC, parse_bmc
 from dade.xg2.vadpcm import FRAME_SIZE, decode_vadpcm, find_table_base, read_codebook
 from dade.xg2.wav import pcm_to_bytes, wrap_wav, write_wav, write_wav16
 
@@ -67,37 +65,52 @@ def test_find_table_base_gives_up() -> None:
     assert find_table_base(b'\xff' * 0x100, 0, [(0, FRAME_SIZE * 2)], 4) is None
 
 
-def test_parse_bmc_reads_the_name() -> None:
-    blob = BMC_MAGIC + b'engine\x00\x00\x00\x00\x00\x00' + b'\x00' * 8 + b'\x01\x02'
-    sound = parse_bmc(blob)
-    assert sound is not None
-    assert sound.name == 'engine'
-    assert sound.data == b'\x01\x02'
+def _clip(frames: int, *channels: bytes) -> bytes:
+    """
+    Build a ``BMC`` clip around ready-made channel records.
+
+    Returns
+    -------
+    bytes
+        The blob.
+    """
+    header = BMC_MAGIC + b'walk.asf'.ljust(12, b'\x00')
+    return header + struct.pack('>4H', frames, frames, 0x7800, len(channels)) + b''.join(channels)
 
 
-def test_parse_bmc_payload_starts_after_the_header() -> None:
-    blob = BMC_MAGIC + b'\x00' * (BMC_HEADER_SIZE - 4) + b'payload'
-    sound = parse_bmc(blob)
-    assert sound is not None
-    assert sound.data == b'payload'
+def test_parse_bmc_reads_the_name_and_frame_count() -> None:
+    clip = parse_bmc(_clip(2, struct.pack('>H2h', 0, 0, 255) + b'\x00\xff'))
+    assert clip is not None
+    assert clip.name == 'walk.asf'
+    assert clip.frames == 2
+
+
+def test_parse_bmc_rescales_a_quantised_channel() -> None:
+    # An eight-bit channel spans its two bounds, so 0 and 255 land on them exactly.
+    clip = parse_bmc(_clip(2, struct.pack('>H2h', 0, -100, 100) + b'\x00\xff'))
+    assert clip is not None
+    assert [round(v) for v in clip.channels[0]] == [-100, 100]
+
+
+def test_parse_bmc_reads_a_raw_channel() -> None:
+    # A record whose length is frames * 2 + 2 carries signed halfwords instead.
+    raw = struct.pack('>H3h', 2 + 3 * 2, 1000, -1000, 7)
+    quantised = struct.pack('>H2h', 0, 0, 0) + b'\x00\x00\x00'
+    clip = parse_bmc(_clip(3, raw, quantised))
+    assert clip is not None
+    assert clip.channels[0] == [1000.0, -1000.0, 7.0]
+
+
+def test_parse_bmc_takes_a_zero_length_as_the_last_channel() -> None:
+    first = struct.pack('>H2h', BMC_HEADER_SIZE // 4 + 2, 0, 255) + b'\x00\xff'
+    clip = parse_bmc(_clip(2, first, struct.pack('>H2h', 0, 0, 255) + b'\xff\x00'))
+    assert clip is not None
+    assert len(clip.channels) == 2
+    assert [round(v) for v in clip.channels[1]] == [255, 0]
 
 
 def test_parse_bmc_rejects_other_data() -> None:
     assert parse_bmc(b'shaw' + b'\x00' * 32) is None
-
-
-@pytest.mark.parametrize(('data', 'expected'), [(b'\x00', [0]), (b'\x01', [256]), (b'\xff', [-256]),
-                                                (b'\x01\x01', [256, 512])])
-def test_decode_bmc_dpcm_accumulates(data: bytes, expected: list[int]) -> None:
-    assert decode_bmc_dpcm(data) == expected
-
-
-def test_decode_bmc_dpcm_clamps_high() -> None:
-    assert decode_bmc_dpcm(b'\x7f' * 4)[-1] == 127 * 256
-
-
-def test_decode_bmc_dpcm_clamps_low() -> None:
-    assert decode_bmc_dpcm(b'\x80' * 4)[-1] == -128 * 256
 
 
 def test_pcm_to_bytes_clamps() -> None:

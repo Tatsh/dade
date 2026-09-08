@@ -19,14 +19,15 @@ import struct
 
 from .albank import BANK_MAGIC, parse_bank
 from .alcseq import to_midi
-from .images import decode_i8, read_tlut, write_png
-from .lzhuf import LzhufUnavailableError, decompress_lzhuf
+from .images import write_png
+from .lzhuf import LzhufError, decompress_lzhuf
 from .mfs import MfsCalibrationError, iter_files
 from .offsets import XG1_DIRECTORY_POINTER, XG1_LEVEL_MAX, XG1_LEVEL_MIN
 from .rom import read_u32, xg1_boot, xg1_level_bases, xg1_texture_banks
 from .smf import GM_DRUM_MAP, to_xg
 from .soundfont import build_combined
 from .wav import write_wav16
+from .xg1_level import read_texture_bank
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -124,12 +125,12 @@ def _extract_levels(rom: bytes, out: Path, run_log: RunLog) -> tuple[int, int]:
             try:
                 (level_dir / f'{name}.bin').write_bytes(decompress_lzhuf(rom, source, size))
                 written += 1
-            except LzhufUnavailableError:
-                # Keep the compressed slice so nothing is lost until the codec exists.
+            except LzhufError as e:
+                # Keep the compressed slice so a truncated stream can still be inspected.
                 following = bases[index + 1] if base != bases[-1] else len(rom)
                 (level_dir / f'{name}.lzhuf.raw').write_bytes(
                     rom[source:min(source + size, following)])
-                run_log.add(f'level {index:02d} {name}: LZHUF is not implemented, wrote raw.')
+                run_log.add(f'level {index:02d} {name}: {e} Wrote the raw slice.')
         objects_offset, objects = read_u32(header, 0), read_u32(header, 4)
         if 0 < objects < _MAX_OBJECTS and XG1_LEVEL_MIN <= base + objects_offset < XG1_LEVEL_MAX:
             start = base + objects_offset
@@ -153,70 +154,24 @@ def _extract_texture_banks(rom: bytes, out: Path, run_log: RunLog) -> int:
     directory.mkdir(parents=True, exist_ok=True)
     total = 0
     for offset, name in sorted(xg1_texture_banks(rom).items()):
-        size = read_u32(rom, offset)
-        if not 0 < size < _MAX_BANK_SIZE:
+        # A size this far out means the pointer is not a bank at all, which is not worth reporting.
+        if not 0 < read_u32(rom, offset) < _MAX_BANK_SIZE:
             continue
-        try:
-            bank = decompress_lzhuf(rom, offset + 4, size)
-        except LzhufUnavailableError:
-            run_log.add(f'texture bank {name} at 0x{offset:X}: LZHUF is not implemented, skipped.')
-            continue
-        total += _write_texture_bank(bank, directory / name, name, run_log)
+        total += _write_texture_bank(rom, offset, directory / name, name, run_log)
     return total
 
 
-def _bank_descriptors(bank: bytes) -> tuple[list[tuple[int, int, int]], int]:
-    """
-    Read the descriptor table that precedes a texture bank's pixels.
-
-    Returns
-    -------
-    tuple[list[tuple[int, int, int]], int]
-        Each texture's pixel offset, width, and height, and the offset the table ends at.
-    """
-    descriptors: list[tuple[int, int, int]] = []
-    offset = 8
-    while offset + 8 <= len(bank):
-        pixels = struct.unpack_from('>I', bank, offset)[0]
-        width, height = struct.unpack_from('>2H', bank, offset + 4)
-        if (pixels == 0 or pixels >= len(bank) or not 0 < width <= _MAX_TEXTURE_SIDE
-                or not 0 < height <= _MAX_TEXTURE_SIDE):
-            break
-        descriptors.append((pixels, width, height))
-        offset += 8
-    return descriptors, offset
-
-
-def _write_texture_bank(bank: bytes, directory: Path, name: str, run_log: RunLog) -> int:
-    descriptors, table_end = _bank_descriptors(bank)
-    if not descriptors or descriptors[0][0] < table_end:
+def _write_texture_bank(rom: bytes, offset: int, directory: Path, name: str,
+                        run_log: RunLog) -> int:
+    textures = read_texture_bank(rom, offset)
+    if not textures:
         run_log.add(f'texture bank {name}: no valid descriptor table.')
         return 0
-    # The pixels are colour indices sharing one palette at the end of the bank, which the header's
-    # first word points at. Fall back to greyscale only when no valid palette is present.
-    palette_offset = struct.unpack_from('>I', bank, 0)[0]
-    pixels_end = max(pixels + width * height for pixels, width, height in descriptors)
-    palette = None
-    if palette_offset == pixels_end and palette_offset + _TLUT_BYTES <= len(bank):
-        palette = read_tlut(bank, palette_offset, _MAX_TEXTURE_SIDE)
     directory.mkdir(parents=True, exist_ok=True)
-    written = 0
-    for index, (pixels, width, height) in enumerate(descriptors):
-        data = bank[pixels:pixels + width * height]
-        if len(data) < width * height:
-            continue
-        rgba = (_decode_indexed(data, palette, width, height) if palette else decode_i8(
-            data, width, height))
-        write_png(directory / f'tex{index:03d}_{width}x{height}.png', width, height, rgba)
-        written += 1
-    return written
-
-
-def _decode_indexed(data: bytes, palette: list[bytes], width: int, height: int) -> bytes:
-    out = bytearray(width * height * 4)
-    for i in range(width * height):
-        out[i * 4:i * 4 + 4] = palette[data[i]]
-    return bytes(out)
+    for index, texture in enumerate(textures):
+        write_png(directory / f'tex{index:03d}_{texture.width}x{texture.height}.png', texture.width,
+                  texture.height, texture.rgba)
+    return len(textures)
 
 
 def _find_magic(rom: bytes, magic: bytes) -> Iterator[int]:

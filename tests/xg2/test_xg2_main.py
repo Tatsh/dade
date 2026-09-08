@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import struct
 
 import pytest
 
+from dade.xg2.f3dex2 import Mesh, Vertex
 from dade.xg2.main import cli
 from dade.xg2.offsets import GAME_CODE_OFFSET, XG1_GAME_CODE, XG2_GAME_CODE
 from dade.xg2.smf import GM_DRUM_MAP, split_tracks
@@ -17,7 +19,17 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 _COMMANDS = ('convert-midi', 'extract-xg1', 'extract-xg2', 'extract-xg2-pc', 'make-sf2',
-             'montage-n64', 'montage-pc', 'unpack-xg1-rom', 'unpack-xg2-rom')
+             'montage-n64', 'montage-pc', 'unpack-xg1-rom', 'unpack-xg2-rom', 'xg1-to-glb',
+             'xg2-to-glb', 'xg2-pc-to-glb')
+
+
+def _mesh() -> Mesh:
+    vertices = [
+        Vertex(0, 0, 0, 0, 0, 0, 0, 127, 255),
+        Vertex(1, 0, 0, 0, 0, 0, 0, 127, 255),
+        Vertex(0, 1, 0, 0, 0, 0, 0, 127, 255),
+    ]
+    return Mesh(None, lit=False, vertices=vertices, triangles=[(0, 1, 2)])
 
 
 def _rom(code: bytes = XG2_GAME_CODE) -> bytes:
@@ -91,30 +103,22 @@ def test_extract_xg1_warns_on_the_wrong_game(runner: CliRunner, tmp_path: Path,
 def test_extract_xg2(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
     rom = tmp_path / 'game.z64'
     rom.write_bytes(_rom())
-    run = mocker.patch('dade.xg2.main.run_xg2',
-                       return_value={
-                           'levels': 8,
-                           'sequences': 23,
-                           'midis': 23,
-                           'wavs': 5,
-                           'soundfonts': 1,
-                           'bmc': 100,
-                           'shaw': 4,
-                           'other': 106,
-                           'textures': 0,
-                           'rendered': 0
-                       })
-    result = runner.invoke(cli, ['extract-xg2', str(rom), str(tmp_path / 'out'), '-r', '32000'])
+    mocker.patch('dade.xg2.main.run_xg2',
+                 return_value={
+                     'levels': 8,
+                     'sequences': 23,
+                     'midis': 23,
+                     'wavs': 5,
+                     'soundfonts': 1,
+                     'bmc': 100,
+                     'shaw': 4,
+                     'other': 106,
+                     'textures': 0,
+                     'rendered': 0
+                 })
+    result = runner.invoke(cli, ['extract-xg2', str(rom), str(tmp_path / 'out')])
     assert result.exit_code == 0
     assert 'sequences: 23' in result.output
-    assert run.call_args.kwargs['rate'] == 32000
-
-
-def test_extract_xg2_rejects_a_bad_rate(runner: CliRunner, tmp_path: Path) -> None:
-    rom = tmp_path / 'game.z64'
-    rom.write_bytes(_rom())
-    result = runner.invoke(cli, ['extract-xg2', str(rom), str(tmp_path / 'out'), '-r', '0'])
-    assert result.exit_code != 0
 
 
 def test_extract_xg2_pc(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
@@ -133,11 +137,12 @@ def test_extract_xg2_pc(runner: CliRunner, tmp_path: Path, mocker: MockerFixture
     assert 'textures: 12' in result.output
 
 
-def test_extract_xg2_pc_requires_a_directory(runner: CliRunner, tmp_path: Path) -> None:
+def test_extract_xg2_pc_aborts_on_an_unreadable_image(runner: CliRunner, tmp_path: Path) -> None:
+    """A file is accepted by Click and rejected downstream when it is not a readable disc image."""
     target = tmp_path / 'file.bin'
-    target.write_bytes(b'')
+    target.write_bytes(b'not a disc')
     result = runner.invoke(cli, ['extract-xg2-pc', str(target), str(tmp_path / 'out')])
-    assert result.exit_code != 0
+    assert result.exit_code == 1
 
 
 @pytest.mark.parametrize(('command', 'patched'), [('unpack-xg1-rom', 'dade.xg2.main.unpack_xg1'),
@@ -151,6 +156,108 @@ def test_unpack_commands(runner: CliRunner, tmp_path: Path, mocker: MockerFixtur
     assert result.exit_code == 0
     assert 'mfs files: 42' in result.output
     assert unpack.call_args.args[2] == 'pre'
+
+
+def _flat_model() -> bytes:
+    header = struct.pack('>2I', 0x05000008, 0)
+    commands = [(0x01004008, 0), (0x05000204, 0), (0xDF000000, 0)]
+    vertex_at = len(header) + len(commands) * 8
+    commands[0] = (0x01004008, 0x05000000 | vertex_at)
+    body = b''.join(struct.pack('>2I', w0, w1) for w0, w1 in commands)
+    vertices = b''.join(
+        struct.pack('>3hH2h4B', x, y, 0, 0, 0, 0, 0, 0, 127, 255)
+        for x, y in ((0, 0), (1, 0), (1, 1), (0, 1)))
+    return header + body + vertices
+
+
+def test_xg1_to_glb(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
+    rom = tmp_path / 'game.z64'
+    rom.write_bytes(_rom(XG1_GAME_CODE))
+    mocker.patch('dade.xg2.main.read_code_segment', return_value=b'')
+    mocker.patch('dade.xg2.main.xg1_level_bases', return_value=[0x1000])
+    mocker.patch('dade.xg2.main.decode_level_geometry', return_value=[_mesh()])
+    mocker.patch('dade.xg2.main.decode_level_textures', return_value=[])
+    mocker.patch('dade.xg2.main.read_entities', return_value=[])
+    mocker.patch('dade.xg2.main.object_placements', return_value=[])
+    out = tmp_path / 'glb'
+    result = runner.invoke(cli, ['xg1-to-glb', str(rom), str(out)])
+    assert result.exit_code == 0
+    assert 'Wrote 1 glTF' in result.output
+    assert list(out.glob('*.glb'))
+
+
+def _bmc_clip_blob() -> bytes:
+    header = b'BMC\x80' + b'walk.asf'.ljust(12, b'\x00') + struct.pack('>4H', 2, 2, 0x7800, 1)
+    return header + struct.pack('>H2h', 0, 0, 255) + bytes([0, 255])
+
+
+def test_xg2_to_glb(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) -> None:
+    rom = tmp_path / 'game.z64'
+    rom.write_bytes(_rom())
+    blobs = [('mfs/file000', _flat_model()), ('mfs/file001', b'\x05' + b'\x00' * 31),
+             ('mfs/file002', _bmc_clip_blob())]
+    mocker.patch('dade.xg2.main.xg2_level_bases', return_value=[])
+    mocker.patch('dade.xg2.main.iter_n64_model_blobs', return_value=blobs)
+    mocker.patch('dade.xg2.main.parse_skeleton', return_value=None)
+    mocker.patch('dade.xg2.main.collect_textures', return_value=[])
+    out = tmp_path / 'glb'
+    result = runner.invoke(cli, ['xg2-to-glb', str(rom), str(out)])
+    assert result.exit_code == 0
+    assert '1 models' in result.output
+    assert '1 animations' in result.output
+    assert list(out.glob('anim_*.glb'))
+
+
+def test_xg1_to_glb_when_a_container_draws_nothing(runner: CliRunner, tmp_path: Path,
+                                                   mocker: MockerFixture) -> None:
+    rom = tmp_path / 'game.z64'
+    rom.write_bytes(_rom(XG1_GAME_CODE))
+    mocker.patch('dade.xg2.main.read_code_segment', return_value=b'')
+    mocker.patch('dade.xg2.main.xg1_level_bases', return_value=[0x1000])
+    mocker.patch('dade.xg2.main.decode_level_geometry', return_value=[])
+    mocker.patch('dade.xg2.main.decode_level_textures', return_value=[])
+    mocker.patch('dade.xg2.main.read_entities', return_value=[])
+    mocker.patch('dade.xg2.main.object_placements', return_value=[])
+    result = runner.invoke(cli, ['xg1-to-glb', str(rom), str(tmp_path / 'glb')])
+    assert result.exit_code == 0
+    assert 'Wrote 0 glTF' in result.output
+    assert '1 containers drew nothing' in result.output
+
+
+def test_xg2_pc_to_glb_of_an_empty_source(runner: CliRunner, tmp_path: Path,
+                                          mocker: MockerFixture) -> None:
+    data1 = tmp_path / 'data1'
+    data1.mkdir()
+    mocker.patch('dade.xg2.main.find_by_suffix', return_value=[])
+    result = runner.invoke(cli, ['xg2-pc-to-glb', str(data1), str(tmp_path / 'glb')])
+    assert result.exit_code == 0
+    assert 'Wrote 0 tracks' in result.output
+
+
+def test_xg2_pc_to_glb_converts_a_track(runner: CliRunner, tmp_path: Path,
+                                        mocker: MockerFixture) -> None:
+    data1 = tmp_path / 'data1'
+    data1.mkdir()
+    (data1 / 'AQUA1.pcb').write_bytes(b'\x00' * 16)
+    mocker.patch('dade.xg2.main.decode_level_geometry', return_value=[_mesh()])
+    mocker.patch('dade.xg2.main.decode_level_textures', return_value=[])
+    out = tmp_path / 'glb'
+    result = runner.invoke(cli, ['xg2-pc-to-glb', str(data1), str(out)])
+    assert result.exit_code == 0
+    assert 'Wrote 1 tracks' in result.output
+    assert (out / 'track_aqua1.glb').is_file()
+
+
+def test_xg2_pc_to_glb_skips_a_track_that_draws_nothing(runner: CliRunner, tmp_path: Path,
+                                                        mocker: MockerFixture) -> None:
+    data1 = tmp_path / 'data1'
+    data1.mkdir()
+    (data1 / 'AQUA1.pcb').write_bytes(b'\x00' * 16)
+    mocker.patch('dade.xg2.main.decode_level_geometry', return_value=[])
+    result = runner.invoke(cli, ['xg2-pc-to-glb', str(data1), str(tmp_path / 'glb')])
+    assert result.exit_code == 0
+    assert 'Wrote 0 tracks' in result.output
+    assert '1 drew nothing' in result.output
 
 
 def test_convert_midi_faithful(runner: CliRunner, tmp_path: Path, midi_file: bytes) -> None:

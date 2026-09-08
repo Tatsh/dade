@@ -18,6 +18,8 @@ import logging
 import shutil
 import struct
 
+from dade.common.disc import find_by_suffix
+
 from .archive import decode_entries, is_archive, parse_archive, try_sized_lzss
 from .images import bmp_to_png, write_png
 from .models import collect_textures
@@ -177,10 +179,10 @@ def run(data1: Path, out: Path) -> dict[str, int]:
     if wav_source.is_dir():
         wav_destination = out / 'WAVS'
         wav_destination.mkdir(parents=True, exist_ok=True)
-        for path in sorted(wav_source.glob('*.wav')):
+        for path in find_by_suffix(wav_source, '.wav', recursive=False):
             shutil.copy2(path, wav_destination / path.name)
             counts['wavs'] += 1
-    for path in sorted(data1.glob('*.bmp')):
+    for path in find_by_suffix(data1, '.bmp', recursive=False):
         if bmp_to_png(path, out / f'{path.stem}.png'):
             counts['bitmaps'] += 1
     return counts

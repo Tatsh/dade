@@ -11,6 +11,7 @@ can then see the main code segment directly.
 """
 from __future__ import annotations
 
+from array import array
 import logging
 
 from dade.common.io import u32
@@ -41,13 +42,20 @@ from .offsets import (
     XG2_SEQUENCE_ARCHIVE,
 )
 
-__all__ = ('BootImage', 'BootSanityError', 'game_code', 'read_u32', 'xg1_boot', 'xg1_level_bases',
-           'xg1_texture_banks', 'xg2_boot', 'xg2_level_bases', 'xg2_resource_archives')
+__all__ = ('BootImage', 'BootSanityError', 'game_code', 'normalize_rom', 'read_u32', 'xg1_boot',
+           'xg1_level_banks', 'xg1_level_bases', 'xg1_texture_banks', 'xg2_boot', 'xg2_level_bases',
+           'xg2_resource_archives')
 
 log = logging.getLogger(__name__)
 
 _BOOT_SIGNATURE = b'\x3c\x1d\x80\x3f'
+_Z64_MAGIC = b'\x80\x37\x12\x40'
+_V64_MAGIC = b'\x37\x80\x40\x12'
+_N64_MAGIC = b'\x40\x12\x37\x80'
 _MAX_LEVELS = 48
+# The level table runs up to the texture bank table that immediately follows it. Without that bound
+# the first few bank offsets read as plausible level offsets and turn into levels that do not exist.
+_XG1_LEVELS = (XG1_LEVEL_TEXTURE_BANK_TABLE - XG1_LEVEL_TABLE) // 4
 _ARCHIVE_TAGS = (b'LZSS', b'LHUF', b'HUFF', b'COPY')
 _MAX_TEXTURE_BANK = 0x800000
 _MIN_ARCHIVE_ADDRESS = 0x1000
@@ -129,6 +137,40 @@ def read_u32(data: bytes, offset: int) -> int:
         The value.
     """
     return u32(data, offset, endian='>')
+
+
+def normalize_rom(data: bytes) -> bytes:
+    """
+    Return an N64 image in big-endian order, whatever order it was dumped in.
+
+    The same cartridge circulates in three layouts, told apart by how the header's magic word comes
+    out: ``.z64`` is big-endian and needs nothing, ``.v64`` has each halfword swapped, and ``.n64``
+    has each word reversed. Every offset in this package is a big-endian ``.z64`` offset, so a
+    wrongly ordered image would not fail loudly -- it would decompress into noise.
+
+    Parameters
+    ----------
+    data : bytes
+        The image as read from disk.
+
+    Returns
+    -------
+    bytes
+        The image in ``.z64`` order, or unchanged when the magic matches none of the three, which
+        leaves a non-N64 file to fail in the caller that knows what it wanted.
+    """
+    magic = data[:4]
+    if magic == _Z64_MAGIC or len(data) % 4:
+        return data
+    if magic == _V64_MAGIC:
+        words = array('H', data)
+        words.byteswap()
+        return words.tobytes()
+    if magic == _N64_MAGIC:
+        words = array('I', data)
+        words.byteswap()
+        return words.tobytes()
+    return data
 
 
 def game_code(rom: bytes) -> bytes:
@@ -225,16 +267,54 @@ def xg1_level_bases(rom: bytes) -> list[int]:
     Returns
     -------
     list[int]
-        Distinct container offsets in ascending order. The table ends at the first entry outside
-        the plausible range.
+        Distinct container offsets in ascending order.
     """
-    bases = []
-    for i in range(_MAX_LEVELS):
+    return sorted(set(_xg1_level_table(rom)))
+
+
+def _xg1_level_table(rom: bytes) -> list[int]:
+    """
+    Read the level table in game order, which is how the texture bank table is indexed.
+
+    Returns
+    -------
+    list[int]
+        Container offsets, with the duplicates the game itself lists.
+    """
+    entries = []
+    for i in range(_XG1_LEVELS):
         value = read_u32(rom, XG1_LEVEL_TABLE + i * 4)
         if not XG1_LEVEL_MIN <= value < XG1_LEVEL_MAX:
             break
-        bases.append(value)
-    return sorted(set(bases))
+        entries.append(value)
+    return entries
+
+
+def xg1_level_banks(rom: bytes) -> dict[int, int]:
+    """
+    Map each Extreme-G 1 level to the shared texture bank its geometry draws from.
+
+    The bytecode's two bank opcodes take their pixels from resources the level loader holds in
+    globals rather than from the level's own descriptor table: one bank shared by every level, and
+    one chosen per level by the table that follows the level table.
+
+    Parameters
+    ----------
+    rom : bytes
+        The whole ROM image.
+
+    Returns
+    -------
+    dict[int, int]
+        Each level container offset mapped to its own bank's offset. Levels listed twice name the
+        same bank both times, so the mapping is unambiguous.
+    """
+    banks = {}
+    for index, base in enumerate(_xg1_level_table(rom)):
+        value = read_u32(rom, XG1_LEVEL_TEXTURE_BANK_TABLE + index * 4)
+        if XG1_LEVEL_MIN <= value < _MAX_TEXTURE_BANK:
+            banks[base] = value
+    return banks
 
 
 def xg1_texture_banks(rom: bytes) -> dict[int, str]:
@@ -252,10 +332,7 @@ def xg1_texture_banks(rom: bytes) -> dict[int, str]:
         Each bank's ROM offset mapped to a name for its output directory.
     """
     banks = {read_u32(rom, XG1_GLOBAL_TEXTURE_BANK_POINTER): 'global'}
-    for i in range(_MAX_LEVELS):
-        value = read_u32(rom, XG1_LEVEL_TEXTURE_BANK_TABLE + i * 4)
-        if not XG1_LEVEL_MIN <= value < _MAX_TEXTURE_BANK:
-            break
+    for value in xg1_level_banks(rom).values():
         banks.setdefault(value, f'bank_{value:07X}')
     return banks
 
