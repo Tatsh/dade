@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import json
 import logging
+import sys
 
 import click
 
@@ -24,7 +25,7 @@ log = logging.getLogger(__name__)
 @click.option('--raw', is_flag=True, help='Write the decrypted bytes verbatim instead of JSON.')
 @debug_option
 def dump_chara(chara: Path, *, raw: bool) -> None:
-    """Decrypt the character-data file CHR and write it to standard output as JSON."""  # noqa: DOC501
+    """Decrypt the character-data file CHR and write it to standard output as JSON."""  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', chara)
     try:
         payload = decrypt_chara(chara.read_bytes())
@@ -32,7 +33,7 @@ def dump_chara(chara: Path, *, raw: bool) -> None:
         click.echo(str(e), err=True)
         raise click.Abort from e
     if raw:
-        click.get_binary_stream('stdout').write(payload)
+        sys.stdout.buffer.write(payload)
         return
     try:
         echo_json(parse_chara(payload))

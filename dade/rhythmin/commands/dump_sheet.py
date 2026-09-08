@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, NamedTuple
 import logging
+import sys
 import zipfile
 
 import click
@@ -98,7 +99,7 @@ def _render(package: Path, suffix: str, buttons: Path | None, direction: str, im
     """
     sheet = read_sheet(package, suffix)
     if raw:
-        click.get_binary_stream('stdout').write(sheet.payload)
+        sys.stdout.buffer.write(sheet.payload)
         return None
     chart_format = detect_format(sheet.payload, package.suffix)
     details = _song_details(sheet, suffix)
@@ -158,7 +159,7 @@ def dump_sheet(package: Path, suffix: str, buttons: Path | None, direction: str,
     PACKAGE is a ``.orb`` or ``.acv``; the two carry completely different chart formats, and which
     one this is is detected from the decrypted payload. SUFFIX names the difficulty, so the entry
     read is ``sheet_<SUFFIX>``.
-    """  # noqa: DOC501
+    """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s` (%s).', package, suffix)
     try:
         rendered = _render(package,
