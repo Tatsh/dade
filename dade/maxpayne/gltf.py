@@ -21,12 +21,23 @@ from __future__ import annotations
 from io import BytesIO
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any
-import json
 import logging
 import math
 import struct
 
 from PIL import Image
+
+from dade.common.gltf import (
+    ARRAY_BUFFER,
+    ELEMENT_ARRAY_BUFFER,
+    FLOAT,
+    GLB_MAGIC,
+    TRIANGLES,
+    UNLIT,
+    UNSIGNED_INT,
+    GLBDocument,
+    image_mime,
+)
 
 from .decals import DECAL_STEP, layer_faces
 
@@ -50,24 +61,7 @@ __all__ = ('GLB_MAGIC', 'build_glb')
 
 log = logging.getLogger(__name__)
 
-GLB_MAGIC = b'glTF'
-"""Magic starting every binary glTF.
-
-:meta hide-value:
-"""
-
-_VERSION = 2
-_JSON_CHUNK = b'JSON'
-_BIN_CHUNK = b'BIN\x00'
-_FLOAT = 5126
-_UNSIGNED_INT = 5125
-_ARRAY_BUFFER = 34962
-_ELEMENT_ARRAY_BUFFER = 34963
-_TRIANGLES = 4
-_REPEAT = 10497
-_JPEG_MAGIC = b'\xff\xd8'
-_PNG_MAGIC = b'\x89PNG'
-_FALLBACK_COLOUR = (0.72, 0.72, 0.74, 1.0)
+_FALLBACK_COLOR = (0.72, 0.72, 0.74, 1.0)
 _NODRAW = 'nodraw'
 _MAX_KEYFRAMES = 24
 """Keyframes kept per clip. The stored curves carry up to 4096 samples of a smooth ease, which is
@@ -119,29 +113,20 @@ They are written with a flat colour instead, which a viewer can swap for a real 
 :meta hide-value:
 """
 
-_SKY_COLOUR = (0.29, 0.33, 0.40, 1.0)
+_SKY_COLOR = (0.29, 0.33, 0.40, 1.0)
 """Stand-in for the sky. Max Payne draws its own sky from the renderer's settings rather than from
 anything the level stores, so there is nothing in the file to read: this is the dull overcast
 blue-grey the game's nights are lit by.
 
 :meta hide-value:
 """
+_NO_LIFTS: Mapping[int, int] = MappingProxyType({})
 
 _FLAT_FAN = 1e-9
 """Below this a fan triangle is a straight line and says nothing about which way its face points.
 
 :meta hide-value:
 """
-
-_UNLIT = 'KHR_materials_unlit'
-"""Extension marking a material that takes its colour straight from the base colour.
-
-:meta hide-value:
-"""
-
-
-def _pad(data: bytes, fill: bytes) -> bytes:
-    return data + fill * (-len(data) % 4)
 
 
 def _draws(level: Level, material_id: int) -> bool:
@@ -218,10 +203,8 @@ def _image_payload(texture: TextureImage) -> tuple[bytes, str] | None:
     tuple[bytes, str] | None
         The bytes and their MIME type, or :py:obj:`None` if the image cannot be decoded.
     """
-    if texture.data[:2] == _JPEG_MAGIC:
-        return texture.data, 'image/jpeg'
-    if texture.data[:4] == _PNG_MAGIC:
-        return texture.data, 'image/png'
+    if (mime := image_mime(texture.data)) is not None:
+        return texture.data, mime
     try:
         with Image.open(BytesIO(texture.data)) as image:
             buffer = BytesIO()
@@ -240,7 +223,7 @@ _MASK_MODE = 'MASK'
 _ALPHA_CUTOFF = 0.5
 
 
-def _compose_alpha(colour: bytes, mask: bytes) -> tuple[tuple[bytes, str], str] | None:
+def _compose_alpha(color: bytes, mask: bytes) -> tuple[tuple[bytes, str], str] | None:
     """
     Put a mask's brightness into a colour image's alpha channel.
 
@@ -251,7 +234,7 @@ def _compose_alpha(colour: bytes, mask: bytes) -> tuple[tuple[bytes, str], str] 
 
     Parameters
     ----------
-    colour : bytes
+    color : bytes
         The colour image as the level stored it.
     mask : bytes
         The mask image as the level stored it.
@@ -263,19 +246,19 @@ def _compose_alpha(colour: bytes, mask: bytes) -> tuple[tuple[bytes, str], str] 
         cannot be decoded.
     """
     try:
-        payload, soft = _apply_mask(colour, mask)
+        payload, soft = _apply_mask(color, mask)
     except OSError:
         return None
     return (payload, 'image/png'), 'BLEND' if soft > _SOFT_FRACTION else _MASK_MODE
 
 
-def _apply_mask(colour: bytes, mask: bytes) -> tuple[bytes, float]:
+def _apply_mask(color: bytes, mask: bytes) -> tuple[bytes, float]:
     """
     Decode both images, put the mask into the colour's alpha, and measure the mask.
 
     Parameters
     ----------
-    colour : bytes
+    color : bytes
         The colour image as the level stored it.
     mask : bytes
         The mask image as the level stored it.
@@ -285,13 +268,13 @@ def _apply_mask(colour: bytes, mask: bytes) -> tuple[bytes, float]:
     tuple[bytes, float]
         The composed PNG and the share of mask pixels that are neither clear nor opaque.
     """
-    with Image.open(BytesIO(colour)) as base, Image.open(BytesIO(mask)) as cover:
+    with Image.open(BytesIO(color)) as base, Image.open(BytesIO(mask)) as cover:
         rgb = base.convert('RGB')
-        grey = cover.convert('L')
-        if grey.size != rgb.size:
-            grey = grey.resize(rgb.size)
-        histogram = grey.histogram()
-        rgb.putalpha(grey)
+        gray = cover.convert('L')
+        if gray.size != rgb.size:
+            gray = gray.resize(rgb.size)
+        histogram = gray.histogram()
+        rgb.putalpha(gray)
         buffer = BytesIO()
         rgb.save(buffer, format='PNG')
     return buffer.getvalue(), sum(histogram[_CLEAR + 1:_OPAQUE]) / max(sum(histogram), 1)
@@ -645,9 +628,13 @@ def _mirror(vector: Vector3) -> Vector3:
     return (vector[0], vector[1], -vector[2])
 
 
-class _Document:
+class _Document(GLBDocument):
     """
     Builds a glTF document as meshes are added.
+
+    The GLB container, its buffer views, and its accessors come from
+    :py:class:`dade.common.gltf.GLBDocument`; what this class adds is everything specific to a Max
+    Payne level, chiefly how a face's material and lightmap pair decide the glTF material.
 
     Parameters
     ----------
@@ -655,20 +642,12 @@ class _Document:
         The level being converted. Its images are embedded up front so materials can refer to them.
     """
     def __init__(self, level: Level) -> None:
+        super().__init__('dade maxpayne')
         self._level = level
-        self._blob = bytearray()
         self._by_path: dict[str, int] = {}
         self._by_material: dict[tuple[int, int], int] = {}
         self._sky_material: int | None = None
         self._by_lightmap: dict[int, int | None] = {}
-        self.views: list[dict[str, Any]] = []
-        self.accessors: list[dict[str, Any]] = []
-        self.meshes: list[dict[str, Any]] = []
-        self.nodes: list[dict[str, Any]] = []
-        self.materials: list[dict[str, Any]] = []
-        self.images: list[dict[str, Any]] = []
-        self.textures: list[dict[str, Any]] = []
-        self.animations: list[dict[str, Any]] = []
         self._raw = {texture.path: texture.data for texture in level.textures}
         self._masked: dict[tuple[str, str], tuple[int, str]] = {}
         self._by_model: dict[str, int] = {}
@@ -735,7 +714,7 @@ class _Document:
                 'input':
                     self.accessor(struct.pack(f'<{len(times)}f', *times),
                                   None,
-                                  componentType=_FLOAT,
+                                  componentType=FLOAT,
                                   count=len(times),
                                   max=[max(times)],
                                   min=[min(times)],
@@ -745,7 +724,7 @@ class _Document:
                 'output':
                     self.accessor(b''.join(struct.pack(f'<{size}f', *value) for value in values),
                                   None,
-                                  componentType=_FLOAT,
+                                  componentType=FLOAT,
                                   count=len(values),
                                   type=kind)
             })
@@ -794,21 +773,15 @@ class _Document:
         int
             Index into the document's textures.
         """
-        self.images.append({
-            'bufferView': self._add_view(payload[0]),
-            'mimeType': payload[1],
-            'name': name
-        })
-        self.textures.append({'sampler': 0, 'source': len(self.images) - 1})
-        return len(self.textures) - 1
+        return self.add_image(payload[0], payload[1], name)
 
-    def masked_texture(self, colour: str, mask: str) -> tuple[int, str] | None:
+    def masked_texture(self, color: str, mask: str) -> tuple[int, str] | None:
         """
         Compose a colour image with its alpha mask, reusing the result across materials.
 
         Parameters
         ----------
-        colour : str
+        color : str
             Path of the colour image.
         mask : str
             Path of the mask image.
@@ -819,51 +792,16 @@ class _Document:
             The texture index and the glTF alpha mode, or :py:obj:`None` when either image cannot
             be decoded.
         """
-        if (found := self._masked.get((colour, mask))) is not None:
+        if (found := self._masked.get((color, mask))) is not None:
             return found
-        composed = _compose_alpha(self._raw.get(colour, b''), self._raw.get(mask, b''))
+        composed = _compose_alpha(self._raw.get(color, b''), self._raw.get(mask, b''))
         if composed is None:
-            log.warning('Could not mask `%s` with `%s`.', colour, mask)
+            log.warning('Could not mask `%s` with `%s`.', color, mask)
             return None
         payload, mode = composed
-        index = self._add_texture(payload, f'{colour} + {mask}')
-        self._masked[colour, mask] = (index, mode)
+        index = self._add_texture(payload, f'{color} + {mask}')
+        self._masked[color, mask] = (index, mode)
         return index, mode
-
-    def _add_view(self, payload: bytes, target: int | None = None) -> int:
-        self._blob.extend(b'\x00' * (-len(self._blob) % 4))
-        view: dict[str, Any] = {
-            'buffer': 0,
-            'byteLength': len(payload),
-            'byteOffset': len(self._blob)
-        }
-        if target is not None:
-            view['target'] = target
-        self._blob.extend(payload)
-        self.views.append(view)
-        return len(self.views) - 1
-
-    def accessor(self, payload: bytes, target: int | None, **extra: Any) -> int:
-        """
-        Append attribute or index data and describe it with an accessor.
-
-        Parameters
-        ----------
-        payload : bytes
-            The raw data.
-        target : int | None
-            glTF buffer target, or :py:obj:`None` for data a vertex puller never reads, such as an
-            animation's keyframes.
-        extra : Any
-            Remaining accessor fields.
-
-        Returns
-        -------
-        int
-            Index into the document's accessors.
-        """
-        self.accessors.append({'bufferView': self._add_view(payload, target), **extra})
-        return len(self.accessors) - 1
 
     def model_material(self, name: str, model: Model, images: Mapping[str, TextureImage]) -> int:
         """
@@ -894,7 +832,7 @@ class _Document:
         texture = images.get(file.lower())
         payload = _image_payload(texture) if texture else None
         if payload is None:
-            pbr['baseColorFactor'] = list(_FALLBACK_COLOUR)
+            pbr['baseColorFactor'] = list(_FALLBACK_COLOR)
         else:
             pbr['baseColorTexture'] = {'index': self._add_texture(payload, file), 'texCoord': 0}
         self.materials.append({
@@ -941,7 +879,7 @@ class _Document:
         elif material:
             index = self._by_path.get(material.image)
         if index is None:
-            pbr['baseColorFactor'] = list(_FALLBACK_COLOUR)
+            pbr['baseColorFactor'] = list(_FALLBACK_COLOR)
         else:
             pbr['baseColorTexture'] = {'index': index, 'texCoord': 0}
         # A material whose image carries its own alpha says how to blend it rather than naming a
@@ -977,15 +915,16 @@ class _Document:
             Index into the document's materials.
         """
         if self._sky_material is None:
+            self.use(UNLIT)
             self.materials.append({
                 # Sky is not a surface and must not shade, so it is written unlit. A viewer that
                 # does not know the extension still gets the same colour, just lit.
                 'extensions': {
-                    _UNLIT: {}
+                    UNLIT: {}
                 },
                 'name': _SKY,
                 'pbrMetallicRoughness': {
-                    'baseColorFactor': list(_SKY_COLOUR),
+                    'baseColorFactor': list(_SKY_COLOR),
                     'metallicFactor': 0.0,
                     'roughnessFactor': 1.0
                 }
@@ -1016,55 +955,6 @@ class _Document:
         found = None if payload is None else self._add_texture(payload, f'lightmap_{index}')
         self._by_lightmap[index] = found
         return found
-
-    def finish(self, name: str) -> bytes:
-        """
-        Serialise the document.
-
-        Parameters
-        ----------
-        name : str
-            Name for the scene.
-
-        Returns
-        -------
-        bytes
-            A complete binary glTF.
-        """
-        binary = _pad(bytes(self._blob), b'\x00')
-        document: dict[str, Any] = {
-            'accessors': self.accessors,
-            'asset': {
-                'generator': 'dade maxpayne',
-                'version': '2.0'
-            },
-            'bufferViews': self.views,
-            'buffers': [{
-                'byteLength': len(binary)
-            }],
-            'materials': self.materials,
-            'meshes': self.meshes,
-            'nodes': self.nodes,
-            'scene': 0,
-            'scenes': [{
-                'name': name,
-                'nodes': list(range(len(self.nodes)))
-            }]
-        }
-        if self.images:
-            document['images'] = self.images
-            document['samplers'] = [{'wrapS': _REPEAT, 'wrapT': _REPEAT}]
-            document['textures'] = self.textures
-        if self.animations:
-            document['animations'] = self.animations
-        if self._sky_material is not None:
-            document['extensionsUsed'] = [_UNLIT]
-        chunk = _pad(json.dumps(document, separators=(',', ':')).encode(), b' ')
-        length = 12 + 8 + len(chunk) + 8 + len(binary)
-        return b''.join((GLB_MAGIC, struct.pack('<II', _VERSION, length),
-                         struct.pack('<I',
-                                     len(chunk)), _JSON_CHUNK, chunk, struct.pack(
-                                         '<I', len(binary)), _BIN_CHUNK, binary))
 
 
 def _add_mesh(document: _Document,
@@ -1114,14 +1004,14 @@ def _add_mesh(document: _Document,
     attributes = {
         'NORMAL':
             document.accessor(b''.join(struct.pack('<3f', *v) for v in normals),
-                              _ARRAY_BUFFER,
-                              componentType=_FLOAT,
+                              ARRAY_BUFFER,
+                              componentType=FLOAT,
                               count=len(normals),
                               type='VEC3'),
         'POSITION':
             document.accessor(b''.join(struct.pack('<3f', *v) for v in positions),
-                              _ARRAY_BUFFER,
-                              componentType=_FLOAT,
+                              ARRAY_BUFFER,
+                              componentType=FLOAT,
                               count=len(positions),
                               max=[max(v[i] for v in positions) for i in range(3)],
                               min=[min(v[i] for v in positions) for i in range(3)],
@@ -1131,8 +1021,8 @@ def _add_mesh(document: _Document,
         if not values:
             continue
         attributes[slot] = document.accessor(b''.join(struct.pack('<2f', *v) for v in values),
-                                             _ARRAY_BUFFER,
-                                             componentType=_FLOAT,
+                                             ARRAY_BUFFER,
+                                             componentType=FLOAT,
                                              count=len(values),
                                              type='VEC2')
     primitives = []
@@ -1143,8 +1033,8 @@ def _add_mesh(document: _Document,
                 attributes,
             'indices':
                 document.accessor(struct.pack(f'<{len(flat)}I', *flat),
-                                  _ELEMENT_ARRAY_BUFFER,
-                                  componentType=_UNSIGNED_INT,
+                                  ELEMENT_ARRAY_BUFFER,
+                                  componentType=UNSIGNED_INT,
                                   count=len(flat),
                                   max=[max(flat)],
                                   min=[min(flat)],
@@ -1152,7 +1042,7 @@ def _add_mesh(document: _Document,
             'material':
                 material(material_id),
             'mode':
-                _TRIANGLES
+                TRIANGLES
         })
     document.meshes.append({'name': name, 'primitives': primitives})
     node: dict[str, Any] = {'mesh': len(document.meshes) - 1, 'name': name}
@@ -1166,17 +1056,15 @@ def _add_mesh(document: _Document,
     return len(document.nodes) - 1
 
 
-def _add_static_mesh(
-    document: _Document,
-    level: Level,
-    mesh: StaticMesh,
-    corners: Sequence[Corner],
-    name: str,
-    *,
-    placed: bool = False,
-    clips: Sequence[PropAnimation] = (),
-    lifts: Mapping[int, int] = MappingProxyType({})
-) -> None:
+def _add_static_mesh(document: _Document,
+                     level: Level,
+                     mesh: StaticMesh,
+                     corners: Sequence[Corner],
+                     name: str,
+                     *,
+                     placed: bool = False,
+                     clips: Sequence[PropAnimation] = (),
+                     lifts: Mapping[int, int] = _NO_LIFTS) -> None:
     """
     Add one mesh, expanding its shared corners into vertices.
 

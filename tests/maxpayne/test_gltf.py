@@ -226,14 +226,14 @@ def test_build_glb_rejects_a_level_with_nothing_to_draw() -> None:
                   textures=()))
 
 
-def _png(size: tuple[int, int], colour: tuple[int, int, int]) -> bytes:
+def _png(size: tuple[int, int], color: tuple[int, int, int]) -> bytes:
     from PIL import Image
     buffer = BytesIO()
-    Image.new('RGB', size, colour).save(buffer, format='PNG')
+    Image.new('RGB', size, color).save(buffer, format='PNG')
     return buffer.getvalue()
 
 
-def _grey(size: tuple[int, int], level: int) -> bytes:
+def _gray(size: tuple[int, int], level: int) -> bytes:
     from PIL import Image
     buffer = BytesIO()
     Image.new('L', size, level).save(buffer, format='PNG')
@@ -263,7 +263,7 @@ def test_build_glb_cuts_out_a_masked_material(make_ldb: Callable[..., bytes]) ->
     # A mask that is only ever black or white is a cut-out, so it alpha-tests rather than blends.
     level = read_level(
         make_ldb(**_masked(textures=(('X:\\plant.png', 0, _png((4, 4), (20, 200, 20))),
-                                     ('X:\\plant_alpha.png', 0, _grey((4, 4), 255))))))
+                                     ('X:\\plant_alpha.png', 0, _gray((4, 4), 255))))))
     assert level.materials[7].alpha == 'X:\\plant_alpha.png'
     document, _ = _parse(build_glb(level))
     material = next(m for m in document['materials'] if m['name'] == 'PLANT.JPG')
@@ -286,7 +286,7 @@ def test_build_glb_blends_a_gradient_mask(make_ldb: Callable[..., bytes]) -> Non
 def test_build_glb_resizes_a_mask_to_its_colour(make_ldb: Callable[..., bytes]) -> None:
     level = read_level(
         make_ldb(**_masked(textures=(('X:\\plant.png', 0, _png((8, 8), (20, 200, 20))),
-                                     ('X:\\plant_alpha.png', 0, _grey((4, 4), 255))))))
+                                     ('X:\\plant_alpha.png', 0, _gray((4, 4), 255))))))
     document, _ = _parse(build_glb(level))
     assert any(image['name'].endswith('plant_alpha.png') for image in document['images'])
 
@@ -295,7 +295,7 @@ def test_build_glb_does_not_embed_a_mask_on_its_own(make_ldb: Callable[..., byte
     # The mask is only ever read through the material that names it.
     level = read_level(
         make_ldb(**_masked(textures=(('X:\\plant.png', 0, _png((4, 4), (20, 200, 20))),
-                                     ('X:\\plant_alpha.png', 0, _grey((4, 4), 255))))))
+                                     ('X:\\plant_alpha.png', 0, _gray((4, 4), 255))))))
     document, _ = _parse(build_glb(level))
     assert not any(image['name'] == 'X:\\plant_alpha.png' for image in document['images'])
 
@@ -317,7 +317,7 @@ def test_build_glb_reuses_one_composed_texture(make_ldb: Callable[..., bytes]) -
                  categories=(('leaves', (('PLANT.JPG', 'X:\\plant.png', 'X:\\plant_alpha.png'),
                                          ('PLANT2.JPG', 'X:\\plant.png', 'X:\\plant_alpha.png'))),),
                  textures=(('X:\\plant.png', 0, _png(
-                     (4, 4), (20, 200, 20))), ('X:\\plant_alpha.png', 0, _grey((4, 4), 255)))))
+                     (4, 4), (20, 200, 20))), ('X:\\plant_alpha.png', 0, _gray((4, 4), 255)))))
     document, _ = _parse(build_glb(level))
     assert sum(1 for image in document['images'] if ' + ' in image['name']) == 1
     materials = [m for m in document['materials'] if m['name'].startswith('PLANT')]
