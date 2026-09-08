@@ -8,9 +8,12 @@ file or the input directory) is only ever opened read-only and is never modified
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+from pathlib import Path
 from typing import TYPE_CHECKING
 import asyncio
 import shutil
+import tempfile
 
 import anyio
 
@@ -19,10 +22,9 @@ from dade.common.io import MmapReader
 from dade.common.iso9660 import Iso9660Image
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-    from pathlib import Path
+    from collections.abc import Generator, Iterator
 
-__all__ = ('iter_ark_bytes', 'materialize', 'open_image')
+__all__ = ('as_directory', 'find_by_suffix', 'iter_ark_bytes', 'materialize', 'open_image')
 
 _ARK_SUFFIX = '.ARK'
 """The upper-case suffix identifying an ARK archive on a disc.
@@ -86,6 +88,64 @@ def iter_ark_bytes(source: Path) -> Iterator[bytes]:
     for path, _ in image.iter_files():
         if path.upper().endswith(_ARK_SUFFIX):
             yield image.read_file(path)
+
+
+def find_by_suffix(directory: Path, suffix: str, *, recursive: bool = True) -> list[Path]:
+    """
+    Find files in ``directory`` with ``suffix``, ignoring case.
+
+    ISO 9660 stores names upper-cased, so a directory produced by :py:func:`as_directory` holds
+    ``TRACK.PCB`` where the installed game holds ``track.pcb``. Matching case-sensitively finds one
+    and silently misses the other, which reads as an empty disc rather than as an error.
+
+    Parameters
+    ----------
+    directory : pathlib.Path
+        Directory to search.
+    suffix : str
+        Suffix to match, with its leading dot.
+    recursive : bool
+        Whether to descend into subdirectories.
+
+    Returns
+    -------
+    list[pathlib.Path]
+        Matching files, sorted.
+    """
+    wanted = suffix.lower()
+    return sorted(path for path in (directory.rglob('*') if recursive else directory.iterdir())
+                  if path.is_file() and path.suffix.lower() == wanted)
+
+
+@contextmanager
+def as_directory(source: Path) -> Generator[Path]:
+    """
+    Yield a directory holding the source's files, whatever form the source arrived in.
+
+    An already-extracted directory is yielded as it stands, so a game installation is read where it
+    sits rather than copied. A disc image is extracted into a temporary directory that is removed
+    on the way out. Use this to give a directory-oriented unpacker disc-image support without
+    teaching it about images; use :py:func:`materialize` instead when the files must end up in a
+    particular output directory to be processed in place.
+
+    Parameters
+    ----------
+    source : pathlib.Path
+        An already-extracted directory, an ISO image, or the ``.cue`` or ``.bin`` of a cue/bin
+        pair.
+
+    Yields
+    ------
+    pathlib.Path
+        The directory to read from.
+    """
+    if source.is_dir():
+        yield source
+        return
+    with tempfile.TemporaryDirectory(prefix='dade-disc-') as name:
+        destination = Path(name)
+        _extract_image(open_image(source), destination)
+        yield destination
 
 
 async def materialize(source: Path, out: Path) -> None:

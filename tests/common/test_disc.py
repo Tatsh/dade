@@ -4,7 +4,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from dade.common.disc import iter_ark_bytes, materialize, open_image
+from dade.common.disc import (
+    as_directory,
+    find_by_suffix,
+    iter_ark_bytes,
+    materialize,
+    open_image,
+)
 from dade.common.exceptions import InvalidFormatError
 from dade.common.iso9660 import Iso9660Image
 
@@ -117,3 +123,40 @@ def test_open_image_bin_in_a_mode_it_cannot_read(make_cuebin: Callable[..., Path
     strange.write_bytes(bytes(raw))
     with pytest.raises(InvalidFormatError, match='Unsupported sector mode'):
         open_image(strange)
+
+
+def test_as_directory_yields_a_directory_source_untouched(tmp_path: Path) -> None:
+    source = tmp_path / 'install'
+    source.mkdir()
+    (source / 'track.pcb').write_bytes(b'DATA')
+    with as_directory(source) as directory:
+        assert directory == source
+
+
+def test_as_directory_extracts_an_image_and_cleans_up(make_iso9660: Callable[..., bytes],
+                                                      tmp_path: Path) -> None:
+    iso = tmp_path / 'game.iso'
+    iso.write_bytes(make_iso9660(top_data=b'TOP', ark_data=b'ARK DATA'))
+    with as_directory(iso) as directory:
+        extracted = directory
+        assert (directory / 'TOP.DAT').read_bytes() == b'TOP'
+        assert (directory / 'GEN' / 'MAIN.ARK').read_bytes() == b'ARK DATA'
+    assert not extracted.exists()
+
+
+def test_find_by_suffix_ignores_case(tmp_path: Path) -> None:
+    (tmp_path / 'sub').mkdir()
+    for name in ('lower.pcb', 'UPPER.PCB', 'Mixed.Pcb', 'other.dat'):
+        (tmp_path / name).write_bytes(b'')
+    (tmp_path / 'sub' / 'NESTED.PCB').write_bytes(b'')
+    # Sorting is by full path, so the subdirectory's entry follows the top-level ones.
+    assert [p.name for p in find_by_suffix(tmp_path, '.pcb')] == [
+        'Mixed.Pcb', 'UPPER.PCB', 'lower.pcb', 'NESTED.PCB'
+    ]
+
+
+def test_find_by_suffix_can_stay_at_the_top_level(tmp_path: Path) -> None:
+    (tmp_path / 'sub').mkdir()
+    (tmp_path / 'top.bmp').write_bytes(b'')
+    (tmp_path / 'sub' / 'nested.bmp').write_bytes(b'')
+    assert [p.name for p in find_by_suffix(tmp_path, '.bmp', recursive=False)] == ['top.bmp']

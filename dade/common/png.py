@@ -8,6 +8,7 @@ is a PNG regardless of the destination's file extension.
 """
 from __future__ import annotations
 
+from io import BytesIO
 from typing import TYPE_CHECKING
 import logging
 
@@ -16,9 +17,35 @@ from PIL import Image
 if TYPE_CHECKING:
     from pathlib import Path
 
-__all__ = ('write_rgb', 'write_rgba')
+__all__ = ('encode_rgba', 'write_rgb', 'write_rgba')
 
 log = logging.getLogger(__name__)
+
+
+def encode_rgba(width: int, height: int, pixels: bytes) -> bytes:
+    """
+    Encode 8-bit RGBA pixel data as a PNG in memory.
+
+    This is what a glTF needs, since an embedded image is a run of bytes in the binary chunk rather
+    than a file on disk.
+
+    Parameters
+    ----------
+    width : int
+        Image width in pixels.
+    height : int
+        Image height in pixels.
+    pixels : bytes
+        Row-major RGBA quads, four bytes per pixel.
+
+    Returns
+    -------
+    bytes
+        The encoded PNG.
+    """
+    buffer = BytesIO()
+    Image.frombytes('RGBA', (width, height), pixels).save(buffer, format='PNG')
+    return buffer.getvalue()
 
 
 def write_rgb(path: Path, width: int, height: int, rgb: bytes) -> None:
@@ -55,5 +82,5 @@ def write_rgba(path: Path, width: int, height: int, pixels: bytes) -> None:
     pixels : bytes
         Row-major RGBA quads, four bytes per pixel.
     """
-    Image.frombytes('RGBA', (width, height), pixels).save(path, format='PNG')
+    path.write_bytes(encode_rgba(width, height, pixels))
     log.debug('Wrote `%s` (%dx%d).', path, width, height)
