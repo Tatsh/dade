@@ -160,7 +160,7 @@ jobs:
             Write-Host "Testing '$($file.FullName)'."
             & $file.FullName --help
           }
-      - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && env.APPLE_SIGNING_CERT != ''
+      - if: (matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest') && env.APPLE_SIGNING_CERT != ''
         name: 'Sign and notarise macOS binaries'
         env:
           APPLE_CERT_BASE64: ${{ secrets.APPLE_SIGNING_CERTIFICATE }}
@@ -203,7 +203,7 @@ jobs:
           rm -f "$cert_path" "$zip_path"
           security delete-keychain "$keychain"
         shell: 'bash'
-      - if: matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
+      - if: matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest'
         name: 'Test binary'
         run: |
           dist_files=(dist/*)
@@ -241,7 +241,7 @@ jobs:
         with:
           subject-path: '${{ matrix.dist_path }}'
           sbom-path: 'sbom.spdx.json'
-      - if: (matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel') && github.ref_type == 'tag'
+      - if: (matrix.os == 'macos-15-intel' || matrix.os == 'macos-latest') && github.ref_type == 'tag'
         name: 'Zip files'
         env:
           DIST_PATH: ${{ matrix.dist_path }}

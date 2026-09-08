@@ -32,7 +32,7 @@ repos:
       - id: 'detect-private-key'
       - exclude: "^vcpkg.*\\.json$"
         id: 'end-of-file-fixer'
-      - files: "^(\\.(docker|eslint|prettier)ignore|CODEOWNERS|\\.gitattributes)$"
+      - files: "^(\\.(docker|eslint|prettier)ignore|CODEOWNERS|\\.gitattributes|\\.vscode/dictionary\\.txt)$"
         id: 'file-contents-sorter'
       - id: 'fix-byte-order-marker'
       - id: 'mixed-line-ending'
@@ -53,7 +53,7 @@ repos:
           - '--fix'
         id: 'ruff-check'
     repo: 'https://github.com/astral-sh/ruff-pre-commit'
-    rev: 'v0.16.6'
+    rev: 'v0.16.5'
   - hooks:
       - id: 'yapf'
         name: 'check Python files are formatted'
@@ -117,4 +117,4 @@ repos:
   - hooks:
       - id: 'cspell'
     repo: 'https://github.com/streetsidesoftware/cspell-cli'
-    rev: 'v10.2.0'
+    rev: 'v10.1.0'
