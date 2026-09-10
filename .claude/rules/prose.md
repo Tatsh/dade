@@ -103,8 +103,8 @@ stamp_ are both fine.
   the condition itself.
 - Delete a definite article wherever the sentence survives without it. Proper names and generic
   plurals almost never take one. _the trash_, _the Downloads folder_, and _the special folders_
-  become _trash_, _Downloads_, and _special folders_. Stacking articles across a sentence is an
-  Americanism and reads as padding.
+  become _trash_, _Downloads_, and _special folders_. Stacking articles across a sentence reads as
+  padding.
 - The same applies to _it_, _them_, _one_, and _none_ once a sentence offers more than one candidate
   noun. _retained every one of them_ becomes _retained its stored properties_. Where exactly one
   candidate noun exists, the pronoun is correct, and repeating the noun is padding.
