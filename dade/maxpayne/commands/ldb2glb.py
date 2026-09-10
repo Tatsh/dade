@@ -49,7 +49,7 @@ def _convert(job: tuple[Path, Path, Path | None]) -> _Result:
     """
     Convert one level, reporting failure rather than raising.
 
-    Runs in a worker process, so the outcome has to be picklable and exceptions have to be turned
+    Runs in a worker process, and the outcome therefore has to be picklable with exceptions turned
     into data.
 
     Parameters
@@ -66,8 +66,8 @@ def _convert(job: tuple[Path, Path, Path | None]) -> _Result:
     level, output_dir, database = job
     try:
         data = unwrap(level.read_bytes())[0]
-        # The second game's levels say so in their first four bytes, and share nothing but the
-        # tagged values with the first game's, so the magic picks the reader.
+        # The second game's levels state that in their first four bytes, and share nothing but the
+        # tagged values with the first game's. The magic therefore picks the reader.
         second = data[:len(MAGIC)] == MAGIC
         parsed = read_level2(data) if second else read_level(data)
         models = {} if second or not database else load_models(database, parsed)
@@ -117,7 +117,7 @@ def _convert(job: tuple[Path, Path, Path | None]) -> _Result:
 @click.option('-D',
               '--database',
               default=None,
-              help="The game's data/database directory, to draw NPCs and pickups with their own "
+              help="The game's data/database directory, to draw NPCs and pickups with their real "
               'models. Without it they are written as empty named nodes.',
               type=click.Path(exists=True, file_okay=False, path_type=Path))
 @click.option('--ignore-failures', is_flag=True, help='Log and skip a level that will not read.')
@@ -125,22 +125,22 @@ def _convert(job: tuple[Path, Path, Path | None]) -> _Result:
 def ldb2glb(levels: tuple[Path, ...], output_dir: Path, jobs: int, database: Path | None, *,
             ignore_failures: bool) -> None:
     """
-    Convert each LEVELS ``.ldb`` to a ``.glb`` holding its geometry.
+    Convert each LEVELS ``.ldb`` to a ``.glb`` with its geometry.
 
     A directory is searched recursively for ``.ldb`` files. Levels are accepted loose or still
-    wrapped in a RA-> block, so a file taken straight out of an archive works. Both games are read:
+    wrapped in a RA-> block, and a file taken straight out of an archive works. Both games are read;
     a level is a Max Payne 2 one when it opens with ``LDB2``, and which game it came from does not
     have to be given.
 
-    Each placed mesh becomes its own node with its own transform, keeping props separate from the
+    Each placed mesh becomes a separate node with its transform, distinguishing props from the
     architecture, and every face is textured with the image the game gives it. Coordinates are
     passed through unchanged because levels are already Y-up.
 
-    Pass ``--database`` to draw the NPCs and pickups with their own models, read from the game's
-    ``skins`` and ``level_items`` directories. It applies to the first game only, which is where
-    those directories are; Max Payne 2 carries its props inside each level.
+    Pass ``--database`` to draw the NPCs and pickups with their real models, read from the game's
+    ``skins`` and ``level_items`` directories. It applies to the first game only, the game those
+    directories belong to; Max Payne 2 stores its props inside each level.
 
-    Reading a level is processor-bound, so levels are converted in parallel processes.
+    Reading a level is processor-bound, and levels are therefore converted in parallel processes.
     """  # ruff: ignore[docstring-missing-exception]
     found: list[Path] = []
     for level in levels:

@@ -22,14 +22,14 @@ def _under(output_dir: Path, path: str) -> Path | None:
     r"""
     Place one member's stored path inside the output directory, or refuse to.
 
-    A member's path is whatever the archive says, and nothing stops an archive naming
+    A member's path is whatever the archive states, and nothing stops an archive specifying
     ``..\..\.ssh\authorized_keys``. Anything that would land outside the directory the caller
-    asked for is dropped rather than written somewhere it was not wanted.
+    requested is dropped rather than written somewhere it was not wanted.
 
     Parameters
     ----------
     output_dir : Path
-        Directory the caller asked members to be written into.
+        Directory the caller requested members be written into.
     path : str
         The member's path, as the archive stores it.
 
@@ -76,7 +76,7 @@ def _unpack(label: str, data: bytes, patterns: tuple[str, ...], output_dir: Path
               default='.',
               help='Directory to write members into.',
               type=click.Path(file_okay=False, path_type=Path))
-@click.option('--raw', is_flag=True, help='Keep the RA-> and RC-> wrappers.')
+@click.option('--raw', is_flag=True, help='Retain the RA-> and RC-> wrappers.')
 @debug_option
 def ras_extract(sources: tuple[Path, ...], patterns: tuple[str, ...], output_dir: Path, *,
                 raw: bool) -> None:
@@ -88,7 +88,7 @@ def ras_extract(sources: tuple[Path, ...], patterns: tuple[str, ...], output_dir
     Payne 2 splits its cabinet across two, and the parts are gathered from all of them
     before it is unpacked.
 
-    Every archive is extracted into the same tree, which reproduces the layout the game itself
+    Every archive is extracted into the same tree, reproducing the layout the game itself
     sees because the archives share one namespace. Pass --pattern to take only the members whose
     in-archive path matches a glob; every member is taken when none is given.
     """  # ruff: ignore[docstring-missing-exception]

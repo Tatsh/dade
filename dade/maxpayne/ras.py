@@ -5,14 +5,14 @@ Reader for RAS (Remedy Archive System) archives.
 
 The 44-byte header starts with the magic and a signed cipher seed in the clear; the remaining 36
 bytes are encrypted with that seed and give the file and directory counts, the size of each table,
-the format version, a CRC32 of the header with its own CRC field zeroed, and the writer identity.
+the format version, a CRC32 of the header with the CRC field zeroed, and the writer identity.
 The file table follows, then the directory table, each encrypted with the same seed restarting its
 keystream at index zero.
 
 Both tables are sequences of a NUL-terminated name followed by fixed-width fields: 40 bytes for a
 file (two sizes, two reserved dwords, the owning directory index, another reserved dword, and a
-``SYSTEMTIME``) and 16 bytes for a directory (a ``SYSTEMTIME`` alone). Members carry no offset
-field because payloads are stored back to back in file-table order, which makes
+``SYSTEMTIME``) and 16 bytes for a directory (a ``SYSTEMTIME`` alone). Members store no offset
+field, payloads being written back to back in file-table order. That makes
 ``header + tables + sum of stored sizes == archive size`` an exact integrity check.
 """
 from __future__ import annotations
@@ -140,7 +140,7 @@ def _read_tables(header: ArchiveHeader, file_table: bytes, directory_table: byte
     Raises
     ------
     InvalidArchiveError
-        If an entry names a directory the archive does not hold.
+        If an entry references a directory the archive does not include.
     """
     directories: list[RASDirectory] = []
     offset = 0
@@ -187,13 +187,13 @@ def read_directory(data: bytes) -> RASContents:
     Raises
     ------
     InvalidArchiveError
-        If the header will not read, the buffer is too short to hold both tables, or an entry
-        names a directory the archive does not hold.
+        If the header will not read, the buffer is too short for both tables, or an entry
+        references a directory the archive does not include.
     """
     header = read_header(data)
     table_start = HEADER_SIZE + header.file_table_size
     # Slicing a short buffer silently gives back a short table, and the walk over it then fails
-    # somewhere inside a name or a field rather than saying the archive is cut off.
+    # somewhere inside a name or a field rather than reporting a truncated archive.
     tables_end = table_start + header.directory_table_size
     if len(data) < tables_end:
         msg = f'The tables need {tables_end} bytes; the archive is {len(data)}.'
@@ -202,9 +202,9 @@ def read_directory(data: bytes) -> RASContents:
     directory_table = decrypt(bytes(data[table_start:table_start + header.directory_table_size]),
                               header.seed)
     cursor = table_start + header.directory_table_size
-    # A table long enough to hold what the header promised can still be nonsense inside it: a name
-    # with no terminator, or one long enough to leave no room for the fields behind it. Those come
-    # back from the readers as `ValueError` or `struct.error`, which say nothing about archives.
+    # A table long enough for what the header promised can still be nonsense inside it, with a name
+    # missing its terminator, or one long enough to crowd out the fields behind it. Those come back
+    # from the readers as `ValueError` or `struct.error`, neither mentioning archives.
     try:
         directories, entries, cursor = _read_tables(header, file_table, directory_table, cursor)
     except InvalidArchiveError:

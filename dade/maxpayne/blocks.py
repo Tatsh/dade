@@ -3,7 +3,7 @@ The ``RA->`` and ``RC->`` block wrappers Remedy's ``rl`` library puts around sto
 
 ``RA->`` marks an LZSS-compressed block and ``RC->`` an encrypted one. Either may wrap the other,
 so :py:func:`unwrap` peels layers until neither magic matches. Every member of the shipped archives
-carries exactly one ``RA->`` layer.
+uses exactly one ``RA->`` layer.
 """
 from __future__ import annotations
 
@@ -141,7 +141,7 @@ def unwrap(data: bytes) -> tuple[bytes, tuple[str, ...]]:
     """
     layers: list[str] = []
     while len(data) >= _COMPRESSED_HEADER_SIZE:
-        # An encrypted block's header is the longer of the two, so a buffer that is long enough to
+        # An encrypted block's header is the longer of the two, and a buffer long enough to
         # be a compressed one and starts with `RC->` is still too short to take apart.
         if is_encrypted(data):
             if len(data) < _ENCRYPTED_HEADER_SIZE:

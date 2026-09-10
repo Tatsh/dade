@@ -29,12 +29,12 @@ def _relative(path: str) -> PurePosixPath:
     Returns
     -------
     PurePosixPath
-        The path with any drive letter, leading separator and upward step removed, so it can only
+        The path with any drive letter, leading separator and upward step removed, letting it only
         ever name somewhere under the output directory.
     """
     windows = PureWindowsPath(path)
-    # A level's texture paths are whatever the artist's machine had, so they are not to be trusted
-    # with where a file lands: `..` in one of them would write outside the directory asked for.
+    # A level's texture paths are whatever the artist's machine had, and are not to be trusted with
+    # where a file lands. A `..` in one of them would write outside the requested directory.
     parts = [
         part for part in windows.parts if part not in {'\\', '/', '.', '..'} and ':' not in part
     ]
@@ -58,7 +58,7 @@ def ldb_textures(levels: tuple[pathlib.Path, ...], output_dir: pathlib.Path, *, 
     Write out the images embedded in each LEVELS ``.ldb``.
 
     A directory is searched recursively. Each image is stored in the level exactly as the artist
-    saved it, so the bytes are written through untouched and keep their original extension. Images
+    saved it, and the bytes are written through untouched with their original extension. Images
     land under the directory tree of the path they were authored at, with the drive letter dropped;
     pass --flat to put them all in one directory instead.
     """  # ruff: ignore[docstring-missing-exception]

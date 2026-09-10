@@ -2,19 +2,19 @@
 Turn Max Payne level geometry into a binary glTF (``.glb``).
 
 A level stores its geometry twice. The BSP faces split it for visibility, and a static mesh
-container holds the geometry the game actually draws: a corner array shared by every mesh, then one
-entry per placed mesh with its own vertices, normals and transform. The second form carries
-Remedy's own texture coordinates and keeps props as separate placed objects, so it is used whenever
-it can be read; the BSP faces are the fallback and are written untextured.
+container stores the geometry the game actually draws, comprising a corner array shared by every
+mesh, then one entry per placed mesh with its vertices, normals and transform. The second form
+includes Remedy's texture coordinates and retains props as separate placed objects, and it is
+therefore used whenever it can be read; the BSP faces are the fallback and are written untextured.
 
-Faces are convex and are triangulated as fans, which is exact for convex polygons. Each fan is
-wound to agree with the face's stored normal so that back-face culling shows a level from the
-inside when the camera sits outside it, which is what a level viewer wants.
+Faces are convex and are triangulated as fans, exactly right for convex polygons. Each fan is wound
+to agree with the face's stored normal, and back-face culling therefore shows a level from the
+inside when the camera sits outside it, as a level viewer wants.
 
-Each material's image is embedded. Targa images are re-encoded as PNG because glTF only carries PNG
-and JPEG; JPEG data is embedded as it was stored.
+Each material's image is embedded. Targa images are re-encoded as PNG because glTF supports only
+PNG and JPEG; JPEG data is embedded as it was stored.
 
-Level coordinates are Y-up, which is glTF's convention, so positions are written through unchanged.
+Level coordinates are Y-up, glTF's convention, and positions are written through unchanged.
 """
 from __future__ import annotations
 
@@ -64,10 +64,10 @@ log = logging.getLogger(__name__)
 _FALLBACK_COLOR = (0.72, 0.72, 0.74, 1.0)
 _NODRAW = 'nodraw'
 _MAX_KEYFRAMES = 24
-"""Keyframes kept per clip. The stored curves carry up to 4096 samples of a smooth ease, which is
-far more than the motion needs. Read against the game's own curve, the worst clip of the first five
-levels of the second game lands within 0.058 of where the game would have it, and the average
-within 0.002.
+"""Keyframes retained per clip. The stored curves extend to 4096 samples of a smooth ease, far
+more than the motion needs. Read against the game's curve, the worst clip of the first five levels
+of the second game lands within 0.058 of where the game would have it, and the average within
+0.002.
 
 :meta hide-value:
 """
@@ -78,7 +78,7 @@ _SPAN = 2
 """
 _SPLINE_STEPS = 6
 """Readings taken across one span of a curve that bends. glTF walks straight lines between
-keyframes and the game walks a spline, so a span needs cutting up for the two to agree.
+keyframes and the game walks a spline, and a span therefore needs cutting up for the two to agree.
 
 :meta hide-value:
 """
@@ -96,8 +96,8 @@ taking the arc would divide by nearly zero.
 _NON_DRAWING = frozenset({'cameracollision', 'dummy'})
 """Material categories the engine does not draw.
 
-Levels name these outright: anything ending in ``nodraw`` is collision geometry, and ``dummy``
-carries Remedy's placeholder image. Keeping them would paper a level in magenta ``DUMMY`` text.
+Levels state these outright. Anything ending in ``nodraw`` is collision geometry, and ``dummy``
+uses Remedy's placeholder image. Retaining them would paper a level in magenta ``DUMMY`` text.
 
 :meta hide-value:
 """
@@ -105,25 +105,25 @@ carries Remedy's placeholder image. Keeping them would paper a level in magenta 
 _SKY = 'skybox'
 """Category on the faces that close a level off where it opens to the sky.
 
-These carry a placeholder image too -- teal ``SKYBOX`` text -- but unlike ``dummy`` they cannot
-just be dropped. They are the only thing between a courtyard, an alley or a stretch of street and
-nothing at all, so leaving them out puts a hole through the level wherever the game showed sky.
-They are written with a flat colour instead, which a viewer can swap for a real sky.
+These use a placeholder image too, teal ``SKYBOX`` text, but unlike ``dummy`` they cannot simply be
+dropped. They are the only barrier between a courtyard, an alley or a stretch of street and nothing
+at all, and omitting them puts a hole through the level wherever the game showed sky. They are
+written with a flat colour instead. A viewer can swap that for a real sky.
 
 :meta hide-value:
 """
 
 _SKY_COLOR = (0.29, 0.33, 0.40, 1.0)
-"""Stand-in for the sky. Max Payne draws its own sky from the renderer's settings rather than from
-anything the level stores, so there is nothing in the file to read: this is the dull overcast
-blue-grey the game's nights are lit by.
+"""Stand-in for the sky. Max Payne draws its sky from the renderer's settings rather than from
+anything the level stores, and there is therefore nothing in the file to read. This is the dull
+overcast blue-grey the game's nights are lit by.
 
 :meta hide-value:
 """
 _NO_LIFTS: Mapping[int, int] = MappingProxyType({})
 
 _FLAT_FAN = 1e-9
-"""Below this a fan triangle is a straight line and says nothing about which way its face points.
+"""Below this a fan triangle is a straight line and establishes no facing direction.
 
 :meta hide-value:
 """
@@ -284,8 +284,8 @@ def _node_matrix(transform: Sequence[float]) -> list[float]:
     """
     Turn a stored four-by-three transform into a glTF node matrix.
 
-    The transform is conjugated by the same depth mirror applied to vertices, which keeps the
-    rotation's determinant positive so no renderer has to reverse winding for it.
+    The transform is conjugated by the same depth mirror applied to vertices. The rotation's
+    determinant therefore stays positive, and no renderer has to reverse winding for it.
 
     Parameters
     ----------
@@ -328,7 +328,7 @@ def _place(matrix: Sequence[float], point: Vector3) -> Vector3:
 
 def _turn(matrix: Sequence[float], vector: Vector3) -> Vector3:
     """
-    Put a direction through a column-major node matrix, leaving the translation out.
+    Put a direction through a column-major node matrix, omitting the translation.
 
     Parameters
     ----------
@@ -352,9 +352,9 @@ def _decompose(transform: Sequence[float]) -> tuple[list[float], list[float], li
     """
     Split a stored transform into the translation, rotation and scale a glTF node animates on.
 
-    A node carrying a ``matrix`` cannot be animated, so an animated prop has to be written as three
-    separate properties instead. The split is taken from :py:func:`_node_matrix`'s output so a prop
-    lands in exactly the same place whether or not it moves.
+    A node with a ``matrix`` cannot be animated, and an animated prop therefore has to be written as
+    three separate properties instead. The split is taken from :py:func:`_node_matrix`'s output, and
+    a prop lands in exactly the same place whether or not it moves.
 
     Parameters
     ----------
@@ -369,9 +369,9 @@ def _decompose(transform: Sequence[float]) -> tuple[list[float], list[float], li
     matrix = _node_matrix(transform)
     columns = [matrix[0:3], matrix[4:7], matrix[8:11]]
     scale = [math.sqrt(sum(v * v for v in column)) or 1.0 for column in columns]
-    # A negative determinant would make the rotation a reflection, which no quaternion can hold;
-    # the mirror conjugation is built to avoid one, and folding it into the scale keeps the node
-    # correct if a level ever contains it.
+    # A negative determinant would make the rotation a reflection, beyond what a quaternion can
+    # express. The mirror conjugation is built to avoid one, and folding it into the scale renders
+    # the node correct if a level ever includes it.
     left, middle, right = (columns[i] for i in range(3))
     determinant = (left[0] * (middle[1] * right[2] - middle[2] * right[1]) - left[1] *
                    (middle[0] * right[2] - middle[2] * right[0]) + left[2] *
@@ -402,7 +402,7 @@ def _quaternion(rotation: Sequence[Sequence[float]]) -> list[float]:
         out = [(rotation[2][1] - rotation[1][2]) / scale, (rotation[0][2] - rotation[2][0]) / scale,
                (rotation[1][0] - rotation[0][1]) / scale, 0.25 * scale]
     else:
-        # Pivot on the largest diagonal entry, which keeps the divisor away from zero.
+        # Pivot on the largest diagonal entry. The divisor then stays away from zero.
         axis = max(range(3), key=lambda i: rotation[i][i])
         other, third = (axis + 1) % 3, (axis + 2) % 3
         scale = math.sqrt(1.0 + rotation[axis][axis] - rotation[other][other] -
@@ -419,7 +419,7 @@ def _catmull_rom(times: Sequence[float], values: Sequence[float], at: float) -> 
     """
     Evaluate one span of a Catmull-Rom curve, the way ``T_GraphCurve`` does.
 
-    The two outer control values are pulled onto this span's length first, which is what keeps the
+    The two outer control values are pulled onto this span's length first. That preserves the
     curve's shape when the samples are not evenly spaced, and the second game's rarely are.
 
     Parameters
@@ -473,8 +473,8 @@ def _curve_value(times: Sequence[float], values: Sequence[float], at: float) -> 
     while span < count - _SPAN and times[span + 1] < at:
         span += 1
     if count == _SPAN:
-        # One span has no neighbours, so the engine invents them by carrying the span straight on,
-        # which makes the curve a straight line rather than a bulging one.
+        # One span has no neighbours, and the engine therefore invents them by extending the span
+        # straight on, making the curve a straight line rather than a bulging one.
         width, rise = times[1] - times[0], values[1] - values[0]
         return _catmull_rom((times[0] - width, times[0], times[1], times[1] + width),
                             (values[0] - rise, values[0], values[1], values[1] + rise), at)
@@ -495,7 +495,7 @@ def _keyframes(duration: float, curve: Sequence[float], total: float,
     curve : collections.abc.Sequence[float]
         The curve's samples.
     total : float
-        What the curve's last sample means as a whole, so the samples come out as fractions.
+        What the curve's last sample means as a whole, making the samples fractions of it.
     times : collections.abc.Sequence[float]
         When each sample falls, as a fraction of *duration*. Empty when the format spaces them
         evenly and states no times.
@@ -524,7 +524,7 @@ def _samples(times: Sequence[float]) -> list[float]:
     Choose where to read a curve so that straight lines between the readings follow it.
 
     A curve of two samples is already a straight line and needs nothing between them. A longer one
-    is a spline, so each of its spans is cut into steps, up to what a clip is allowed to carry.
+    is a spline, and each of its spans is therefore cut into steps, up to a clip's keyframe limit.
 
     Parameters
     ----------
@@ -612,8 +612,8 @@ def _mirror(vector: Vector3) -> Vector3:
     Mirror a vector along the depth axis.
 
     Max Payne is a Direct3D game and stores a left-handed world; glTF is right-handed. Without the
-    conversion every level comes out as its own mirror image, which only shows up on signage: the
-    Choir Communications billboard reads backwards.
+    conversion every level comes out mirrored, visible only on signage. The Choir Communications
+    billboard reads backwards.
 
     Parameters
     ----------
@@ -651,8 +651,8 @@ class _Document(GLBDocument):
         self._raw = {texture.path: texture.data for texture in level.textures}
         self._masked: dict[tuple[str, str], tuple[int, str]] = {}
         self._by_model: dict[str, int] = {}
-        # A mask is only ever read through the material that names it, so embedding it on its own
-        # would double its weight for nothing.
+        # A mask is only ever read through the material that references it, and embedding it
+        # separately would double its weight for nothing.
         masks = {m.alpha for m in level.materials.values() if m.alpha}
         for texture in level.textures:
             if texture.path in masks:
@@ -666,20 +666,20 @@ class _Document(GLBDocument):
         """
         Add one clip as a glTF animation driving a node's translation and rotation.
 
-        The level drives the two separately: one curve gives the distance travelled in world units
-        and the other how far the prop has turned, each with its own sample count and, in the second
-        game, its own times. Both are walked and baked into keyframes, which leaves nothing for a
-        viewer to interpolate differently, and is why the samples are thinned first -- a crane's
-        curve carries 4096 of them.
+        The level drives the two separately. One curve gives the distance travelled in world units
+        and the other how far the prop has turned, each with a separate sample count and, in the
+        second game, separate times. Both are walked and baked into keyframes, and a viewer has
+        nothing to interpolate differently. That is why the samples are thinned first; a crane's
+        curve runs to 4096 of them.
 
-        A channel whose two poses agree is left out, so a hinged door gets rotation alone.
+        A channel whose two poses agree is omitted, and a hinged door therefore gets rotation alone.
 
         Parameters
         ----------
         node : int
             Index of the node the clip drives.
         mesh : str
-            The prop's name, which the clip's name is appended to.
+            The prop's name, with the clip's name appended to it.
         clip : PropAnimation
             The clip.
 
@@ -733,9 +733,9 @@ class _Document(GLBDocument):
             return False
         self.animations.append({
             'channels': channels,
-            # The prop and the clip are both named by the level, and a clip name is only unique
-            # within its prop, so the two together are what a viewer can list and a script can
-            # match: `DO_Animate("open1")` sent to `::Sanctum Corridor::door01.DO`.
+            # The prop and the clip are both titled by the level, and a clip name is only unique
+            # within its prop. The two together are therefore what a viewer can list and a script
+            # can match, as in `DO_Animate("open1")` sent to `::Sanctum Corridor::door01.DO`.
             'name': f'{mesh}/{clip.name}',
             'samplers': samplers
         })
@@ -807,9 +807,9 @@ class _Document(GLBDocument):
         """
         Add a material belonging to a model rather than to the level.
 
-        A model brings its own library, naming an image file that the caller was asked to read in
-        beside it. Materials are keyed by that file name so two NPCs sharing a texture share it here
-        too.
+        A model brings a separate library, referencing an image file the caller was requested to
+        read in beside it. Materials are keyed by that file name, and two NPCs sharing a texture
+        share it here too.
 
         Parameters
         ----------
@@ -847,12 +847,12 @@ class _Document(GLBDocument):
         """
         Return the glTF material for a level material and lightmap pair, creating it once.
 
-        A face names both the material it draws with and which of the level's baked lighting
-        atlases lights it, so the two together decide the material a primitive needs. The atlas
-        goes in the occlusion slot on the second coordinate set: glTF has no slot that multiplies a
-        baked lightmap into the base colour, and occlusion is the one a plain viewer darkens with
-        rather than ignoring. A viewer after the game's own look should multiply that texture's
-        colour into the base rather than treating it as ambient occlusion.
+        A face states both the material it draws with and which of the level's baked lighting
+        atlases lights it, and the two together therefore decide the material a primitive needs. The
+        atlas goes in the occlusion slot on the second coordinate set. glTF has no slot that
+        multiplies a baked lightmap into the base colour, and occlusion is the one a plain viewer
+        darkens with rather than ignoring. A viewer after the game's look should multiply that
+        texture's colour into the base rather than treating it as ambient occlusion.
 
         Parameters
         ----------
@@ -882,14 +882,14 @@ class _Document(GLBDocument):
             pbr['baseColorFactor'] = list(_FALLBACK_COLOR)
         else:
             pbr['baseColorTexture'] = {'index': index, 'texCoord': 0}
-        # A material whose image carries its own alpha says how to blend it rather than naming a
-        # mask to composite, so there is nothing to build and the mode is taken as given.
+        # A material whose image includes alpha states how to blend it rather than referencing a
+        # mask to composite. There is therefore nothing to build, and the mode is taken as given.
         if not mode and material:
             mode = material.blend
         name = material.texture if material else f'material_{material_id}'
         entry: dict[str, Any] = {
-            # A cut-out is a flat card meant to be seen from either side, so it cannot be culled,
-            # and a material may ask for both sides outright.
+            # A cut-out is a flat card meant to be seen from either side and cannot be culled, and
+            # a material may request both sides outright.
             'doubleSided': bool(mode) or bool(material and material.dual_sided),
             'name': name,
             'pbrMetallicRoughness': pbr
@@ -917,8 +917,8 @@ class _Document(GLBDocument):
         if self._sky_material is None:
             self.use(UNLIT)
             self.materials.append({
-                # Sky is not a surface and must not shade, so it is written unlit. A viewer that
-                # does not know the extension still gets the same colour, just lit.
+                # Sky is not a surface and must not shade, and is therefore written unlit. A viewer
+                # that does not know the extension still gets the same colour, just lit.
                 'extensions': {
                     UNLIT: {}
                 },
@@ -986,14 +986,14 @@ def _add_mesh(document: _Document,
     name : str
         Name for the node and mesh.
     matrix : collections.abc.Sequence[float] | None
-        The mesh's four-by-three transform, or :py:obj:`None` to leave the node at the origin.
+        The mesh's four-by-three transform, or :py:obj:`None` to put the node at the origin.
     material : collections.abc.Callable[[Any], int] | None
-        Turns a group's key into a document material index. Defaults to the level's own materials.
+        Turns a group's key into a document material index. Defaults to the level's materials.
     lightmap_coords : collections.abc.Sequence[tuple[float, float]]
         One lightmap coordinate per position, empty when the mesh has none.
     animate : bool
         Write the node's placement as translation, rotation and scale rather than as one matrix. A
-        node carrying a matrix cannot be animated.
+        node with a matrix cannot be animated.
 
     Returns
     -------
@@ -1068,11 +1068,11 @@ def _add_static_mesh(document: _Document,
     """
     Add one mesh, expanding its shared corners into vertices.
 
-    Faces the engine does not draw are left out, so collision volumes and the skybox's placeholder
-    image do not paper over the level.
+    Faces the engine does not draw are omitted, and collision volumes and the skybox's placeholder
+    image therefore do not paper over the level.
 
     Vertices arrive in their room's space and :py:attr:`StaticMesh.transform` is the transform the
-    reader worked out for that room from the level's exit graph, so it always has to be applied.
+    reader worked out for that room from the level's exit graph. It always has to be applied.
 
     Parameters
     ----------
@@ -1093,7 +1093,7 @@ def _add_static_mesh(document: _Document,
     lifts : collections.abc.Mapping[int, int]
         How far off its plane each face has to sit, in steps of
         :py:data:`dade.maxpayne.decals.DECAL_STEP`, keyed by the face's index. Faces that stay put
-        may be left out.
+        may be omitted.
     """
     positions: list[Vector3] = []
     normals: list[Vector3] = []
@@ -1107,8 +1107,8 @@ def _add_static_mesh(document: _Document,
         end = face.first_corner + face.corner_count
         if end > len(corners):
             return
-        # Anything laid over another surface rides a little way up its own normal, so that a
-        # viewer drawing both at once does not have to guess which is in front.
+        # Anything placed over another surface rides a little way up its normal, letting a viewer
+        # drawing both at once avoid guessing which is in front.
         step = lifts.get(at, 0) * DECAL_STEP
         lift = _mirror(face.normal)
         for corner in corners[face.first_corner:end]:
@@ -1120,8 +1120,8 @@ def _add_static_mesh(document: _Document,
             coords.append(corner.uv)
             baked.append(corner.lightmap_uv)
         fan = [(base, base + i, base + i + 1) for i in range(1, face.corner_count - 1)]
-        # A face names both its material and the atlas that lights it, and a primitive can carry
-        # only one of each, so the two together group the triangles.
+        # A face states both its material and the atlas that lights it, and a primitive supports
+        # only one of each. The two together therefore group the triangles.
         groups.setdefault((face.material, face.lightmap), []).extend(
             _wind(fan, positions, _mirror(face.normal)))
     if not groups:
@@ -1138,7 +1138,7 @@ def _add_static_mesh(document: _Document,
                      lightmap_coords=baked)
     written = sum(document.add_animation(node, name, clip) for clip in moving)
     if moving and not written and placed:
-        # Nothing drove the node after all, so it may as well carry a matrix like the rest.
+        # Nothing drove the node after all, and it may as well use a matrix like the rest.
         document.settle(node, mesh.transform)
 
 
@@ -1175,8 +1175,8 @@ def _add_model(document: _Document, model: Model, placement: Placement, label: s
     """
     Add one NPC or pickup as real geometry.
 
-    The model arrives in its own space with its own material library, so its images are embedded
-    beside the level's and the placement's transform puts it where the level asked for it.
+    The model arrives in model space with a separate material library. Its images are therefore
+    embedded beside the level's, and the placement's transform puts it where the level specified.
 
     Parameters
     ----------
@@ -1187,7 +1187,7 @@ def _add_model(document: _Document, model: Model, placement: Placement, label: s
     placement : Placement
         Where the object stands.
     label : str
-        Prefix naming what the node holds, such as ``character:transit_cop``.
+        Prefix identifying the node's subject, such as ``character:transit_cop``.
     """
     images = {texture.path.lower(): texture for texture in model.textures}
     for index, mesh in enumerate(model.meshes):
@@ -1225,8 +1225,8 @@ def _add_placement(document: _Document, placement: Placement, label: str) -> Non
     Add one NPC or pickup as an empty node.
 
     The models live outside the level, under ``data/database/skins`` and
-    ``data/database/level_items``, so what the level itself supplies is where each one stands and
-    which model belongs there. Carrying that as a named, positioned node keeps the placement usable
+    ``data/database/level_items``. The level itself supplies only where each one stands and which
+    model belongs there. Writing that as a positioned node with a name preserves the placement even
     without the model.
 
     Parameters
@@ -1236,7 +1236,7 @@ def _add_placement(document: _Document, placement: Placement, label: str) -> Non
     placement : Placement
         Where the object stands.
     label : str
-        Prefix naming what the node holds, such as ``character:transit_cop``.
+        Prefix identifying the node's subject, such as ``character:transit_cop``.
     """
     document.nodes.append({
         'matrix': _node_matrix(placement.transform),
@@ -1249,7 +1249,7 @@ def _lift_decals(level: Level, containers: Sequence[RenderMesh]) -> list[list[di
     Work out which faces have to come off their plane, across the whole level at once.
 
     Whether two surfaces fight depends on where they end up in the scene, not on which mesh they
-    were stored in, so every drawn face is gathered in scene space first and layered together. See
+    were stored in. Every drawn face is therefore gathered in scene space first and layered. See
     :py:func:`dade.maxpayne.decals.layer_faces` for what the layering means.
 
     Parameters
@@ -1267,7 +1267,7 @@ def _lift_decals(level: Level, containers: Sequence[RenderMesh]) -> list[list[di
         out.
     """
     # A level that states which of its surfaces sit over others is believed rather than measured.
-    # Only the second game does; the first leaves every priority at nought.
+    # Only the second game does; the first sets every priority to nought.
     stated = {key: m.sort_priority for key, m in level.materials.items() if m.sort_priority}
     if stated:
         return [[{

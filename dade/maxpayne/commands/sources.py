@@ -29,10 +29,10 @@ ARCHIVE_SUFFIXES = ('.ras', '.mpm')
 :meta hide-value:
 """
 CABINET_NAME = 'data1.cab'
-"""Name of the InstallShield cabinet holding the archives that are not loose on the disc.
+"""Name of the InstallShield cabinet with the archives that are not loose on the disc.
 
 It is the one ``unshield`` is pointed at, but not the only one it reads: the header beside it and
-every later volume are opened too, so a cabinet split across two discs is only whole once both
+every later volume are opened too, and a cabinet split across two discs is only whole once both
 have been staged together.
 
 :meta hide-value:
@@ -40,7 +40,7 @@ have been staged together.
 
 
 class NoArchivesFoundError(ValueError):
-    """Raised when a source holds no RAS archive."""
+    """Raised when a source includes no RAS archive."""
 
 
 def _is_archive_name(name: str) -> bool:
@@ -126,7 +126,7 @@ def iter_archives(*sources: Path) -> Iterator[tuple[str, bytes]]:
     Yield every archive reachable from *sources*.
 
     A file beginning with the RAS magic is yielded as-is. A directory is scanned recursively. A
-    disc image -- an ISO, the ``.cue`` of a cue/bin pair, or the ``.bin`` on its own -- yields the
+    disc image (an ISO, the ``.cue`` of a cue/bin pair, or a bare ``.bin``) yields the
     archives lying loose on it. Max Payne's retail disc needs both kinds: its levels are loose but
     the shared game database is in the cabinet.
 
@@ -135,7 +135,7 @@ def iter_archives(*sources: Path) -> Iterator[tuple[str, bytes]]:
     and ``data2.cab`` are on the install disc while ``data3.cab`` is on the play disc, and
     unpacking either alone stops part way through. Give both and the whole cabinet comes out.
 
-    The cabinet is skipped with a warning when ``unshield`` is missing or fails, so the archives
+    The cabinet is skipped with a warning when ``unshield`` is missing or fails, and the archives
     that were reachable are still returned.
 
     Parameters
@@ -151,7 +151,7 @@ def iter_archives(*sources: Path) -> Iterator[tuple[str, bytes]]:
     Raises
     ------
     NoArchivesFoundError
-        If no archive could be reached.
+        If no archive could be found.
     """
     found = 0
     with TemporaryDirectory() as staging:

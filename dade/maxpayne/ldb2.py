@@ -5,11 +5,11 @@ The format is specified in ``docs/MAXPAYNE2_LDB.md`` of the ``max-payne-noclip``
 follows it section by section. It shares the tagged ``R_MemoryFile`` values with the first game and
 nothing else: the strings are hoisted into one pool the body addresses by byte offset, geometry
 arrives already triangulated in packed float arrays rather than as convex polygons over a shared
-corner array, and a room carries the transform that places it instead of leaving it to the exits.
+corner array, and a room states the transform that places it instead of deferring to the exits.
 
-The whole file is read. The rooms hold the architecture and the dynamic meshes near the end hold
-the props -- doors, lifts, breakables, vending machines -- which a level looks conspicuously empty
-without. The containers in between are walked only far enough to keep the reader's place.
+The whole file is read. The rooms store the architecture and the dynamic meshes near the end store
+the props (doors, lifts, breakables, vending machines), without which a level looks conspicuously
+empty. The containers in between are walked only far enough to track the reader's place.
 
 The result is shaped like :py:func:`dade.maxpayne.ldb.read_level`'s so that one exporter serves
 both games: each per-material batch becomes a :py:class:`StaticMesh` of three-corner faces placed
@@ -63,14 +63,14 @@ _POINT = 3
 """Floats in the ``M_Vector3`` a mesh states its midpoint as."""
 
 _CURVES = 2
-"""Curves an animation carries: how far it has travelled, then how far it has turned."""
+"""Curves an animation stores, meaning how far it has travelled and how far it has turned."""
 
 _PROP_FLAGS = 8
 """Flags between a prop's lightmap setting and its prefab identifier."""
 
 _IDENTITY = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0)
-"""A prop's vertices are already where the level wants them, so it needs no transform of its
-own. Its clips move it from there."""
+"""A prop's vertices are already where the level wants them, and it therefore needs no transform.
+Its clips move it from there."""
 _MATERIAL_FIELDS = 14
 """Tagged values in one material: see the specification's material section."""
 
@@ -87,12 +87,12 @@ _BLEND_MODES = {
     10: 'MASK',
     11: 'BLEND'
 }
-"""How each blending mode a material can ask for lands in glTF.
+"""How each blending mode a material can request lands in glTF.
 
-The modes are named in the specification. Everything with `AlphaCompare` in its name is a cut-out
-and needs no sorting, so it masks; the ones that blend an edge, add, or blend outright have to be
-drawn in order and so blend. The rest draw opaque, whatever else they do with their other
-textures."""
+The modes are listed in the specification. Everything with `AlphaCompare` in its name is a cut-out
+and needs no sorting, and it therefore masks. The ones that blend an edge, add, or blend outright
+have to be drawn in order and therefore blend. The rest draw opaque, whatever else they do with
+their other textures."""
 
 
 class InvalidLevel2Error(ValueError):
@@ -124,8 +124,8 @@ class _Reader:
             raise InvalidLevel2Error(msg)
         tag = self.data[self.at]
         if tag == BasicType.STRING:
-            # Not every string went into the pool: a room's name is written here, with its own
-            # tagged length ahead of it.
+            # Not every string went into the pool. A room's name is written here, with a tagged
+            # length ahead of it.
             self.at += 1
             return self.raw(self.count()).decode('latin-1')
         width = TAG_SIZES.get(tag)
@@ -245,7 +245,7 @@ def _string_at(pool: bytes, offset: int) -> str:
 
 def _read_texture_group(reader: _Reader, pool: bytes) -> list[TextureImage]:
     """
-    Read one of the four groups that carry a path with each image.
+    Read one of the four groups that store a path with each image.
 
     Parameters
     ----------
@@ -270,7 +270,7 @@ def _read_texture_group(reader: _Reader, pool: bytes) -> list[TextureImage]:
 
 def _read_lightmaps(reader: _Reader) -> list[TextureImage]:
     """
-    Read the lightmap group, which names no paths because a face addresses it by number.
+    Read the lightmap group. It stores no paths; a face addresses it by number.
 
     Parameters
     ----------
@@ -294,8 +294,9 @@ def _read_materials(reader: _Reader,
     """
     Read the material table.
 
-    A material names a range of diffuse frames and which of them to show, so a still material
-    names the same frame twice. The other three texture groups and the lightmap are indices too,
+    A material states a range of diffuse frames and which of them to show, and a still material
+    therefore states the same frame twice. The other three texture groups and the lightmap are
+    indices too,
     but only the diffuse image is needed to draw the level.
 
     Parameters
@@ -341,16 +342,16 @@ def _read_mesh(reader: _Reader, transform: tuple[float, ...], corners: list[Corn
     """
     Read one room's static mesh batches.
 
-    Each batch is one material's triangles, stored the way the hardware takes them: packed float
-    arrays and a sixteen-bit index buffer. A face's normal is taken from its own corners, because
-    the format stores one per vertex and none per face.
+    Each batch is one material's triangles, stored the way the hardware takes them, as packed float
+    arrays and a sixteen-bit index buffer. A face's normal is taken from its corners. The format
+    stores one per vertex and none per face.
 
     Parameters
     ----------
     reader : _Reader
         A cursor positioned at the batch count.
     transform : tuple[float, ...]
-        The room's transform, which places every batch in it.
+        The room's transform, placing every batch in it.
     corners : list[Corner]
         The corner array being built for the whole level, appended to in place.
     lightmap_of : dict[int, int]
@@ -452,7 +453,7 @@ def _face_normal(triangle: list[Vector3]) -> Vector3:
 
 def _skip_collisions(reader: _Reader) -> None:
     """
-    Step over one room's collision shapes, which a viewer does not draw.
+    Step over one room's collision shapes, never drawn by a viewer.
 
     Parameters
     ----------
@@ -473,7 +474,7 @@ def _skip_collisions(reader: _Reader) -> None:
 
 def _skip_volume_lights(reader: _Reader) -> None:
     """
-    Step over one room's volume lights, which light what moves rather than what is drawn.
+    Step over one room's volume lights, lighting what moves rather than what is drawn.
 
     Parameters
     ----------
@@ -489,7 +490,7 @@ def _skip_volume_lights(reader: _Reader) -> None:
 
 def _read_rooms(reader: _Reader, lightmap_of: dict[int, int]) -> tuple[RenderMesh, tuple[str, ...]]:
     """
-    Read the rooms and everything they hold.
+    Read the rooms and everything inside them.
 
     Parameters
     ----------
@@ -506,7 +507,7 @@ def _read_rooms(reader: _Reader, lightmap_of: dict[int, int]) -> tuple[RenderMes
     Raises
     ------
     InvalidLevel2Error
-        If a room does not carry the transform that places it.
+        If a room states no transform to place it with.
     """
     corners: list[Corner] = []
     meshes: list[StaticMesh] = []
@@ -561,10 +562,10 @@ def _skip_records(reader: _Reader, fields: int) -> None:
 
 def _skip_to_props(reader: _Reader) -> list[tuple[float, ...]]:
     """
-    Walk the containers between the rooms and the props, keeping the transforms on the way.
+    Walk the containers between the rooms and the props, retaining the transforms on the way.
 
-    Nothing here is drawn, but a prop does not carry the transform that places it: it names a
-    state machine, and the state machine has it. So the state machines are walked for their
+    Nothing here is drawn, but a prop states no transform to place it with. It references a state
+    machine, and the state machine has it. The state machines are therefore walked for their
     transforms and everything else only for its length.
 
     Parameters
@@ -609,10 +610,10 @@ def _read_animations(reader: _Reader, pool: bytes) -> list[PropAnimation]:
     """
     Read the clips one prop can play.
 
-    A clip is two curves sampled over its length -- how far the prop has travelled and how far it
-    has turned -- between a start and an end transform, which is the same shape the first game
-    uses. Where the first game states only the samples, this states the times they fall at as well,
-    and 898 of the 2454 curves in the first six levels are not evenly spaced.
+    A clip is two curves sampled over its length (how far the prop has travelled and how far it has
+    turned) between a start and an end transform, the same shape the first game uses. Where the
+    first game states only the samples, this states the times they fall at as well, and 898 of the
+    2454 curves in the first six levels are not evenly spaced.
 
     Parameters
     ----------
@@ -635,7 +636,7 @@ def _read_animations(reader: _Reader, pool: bytes) -> list[PropAnimation]:
         for _ in range(_CURVES):
             _skip_values(reader, 2)
             reader.value()  # Which of the two shapes `T_GraphCurve::getCurveValue` evaluates.
-            reader.value()  # Layers, which every level's curves set to one.
+            reader.value()  # Layers, set to one by every level's curves.
             points = reader.count()
             times = reader.floats(points)
             curves.append((times, reader.floats(points)))
@@ -656,7 +657,7 @@ def _read_animations(reader: _Reader, pool: bytes) -> list[PropAnimation]:
 
 def _offset(transform: tuple[float, ...], midpoint: tuple[float, ...]) -> tuple[float, ...]:
     """
-    Move a transform along to where the mesh it places keeps its own centre.
+    Move a transform along to where the mesh it places has its centre.
 
     Parameters
     ----------
@@ -681,11 +682,12 @@ def _read_props(
         reader: _Reader, pool: bytes, lightmap_of: dict[int, int],
         placed: list[tuple[float, ...]]) -> tuple[RenderMesh, list[tuple[PropAnimation, ...]]]:
     """
-    Read the dynamic meshes: the doors, lifts and breakables a room's walls do not include.
+    Read the dynamic meshes, meaning the doors, lifts and breakables a room's walls exclude.
 
-    A prefab is written once and referred to afterwards, so the geometry is only present the first
-    time an identifier is seen, or when a later copy carries its own lighting. A reader that always
-    expects a mesh loses its place; the specification's dynamic mesh section sets out the rule.
+    A prefab is written once and referred to afterwards. The geometry is therefore only present the
+    first time an identifier is seen, or when a later copy states separate lighting. A reader that
+    always expects a mesh loses its place; the specification's dynamic mesh section sets out the
+    rule.
 
     Parameters
     ----------
@@ -696,7 +698,7 @@ def _read_props(
     lightmap_of : dict[int, int]
         Which lightmap each material is lit by.
     placed : list[tuple[float, ...]]
-        One transform per state machine, which is where a prop naming it stands.
+        One transform per state machine, the place a prop referencing it stands.
 
     Returns
     -------
@@ -716,11 +718,11 @@ def _read_props(
         prefab = reader.count()
         share = reader.value()
         _skip_values(reader, 2)  # Bounding box.
-        # The mesh's own midpoint, which the second game writes ahead of the batches. A prop's
-        # vertices are written about their centre rather than about the state machine's origin, so
-        # a pose has to carry the gap between the two or the prop hangs off it. `10_Police_Station`
-        # keeps its vending machine's front panel `(0.047, -0.078, 0.112)` off the machine's origin,
-        # and the recess the panel closes lines up with it only once that is added.
+        # The mesh's midpoint, written by the second game ahead of the batches. A prop's vertices
+        # are written about their centre rather than about the state machine's origin, and a pose
+        # therefore has to include the gap between the two or the prop hangs off it.
+        # `10_Police_Station` sets its vending machine's front panel `(0.047, -0.078, 0.112)` off
+        # the machine's origin, and the recess the panel closes lines up only once that is added.
         midpoint = reader.value()
         origin = (midpoint if isinstance(midpoint, tuple) and len(midpoint) == _POINT else
                   (0.0, 0.0, 0.0))
@@ -735,10 +737,10 @@ def _read_props(
                 _skip_collisions(reader)
         if prefab >= 0:
             seen.add(prefab)
-        # A state machine holds where its prop was placed, and that is where the level draws it at
-        # rest. A clip is authored around that pose and may be written in a parent's space, so its
-        # own transforms cannot stand in for one: a door's first clip closes it, starting from open,
-        # and a prop hanging off a parent keeps a translation near the parent rather than the world.
+        # A state machine records where its prop was placed, and that is where the level draws it at
+        # rest. A clip is authored around that pose and may be written in a parent's space, and its
+        # transforms therefore cannot stand in. A door's first clip closes it, starting from open,
+        # and a prop under a parent has a translation near the parent rather than near the world.
         playable = tuple(
             clip._replace(end=_offset(clip.end, origin), start=_offset(clip.start, origin))
             for clip in _read_animations(reader, pool))

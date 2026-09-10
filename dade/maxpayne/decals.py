@@ -12,10 +12,10 @@ if TYPE_CHECKING:  # pragma: no cover
 __all__ = ('DECAL_STEP', 'layer_faces')
 
 DECAL_STEP = 1.0 / 128.0
-"""How far apart to hold two surfaces that share a plane, in level units.
+"""How far apart to set two surfaces that share a plane, in level units.
 
-A level unit is about a metre, so this lifts a graffiti tag eight millimetres off its wall: far
-too little to see, and far enough that a depth buffer stops guessing which one is in front."""
+A level unit is about a metre, and this therefore lifts a graffiti tag eight millimetres off its
+wall, far too little to see and far enough that a depth buffer stops guessing which is in front."""
 
 _NORMAL_STEPS = 128.0
 """Grid the normal is rounded onto when deciding whether two faces face the same way."""
@@ -29,11 +29,11 @@ _CELL = 4.0
 _TOUCH = 0.03
 """Overlap two boxes must share before they count as stacked rather than merely adjacent.
 
-Level architecture is tiled, so a wall is many faces whose boxes meet along their edges. Without
-this every tile would read as covering its neighbour."""
+Level architecture is tiled, and a wall is therefore many faces whose boxes meet along their edges.
+Without this every tile would read as covering its neighbour."""
 
 _FLAT = 1e-9
-"""Below this a normal is too short to say which way a face points."""
+"""Below this a normal is too short to establish which way a face points."""
 
 _PAIR = 2
 """Faces a plane needs before anything on it can be covering anything else."""
@@ -54,7 +54,7 @@ def _frame(normal: Vector3) -> tuple[Vector3, Vector3]:
         Two perpendicular unit vectors lying in the plane.
     """
     x, y, z = normal
-    # Cross with whichever axis the normal leans on least, so the result is never degenerate.
+    # Cross with whichever axis the normal leans on least, and the result is never degenerate.
     other = (0.0, 0.0, 1.0) if abs(z) < abs(x) or abs(z) < abs(y) else (1.0, 0.0, 0.0)
     ax = y * other[2] - z * other[1]
     ay = z * other[0] - x * other[2]
@@ -73,7 +73,7 @@ def _profile(normal: Vector3,
     Parameters
     ----------
     normal : Vector3
-        The face's outward normal, which need not be unit length.
+        The face's outward normal, not required to be unit length.
     corners : collections.abc.Sequence[Vector3]
         The face's corners.
 
@@ -90,7 +90,7 @@ def _profile(normal: Vector3,
     flat = [(sum(f * p for f, p in zip(first, corner, strict=True)),
              sum(s * p for s, p in zip(second, corner, strict=True))) for corner in corners]
     away = sum(n * p for n, p in zip(unit, corners[0], strict=True))
-    # A face and one turned to face the other way never hide each other, so the sign is kept.
+    # A face and one turned to face the other way never hide each other, and the sign is retained.
     plane = (*(round(v * _NORMAL_STEPS) for v in unit), round(away * _AWAY_STEPS))
     box = (min(p[0] for p in flat), min(p[1] for p in flat), max(
         p[0] for p in flat), max(p[1] for p in flat))
@@ -99,7 +99,7 @@ def _profile(normal: Vector3,
 
 def _stacked(one: Sequence[float], two: Sequence[float]) -> bool:
     """
-    Say whether two in-plane boxes cover a shared patch rather than merely meeting.
+    Report whether two in-plane boxes cover a shared patch rather than merely meeting.
 
     Parameters
     ----------
@@ -141,16 +141,16 @@ def layer_faces(surfaces: Sequence[tuple[Vector3, Sequence[Vector3], Hashable]])
     """
     Work out how far off its plane each face has to sit to stop fighting the ones behind it.
 
-    A level draws graffiti, signs and stains as their own polygons laid exactly on the wall, and
-    keeps every variant of a switchable surface -- a television showing static or a programme, a
-    neon sign lit or dark -- in the same place. The engine chose between them and drew what was
-    left in tree order, so none of it ever fought. A viewer that draws the whole level at once has
-    only its depth buffer to go on, and two surfaces at the same depth flicker against each other.
+    A level draws graffiti, signs and stains as separate polygons placed exactly on the wall, and
+    puts every variant of a switchable surface (a television showing static or a programme, a neon
+    sign lit or dark) in the same place. The engine chose between them and drew the survivor in tree
+    order, and none of it ever fought. A viewer that draws the whole level at once has only its
+    depth buffer to go on, and two surfaces at the same depth flicker against each other.
 
-    Faces are considered in order of the area they cover, so the surface underneath keeps the
-    plane the level gave it and only the smaller things laid over it move.
+    Faces are considered in order of the area they cover. The surface underneath therefore retains
+    the plane the level gave it, and only the smaller things over it move.
 
-    Faces are stacked only when they belong to different surfaces, which is what the key says.
+    Faces are stacked only when they belong to different surfaces, as the key records.
     Two faces of one mesh drawing with one material are two pieces of the same thing: a quad split
     along its diagonal gives two triangles with the same bounding box, and lifting either off the
     other opens a hairline crack down the middle of every table top in the level. Two copies of a

@@ -1,20 +1,20 @@
 r"""
 Reader for the ``.kfs`` and ``.kf2`` models NPCs, pickups and weapons are drawn with.
 
-Both are chunked ``R_MemoryFile`` streams written by the 3ds max exporter, and they carry the same
+Both are chunked ``R_MemoryFile`` streams written by the 3ds max exporter, and they store the same
 information in two encodings. A ``.kfs`` skin uses version 0 chunks, where everything is tagged and
 faces index positions and texture coordinates separately; a ``.kf2`` object uses version 1, where
 the counts are tagged but the vertex and coordinate data are packed float arrays and a flat
-sixteen-bit index buffer draws them. The chunk identifiers are shared, so one reader handles both.
+sixteen-bit index buffer draws them. The chunk identifiers are shared, and one reader handles both.
 
 Models are Z-up, the convention of the tool that exported them, while the game and glTF are both
 Y-up; positions and normals are rotated on the way out so a character stands up. Texture
-coordinates are not touched at all: V runs negative, and the game hands it to Direct3D as written
+coordinates are not touched at all. V runs negative, and the game hands it to Direct3D as written
 and lets wrapping sort it out.
 
-A model does not embed its images. It carries a search path -- always ``textures`` then
-``..\\sharedtextures`` -- and its materials name files to be found along it, so a caller that wants
-the model textured has to read those off disk itself.
+A model does not embed its images. It states a search path, always ``textures`` then
+``..\\sharedtextures``, and its materials reference files to be found along it. A caller that wants
+the model textured therefore has to read those off disk itself.
 """
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ class InvalidModelError(ValueError):
 
 def _chunks(data: bytes, offset: int, end: int) -> Iterator[tuple[int, int, int, int]]:
     """
-    Walk the chunks laid consecutively between two offsets.
+    Walk the chunks placed consecutively between two offsets.
 
     Parameters
     ----------
@@ -115,7 +115,7 @@ def _read_count(data: bytes, offset: int) -> tuple[int, int]:
     Raises
     ------
     InvalidModelError
-        If the count is negative or beyond anything a model holds.
+        If the count is negative or beyond anything a model has.
     """
     count, offset = read_int(data, offset)
     if not 0 <= count < _MAX_ELEMENTS:
@@ -159,7 +159,7 @@ def _read_vectors(data: bytes, offset: int, count: int, end: int, *,
     count : int
         How many to read.
     end : int
-        Offset the run has to finish inside, being the end of the chunk holding it.
+        Offset the run has to finish inside, being the end of its chunk.
     packed : bool
         Read raw floats rather than tagged vectors.
 
@@ -171,13 +171,13 @@ def _read_vectors(data: bytes, offset: int, count: int, end: int, *,
     Raises
     ------
     InvalidModelError
-        If the run does not fit inside its chunk, or a tagged one holds something that is not a
+        If the run does not fit inside its chunk, or a tagged one stores a value that is not a
         vector.
     """
     out: list[Vector3] = []
     stride = 3 * _FLOAT_SIZE
-    # The count comes out of the file, so on its own it says only how much to read, not how much
-    # there is. Unchecked it reads whatever follows the chunk and calls it geometry.
+    # The count comes out of the file and states only how much to read, not how much there is.
+    # Unchecked it reads whatever follows the chunk and treats that as geometry.
     if offset + count * (stride if packed else 1 + stride) > end:
         msg = f'A run of {count} vectors at offset {offset} does not fit inside its chunk.'
         raise InvalidModelError(msg)
@@ -299,7 +299,7 @@ def _skip_to_chunk(data: bytes, offset: int, end: int) -> int:
     Step over tagged values until a chunk begins.
 
     A material writes a long run of flags and colours before its texture chunk, and none of it is
-    needed here, so the values are stepped over by their tag widths rather than decoded.
+    needed here, and the values are stepped over by their tag widths rather than decoded.
 
     Parameters
     ----------
@@ -352,9 +352,9 @@ def _read_mesh(data: bytes, offset: int, end: int) -> ModelMesh:
     coord_faces: list[tuple[int, ...]] = []
     materials: tuple[str, ...] = ()
     face_materials: list[int] = []
-    # The mesh chunk's own version does not decide the encoding: a skin's mesh is version 1 with
+    # The mesh chunk's version does not decide the encoding. A skin's mesh is version 1 with
     # version 0 arrays inside it, and an object's is version 2 with version 1 arrays. Each array
-    # chunk says for itself whether it is packed.
+    # chunk states for itself whether it is packed.
     for identifier, inner, body, tail in _chunks(data, offset, end):
         packed = inner >= _PACKED
         if identifier == _NODE:
@@ -414,13 +414,13 @@ def _read_coords(data: bytes, offset: int, end: int, *,
     """
     Read one texture coordinate set.
 
-    A packed set stores one coordinate per vertex, so its faces are the position faces and no
-    per-face indices are written. A tagged set writes per-face indices first and its own pool after.
+    A packed set stores one coordinate per vertex. Its faces are therefore the position faces and no
+    per-face indices are written. A tagged set writes per-face indices first and a pool after.
 
     Coordinates are stored as three-component vectors whose second component is V and whose third
-    is unused, and they go to Direct3D untouched, so they are kept exactly as written. V is
-    normally negative, which wraps to the same texel as ``1 + v``; U goes negative too on skins
-    that mirror a face across the head, so wrapping is required either way.
+    is unused, and they go to Direct3D untouched, retained exactly as written. V is normally
+    negative, wrapping to the same texel as ``1 + v``. U goes negative too on skins that mirror a
+    face across the head, and wrapping is required in both cases.
 
     Parameters
     ----------
@@ -517,8 +517,8 @@ def _assemble(name: str, positions: list[Vector3], normals: list[Vector3],
         The assembled mesh.
     """
 
-    # An index has to be in range at both ends: a negative one is in range for Python and picks a
-    # vertex from the far end of the pool, which is silently wrong geometry rather than an error.
+    # An index has to be in range at both ends. A negative one is in range for Python and picks a
+    # vertex from the far end of the pool, producing silently wrong geometry rather than an error.
     def holds(indices: Sequence[int], pool: Sequence[object]) -> bool:
         return len(indices) == _TRIANGLE and all(0 <= i < len(pool) for i in indices)
 

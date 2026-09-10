@@ -1,9 +1,9 @@
 """
-Decoder for the tagged ``R_MemoryFile`` streams carrying every custom Max Payne asset.
+Decoder for the tagged ``R_MemoryFile`` streams behind every custom Max Payne asset.
 
 ``R_MemoryFile::writeTagged`` prefixes each value with a one-byte ``BasicType`` tag and then writes
-a byte count the caller chooses, so a tag does not encode its own length in general. In practice
-each tag is used with one width, which :py:data:`TAG_SIZES` records.
+a byte count the caller chooses, and a tag therefore does not encode its length in general. In
+practice each tag is used with one width, recorded in :py:data:`TAG_SIZES`.
 
 Integers are stored in a narrowest-signed-fit form: ``operator<<`` measures the magnitude and picks
 a one-, two-, three-, or four-byte encoding, with the tag identifying the width. That is why the
@@ -91,12 +91,12 @@ class BasicType(IntEnum):
     MATRIX4 = 0x1B
     """Four-by-four matrix of floats."""
     ARRAY = 0x1C
-    """Marker introducing a counted array. Carries no payload of its own."""
+    """Marker introducing a counted array. It has no payload."""
     MAP = 0x1F
-    """Marker introducing a counted map. Carries no payload of its own; a count follows, then that
+    """Marker introducing a counted map. It has no payload; a count follows, then that
     many entries of a key and a :py:attr:`PAIR`."""
     PAIR = 0x25
-    """Marker introducing the two halves of a map entry. Carries no payload of its own."""
+    """Marker introducing the two halves of a map entry. It has no payload."""
     FLOAT16 = 0x26
     """Half-precision float, two bytes."""
 
@@ -159,7 +159,7 @@ _INTEGER_TAGS = frozenset({
 })
 """Tags whose payload is a whole number, and so the only ones an integer can be read from.
 
-Every other tag in :py:data:`TAG_SIZES` has a width too, which is not the same thing: reading a
+Every other tag in :py:data:`TAG_SIZES` has a width too, a different property. Reading a
 ``FLOAT`` as an integer gives its bit pattern, and reading a ``MAP``, whose width is nought, gives
 a silent zero."""
 
@@ -179,7 +179,7 @@ def read_chunk_header(data: bytes, offset: int = 0) -> tuple[int, int, int]:
     -------
     tuple[int, int, int]
         The chunk identifier, its version, and its size. The size counts the
-        :py:data:`CHUNK_HEADER_SIZE` header bytes, so the payload is that many bytes shorter.
+        :py:data:`CHUNK_HEADER_SIZE` header bytes, and the payload is that many bytes shorter.
 
     Raises
     ------
@@ -227,8 +227,8 @@ def read_string(data: bytes, offset: int) -> tuple[str, int]:
     Read one tagged string.
 
     A string is the :py:attr:`BasicType.STRING` tag, then a tagged integer giving its length, then
-    that many raw bytes. The length is compacted like any other integer, so it is one to four bytes
-    wide and carries its own tag.
+    that many raw bytes. The length is compacted like any other integer, and is therefore one to
+    four bytes wide with a tag ahead of it.
 
     Parameters
     ----------
@@ -285,9 +285,9 @@ def iter_values(data: bytes, offset: int = 0) -> Iterator[TaggedValue]:
     """
     Walk a tagged stream until an unknown tag or the end of the buffer.
 
-    Bulk data such as lightmap pixels is written untagged, so a walk stops wherever the stream
-    leaves tagged territory. The caller can resume by passing a later offset. Strings are followed
-    correctly because they carry their own length.
+    Bulk data such as lightmap pixels is written untagged, and a walk therefore stops wherever the
+    stream exits tagged territory. The caller can resume by passing a later offset. Strings are
+    followed correctly, each stating its length.
 
     Parameters
     ----------

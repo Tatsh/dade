@@ -26,7 +26,7 @@ def inspect_tags(asset: Path, limit: int) -> None:
     Decode the tagged R_MemoryFile stream at the start of ASSET.
 
     Accepts a loose file or one still wrapped in RA-> or RC-> blocks. Walks from the first byte and
-    stops where the stream leaves tagged territory, which happens as soon as untagged bulk data
+    stops where the stream exits tagged territory, as soon as untagged bulk data
     such as a string or lightmap begins. Prints where it stopped so the boundary is visible.
     """
     data, layers = unwrap(asset.read_bytes())

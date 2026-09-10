@@ -4,7 +4,7 @@ The seeded stream cipher guarding Max Payne's RAS archives and their wrapped blo
 Transcribed from ``R_File::decryptWithSeed`` in ``rl.dll``. Each byte is rotated left by its index
 modulo five, exclusive-ORed with a value derived from that index, then offset by the low byte of a
 Wichmann-Hill generator stepped once per byte. The generator is written the way the original
-compiler emitted it, because archive seeds are large enough that ``171 * seed`` overflows a signed
+compiler emitted it. Archive seeds are large enough that ``171 * seed`` overflows a signed
 32-bit integer and the wrapped result is part of the key schedule.
 """
 from __future__ import annotations
@@ -69,7 +69,7 @@ def decrypt(data: bytes, seed: int) -> bytes:
     Parameters
     ----------
     data : bytes
-        Ciphertext. The keystream always restarts at index zero, so callers must pass whole
+        Ciphertext. The keystream always restarts at index zero, and callers must pass whole
         blocks rather than slices of one.
     seed : int
         Signed cipher seed. Zero is promoted to one.

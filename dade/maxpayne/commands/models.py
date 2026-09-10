@@ -19,7 +19,7 @@ __all__ = ('load_models',)
 log = logging.getLogger(__name__)
 
 _EXPORT_DATA = re.compile(r'ExportData\s*=\s*([^;]+);', re.IGNORECASE)
-"""How a pickup's ``.txt`` names the file holding its geometry."""
+"""How a pickup's ``.txt`` identifies the file with its geometry."""
 
 
 def _skin(database: Path, skin: str) -> Path | None:
@@ -36,7 +36,7 @@ def _skin(database: Path, skin: str) -> Path | None:
     Returns
     -------
     pathlib.Path | None
-        The model, or :py:obj:`None` when the directory holds none.
+        The model, or :py:obj:`None` when the directory includes none.
     """
     directory = database / 'skins' / skin
     if not directory.is_dir():
@@ -48,7 +48,7 @@ def _skin(database: Path, skin: str) -> Path | None:
 
 def _item(database: Path, item: str) -> Path | None:
     """
-    Find a pickup's model, which its script names rather than the directory listing.
+    Find a pickup's model, identified by its script rather than by the directory listing.
 
     Parameters
     ----------
@@ -76,7 +76,7 @@ def _read(path: Path) -> Model | None:
     """
     Read one model and the images its materials name.
 
-    The model carries a search path -- its own ``textures`` directory, then the shared one beside
+    The model states a search path, its ``textures`` directory, then the shared one beside
     it -- and the images are looked up along it in order.
 
     Parameters

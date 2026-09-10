@@ -4,16 +4,16 @@ Reader for the world geometry at the head of a ``.ldb`` level.
 ``X_LevelDBExportLevel::vf03`` in ``MaxED.exe`` writes four arrays before anything else, and the
 first two are the whole of the level's static geometry: a pool of vertices, then a table of convex
 faces. Each face records where its corners start in the pool and how many there are, and the runs
-are contiguous and exhaustive, so the pool is a flat de-indexed corner list rather than something
-an index buffer addresses.
+are contiguous and exhaustive. The pool is therefore a flat de-indexed corner list rather than a
+buffer an index addresses.
 
-That is checkable, and :py:func:`read_geometry` checks it: the vertex counts must sum to exactly
+That is checkable, and :py:func:`read_geometry` checks it. The vertex counts must sum to exactly
 the pool size. On ``Part1_Level6.ldb`` that is 15333 faces over 53263 vertices, with every
 consecutive pair contiguous.
 
-Y is up. On a shipped level the Y axis carries far fewer distinct values than X or Z and they
-cluster hard, which is what floors and ceilings at fixed heights look like. glTF is also Y-up, so
-no axis conversion is needed.
+Y is up. On a shipped level the Y axis takes far fewer distinct values than X or Z and they cluster
+hard, exactly as floors and ceilings at fixed heights would. glTF is also Y-up, and no axis
+conversion is needed.
 
 The two arrays that follow are the level BSP, and after them come the containers; neither is needed
 for geometry and neither is read here.
@@ -127,7 +127,7 @@ def read_geometry(data: bytes) -> LevelGeometry:
                     polygon_index=polygon_index,
                     vertex_count=corners))
     if total != len(vertices):
-        msg = (f'Faces account for {total} vertices but the pool holds {len(vertices)}; '
+        msg = (f'Faces account for {total} vertices but the pool has {len(vertices)}; '
                'the read is out of step.')
         raise InvalidLevelError(msg)
     log.debug('Read %d faces over %d vertices.', len(polygons), len(vertices))
@@ -176,7 +176,7 @@ def read_textures(data: bytes) -> tuple[TextureImage, ...]:
 
     Each texture is stored as a complete image file, byte for byte as the artist saved it, under
     the absolute path it was authored at. ``X_LevelDBTextureImage``'s writer emits a format code,
-    a byte count, and then the file, so nothing needs decoding here.
+    a byte count, and then the file, and nothing needs decoding here.
 
     Parameters
     ----------
@@ -268,7 +268,7 @@ def _resolve_images(materials: dict[int, Material], images: dict[str, tuple[str,
     Returns
     -------
     dict[int, Material]
-        The same materials, each carrying the paths of the images it draws with.
+        The same materials, each with the paths of the images it draws with.
     """
     embedded = {texture.path.lower(): texture.path for texture in textures}
     resolved: dict[int, Material] = {}
@@ -292,9 +292,9 @@ _MAX_PLACEMENTS = 100_000
 _PROBE_CORNERS = 64
 """Corners read before a candidate container is parsed in full.
 
-The array marker's byte value occurs constantly inside float payloads, so a level yields tens of
-thousands of candidates. Four corners let hundreds through, and parsing each of those in full costs
-seconds; sixty-four rejects effectively all of them for a fixed, tiny cost.
+The array marker's byte value occurs constantly inside float payloads, and a level therefore yields
+tens of thousands of candidates. Four corners let hundreds through, and parsing each of those in
+full costs seconds; sixty-four rejects effectively all of them for a fixed, tiny cost.
 
 :meta hide-value:
 """
@@ -356,7 +356,7 @@ def _read_faces(data: bytes, offset: int) -> tuple[list[MeshFace], int]:
     Read a mesh polygon container.
 
     ``X_LevelDBExportMeshPolygonContainer::vf01`` writes a count, then a key and a polygon per
-    entry, and closes with a map of integers to vectors that carries no pair markers.
+    entry, and closes with a map of integers to vectors that uses no pair markers.
 
     Parameters
     ----------
@@ -442,10 +442,10 @@ def _read_corner_count(data: bytes, offset: int, *, minimum: int = _MIN_CORNERS)
     """
     Read a mesh container's corner count and reject an implausible one.
 
-    The scan for the static mesh container tries every array marker in the file, so this doubles as
-    the cheap first filter there: the marker's byte value occurs constantly inside float payloads
-    and almost every hit fails here. The prop container is found by walking rather than scanning,
-    so it passes a *minimum* of zero and only needs the upper bound.
+    The scan for the static mesh container tries every array marker in the file, and this therefore
+    doubles as the cheap first filter there. The marker's byte value occurs constantly inside float
+    payloads and almost every hit fails here. The prop container is found by walking rather than
+    scanning, and it passes a *minimum* of zero and only needs the upper bound.
 
     Parameters
     ----------
@@ -493,7 +493,7 @@ def _read_mesh_container(data: bytes, offset: int) -> tuple[RenderMesh, int]:
     Raises
     ------
     InvalidLevelError
-        If the structure does not hold at *offset*.
+        If the structure does not parse at *offset*.
     """
     count, offset = _read_corner_count(data, offset)
     corners, offset = _read_corners(data, offset, count)
@@ -515,10 +515,10 @@ def _find_mesh_container(data: bytes, offset: int) -> tuple[RenderMesh, int] | N
     """
     Locate the static mesh container.
 
-    The exit container sits between the lightmaps and the meshes and is not read here, so the
-    meshes' position is not derivable; instead every array marker is tried and the first whose
-    whole structure parses is taken. A level holds one such container, so the search stops at the
-    first hit rather than looking for a better one.
+    The exit container sits between the lightmaps and the meshes and is not read here, and the
+    meshes' position is therefore not derivable. Every array marker is tried instead, and the first
+    whose whole structure parses is taken. A level has exactly one such container, and the search
+    stops at the first hit rather than looking for a better one.
 
     Parameters
     ----------
@@ -557,7 +557,7 @@ def _try_mesh_container(data: bytes, position: int) -> tuple[RenderMesh, int] | 
     Returns
     -------
     tuple[RenderMesh, int] | None
-        The mesh and the offset just past it, or :py:obj:`None` when the structure does not hold
+        The mesh and the offset just past it, or :py:obj:`None` when the structure does not parse
         here.
     """
     try:
@@ -609,9 +609,9 @@ def _read_material_categories(data: bytes, offset: int) -> tuple[dict[str, tuple
 
     ``X_LevelDBExportMaterialCategory::read`` writes three strings per entry: the material's name,
     the path of the image it draws with, and a fallback path pointing at the artist's source file.
-    The name is what the material map stores, and it only looks like a filename --
+    The name is what the material map stores, and it only looks like a filename.
     ``PAINTING22CB.JPG`` is the name of the material that draws with ``...\\Painting22b.jpg``. This
-    table is the only link between the two, so matching on filename gets a fifth of the level's
+    table is the only link between the two, and matching on filename gets a fifth of the level's
     faces wrong.
 
     Parameters
@@ -645,10 +645,10 @@ def _read_lightmaps(data: bytes, offset: int) -> tuple[tuple[TextureImage, ...],
     """
     Read the baked lighting atlases.
 
-    Each is an uncompressed 24-bit Targa of 256 by 256 pixels -- 196626 bytes, header included --
-    written the same way the level's other images are: an identifier, a format code, a byte count,
-    then the file. :py:attr:`Corner.lightmap_uv` addresses them and already arrives in the nought to
-    one range they want.
+    Each is an uncompressed 24-bit Targa of 256 by 256 pixels (196626 bytes, header included),
+    written the same way the level's other images are, as an identifier, a format code, a byte
+    count, then the file. :py:attr:`Corner.lightmap_uv` addresses them and already arrives in the
+    nought to one range they want.
 
     Parameters
     ----------
@@ -693,7 +693,7 @@ def _compose(a: Sequence[float], b: Sequence[float]) -> tuple[float, ...]:
     Returns
     -------
     tuple[float, ...]
-        Twelve floats: three basis rows then a translation.
+        Twelve floats, three basis rows then a translation.
     """
     out = [
         sum(a[row * 3 + k] * b[k * 3 + col] for k in range(3)) for row in range(3)
@@ -708,7 +708,7 @@ def _read_any_array(data: bytes, offset: int) -> tuple[list[str | int], int]:
     Read an array whose element type is told by the first element's tag.
 
     The room record mixes arrays of names with arrays of identifiers and gives no type marker. An
-    empty array consumes nothing either way, so peeking at the first element settles it.
+    empty array consumes nothing either way, and peeking at the first element settles it.
 
     Parameters
     ----------
@@ -737,12 +737,12 @@ def _read_any_array(data: bytes, offset: int) -> tuple[list[str | int], int]:
 
 def _read_exits(data: bytes, offset: int) -> tuple[dict[str, tuple[tuple[float, ...], str]], int]:
     """
-    Read the exits, which are what hold a level together.
+    Read the exits, the records that bind a level together.
 
     ``X_LevelDBExportExit::read`` writes the portal polygon and its normal in the room's own space,
     a ``mat4x3`` mapping that space into the room on the other side, two indices, the name of the
     matching exit over there, and a remap of the portal's corners. The two sides of one doorway
-    carry inverse transforms.
+    store inverse transforms.
 
     Parameters
     ----------
@@ -779,10 +779,10 @@ def _read_exits(data: bytes, offset: int) -> tuple[dict[str, tuple[tuple[float, 
 
 def _read_rooms(data: bytes, offset: int) -> tuple[list[tuple[list[int], str]], int]:
     """
-    Read the rooms: the identifiers of the meshes each one owns, and its name.
+    Read the rooms, meaning the identifiers of the meshes each one owns, and its name.
 
-    ``X_LevelDBExportRoom::read`` writes ten arrays -- the room's mesh identifiers, its exits, its
-    objects, its props, its pickups and so on -- then the room's name and five trailing scalars.
+    ``X_LevelDBExportRoom::read`` writes ten arrays (the room's mesh identifiers, its exits, its
+    objects, its props, its pickups and so on), then the room's name and five trailing scalars.
 
     Parameters
     ----------
@@ -817,12 +817,12 @@ def _place_rooms(exits: dict[str, tuple[tuple[float, ...], str]],
     """
     Give every room a world transform by walking the exit graph.
 
-    A level is not stored as one space: each room is modelled about its own origin, so without this
+    A level is not stored as one space. Each room is modelled about a local origin, and without this
     they all pile onto each other. On ``Part1_Level1.ldb`` 545 of the 703 room pairs overlap by more
     than half the smaller room's volume before the walk and 15 after it.
 
-    Rooms unreachable from the first are given their own component rather than dropped, so nothing
-    disappears when a level's graph is not fully connected.
+    Rooms with no path from the first are given a separate component rather than dropped, and
+    nothing disappears when a level's graph is not fully connected.
 
     Parameters
     ----------
@@ -861,8 +861,9 @@ def _read_entry_count(data: bytes, offset: int, label: str) -> tuple[int, int]:
     """
     Read a container's entry count and reject an implausible one.
 
-    The containers are walked in sequence, so one misread ripples into every one that follows; the
-    count is the first place that shows, which is why each container checks it before believing it.
+    The containers are walked in sequence, and one misread therefore ripples into every one that
+    follows. The count is the first place that shows, and each container checks it before trusting
+    it.
 
     Parameters
     ----------
@@ -881,7 +882,7 @@ def _read_entry_count(data: bytes, offset: int, label: str) -> tuple[int, int]:
     Raises
     ------
     InvalidLevelError
-        If the count is negative or beyond anything a level holds.
+        If the count is negative or beyond anything a level has.
     """
     count, offset = read_int(data, offset)
     if not 0 <= count < _MAX_PLACEMENTS:
@@ -944,7 +945,7 @@ def _read_string_array(data: bytes, offset: int) -> int:
 
 def _skip_properties(data: bytes, offset: int) -> int:
     """
-    Step over one property bag: an array of strings, a map of arrays, then another array.
+    Step over one property bag, an array of strings, a map of arrays, then another array.
 
     Parameters
     ----------
@@ -969,7 +970,7 @@ def _skip_properties(data: bytes, offset: int) -> int:
 
 def _skip_static_light(data: bytes, offset: int) -> int:
     """
-    Step over one static light: the placement, an orientation, then ten floats.
+    Step over one static light, the placement, an orientation, then ten floats.
 
     Parameters
     ----------
@@ -992,7 +993,7 @@ def _skip_static_light(data: bytes, offset: int) -> int:
 
 def _skip_startpoint(data: bytes, offset: int) -> int:
     """
-    Step over one start point: the placement then an integer.
+    Step over one start point, the placement then an integer.
 
     Parameters
     ----------
@@ -1045,7 +1046,7 @@ def _skip_fsm(data: bytes, offset: int) -> int:
 
 def _skip_trigger(data: bytes, offset: int) -> int:
     """
-    Step over one trigger: the placement, a float, then an integer.
+    Step over one trigger, the placement, a float, then an integer.
 
     Parameters
     ----------
@@ -1067,7 +1068,7 @@ def _skip_trigger(data: bytes, offset: int) -> int:
 
 def _read_curve(data: bytes, offset: int) -> tuple[tuple[float, ...], int]:
     """
-    Read one animation curve: a three-integer header, a sample count, and that many floats.
+    Read one animation curve, a three-integer header, a sample count, and that many floats.
 
     Parameters
     ----------
@@ -1098,14 +1099,14 @@ def _read_animation(data: bytes, offset: int, name: str) -> tuple[PropAnimation,
 
     ``X_LevelDBExportDynamicMeshAnimation::read`` writes a duration, the transform the prop starts
     at, the one it ends at, three arrays of script lines, then two curves. The scripts are what
-    chain clips together -- a door's ``open1`` ends by firing ``DO_Animate(stop1)`` -- and are not
-    needed to draw the motion, so they are stepped over.
+    chain clips together (a door's ``open1`` ends by firing ``DO_Animate(stop1)``) and are not
+    needed to draw the motion, and they are therefore stepped over.
 
     The two curves are separate channels, each sampled evenly across the duration. The first is the
-    distance travelled in world units -- its last sample matches the gap between the two poses on
-    4701 of the 4704 moving clips -- and the second is how far the prop has turned, from nought to
-    one, reaching exactly one on 3535 of the 3536 that turn. They carry different sample counts,
-    so a prop that both slides and turns eases the two differently.
+    distance travelled in world units, its last sample matching the gap between the two poses on
+    4701 of the 4704 moving clips. The second is how far the prop has turned, from nought to one,
+    arriving at exactly one on 3535 of the 3536 that turn. They use different sample counts, and a
+    prop that both slides and turns therefore eases the two differently.
 
     Parameters
     ----------
@@ -1114,7 +1115,7 @@ def _read_animation(data: bytes, offset: int, name: str) -> tuple[PropAnimation,
     offset : int
         Offset of the animation.
     name : str
-        The clip's name, which the container read just before this.
+        The clip's name, read by the container just before this.
 
     Returns
     -------
@@ -1153,12 +1154,12 @@ def _read_dynamic_meshes(data: bytes, offset: int) -> tuple[RenderMesh, int]:
     per prop -- but keys its entries by name and follows each mesh with the placement, the prop's
     animations, six flags and four integers.
 
-    Props nest: ``::a5::Gas_Bottle_small1::valve.DO`` is a child of ``::a5::Gas_Bottle_small1``, and
-    the mesh's own transform is relative to that parent while the placement's is the accumulated
-    world one. They agree for a prop with no parent, which is most of them, and disagree on 1356 of
-    the 5946 props across the shipped levels -- by as much as 953 units on
-    ``Startup_level.ldb``. The placement's is the one to keep, so it replaces the mesh's here and
-    the exporter can treat every prop the same way.
+    Props nest. ``::a5::Gas_Bottle_small1::valve.DO`` is a child of ``::a5::Gas_Bottle_small1``, and
+    the mesh's transform is relative to that parent while the placement's is the accumulated world
+    one. They agree for a prop with no parent, most of them, and disagree on 1356 of the 5946 props
+    across the shipped levels, by as much as 953 units on ``Startup_level.ldb``. The placement's is
+    the one to retain, and it therefore replaces the mesh's here so the exporter can treat every
+    prop the same way.
 
     Parameters
     ----------
@@ -1207,7 +1208,7 @@ def _read_object_container(data: bytes, offset: int,
     Read one container of placed objects.
 
     ``R_Container<T>::read`` writes the entry count, then per entry a key and the element itself.
-    Every element begins with the placement, so *element* is only asked to step over the rest.
+    Every element begins with the placement, and *element* therefore steps over only the rest.
 
     Parameters
     ----------
@@ -1239,7 +1240,7 @@ def _read_characters(data: bytes, offset: int) -> tuple[tuple[Character, ...], i
     Read the NPC placements.
 
     ``X_LevelDBExportCharacter::read`` follows the placement with the skin's directory name and four
-    arrays of strings holding the character's scripted behaviour.
+    arrays of strings storing the character's scripted behaviour.
 
     Parameters
     ----------
@@ -1297,7 +1298,7 @@ def _read_items(data: bytes, offset: int) -> tuple[tuple[LevelItem, ...], int]:
 
 def _skip_static_point_light(data: bytes, offset: int) -> int:
     """
-    Step over one static point light: the placement then six floats.
+    Step over one static point light, the placement then six floats.
 
     Parameters
     ----------
@@ -1357,7 +1358,7 @@ def _room_of(name: str) -> str:
     Returns
     -------
     str
-        The room's name, or an empty string when the name does not carry one.
+        The room's name, or an empty string when the record states none.
     """
     parts = name.split('::')
     return f'::{parts[1]}' if len(parts) > 2 else ''  # ruff: ignore[magic-value-comparison]
@@ -1388,7 +1389,7 @@ def _read_tail_containers(
     Returns
     -------
     tuple[tuple[Character, ...], RenderMesh, tuple[LevelItem, ...], list[tuple[list[int], str]]]
-        The characters, props, pickups and rooms, each still in its own room's space.
+        The characters, props, pickups and rooms, each still in its room's space.
     """
     for element in (_skip_static_light, _skip_startpoint, _skip_fsm):
         _, offset = _read_object_container(data, offset, element)
@@ -1408,7 +1409,7 @@ def _place_props(props: RenderMesh, placed: dict[str, tuple[float, ...]]) -> Ren
     Parameters
     ----------
     props : RenderMesh
-        The props, still in their own rooms' spaces.
+        The props, still in their rooms' spaces.
     placed : dict[str, tuple[float, ...]]
         Room name to the transform placing it.
 
@@ -1437,10 +1438,10 @@ def _read_tail(data: bytes, offset: int, mesh: RenderMesh, exits: dict[str, tupl
 
     ``X_LevelDBExportLevel::read`` takes them in a fixed order: static lights, start points, state
     machines, characters, triggers, animated props, pickups, static point lights, then rooms. The
-    rooms come last, which is why the whole tail has to be walked before anything can be placed.
+    rooms come last, and the whole tail therefore has to be walked before anything can be placed.
 
-    A failure anywhere costs the rest of the tail. The level still renders without it, so the walk
-    gives up and hands back what it has rather than raising.
+    A failure anywhere costs the rest of the tail. The level still renders without it, and the walk
+    therefore gives up and hands back what it has rather than raising.
 
     Parameters
     ----------
@@ -1449,9 +1450,9 @@ def _read_tail(data: bytes, offset: int, mesh: RenderMesh, exits: dict[str, tupl
     offset : int
         Offset just past the static mesh container.
     mesh : RenderMesh
-        The static meshes, still in their own rooms' spaces.
+        The static meshes, still in their rooms' spaces.
     exits : dict[str, tuple[tuple[float, ...], str]]
-        The level's exits, which say how the rooms fit together.
+        The level's exits, stating how the rooms fit together.
 
     Returns
     -------
@@ -1499,7 +1500,7 @@ def read_level(data: bytes) -> Level:
     Raises
     ------
     InvalidLevelError
-        If any structure is not where the format says it should be.
+        If any structure is not where the format requires it to be.
     """
     geometry = read_geometry(data)
     offset = _skip_preamble(data)

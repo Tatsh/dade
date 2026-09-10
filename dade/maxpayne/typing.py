@@ -10,8 +10,8 @@ __all__ = ('ArchiveHeader', 'Corner', 'Level', 'LevelGeometry', 'Material', 'Mes
 Vector3: TypeAlias = 'tuple[float, float, float]'
 """A point or direction in level space, where one unit is about a metre.
 
-Nothing in a level says so outright, but the skins settle it: ``gognitti_vinnie_l0.kfs`` is a man
-1.88 units tall, and the doors he walks through are a little over two."""
+Nothing in a level states that outright, but the skins settle it. ``gognitti_vinnie_l0.kfs`` is a
+man 1.88 units tall, and the doors he walks through are a little over two."""
 
 
 class ArchiveHeader(NamedTuple):
@@ -87,16 +87,15 @@ class Polygon(NamedTuple):
     """Index of the face's first corner in the level's vertex pool."""
     vertex_count: int
     """Number of corners, between three and eight. The corners are the pool entries from
-    :py:attr:`first_vertex` onwards, so faces never share pool entries."""
+    :py:attr:`first_vertex` onwards, and faces never share pool entries."""
     polygon_index: int
-    """Index into a table that is not decoded yet. The name is provisional: on
+    """Index into a table that is not decoded yet. The name is provisional. On
     ``Part1_Level6.ldb`` it takes 4201 values over 15333 faces, and faces sharing a value do not
-    reliably share a normal, so it is not a plane identifier."""
+    reliably share a normal, ruling out a plane identifier."""
     mesh_index: int
     """Index into a smaller table that is not decoded yet, also provisionally named. It takes 5
     values on ``Part1_Level6.ldb`` and 39 on ``Part1_Level1.ldb``, splitting a level into a handful
-    of large face sets, which is what :py:func:`dade.maxpayne.gltf.build_glb` groups primitives
-    by."""
+    of large face sets. :py:func:`dade.maxpayne.gltf.build_glb` groups primitives by it."""
     normal: Vector3
     """Outward face normal."""
     origin: Vector3
@@ -118,7 +117,7 @@ class TaggedValue(NamedTuple):
     offset: int
     """Byte offset of the tag within the stream."""
     end: int
-    """Byte offset just past the value, which is where the next tag begins."""
+    """Byte offset just past the value, where the next tag begins."""
     tag: int
     """Raw ``BasicType`` tag byte."""
     payload: bytes
@@ -127,7 +126,7 @@ class TaggedValue(NamedTuple):
 
 
 class TextureImage(NamedTuple):
-    """One image a level carries, stored as a complete file."""
+    """One image a level includes, stored as a complete file."""
 
     path: str
     """Absolute path the artist authored the image at, used as the texture's key."""
@@ -143,32 +142,32 @@ class Material(NamedTuple):
     category: str
     """Surface category, such as ``wood`` or ``metal``. Drives footstep and impact sounds."""
     texture: str
-    """The material's name, as the artist typed it. Usually looks like a filename but is not one:
-    ``BOOKSHELF01_128X256.JPG`` names the material that draws with
-    ``bookshelf01_256x256.jpg``. Use :py:attr:`image` to reach the picture."""
+    """The material's name, as the artist typed it. Usually looks like a filename but is not one.
+    ``BOOKSHELF01_128X256.JPG`` identifies the material that draws with
+    ``bookshelf01_256x256.jpg``. Use :py:attr:`image` for the picture itself."""
     image: str
     """Path of the embedded image the material draws with, matching a
-    :py:attr:`TextureImage.path` exactly, or an empty string when the level's category table does
-    not name one."""
+    :py:attr:`TextureImage.path` exactly, or an empty string when the level's category table
+    specifies none."""
     alpha: str = ''
-    """Path of the embedded image holding the material's alpha, or an empty string when it is
-    opaque. The colour images are JPEG or 8-bit PCX and carry no alpha channel of their own, so a
-    material that needs one -- foliage, fences, neon signs, glass -- names a second image whose
+    """Path of the embedded image storing the material's alpha, or an empty string when it is
+    opaque. The colour images are JPEG or 8-bit PCX and have no alpha channel, and a material that
+    needs one (foliage, fences, neon signs, glass) therefore references a second image whose
     brightness is the mask."""
     blend: str = ''
-    """glTF alpha mode the material asks for outright, or an empty string when it does not.
+    """glTF alpha mode the material requests outright, or an empty string when it requests none.
 
-    Max Payne 2 says how a material blends rather than naming a mask, because its images are DDS
-    and carry their own alpha channel. Max Payne 1 leaves this empty and the mode is worked out
-    from :py:attr:`alpha` instead."""
+    Max Payne 2 states how a material blends rather than referencing a mask. Its images are DDS and
+    include an alpha channel. Max Payne 1 stores nothing here, and the mode is worked out from
+    :py:attr:`alpha` instead."""
     dual_sided: bool = False
     """Whether the material is drawn from both sides."""
     sort_priority: int = 0
     """How far in front of what it covers the material is drawn.
 
-    Max Payne 2 states this for the surfaces laid over other surfaces -- graffiti, signage, decals
-    -- so an exporter has no need to work it out from the geometry. Max Payne 1 stores nothing and
-    leaves it at zero, and :py:mod:`dade.maxpayne.decals` does the working out instead."""
+    Max Payne 2 states this for the surfaces placed over other surfaces (graffiti, signage, decals),
+    and an exporter therefore need not work it out from the geometry. Max Payne 1 stores nothing and
+    the value stays zero, and :py:mod:`dade.maxpayne.decals` does the working out instead."""
 
 
 class Level(NamedTuple):
@@ -183,12 +182,12 @@ class Level(NamedTuple):
     mesh: RenderMesh | None
     """The renderable mesh, or :py:obj:`None` when it could not be located."""
     props: RenderMesh | None = None
-    """The animated props -- doors, elevators, breakables -- which the editor keeps apart from the
+    """The animated props (doors, elevators, breakables), stored by the editor apart from the
     architecture because each can be driven by an animation."""
     characters: tuple[Character, ...] = ()
     """The NPCs the level spawns."""
     items: tuple[LevelItem, ...] = ()
-    """The pickups the level holds."""
+    """The pickups the level includes."""
     lightmaps: tuple[TextureImage, ...] = ()
     """The baked lighting atlases, addressed by :py:attr:`Corner.lightmap_uv`. Each is an
     uncompressed 256 by 256 Targa."""
@@ -256,32 +255,32 @@ class PropAnimation(NamedTuple):
     """The prop's transform at the end, as twelve floats."""
     distance: tuple[float, ...]
     """How far the prop has travelled, in world units. Its last sample is the whole distance from
-    :py:attr:`start` to :py:attr:`end`, which holds on 4701 of the 4704 moving clips in the first
-    game's levels."""
+    :py:attr:`start` to :py:attr:`end`, true of 4701 of the 4704 moving clips in the first game's
+    levels."""
     turn: tuple[float, ...]
     """How far the prop has turned, from zero to one. The two curves are separate channels with
-    their own sample counts, and a prop that both slides and turns eases them differently."""
+    separate sample counts, and a prop that both slides and turns eases them differently."""
     distance_times: tuple[float, ...] = ()
     """When each of :py:attr:`distance`'s samples falls, as a fraction of :py:attr:`duration`.
-    Empty when the format spaces them evenly and states no times, which the first game does."""
+    Empty when the format spaces them evenly and states no times, as the first game does."""
     turn_times: tuple[float, ...] = ()
     """When each of :py:attr:`turn`'s samples falls, as a fraction of :py:attr:`duration`. Empty
-    when the format spaces them evenly and states no times, which the first game does."""
+    when the format spaces them evenly and states no times, as the first game does."""
 
 
 class RenderMesh(NamedTuple):
-    """A level's renderable geometry, carrying the game's own texture coordinates."""
+    """A level's renderable geometry, with the game's texture coordinates."""
 
     corners: tuple[Corner, ...]
-    """Polygon corners shared by every mesh, each naming a position in its own mesh."""
+    """Polygon corners shared by every mesh, each addressing a position in its mesh."""
     meshes: tuple[StaticMesh, ...]
     """The placed meshes, in stored order."""
     names: tuple[str, ...] = ()
     """One editor name per mesh, where the container stores them. The static mesh container keys
-    its meshes by number and leaves this empty; the dynamic mesh container keys them by name."""
+    its meshes by number and stores nothing here; the dynamic mesh container keys them by name."""
     keys: tuple[int, ...] = ()
     """One identifier per mesh, where the container keys them by number. The room table and the
-    BSP's faces both name meshes by these."""
+    BSP's faces both address meshes by these."""
     animations: tuple[tuple[PropAnimation, ...], ...] = ()
     """The clips each mesh can play, in the same order as :py:attr:`meshes`. Only the animated
     props have any."""
@@ -342,7 +341,7 @@ class ModelMesh(NamedTuple):
     """One normal per position, or empty when the file stores none."""
     coords: tuple[tuple[float, float], ...]
     """Texture coordinates exactly as stored. Both components run outside ``0..1``, V almost
-    always negative, so the sampler has to wrap them the way Direct3D did."""
+    always negative, and the sampler has to wrap them the way Direct3D did."""
     faces: tuple[ModelFace, ...]
     """The mesh's triangles."""
     materials: tuple[str, ...]
@@ -350,14 +349,14 @@ class ModelMesh(NamedTuple):
 
 
 class Model(NamedTuple):
-    """A ``.kfs`` skin or ``.kf2`` object: the models NPCs, pickups and weapons are drawn with."""
+    """A ``.kfs`` skin or ``.kf2`` object, the models NPCs, pickups and weapons are drawn with."""
 
     meshes: tuple[ModelMesh, ...]
     """The meshes, in stored order."""
     materials: dict[str, str]
     """Material name to the file name of the image it draws with."""
     search: tuple[str, ...] = ()
-    """Directories the model expects its images to be found in, relative to its own."""
+    """Directories the model expects its images to be found in, relative to the model's."""
     textures: tuple[TextureImage, ...] = ()
-    """The images themselves. A model does not embed them, so a caller that wants the model
-    textured has to read them off disk and put them here."""
+    """The images themselves. A model does not embed them, and a caller that wants the model
+    textured therefore has to read them off disk and put them here."""
