@@ -2,7 +2,7 @@
 Reader for the ZFSF and ZFS3 archives shipped with Interstate '76 and Interstate '82.
 
 Both formats share a byte-compatible directory: a ``0x20``-byte header followed by a linked list
-of blocks of up to 100 thirty-six-byte entries. The header is little-endian and holds the magic
+of blocks of up to 100 thirty-six-byte entries. The header is little-endian and stores the magic
 (4), a version (4), an entries-per-block hint (4), the block capacity (4) which is always 100, the
 entry count (4), two reserved dwords, and the offset of the second block (4). Block zero's entries
 start at ``0x20`` and its next pointer is the header field at ``0x1c``; every later block is a next
@@ -75,7 +75,7 @@ _FORMATS: Mapping[bytes, Literal['zfsf', 'zfs3']] = {MAGIC_ZFSF: 'zfsf', MAGIC_Z
 
 
 class InvalidArchiveError(ValueError):
-    """Raised when a file does not carry a recognised ZFS magic."""
+    """Raised when a file has no recognised ZFS magic."""
 
 
 def archive_format(data: bytes) -> Literal['zfsf', 'zfs3']:
@@ -143,8 +143,8 @@ def iter_members(data: bytes) -> Iterator[tuple[ZfsEntry, bytes]]:
     """
     Yield every named member of an archive together with its decoded contents.
 
-    ZFSF records are decompressed per their flags. ZFS3 records are yielded verbatim, since no
-    shipped Interstate '82 archive compresses its members; a member that does carry compression
+    ZFSF records are decompressed per their flags. ZFS3 records are yielded verbatim. No shipped
+    Interstate '82 archive compresses its members; a member that does have compression
     flags is logged and still yielded verbatim rather than being decoded as garbage. Entries with
     an empty name are skipped. An unrecognised magic raises :py:class:`InvalidArchiveError`.
 

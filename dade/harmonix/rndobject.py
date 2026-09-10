@@ -1,12 +1,12 @@
 """
 Extract metadata from FreQuency Harmonix ``Rnd`` scene-graph and data objects.
 
-These objects are the building blocks of the games' arenas: scene-graph reference containers
-(``.view``, ``.tnm``, ``.mmesh``, ``.lnm``, ``.arena``) that name other objects and carry 4x3
-transforms, and leaf data objects (``.mat`` materials, ``.lit`` lights, ``.env`` environments, and
-``.tmov`` texture movies). Each is parsed by extension to a JSON sidecar next to the original; the
-original file is kept. Object names embedded in these files are NUL-terminated ASCII looked up by
-the engine's ``RndString`` reader.
+These objects are the building blocks of the games' arenas. There are scene-graph reference
+containers (``.view``, ``.tnm``, ``.mmesh``, ``.lnm``, ``.arena``) that reference other objects and
+have 4x3 transforms, and leaf data objects (``.mat`` materials, ``.lit`` lights, ``.env``
+environments, and ``.tmov`` texture movies). Each is parsed by extension to a JSON sidecar next to
+the original; the original file is retained. Object names embedded in these files are
+NUL-terminated ASCII looked up by the engine's ``RndString`` reader.
 """
 from __future__ import annotations
 
@@ -404,9 +404,9 @@ def tmov_to_json(data: bytes) -> MovieMeta:
     """
     Decode a ``Rnd::Movie`` (``.tmov``) texture movie.
 
-    The header is ``u32 version, u32, u32 flag``. When ``flag`` is ``1`` the body holds a timed
+    The header is ``u32 version, u32, u32 flag``. When ``flag`` is ``1`` the body has a timed
     block (a ``u32``, a start ``f32`` of ``1.0``, the ``fps`` ``f32``, and a ``u32``); otherwise it
-    holds a single ``u32``. The NUL-terminated ``.gif`` movie name follows, then a ``u32`` frame
+    has a single ``u32``. The NUL-terminated ``.gif`` movie name follows, then a ``u32`` frame
     count, a ``u32``, and the NUL-terminated ``.tex`` target name.
 
     Parameters
@@ -467,7 +467,7 @@ _PARSERS = {
 
 def convert(path: Path) -> Path | None:
     """
-    Write a ``Rnd`` object metadata sidecar (``<name>.json``); the original file is kept.
+    Write a ``Rnd`` object metadata sidecar (``<name>.json``); the original file is retained.
 
     Parameters
     ----------

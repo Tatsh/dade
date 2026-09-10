@@ -75,12 +75,12 @@ class Geometry(NamedTuple):
 
 
 class MIDITrack(TypedDict):
-    """A decoded MIDI track: its name and its events (each carrying an absolute ``tick``)."""
+    """A decoded MIDI track, its title and its events (each with an absolute ``tick``)."""
 
     event_count: int
     """Number of events in the track."""
     events: Sequence[dict[str, Any]]
-    """The track's events in order; each is a mido message dict carrying an absolute ``tick``."""
+    """The track's events in order; each is a mido message dict with an absolute ``tick``."""
     name: str
     """The track name (from a ``track_name`` meta event; empty if none)."""
 

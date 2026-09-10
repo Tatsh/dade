@@ -12,7 +12,7 @@ at ``FUN_0044b430``:
 - ``.cbk`` is a count dword followed by that many 16-byte entries, each a 4x4 block of palette
   indices.
 
-Every format resolves to 8-bit palette indices, which :py:func:`to_rgb` expands through a palette.
+Every format resolves to 8-bit palette indices. :py:func:`to_rgb` expands them through a palette.
 """
 from __future__ import annotations
 

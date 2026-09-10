@@ -24,7 +24,7 @@ def unpack_i82sim(input_file: Path, output_file: Path) -> None:
     Unpack packed image INPUT_FILE to OUTPUT_FILE.
 
     The result is a memory-aligned dump whose file offsets equal its relative virtual addresses,
-    with the original entry point restored, so a disassembler can load it at the image's preferred
+    with the original entry point restored. A disassembler can load it at the image's preferred
     base. Base relocations are not applied.
     """  # ruff: ignore[docstring-missing-exception]
     try:

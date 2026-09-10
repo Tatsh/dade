@@ -3,7 +3,7 @@ Parser for the ``.geo`` mesh format.
 
 Reverse-engineered from ``ParseGeoModel`` at ``0x446c90``. The file opens with a nine-dword header
 whose seventh and eighth fields are the vertex and face counts. Vertex positions follow as packed
-triples of floats, then an equally long run of normals. Each face record carries its vertex count
+triples of floats, then an equally long run of normals. Each face record has its vertex count
 at offset 4, and its vertex indices begin at offset ``0x37`` with a stride of ``0x10``.
 """
 from __future__ import annotations

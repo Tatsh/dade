@@ -1,9 +1,9 @@
 """
 Static unpacker for DLLs packed with the Interstate '82 custom compressor.
 
-``i82sim.dll`` and its siblings ship with a ``.text`` section holding only a small decompressor
-stub and a zero-filled hole; the real code lives in an appended overlay that the stub inflates at
-load time. Reproducing that statically lets the result be loaded into a disassembler.
+``i82sim.dll`` and its siblings ship with a ``.text`` section of only a small decompressor stub and
+a zero-filled hole; the real code lives in an appended overlay that the stub inflates at load time.
+Reproducing the inflation statically lets the result be loaded into a disassembler.
 
 Reverse-engineered from the stub at image base ``0x10000000``:
 
@@ -12,15 +12,15 @@ Reverse-engineered from the stub at image base ``0x10000000``:
 - ``FUN_10001828`` is the decompressor. Each block is an output size dword, a header dword, and
   then a bit stream. When the header's low byte is zero the block is a run of ``(header >> 8) &
   0xff`` repeated to fill the output. Otherwise the low byte is the number of Huffman internal
-  nodes, each holding two 9-bit child entries; a child below ``0x100`` is a leaf byte and one at or
+  nodes, each with two 9-bit child entries; a child below ``0x100`` is a leaf byte and one at or
   above ``0x100`` is an internal node index plus ``0x100``. Bits are read least-significant first,
   the header dword doubles as the first accumulator word, and refills read little-endian dwords.
-- The overlay begins at file offset ``0x1be00`` and holds the magic, the number of compressed
+- The overlay begins at file offset ``0x1be00`` and stores the magic, the number of compressed
   sections, the original entry point's relative virtual address, the decompressed size of the
   relocation stream, one section index and characteristics pair per compressed section, and then
   one compressed block per section followed by the relocation block.
 
-The unpacked image is emitted at its preferred base, so base relocations are a no-op and are
+The unpacked image is emitted at its preferred base. Base relocations are therefore a no-op and are
 skipped. Imports live in the uncompressed ``.rdata`` and survive intact.
 """
 from __future__ import annotations
@@ -62,7 +62,7 @@ _SECTION_HEADER_SIZE = 40
 
 
 class InvalidImageError(ValueError):
-    """Raised when a file is not a PE image or carries no recognised overlay."""
+    """Raised when a file is not a PE image or has no recognised overlay."""
 
 
 def decompress_block(data: bytes, position: int) -> tuple[bytes, int]:
@@ -91,7 +91,7 @@ def decompress_block(data: bytes, position: int) -> tuple[bytes, int]:
     def read_bit() -> int:
         nonlocal accumulator, mask, position
         mask = (mask * 2) & 0xFFFFFFFF
-        if mask == 0:  # Thirty-two bits consumed, so refill.
+        if mask == 0:  # Thirty-two bits consumed; refill.
             accumulator = u32(data, position)
             position += 4
             mask = 1
@@ -140,7 +140,7 @@ def parse_sections(data: bytes) -> tuple[PeSection, ...]:
     Raises
     ------
     InvalidImageError
-        If the file carries no PE signature.
+        If the file has no PE signature.
     """
     pe_offset = u32(data, 0x3C)
     if data[pe_offset:pe_offset + 4] != b'PE\0\0':
@@ -162,7 +162,7 @@ def unpack(data: bytes) -> bytes:
     Statically unpack a packed image into a memory-aligned dump.
 
     The result has its file offsets equal to its relative virtual addresses and its entry point
-    restored, so a disassembler can load it directly at the image's preferred base.
+    restored. A disassembler can load it directly at the image's preferred base.
 
     Parameters
     ----------
@@ -177,7 +177,7 @@ def unpack(data: bytes) -> bytes:
     Raises
     ------
     InvalidImageError
-        If the file carries no PE signature or no recognised overlay.
+        If the file has no PE signature or no recognised overlay.
     """
     pe_offset = u32(data, 0x3C)
     sections = parse_sections(data)

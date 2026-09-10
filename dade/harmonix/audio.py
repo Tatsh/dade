@@ -47,8 +47,8 @@ STR_BLOCK = 512
 
 _VAG_DEFAULT_RATE = 22050
 
-# FreQuency SCEI sound bank chunk tags. Each 4-char tag is written as a little-endian u32, so on
-# disk the bytes read reversed: 'SCEI' -> b'IECS', 'Vers' -> b'sreV', 'Head' -> b'daeH', etc.
+# FreQuency SCEI sound bank chunk tags. Each 4-char tag is written as a little-endian u32. On
+# disk the bytes therefore read reversed: 'SCEI' -> b'IECS', 'Vers' -> b'sreV', 'Head' -> b'daeH'.
 _SD_VERS = b'IECSsreV'
 _SD_HEAD = b'IECSdaeH'
 _SD_VAGI = b'IECSigaV'
@@ -95,7 +95,7 @@ def str_to_wav(data: bytes, *, rate: int = STR_RATE, block: int = STR_BLOCK) -> 
 
 def convert(path: Path) -> Path | None:
     """
-    Convert a ``.str`` stream to a sibling ``.wav``, leaving the original in place.
+    Convert a ``.str`` stream to a sibling ``.wav``. The original is not modified.
 
     Parameters
     ----------
@@ -221,7 +221,7 @@ def bnk_to_json(data: bytes) -> BankMeta:
     for i in range(count):
         p = 8 + i * stride
         # The stride is derived from the ``SANM`` offset and the name count, and every name lies
-        # past that offset, so the last descriptor always fits; this only bounds a hostile file.
+        # past that offset. The last descriptor always fits; this only bounds a hostile file.
         if p + 10 > len(data):  # pragma: no cover
             break
         samples.append({
@@ -244,7 +244,7 @@ def parse_sd_bank(data: bytes) -> tuple[int, list[tuple[int, int, int]]] | None:
     Parse a FreQuency SCEI (``sceSdBank``) ``.hd`` header's VAG table.
 
     The header is a sequence of ``SCEI<tag>`` chunks (each 4-char tag stored little-endian). The
-    ``Head`` chunk records the ``.bd`` body size; the ``Vagi`` chunk holds ``count`` u32 offsets
+    ``Head`` chunk records the ``.bd`` body size; the ``Vagi`` chunk stores ``count`` u32 offsets
     (relative to the chunk start), each pointing to an 8-byte record ``{u32 bdOffset, u16 rate,
     u16 flags}``.
 

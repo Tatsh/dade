@@ -122,8 +122,8 @@ def convert(path: Path) -> Path | None:  # ruff: ignore[too-many-locals]
     Decompose a ``.rnd`` Milo archive into a ``<name>/`` folder of objects plus a manifest.
 
     The Amplitude directory layout (version 10) is ``u32 version, u32 objectCount, then objectCount
-    length-prefixed (type, name) pairs, then per-object bodies`` -- each body terminated by the
-    ``0xADDEADDE`` sentinel, which lets the bodies be split without per-class deserializers.
+    length-prefixed (type, name) pairs, then per-object bodies``. Each body is terminated by the
+    ``0xADDEADDE`` sentinel. The bodies can therefore be split without per-class deserializers.
     FreQuency (version 6) is stored uncompressed and uses NUL-terminated (type, name) pairs each
     followed by a ``0x01`` separator; the rest splits on the same sentinel.
 
@@ -171,7 +171,7 @@ def convert(path: Path) -> Path | None:  # ruff: ignore[too-many-locals]
             objects.append({'type': typ, 'name': nam, 'file': fn, 'size': len(blob)})
     else:
         (out_dir / f'{path.stem}.milo').write_bytes(body)
-        note = 'object table unparsed; decompressed Milo kept whole'
+        note = 'object table unparsed; decompressed Milo retained whole'
     manifest: dict[str, object] = {
         'source': path.name,
         'milo_magic': hex(struct.unpack_from('<I', data, 0)[0]),

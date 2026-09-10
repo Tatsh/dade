@@ -67,7 +67,7 @@ def inspect_chunks(container: Path, container_tags: str | None) -> None:
     """
     Dump the chunk tree of BWD2 container CONTAINER.
 
-    Which tags nest further chunks is not recorded in the file, so the container tags default to
+    Which tags nest further chunks is not recorded in the file. The container tags default to
     the set observed in the shipped missions and can be overridden with ``--container-tags``.
     """
     tags = DEFAULT_CONTAINER_TAGS if container_tags is None else set(container_tags.split(','))

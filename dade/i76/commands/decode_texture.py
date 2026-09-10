@@ -35,14 +35,15 @@ log = logging.getLogger(__name__)
 @click.option('--codebook-dir',
               default=None,
               type=click.Path(exists=True, file_okay=False, path_type=Path),
-              help='Directory holding .cbk codebooks. Defaults to the directory of TEXTURE.')
+              help='Directory of .cbk codebooks. Defaults to the directory of TEXTURE.')
 @debug_option
 def decode_texture(texture: Path, outdir: Path, palette: Path, codebook_dir: Path | None) -> None:
     """
     Decode texture TEXTURE into OUTDIR as a PNG.
 
     A ``.map`` is palette-indexed and needs only the palette. A ``.vqm`` is vector-quantised and
-    additionally needs the ``.cbk`` codebook it names, which is looked up in ``--codebook-dir``.
+    additionally needs the ``.cbk`` codebook it identifies. That is looked up in
+    ``--codebook-dir``.
     """  # ruff: ignore[docstring-missing-exception]
     data = texture.read_bytes()
     colors = load_palette(palette.read_bytes())

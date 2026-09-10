@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 @click.option('--game-root',
               default=None,
               type=click.Path(exists=True, file_okay=False, path_type=Path),
-              help='Directory holding the .pak bundles. Defaults to the directory of MODEL.')
+              help='Directory of .pak bundles. Defaults to the directory of MODEL.')
 @debug_option
 def sdf2obj(model: Path, outdir: Path, game_root: Path | None) -> None:
     """
@@ -30,8 +30,8 @@ def sdf2obj(model: Path, outdir: Path, game_root: Path | None) -> None:
 
     Each part named by the model's SGEO chunk is looked up as a ``.geo`` member of the ``.pak``
     bundles under the game root, transformed into world space, and merged into one mesh. Parts
-    whose geometry is absent are skipped. No material library is written, because the ``.geo``
-    format carries neither texture coordinates nor material references.
+    whose geometry is absent are skipped. No material library is written. The ``.geo``
+    format has neither texture coordinates nor material references.
     """  # ruff: ignore[docstring-missing-exception]
     root = model.parent if game_root is None else game_root
     index = build_bundle_index(root)

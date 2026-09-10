@@ -43,7 +43,7 @@ def _stage_mesh(stem: str, data: Path, meshes: Path, textures: set[str],
     stem : str
         Mesh name without its extension.
     data : pathlib.Path
-        Directory holding the meshes.
+        Directory of meshes.
     meshes : pathlib.Path
         Destination directory.
     textures : set[str]
@@ -73,12 +73,12 @@ def _stage_mesh(stem: str, data: Path, meshes: Path, textures: set[str],
 @click.option('--data-dir',
               default=None,
               type=click.Path(exists=True, file_okay=False, path_type=Path),
-              help="Directory holding the .msa worlds and meshes. Defaults to SOURCE's data "
+              help="Directory of .msa worlds and meshes. Defaults to SOURCE's data "
               'subdirectory.')
 @click.option('--mrm-dir',
               default=None,
               type=click.Path(exists=True, file_okay=False, path_type=Path),
-              help="Directory holding the .mrm terrains. Defaults to SOURCE's mrm subdirectory.")
+              help="Directory of .mrm terrains. Defaults to SOURCE's mrm subdirectory.")
 @click.option('--texture-pool',
               multiple=True,
               type=click.Path(exists=True, file_okay=False, path_type=Path),

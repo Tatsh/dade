@@ -3,7 +3,7 @@ Walker for the BWD2 FOURCC containers used by ``.msn`` and ``.sdf`` files.
 
 The grammar is a flat sequence of chunks, each a four-byte tag followed by a little-endian dword
 size that counts the eight-byte header itself. Some tags nest further chunks in their payload and
-others are leaves; which is which is not encoded in the file, so the container tags are supplied by
+others are terminal. Which is which is not encoded in the file, and the container tags are given by
 the caller and default to the set observed in the shipped missions.
 """
 from __future__ import annotations
@@ -118,7 +118,7 @@ def _walk(data: bytes, offset: int, end: int, container_tags: Collection[str]) -
     end : int
         Byte offset to stop at.
     container_tags : collections.abc.Collection[str]
-        Tags whose payloads hold further chunks.
+        Tags whose payloads nest further chunks.
 
     Yields
     ------
@@ -150,7 +150,7 @@ def walk(data: bytes, container_tags: Collection[str] | None = None) -> tuple[Ch
     data : bytes
         The container's contents.
     container_tags : collections.abc.Collection[str] | None
-        Tags whose payloads hold further chunks. Defaults to
+        Tags whose payloads nest further chunks. Defaults to
         :py:data:`DEFAULT_CONTAINER_TAGS`.
 
     Returns

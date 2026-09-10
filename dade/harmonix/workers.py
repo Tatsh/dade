@@ -158,7 +158,7 @@ async def run_pool(func: Callable[[Any], Path | None],
         Short verb phrase for log messages (e.g. ``'convert'``).
     consumed : list[typing.Any] | None
         If given, each item whose task produced an output at a different path (a true intermediate,
-        not an in-place edit) is appended to it, so a caller can delete those inputs afterwards.
+        not an in-place edit) is appended to it. A caller can then delete those inputs afterwards.
 
     Returns
     -------

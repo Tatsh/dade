@@ -31,7 +31,7 @@ def ipu_to_json(data: bytes) -> IPUMeta:
     Decode a PS2 IPU video header to metadata.
 
     The payload is a raw IPU IDEC MPEG2-intra bitstream (frames delimited by ``0x000001B0``, with
-    no MPEG sequence/slice headers), so a full transcode would need IPU/MPEG2 emulation.
+    no MPEG sequence/slice headers). A full transcode would therefore need IPU/MPEG2 emulation.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ def ipu_to_json(data: bytes) -> IPUMeta:
 
 def convert(path: Path) -> Path | None:
     """
-    Write an IPU metadata sidecar (``<name>.ipu.json``); the raw ``.ipu`` is kept.
+    Write an IPU metadata sidecar (``<name>.ipu.json``); the raw ``.ipu`` is retained.
 
     Parameters
     ----------

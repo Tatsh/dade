@@ -50,11 +50,11 @@ class Unpacker:
 
     The source may be an already-extracted directory, a raw PS2 ISO image, or the ``.cue`` of a
     cue/bin pair (the CD release). :py:meth:`unpack` materialises the source into the output
-    directory -- an image is extracted, a directory is copied -- and processes it there in place
+    directory (an image is extracted, a directory is copied) and processes it there in place
     (see :py:func:`dade.common.disc.materialize`); the source is only read, never modified.
 
     A concrete subclass sets :py:attr:`game_name` and :py:attr:`ark_layout`; the base supplies
-    :py:meth:`accepts` (which detects whether :py:attr:`source` holds this game's ARKs) and
+    :py:meth:`accepts` (which detects whether :py:attr:`source` has this game's ARKs) and
     :py:meth:`unpack` (which validates the source and delegates to
     :py:func:`dade.harmonix.pipeline.run_game` with the fixed layout).
 
@@ -107,11 +107,11 @@ class Unpacker:
 
     def accepts(self) -> bool:
         r"""
-        Report whether :py:attr:`source` holds at least one ARK with this game's layout.
+        Report whether :py:attr:`source` has at least one ARK with this game's layout.
 
         Every ``*.ark`` on the disc is peeked (its leading four bytes); a ``ARK\0`` magic marks the
         FreQuency layout and anything else marks the Amplitude layout. A disc image is peeked in
-        place (its ARK headers are read directly), so no extraction happens.
+        place (its ARK headers are read directly), and no extraction happens.
 
         Returns
         -------
@@ -150,12 +150,12 @@ class Unpacker:
         gunzip : bool
             Decompress ``.gz`` entries in place during extraction.
         keep_gz : bool
-            Keep the original ``.gz`` entry alongside the decompressed output.
+            Retain the original ``.gz`` entry alongside the decompressed output.
         ignore_failures : bool
             Log and skip a converter/decompose failure instead of stopping the run.
         delete : bool
-            Delete every materialised intermediate from ``out`` -- the ARK archives, the disc-audio
-            ``.str`` files, and the raw pre-conversion assets -- keeping only the converted output.
+            Delete every materialised intermediate from ``out`` (the ARK archives, the disc-audio
+            ``.str`` files, and the raw pre-conversion assets), retaining only the converted output.
         jobs : int
             Maximum concurrent workers for the CPU-bound conversion phases; ``0`` uses the CPU
             count.
@@ -172,7 +172,7 @@ class Unpacker:
         Raises
         ------
         dade.common.exceptions.InvalidFormatError
-            If :py:attr:`source` is not a readable disc image, or holds no ARK with this game's
+            If :py:attr:`source` is not a readable disc image, or has no ARK with this game's
             layout.
         """
         self._reject_bad_output(out)
@@ -193,8 +193,8 @@ class Unpacker:
 
     async def _aiter(self) -> AsyncIterator[Asset]:
         # Pull each ARK's bytes from the synchronous reader in a worker thread (its file/image reads
-        # block), so the source is streamed without materialising anything and the event loop is
-        # never blocked. ``None`` is the end sentinel -- an ARK's bytes are never ``None``.
+        # block). The source is therefore streamed without materialising anything and the event
+        # loop is never blocked. ``None`` is the end sentinel; an ARK's bytes are never ``None``.
         ark_bytes = iter_ark_bytes(self.source)
         while (data := await asyncio.to_thread(lambda: next(ark_bytes, None))) is not None:
             directory = await asyncio.to_thread(parse_directory, data)

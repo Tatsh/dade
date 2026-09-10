@@ -4,11 +4,11 @@ Reader for the Interstate '82 object reference graph.
 Levels place objects through text records. A static object is an ``Object_Header`` block naming a
 ``.stf`` wrapper, whose ``Geometry_Files`` block names a ``.six`` mesh; the binary mesh itself is
 the matching ``.sbx``, falling back to the ``.six``. A vehicle is an ``Object_Header`` naming a
-``.vdf``, whose ``Chassis`` names a ``.cdf`` carrying the same ``Geometry_Files`` block plus a
+``.vdf``, whose ``Chassis`` names a ``.cdf`` with the same ``Geometry_Files`` block plus a
 ``Wheels`` block and a ``Stock_Paint`` texture.
 
 Material textures are not listed in the text records; they are ``.bmp`` and ``.tga`` names embedded
-in the binary mesh, so they are recovered by scanning it.
+in the binary mesh, and they are recovered by scanning it.
 """
 from __future__ import annotations
 
@@ -71,7 +71,7 @@ def placement_refs(msa: bytes, suffix: str) -> tuple[str, ...]:
     msa : bytes
         Contents of the ``.msa`` world.
     suffix : str
-        Extension to keep, including the leading dot, for example ``'.stf'``.
+        Extension to match, including the leading dot, for example ``'.stf'``.
 
     Returns
     -------

@@ -22,7 +22,7 @@ The Amplitude layout (a single ``GEN/MAIN.ARK``) and the FreQuency layout
     ...  file data ...
 
 A record's ``fileBkt``/``dirBkt`` are bucket indices; ``bucket[idx]`` is the name's offset
-into the string pool, where a NUL-terminated string holds the name. The full path is
+into the string pool, where a NUL-terminated string stores the name. The full path is
 ``<dir>/<file>`` (or just ``<file>`` at root).
 
 **FreQuency** (all little-endian), from the loader ``FUN_00559858``::
@@ -52,8 +52,8 @@ into the string pool, where a NUL-terminated string holds the name. The full pat
 
 Dir paths are already slash-joined (e.g. ``metagame/arena/gen``). A file is gzip-compressed
 exactly when ``onDiskSize != rawSize``; in this archive that set is identical to the set of
-entries whose name ends in ``.gz``, so :py:func:`extract`'s name-based gunzip handles both
-layouts uniformly.
+entries whose name ends in ``.gz``. The name-based gunzip in :py:func:`extract` therefore handles
+both layouts uniformly.
 """
 from __future__ import annotations
 
@@ -112,7 +112,7 @@ class ExtractStats(NamedTuple):
     gunzipped: int
     """Number of ``.gz`` entries decompressed in place."""
     gunzip_failed: int
-    """Number of ``.gz``-named entries that were not valid gzip (kept verbatim)."""
+    """Number of ``.gz``-named entries that were not valid gzip (copied verbatim)."""
     raw_bytes: int
     """Total bytes read from the archive."""
     disk_bytes: int
@@ -281,8 +281,8 @@ def _gunzip_region(src: BinaryIO, offset: int, size: int, dst: Path) -> int:
                     out.write(data)
                     written += len(data)
         tail = dec.flush()
-        # A decompressor fed without a length cap leaves nothing pending, so the tail is always
-        # empty here; the write is kept in case that ever changes.
+        # A decompressor fed without a length cap has nothing pending, and the tail is always
+        # empty here. The write remains in case that ever changes.
         if tail:  # pragma: no cover
             out.write(tail)
             written += len(tail)
@@ -293,7 +293,7 @@ def _read_directory(src: BinaryIO,
                     ark_size: int,
                     *,
                     layout: ArkLayout | None = None) -> ARKDirectory:
-    src.seek(0)  # The caller obtains ark_size via seek(0, 2), leaving the position at EOF.
+    src.seek(0)  # The caller obtains ark_size via seek(0, 2) and the position is then at EOF.
     head = src.read(min(ark_size, 8 << 20))
     directory = parse_directory(head, layout=layout)
     if directory.dir_end > len(head):  # Unlikely: directory larger than 8 MiB.
@@ -320,7 +320,7 @@ def extract(ark: Path,
     gunzip : bool
         Decompress ``.gz`` entries in place (writing the de-suffixed name).
     keep_gz : bool
-        When decompressing a ``.gz`` entry, also keep the original compressed copy.
+        When decompressing a ``.gz`` entry, also retain the original compressed copy.
     layout : dade.harmonix.typing.ArkLayout | None
         Force a specific ARK layout, or ``None`` to auto-detect it from the leading bytes.
 
@@ -350,7 +350,7 @@ def extract(ark: Path,
                     gunzipped += 1
                     if keep_gz:
                         copy_region(src, entry.offset, entry.size, raw_dst)
-                except zlib.error:  # ".gz" name but not valid gzip: keep it verbatim.
+                except zlib.error:  # ".gz" name but not valid gzip; copy it verbatim.
                     gunzip_failed += 1
                     if dst.exists():  # pragma: no branch -- the decoder always creates it first.
                         dst.unlink()

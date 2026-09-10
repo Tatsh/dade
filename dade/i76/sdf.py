@@ -2,10 +2,10 @@
 Assembler for ``.sdf`` object models.
 
 Reverse-engineered from ``ParseSDFSGEO`` at ``0x4b8470`` and the geometry cache at ``0x4469a0``.
-The ``SGEO`` chunk holds a part count followed by 120-byte part records: an eight-byte name that
+The ``SGEO`` chunk stores a part count followed by 120-byte part records: an eight-byte name that
 doubles as the ``.geo`` member name, a row-major 3x3 rotation, a translation, and an eight-byte
-parent name at offset 56. Parts form a tree, so each part's world transform is its local transform
-composed with its parent's.
+parent name at offset 56. Parts form a tree. Each part's world transform is therefore its local
+transform composed with its parent's.
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ __all__ = ('apply_transform', 'assemble', 'encode_obj', 'parse_sgeo', 'world_tra
 log = logging.getLogger(__name__)
 
 _SGEO_TAG = b'SGEO'
-"""Tag of the chunk holding the part list.
+"""Tag of the chunk storing the part list.
 
 :meta hide-value:
 """
@@ -180,8 +180,8 @@ def encode_obj(mesh: Mesh, *, name: str = 'model') -> str:
     """
     Encode a mesh as Wavefront OBJ text.
 
-    No material library is referenced, because the ``.geo`` format carries neither texture
-    coordinates nor material references. Face indices are one-based, as the format requires.
+    No material library is referenced. The ``.geo`` format has neither texture coordinates nor
+    material references. Face indices are one-based, as the format requires.
 
     Parameters
     ----------

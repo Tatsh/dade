@@ -88,7 +88,7 @@ def smf_to_obj(data: bytes) -> MIDIFile:
 
 def convert(path: Path) -> Path | None:
     """
-    Write a ``<name>.mid.json`` chart sidecar; the standard ``.mid`` is kept.
+    Write a ``<name>.mid.json`` chart sidecar; the standard ``.mid`` is retained.
 
     Parameters
     ----------

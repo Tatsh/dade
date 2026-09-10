@@ -1,10 +1,9 @@
 """
 Assembler for a mission's 360-degree horizon panorama.
 
-A mission's ``WRLD`` chunk references an ``.hzd`` file, which is a text list of horizon strip names
-of the form ``NH_<set>_NN.MAP``. The strips live in the ``nhoriz<set>m.pak`` bundle and are laid
-out left to right to form one panorama whose horizontal axis is azimuth and whose vertical axis is
-height.
+A mission's ``WRLD`` chunk references an ``.hzd`` file, a text list of horizon strip names of the
+form ``NH_<set>_NN.MAP``. The strips live in the ``nhoriz<set>m.pak`` bundle and run left to right
+to form one panorama whose horizontal axis is azimuth and whose vertical axis is height.
 """
 from __future__ import annotations
 
@@ -88,7 +87,7 @@ def horizon_set(name: str) -> int:
 
 def bundle_stem(set_number: int) -> str:
     """
-    Give the bundle stem holding a horizon set's strips.
+    Give the bundle stem storing a horizon set's strips.
 
     Parameters
     ----------
@@ -105,7 +104,7 @@ def bundle_stem(set_number: int) -> str:
 
 def assemble_panorama(strips: Sequence[IndexedImage], palette: bytes) -> RgbImage:
     """
-    Lay horizon strips out left to right into one truecolour panorama.
+    Arrange horizon strips left to right into one truecolour panorama.
 
     The panorama's height is that of the first strip.
 

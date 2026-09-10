@@ -23,7 +23,7 @@ def pak_extract(pak: Path, outdir: Path) -> None:
     """
     Unpack bundle PAK into OUTDIR.
 
-    The bundle's member list comes from the sibling ``.pix`` index, which must sit beside PAK.
+    The bundle's member list comes from the sibling ``.pix`` index. It must sit beside PAK.
     """  # ruff: ignore[docstring-missing-exception]
     try:
         count = extract(pak, outdir)

@@ -2,7 +2,7 @@
 End-to-end ARK unpacking and asset-conversion pipeline.
 
 Extracts an ARK archive into an output directory, decompresses ``.gz`` entries, decomposes the
-contained Milo (``.rnd``) scenes, converts every recognised asset in place (bitmaps, DataArray,
+embedded Milo (``.rnd``) scenes, converts every recognised asset in place (bitmaps, DataArray,
 meshes, audio, icons, video metadata), and runs the material-linking and sample-bank post-passes.
 The CPU-bound conversion phases run concurrently across a thread pool (see
 :py:mod:`dade.harmonix.workers`).
@@ -114,7 +114,7 @@ async def _split_banks(root: anyio.Path,
                                      label='split bank')
     json_only = 0
     for bnk in sorted([bnk async for bnk in root.rglob('*.bnk')]):
-        # A split that already produced WAVs writes a manifest, so skip the metadata-only sidecar.
+        # A split that already produced WAVs writes a manifest; skip the metadata-only sidecar.
         if await (bnk.with_suffix('') / 'manifest.json').is_file():
             continue
         try:
@@ -179,7 +179,7 @@ async def run(ark_path: Path,
     gunzip : bool
         Decompress ``.gz`` entries in place during extraction.
     keep_gz : bool
-        Keep the original ``.gz`` entry alongside the decompressed output.
+        Retain the original ``.gz`` entry alongside the decompressed output.
     ignore_failures : bool
         Log and skip a converter/decompose failure instead of stopping the run.
     delete : bool
@@ -209,7 +209,7 @@ async def run(ark_path: Path,
         return steps
     anyio_out = anyio.Path(out)
     # Intermediates are collected across the conversion phases and pruned only after the
-    # reference-linking passes below, which rewrite every reference to a converted name.
+    # reference-linking passes below. Those passes rewrite every reference to a converted name.
     consumed: list[Path] | None = [] if delete else None
     log.info('Decomposing Milo (.rnd) scenes...')
     if on_status is not None:
@@ -268,25 +268,25 @@ async def run_game(work_dir: Path,
                    layout: ArkLayout | None = None,
                    on_status: Callable[[str], None] | None = None) -> dict[str, str]:
     """
-    Unpack a whole game in place: every ARK in ``work_dir`` plus its on-disc streaming audio.
+    Unpack a whole game in place, every ARK in ``work_dir`` plus its on-disc streaming audio.
 
-    ``work_dir`` already holds the materialised disc (see
+    ``work_dir`` already stores the materialised disc (see
     :py:func:`dade.common.disc.materialize`). Each ``*.ark`` in it is unpacked beside itself (e.g.
     ``GEN/MAIN.ARK`` -> ``GEN/MAIN/``) and its assets converted; disc streaming songs (``*.STR``)
     are converted to WAV in place. The ARK layout (Amplitude vs FreQuency) is auto-detected. With
-    ``delete``, the materialised intermediates -- the ARK archives, the ``.str`` files, and the raw
-    pre-conversion assets -- are removed, leaving only the converted output.
+    ``delete``, the materialised intermediates (the ARK archives, the ``.str`` files, and the raw
+    pre-conversion assets) are removed, and only the converted output remains.
 
     Parameters
     ----------
     work_dir : pathlib.Path
-        The directory holding the materialised disc, processed in place.
+        The directory storing the materialised disc, processed in place.
     convert : bool
         Convert extracted assets to standard formats (otherwise extract raw).
     gunzip : bool
         Decompress ``.gz`` entries in place during extraction.
     keep_gz : bool
-        Keep the original ``.gz`` entry alongside the decompressed output.
+        Retain the original ``.gz`` entry alongside the decompressed output.
     ignore_failures : bool
         Log and skip a converter/decompose failure instead of stopping the run.
     delete : bool

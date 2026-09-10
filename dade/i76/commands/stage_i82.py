@@ -28,11 +28,11 @@ _DEFAULT_POOLS = ('bmp', 'tga', 'data')
 @click.option('--data-dir',
               default=None,
               type=click.Path(exists=True, file_okay=False, path_type=Path),
-              help="Directory holding the .msa worlds. Defaults to SOURCE's data subdirectory.")
+              help="Directory of .msa worlds. Defaults to SOURCE's data subdirectory.")
 @click.option('--mrm-dir',
               default=None,
               type=click.Path(exists=True, file_okay=False, path_type=Path),
-              help="Directory holding the .mrm terrains. Defaults to SOURCE's mrm subdirectory.")
+              help="Directory of .mrm terrains. Defaults to SOURCE's mrm subdirectory.")
 @click.option('--texture-pool',
               multiple=True,
               type=click.Path(exists=True, file_okay=False, path_type=Path),

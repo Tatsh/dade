@@ -41,7 +41,7 @@ _MAX_VERTS = 200000
 _MAX_FACES = 400000
 _MATERIAL_RE = re.compile(r'^# material: (.+)$', re.MULTILINE)
 _MESH_MIN_SIZE = 8  # Version plus the start of the transform header.
-_TVER_FLAG_RANGE = range(2, 5)  # Transform versions 2..4 carry an extra flag byte.
+_TVER_FLAG_RANGE = range(2, 5)  # Transform versions 2..4 have an extra flag byte.
 _MAX_STR_LEN = 128  # Upper bound on a plausible texture-name length.
 _PRINTABLE = range(32, 127)  # Printable ASCII range.
 
@@ -51,7 +51,7 @@ def _parse_v14_mesh(data: bytes) -> Geometry | None:
     Walk a version-14 RndMesh body to locate its vertex and face vectors.
 
     The geometry sits behind a variable-length header (transform matrices, three name-handle
-    lists, material/name strings, bounds), so it must be walked, not scanned.
+    lists, material/name strings, bounds). The header must be walked, not scanned.
 
     Parameters
     ----------
@@ -128,9 +128,10 @@ def _parse_v10_mesh(data: bytes) -> Geometry | None:
     """
     Locate the vertex and face vectors of a FreQuency version-10 RndMesh.
 
-    The geometry sits behind a variable header that is not uniformly length-prefixed, so the vector
-    is found by scanning for a ``u32`` count whose ``count * 56``-byte vertex block (with finite
-    positions) is followed by a ``u32`` face count whose ``3 * uint16`` indices are all in range.
+    The geometry sits behind a variable header that is not uniformly length-prefixed. The vector
+    is therefore found by scanning for a ``u32`` count whose ``count * 56``-byte vertex block
+    (finite positions) is followed by a ``u32`` face count whose ``3 * uint16`` indices are in
+    range.
     The match is unambiguous in practice.
 
     Parameters
@@ -215,7 +216,7 @@ def mesh_to_obj(data: bytes) -> str | None:
 
 def convert(path: Path) -> Path | None:
     """
-    Convert a ``.mesh`` object to a sibling ``.obj`` (the ``.mesh`` is kept).
+    Convert a ``.mesh`` object to a sibling ``.obj`` (the ``.mesh`` is retained).
 
     Parameters
     ----------
@@ -226,7 +227,7 @@ def convert(path: Path) -> Path | None:
     -------
     pathlib.Path | None
         The written OBJ path, or ``None`` if the body was not a parseable v14 mesh. The
-        ``.mesh`` is kept because the OBJ is a lossy view (no bone weights or LODs).
+        ``.mesh`` is retained. The OBJ is a lossy view (no bone weights or LODs).
     """
     obj = mesh_to_obj(path.read_bytes())
     if obj is None:
@@ -261,7 +262,7 @@ def link_materials(root: Path) -> int:
 
     For each ``.obj`` naming a material, finds the sibling ``.mat`` object, resolves its texture
     to a ``.png`` anywhere under ``root``, copies that ``.png`` next to the ``.obj`` as
-    ``<stem>.png`` (matching the ``.mtl``) so the pair is self-contained, writes a ``.mtl``
+    ``<stem>.png`` (matching the ``.mtl``) to make the pair self-contained, writes a ``.mtl``
     referencing it, and links it from the ``.obj``.
 
     Parameters

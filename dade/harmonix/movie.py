@@ -40,8 +40,8 @@ def mmv_to_json(data: bytes) -> MMVMeta:
     Decode a ``MOVS`` movie header to metadata.
 
     The header is ``u32 'MOVS', u32 0, u32 version, u32 0, u32 trackCount, u32 tickRate``. An
-    animated texture then carries a ``MOVT`` track whose ``RLE8`` chunk gives ``u16 width, u16
-    height``; a soundbank movie carries a ``SNDH`` chunk whose first field is the bank count.
+    animated texture then has a ``MOVT`` track whose ``RLE8`` chunk gives ``u16 width, u16
+    height``; a soundbank movie has a ``SNDH`` chunk whose first field is the bank count.
 
     Parameters
     ----------
@@ -86,7 +86,7 @@ def mmv_to_json(data: bytes) -> MMVMeta:
 
 def convert(path: Path) -> Path | None:
     """
-    Write a ``MOVS`` metadata sidecar (``<name>.mmv.json``); the raw ``.mmv`` is kept.
+    Write a ``MOVS`` metadata sidecar (``<name>.mmv.json``); the raw ``.mmv`` is retained.
 
     Parameters
     ----------

@@ -88,7 +88,7 @@ class SdfPart(NamedTuple):
     """One part record from an ``.sdf`` ``SGEO`` chunk."""
 
     name: str
-    """Part name, which doubles as the ``.geo`` member name."""
+    """Part name, doubling as the ``.geo`` member name."""
     rotation: Matrix3
     """Local rotation as a row-major 3x3 matrix."""
     position: Vector3

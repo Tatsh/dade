@@ -1,13 +1,13 @@
 """
 Readers for the Interstate '82 level formats.
 
-A level is a pair of files sharing a stem: an ``.msa`` world, which is text, and a ``.mrm``
+A level is a pair of files sharing a stem: an ``.msa`` world in text form, and a ``.mrm``
 terrain. The world names its textures inline as ``.bmp`` and ``.tga`` file names. The terrain
 begins with a ``ZONV`` magic followed by a surface table whose entry count sits at offset 12 and
 whose 0x80-byte entries each open with a NUL-terminated texture name.
 
-Textures are resolved against a list of pools, since the shipped archives split them across
-separate ``bmp``, ``tga``, and ``data`` extractions.
+Textures are resolved against a list of pools. The shipped archives split them across separate
+``bmp``, ``tga``, and ``data`` extractions.
 """
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ __all__ = ('MRM_MAGIC', 'find_in_pools', 'level_ids', 'surface_names', 'texture_
 log = logging.getLogger(__name__)
 
 MRM_MAGIC = b'ZONV'
-"""Magic at the start of a ``.mrm`` terrain carrying a surface table.
+"""Magic at the start of a ``.mrm`` terrain with a surface table.
 
 :meta hide-value:
 """
@@ -71,7 +71,7 @@ def surface_names(mrm: bytes) -> tuple[str, ...]:
     Returns
     -------
     tuple[str, ...]
-        Every non-empty surface texture name, in table order. Empty when the file carries no
+        Every non-empty surface texture name, in table order. Empty when the file has no
         ``ZONV`` magic.
     """
     if mrm[:4] != MRM_MAGIC:
@@ -114,9 +114,9 @@ def level_ids(data_dir: Path, mrm_dir: Path) -> tuple[str, ...]:
     Parameters
     ----------
     data_dir : pathlib.Path
-        Directory holding the ``.msa`` worlds.
+        Directory of ``.msa`` worlds.
     mrm_dir : pathlib.Path
-        Directory holding the ``.mrm`` terrains.
+        Directory of ``.mrm`` terrains.
 
     Returns
     -------

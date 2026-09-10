@@ -89,7 +89,7 @@ def test_convert_keeps_unparsed_table_whole(make_milo: Callable[..., bytes],
     out = milo.convert(source)
     assert out is not None
     manifest = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
-    assert manifest['note'] == 'object table unparsed; decompressed Milo kept whole'
+    assert manifest['note'] == 'object table unparsed; decompressed Milo retained whole'
     assert manifest['objects'] == []
     assert (out / 'scene.milo').is_file()
 

@@ -9,7 +9,7 @@ Two variants exist, selected by the ZFS record flags field at entry offset ``0x2
   ``((t >> 2) & 3) + (b << 2)``, and M2 length ``(t >> 4) - 1``.
 
 The M3, M4, literal, and inline-M1 cases are identical between the two. The decompressed size is
-``flags >> 8``, which is only an allocation hint; the end-of-stream marker is authoritative. A
+``flags >> 8``, only an allocation hint; the end-of-stream marker is authoritative. A
 record whose flags have neither bit set is stored uncompressed.
 """
 from __future__ import annotations
@@ -57,7 +57,7 @@ _M3_TOKEN_MIN = 32
 
 
 # The branch and statement counts mirror the original routine's control flow one for one.
-# Splitting the state machine up would risk changing the decoded bytes, so the limits are waived.
+# Splitting the state machine up would risk changing the decoded bytes. The limits are waived.
 def _decompress(  # ruff: ignore[complex-structure, too-many-branches, too-many-statements]
         src: bytes, dst_len: int, m1_base: int, m2_offset_mask: int, m2_offset_shift: int,
         m2_length: Callable[[int], int]) -> bytes:

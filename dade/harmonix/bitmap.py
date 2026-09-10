@@ -112,7 +112,7 @@ _ABM_PALETTE = 256 * 4  # 256 RGBA entries.
 def _abm_unpack_rle(region: bytes, target: int) -> bytes:
     # Run/literal codec: ctrl < 0x80 -> run of `ctrl` copies of the next byte; ctrl >= 0x80 ->
     # literal run of the next ``ctrl & 0x7f`` bytes. Decodes to exactly ``target`` bytes (the
-    # stored stream is padded to an even length, so one trailing byte may go unread).
+    # stored stream is padded to an even length, and one trailing byte may go unread).
     out = bytearray()
     i, n = 0, len(region)
     while len(out) < target and i < n:
@@ -186,7 +186,7 @@ def decode_freq_abm(data: bytes) -> tuple[int, int, bytes] | None:
 
 def convert(path: Path) -> Path | None:
     """
-    Convert a bitmap to a sibling ``.png``, leaving the original in place.
+    Convert a bitmap to a sibling ``.png``. The original is not modified.
 
     Console-native formats (HMX ``.bmp``, FreQuency ``.abm``) are decoded here; any other file
     Pillow recognises (e.g. a standard Windows BMP) is converted by Pillow directly.
@@ -229,7 +229,7 @@ def parse_tex_reference(data: bytes) -> str | None:
 
     Many ``.bmp``/``.tex`` objects are not bitmaps at all but tiny proxies -- a small header
     followed by the name of the real texture in a shared pool (e.g. ``image/bg_fog.bmp``). Such a
-    proxy ends with that name plus NUL padding and is far too small to hold pixels.
+    proxy ends with that name plus NUL padding and is far too small for pixels.
 
     Parameters
     ----------
@@ -251,7 +251,7 @@ def parse_freq_tex_reference(data: bytes) -> str | None:
     """
     Return the bitmap a FreQuency ``Rnd::Tex`` (``.bmp``) descriptor points to, or ``None``.
 
-    A FreQuency ``.bmp`` holds no pixels: it is ``u32 version (4) | u32 width | u32 height |
+    A FreQuency ``.bmp`` stores no pixels. It is ``u32 version (4) | u32 width | u32 height |
     u32 bpp | NUL-terminated bitmap name | ...``. The named bitmap's pixels live in an external
     ABitmap that this package decodes to ``<name>_bmp.png`` (see :py:func:`link_references`).
 
@@ -264,7 +264,7 @@ def parse_freq_tex_reference(data: bytes) -> str | None:
     -------
     str | None
         The referenced bitmap name (e.g. ``'circ_shuttle.bmp'``), or ``None`` if the data is not a
-        FreQuency texture descriptor carrying a non-empty name.
+        FreQuency texture descriptor with a non-empty name.
     """
     if len(data) < _FREQ_TEX_NAME_OFFSET + 2 or u32(data, 0) != _FREQ_TEX_VERSION:
         return None
@@ -310,11 +310,11 @@ def link_references(root: Path, *, copy: bool | None = None) -> int:
     """
     Resolve texture-reference proxies to the real PNG (post-extraction pass).
 
-    For every ``.bmp``/``.tex`` proxy (see :py:func:`parse_tex_reference`) that has no PNG of its
-    own, the real ``<name>.png`` is located anywhere under ``root`` and materialised in its place:
-    a symlink on POSIX, a copy on Windows. The proxy is then deleted, since it only points at the
-    real texture. When several textures share the name, the one nearest the proxy in the directory
-    tree is chosen. The pass is idempotent: a proxy left beside a symlink by an earlier run is
+    For every ``.bmp``/``.tex`` proxy (see :py:func:`parse_tex_reference`) with no PNG, the real
+    ``<name>.png`` is located anywhere under ``root`` and materialised in its place as a symlink on
+    POSIX and a copy on Windows. The proxy is then deleted. It only points at the real texture.
+    When several textures share the name, the one nearest the proxy in the directory tree is
+    chosen. The pass is idempotent, and a proxy stranded beside a symlink by an earlier run is
     cleaned up on the next.
 
     Parameters
@@ -345,7 +345,7 @@ def link_references(root: Path, *, copy: bool | None = None) -> int:
             proxy.unlink()
             resolved += 1
             continue
-        if dst.exists():  # A real PNG (e.g. a decoded bitmap) already holds the slot.
+        if dst.exists():  # A real PNG (e.g. a decoded bitmap) already occupies the slot.
             continue
         stem = _reference_png_stem(proxy.read_bytes())
         if stem is None:

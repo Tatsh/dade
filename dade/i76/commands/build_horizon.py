@@ -32,7 +32,7 @@ _DEFAULT_PALETTE = 't17.act'
               '--game-root',
               required=True,
               type=click.Path(exists=True, file_okay=False, path_type=Path),
-              help='Directory holding the extracted ZFS content.')
+              help='Directory of extracted ZFS content.')
 @click.option('-p',
               '--palette',
               default=None,
@@ -42,7 +42,7 @@ def build_horizon(mission: Path, outdir: Path, game_root: Path, palette: str | N
     """
     Assemble the horizon panorama for MISSION into OUTDIR as a PNG.
 
-    The mission's WRLD chunk names an ``.hzd`` strip list, whose strips are laid out left to right
+    The mission's WRLD chunk identifies an ``.hzd`` strip list, whose strips run left to right
     into one panorama whose horizontal axis is azimuth and whose vertical axis is height.
     """  # ruff: ignore[docstring-missing-exception]
     refs = world_refs(mission.read_bytes())

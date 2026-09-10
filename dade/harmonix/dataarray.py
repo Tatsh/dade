@@ -87,7 +87,7 @@ def dtb_to_obj(data: bytes) -> tuple[list[DataArrayNode], bool]:
 
 def convert(path: Path) -> Path | None:
     """
-    Convert a compiled DataArray file to a sibling ``.json``, leaving the original in place.
+    Convert a compiled DataArray file to a sibling ``.json``. The original is not modified.
 
     Parameters
     ----------

@@ -23,7 +23,7 @@ __all__ = ('build_bundle_index', 'extract', 'iter_members', 'load_member', 'pars
 log = logging.getLogger(__name__)
 
 _INDEX_FIELDS = 3
-"""Number of whitespace-separated fields a usable ``.pix`` line carries.
+"""Number of whitespace-separated fields a usable ``.pix`` line has.
 
 :meta hide-value:
 """
@@ -95,12 +95,12 @@ def build_bundle_index(root: Path) -> dict[str, tuple[Path, PakEntry]]:
     Parameters
     ----------
     root : pathlib.Path
-        Directory holding the ``.pak`` bundles and their ``.pix`` indices.
+        Directory of ``.pak`` bundles and their ``.pix`` indices.
 
     Returns
     -------
     dict[str, tuple[pathlib.Path, PakEntry]]
-        Map of lowercased member name to the bundle holding it and its index entry.
+        Map of lowercased member name to its bundle and its index entry.
     """
     index: dict[str, tuple[Path, PakEntry]] = {}
     for pix in sorted(root.glob('*.pix')):
