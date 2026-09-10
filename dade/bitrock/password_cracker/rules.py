@@ -4,7 +4,7 @@ Host-side candidate generators: word-mangling rules and a word combinator.
 Passwords built from dictionary words (for example ``RandomGeneratedPassword``) are unreachable by
 pure brute force but fall quickly to a dictionary attack. :py:func:`mangle` expands one word into
 common variants, and :py:func:`combine` joins several dictionary words. Both yield ``bytes`` ready
-for :py:func:`dade.bitrock.password_cracker.crack.crack`, which verifies them on the GPU or CPU.
+for :py:func:`dade.bitrock.password_cracker.crack.crack`. It verifies them on the GPU or CPU.
 """
 from __future__ import annotations
 
@@ -121,8 +121,9 @@ def combine(words: Sequence[str | bytes],
     count : int
         Number of words to concatenate per candidate.
     rules : Sequence[Rule] | None
-        When given, each drawn word is first expanded by :py:func:`mangle` with these rules, so the
-        combinations range over the mangled variants. When ``None`` the words are used verbatim.
+        When given, each drawn word is first expanded by :py:func:`mangle` with these rules. The
+        combinations then range over the mangled variants. When ``None`` the words are used
+        verbatim.
     separator : bytes
         Bytes inserted between joined words.
 

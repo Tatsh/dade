@@ -62,7 +62,7 @@ def _convert_asset(path: Path) -> tuple[Path, bool, str]:
 def _extract_pack(path: Path) -> tuple[Path, bool, str]:
     try:
         packs.extract(path)
-    # Extraction may raise anything; the batch must continue past one pack's failure, so the
+    # Extraction may raise anything; the batch must continue past one pack's failure. The
     # error is captured and returned to the caller rather than propagated.
     except Exception as e:  # ruff: ignore[blind-except]
         return path, False, f'{type(e).__name__}: {e}'

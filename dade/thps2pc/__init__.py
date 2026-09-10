@@ -15,7 +15,7 @@ converts them to open formats:
 - :mod:`dade.thps2pc.render` - top-down and isometric software renders of a scene.
 
 Everything above works on ``bytes`` and needs no external tools. ImageMagick is only invoked when
-a command is asked to write an image format other than PPM.
+a command must write an image format other than PPM.
 """
 from __future__ import annotations
 

@@ -11,8 +11,8 @@ the platform:
 
 * **EA "SCHl"** (PS2 / classic little-endian banks). Each logical sound is a
   self-contained ``SCHl`` .. ``SCEl`` unit. The PS2 ``.mus`` (magic ``cefb807a``)
-  wraps these too. vgmstream decodes them natively (layout "blocked (EA SCHl)"),
-  so each unit is carved out and handed to ``vgmstream-cli``.
+  wraps these too. vgmstream decodes them natively (layout "blocked (EA SCHl)").
+  Each unit is carved out and handed to ``vgmstream-cli``.
 * **EAAC** (Xbox 360 / PS3 / Wii SNR/SNS streams). ``.mus`` (magic ``ce fb 80
   7a``) wraps **EA-XMA** segments; ``.sdt`` (``ADAT`` speech or a headerless
   bank) wraps **EALayer3** streams. A standard EA ``.snr`` / ``.sns`` pair is
@@ -97,7 +97,7 @@ _EAAC_EALAYER3_V1 = 5
 """
 
 _WAV_HEADER_SIZE = 44
-"""Size in bytes of a canonical WAV header; a larger output file carries audio.
+"""Size in bytes of a canonical WAV header; a larger output file has audio.
 
 :meta hide-value:
 """
@@ -112,7 +112,7 @@ _MAX_SUBTITLE_CHARS = 4000
 :meta hide-value:
 """
 _CHANNEL_SILENCE_RMS = 0.02
-"""RMS threshold below which a whole channel is treated as carrying no signal.
+"""RMS threshold below which a whole channel is treated as having no signal.
 
 :meta hide-value:
 """
@@ -142,9 +142,9 @@ _CLEAN_SILENCE_PCT = 6
 :meta hide-value:
 """
 
-# An EALayer3 EA-SNS block holds a few MPEG frames; the measured maximum across
+# An EALayer3 EA-SNS block stores a few MPEG frames; the measured maximum across
 # the game's banks is ~4001 samples. Anything far above this (garbage chains seen
-# in ADAT/SUB3 metadata reached 215040+) is not audio; 16384 cleanly separates
+# in ADAT/SUB3 metadata climbed to 215040+) is not audio; 16384 cleanly separates
 # real audio from junk.
 _MAX_BLOCK_SAMPLES = 16384
 """Upper bound on per-block sample counts used to reject non-audio while walking.
@@ -338,8 +338,8 @@ def _carve_schl_streams(b: bytes) -> list[tuple[int, int]]:
     -------
     list[tuple[int, int]]
         Byte ranges for each stream. ``SCHl`` and ``SCEl`` appear 1:1 and
-        properly nested in these banks, so pairing them in order is exact; the
-        end is the ``SCEl`` offset plus its own little-endian chunk size, which
+        properly nested in these banks, and pairing them in order is exact. The
+        end is the ``SCEl`` offset plus its little-endian chunk size. That
         excludes trailing padding/index bytes. If the counts disagree the next
         ``SCHl`` boundary is used as the end instead.
     """
@@ -412,7 +412,7 @@ def _parse_mus(b: bytes) -> list[tuple[int, bytes, int, int]]:
     if (magic := u32(b, 0, endian='>')) != _MUS_MAGIC:
         msg = f'bad .mus magic {magic:08x}'
         raise ValueError(msg)
-    # Seek table @0x10: [dataOff, field2, snrPtr] until it reaches the SNR table.
+    # Seek table @0x10: [dataOff, field2, snrPtr] until it arrives at the SNR table.
     offs: list[int] = []
     o = 0x10
     while o + 12 <= _SNR_TABLE:
@@ -436,7 +436,7 @@ def _decode_mus_segment(job: AudioJob) -> tuple[Path, bool, str]:
     Parameters
     ----------
     job : AudioJob
-        Job carrying the 8-byte EAAC ``header`` and the segment byte range.
+        Job with the 8-byte EAAC ``header`` and the segment byte range.
 
     Returns
     -------
@@ -473,7 +473,7 @@ def _walk_stream(b: bytes, start: int) -> tuple[int, int, int, int] | None:
         ``(start, end, nblocks, total_samples)`` for a valid stream, or ``None``
         when the bytes at ``start`` are not a valid EA-SNS block run. Validity is
         enforced via the block invariants (flag in ``{0x00, 0x80}``, sane size,
-        and per-block samples within one MPEG frame), which makes the walk a
+        and per-block samples within one MPEG frame). The walk is therefore a
         reliable detector across ADAT/SUB3 metadata gaps.
     """
     o = start
@@ -702,7 +702,7 @@ def _decode_array(snr_bytes: bytes,
 
 def _active_silence(a: npt.NDArray[np.int16]) -> float:
     """
-    Median percentage of near-silent frames across signal-carrying channels.
+    Median percentage of near-silent frames across channels with signal.
 
     Parameters
     ----------
@@ -713,7 +713,7 @@ def _active_silence(a: npt.NDArray[np.int16]) -> float:
     -------
     float
         Median percentage of near-silent windows; ``100.0`` if no channel
-        carries signal.
+        has signal.
     """
     act = []
     for c in range(a.shape[1]):
@@ -808,7 +808,7 @@ def _decode_ealayer3_stream(b: bytes, start: int, end: int, nsamp: int, out_wav:
         return
     best: tuple[npt.NDArray[np.int16], float, int] | None = None
     for nch in dict.fromkeys([ch, ch * 2, ch * 3]):  # 1->{1,2,3}, 2->{2,4,6}
-        # Defensive only: the MPEG channel-mode table yields 1 or 2, so the largest candidate is
+        # Defensive only: the MPEG channel-mode table yields 1 or 2, and the largest candidate is
         # exactly _MAX_SURROUND_CHANNELS.
         if nch > _MAX_SURROUND_CHANNELS:  # pragma: no cover
             continue
@@ -834,7 +834,7 @@ def _decode_sdt_stream(job: AudioJob) -> tuple[Path, bool, str]:
     Parameters
     ----------
     job : AudioJob
-        Job carrying the stream byte range and declared ``nsamp``.
+        Job with the stream byte range and declared ``nsamp``.
 
     Returns
     -------
@@ -871,8 +871,8 @@ def _is_schl(b: bytes) -> bool:
     -------
     bool
         ``True`` if an ``SCHl`` marker is present (covers PS2 ``.sdt`` banks and
-        the PS2 ``.mus`` container, which wraps SCHl streams); ``False`` for EAAC
-        ``.mus`` / ``.sdt`` payloads, which never contain ``SCHl``.
+        the PS2 ``.mus`` container that wraps SCHl streams); ``False`` for EAAC
+        ``.mus`` / ``.sdt`` payloads, never including ``SCHl``.
     """
     return _SCHL_MAGIC in b
 
@@ -919,7 +919,7 @@ def jobs_for(path: str | Path) -> list[AudioJob]:
     """
     Build the per-stream decode jobs for one ``.mus`` / ``.sdt`` file.
 
-    The container family is auto-detected by magic: any payload containing an
+    The container family is auto-detected by magic: any payload with an
     ``SCHl`` marker takes the EA SCHl carve path; otherwise an EAAC ``.mus``
     (EA-XMA) or ``.sdt`` (EALayer3) path is chosen by extension. ADAT speech
     ``.sdt`` files have their ``<stem>.subtitles.txt`` sidecar written here as a

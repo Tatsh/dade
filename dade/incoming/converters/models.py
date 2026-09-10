@@ -117,7 +117,7 @@ def _obj_text(model: IANModel, mtl_name: str) -> str:
         f'# Converted from Incoming .ian model `{model.name}`.',
         '# Incoming is left-handed with up = -Y; OBJ is right-handed with up = +Y.',
         '# Negating Y alone performs that left-to-right-handed conversion and the up flip, and',
-        '# turns the game clockwise-front winding into OBJ counter-clockwise-front (kept as-is).',
+        '# turns the game clockwise-front winding into OBJ counter-clockwise-front (unchanged).',
         '# Texture V is flipped (1 - v) from the game top-left origin to the OBJ bottom-left.',
         f'mtllib {mtl_name}',
         f'o {model.name or "model"}',
@@ -139,7 +139,7 @@ def ian_to_obj(source: Path, dest_dir: Path) -> tuple[Path, ...]:
     Convert an Incoming ``.ian`` model to Wavefront OBJ and MTL.
 
     Geometry, normals, and texture coordinates are written. The texture is resolved through the
-    referencing ``.odl`` (the ``.ian`` file carries no texture of its own) and, when found, written
+    referencing ``.odl`` (the ``.ian`` file has no texture) and, when found, written
     as a PNG next to the model and referenced from the material.
 
     Parameters

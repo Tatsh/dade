@@ -1,10 +1,10 @@
 """
 Shared kernel-source templating for the GPU backends.
 
-Both the CUDA and OpenCL backends compile the same :file:`kernel.cl`, which bridges the two dialects
+Both the CUDA and OpenCL backends compile the same :file:`kernel.cl`. It bridges the two dialects
 with an ``#ifdef __OPENCL_VERSION__`` prelude. This module fills its placeholders with the Twofish
-tables and sizes from :py:mod:`~dade.bitrock.crypto`, so the device and CPU cannot diverge on the
-lookup tables.
+tables and sizes from :py:mod:`~dade.bitrock.crypto`. The device and CPU therefore cannot diverge
+on the lookup tables.
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 __all__ = ('MAX_IV_POOL', 'MAX_PASSWORD', 'kernel_source')
 
 _PACKAGE = 'dade.bitrock.password_cracker'
-"""Package holding :file:`kernel.cl`, resolved by :py:func:`importlib.resources.files`.
+"""Package storing :file:`kernel.cl`, resolved by :py:func:`importlib.resources.files`.
 
 :meta hide-value:
 """

@@ -21,11 +21,11 @@ Status (honest, current state):
 
 * Xbox 360 **NPM7** is the correct reference decode.
 * PS2 **SPM7** is VIF-decoded and front-correct, with residual strip-restart
-  spikes (per-vertex ADC restart flags are not decoded yet, so a restart inside
-  a batch can leave one long triangle; those are dropped with an adaptive edge
-  gate, which can also nick thin parts).
+  spikes (per-vertex ADC restart flags are not decoded yet, and a restart inside
+  a batch can produce one long triangle; those are dropped with an adaptive edge
+  gate that can also nick thin parts).
 * PS3 **PPM7** ``.obj`` is **NOT yet correct**: the vertex-data offset within
-  the PH block differs from NPM7 (known TODO), so the PPM7 ``.obj`` may be
+  the PH block differs from NPM7 (known TODO), and the PPM7 ``.obj`` may be
   garbage. Its ``.json`` metadata is fine.
 * Wii **RPM7** shares the big-endian PH path with NPM7.
 """
@@ -285,7 +285,7 @@ class _MeshHeader(NamedTuple):
 def _mesh_header(b: bytes) -> _MeshHeader:
     # Header transform: 3x4 row-major matrix at 0x20, pivot/translation at 0x50.
     # Quantized (u16) positions dequantize as raw*diag + pivot. Float32 meshes
-    # carry an identity matrix (diag == 1.0, pivot == 0), so the same formula is
+    # have an identity matrix (diag == 1.0, pivot == 0), and the same formula is
     # a no-op and we read positions as float directly.
     en = _endian(b)
 
@@ -318,11 +318,11 @@ def _decode_pos(hdr: _MeshHeader, o: int) -> tuple[float, ...]:
 
 def _in_bbox_frac(hdr: _MeshHeader, vo: int, stride: int, vcount: int) -> float:
     # Fraction of decoded vertices that fall within the header bounding box
-    # (+10% margin). The wrong stride reads index/garbage as positions, which
-    # lands far outside the bbox -- so this rejects bad stride guesses.
+    # (+10% margin). The wrong stride reads index/garbage as positions. Those
+    # land far outside the bbox, and this rejects bad stride guesses.
     n = min(vcount, 24)
     if n <= 0:
-        # Defensive only: the sole caller derives vcount with max(1, ...), so n is never zero.
+        # Defensive only: the sole caller derives vcount with max(1, ...), and n is never zero.
         return 0.0  # pragma: no cover
     ok = 0
     for i in range(n):
@@ -416,7 +416,7 @@ def _parse(b: bytes) -> list[_Submesh]:
 def _parse_meta(b: bytes) -> dict[str, object]:
     # NPM7 (Xbox360), PPM7 (PS3) and RPM7 (Wii) are the same big-endian mesh
     # container; SPM7 (PS2) is the same container little-endian. They differ only
-    # in the 4-byte magic and (for SPM7) the byte order, which we switch on below.
+    # in the 4-byte magic and (for SPM7) the byte order. We switch on that below.
     magic = b[:4]
     if magic not in {b'NPM7', b'PPM7', b'RPM7', b'SPM7'}:
         msg = f'not NPM7/PPM7/RPM7/SPM7 ({magic!r})'

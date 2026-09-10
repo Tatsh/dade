@@ -18,7 +18,7 @@ class NotEncryptedError(BitrockError):
 
 
 class SignatureNotFoundError(BitrockError):
-    """Raised when the cookfs signature cannot be located, so the source is not an installer."""
+    """Raised when the cookfs signature cannot be located and the source is not an installer."""
 
 
 class CorruptArchiveError(BitrockError):

@@ -105,7 +105,7 @@ def unpack_pkr(pkr: Path, destdir: Path | None, *, list_only: bool = False) -> N
     Unpack the PKR2 resource pack PKR into DESTDIR.
 
     DESTDIR is required unless --list is given. Entry names are checked before anything is
-    written, so an archive cannot place files outside DESTDIR.
+    written; an archive cannot place files outside DESTDIR.
     """
     data = pkr.read_bytes()
     archive = _parse(pkr, data)

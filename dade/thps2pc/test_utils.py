@@ -3,7 +3,7 @@ Builders for synthetic Tony Hawk's Pro Skater 2 PC asset bytes.
 
 These construct minimal but valid containers in memory so the readers can be exercised without
 shipping any copyrighted game data. They are shipped as part of the package so downstream code can
-reuse them in its own tests.
+reuse them in its tests.
 """
 from __future__ import annotations
 
@@ -106,11 +106,11 @@ def pkr_archive(directories: Sequence[tuple[str, Sequence[PkrFileSpec]]],
     Parameters
     ----------
     directories : Sequence[tuple[str, Sequence[PkrFileSpec]]]
-        Each directory's name, including its trailing separator, and the files it holds.
+        Each directory's name, including its trailing separator, and the files inside it.
     alignment : int
         Value recorded in the header's alignment field.
     magic : bytes
-        Magic bytes to write, so a rejection path can be exercised.
+        Magic bytes to write, allowing a rejection path to be exercised.
 
     Returns
     -------

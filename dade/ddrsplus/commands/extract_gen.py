@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
               'Measured from the audio when not given.')
 @click.option('--iv', default=DEFAULT_IV.hex(), help='Initialisation vector, in hex.')
 @click.option('-k', '--key', default=GEN_KEY.hex(), help='Cipher key, in hex.')
-@click.option('--no-crop', is_flag=True, help="Keep the banner's transparent padding.")
+@click.option('--no-crop', is_flag=True, help="Retain the banner's transparent padding.")
 @click.option('-o',
               '--output-dir',
               type=WRITABLE_DIR,
@@ -52,14 +52,14 @@ def extract_gen(files: tuple[Path, ...],
     count tables also become JSON, and each set of step charts also becomes a StepMania simfile.
     Nothing replaces the section it came from.
 
-    The simfile's ``#OFFSET`` is measured from the audio, which needs ``ffmpeg``; pass ``--gap``
+    The simfile's ``#OFFSET`` is measured from the audio and needs ``ffmpeg``; pass ``--gap``
     to set it yourself.
     """  # ruff: ignore[docstring-missing-exception]
     if ffmpeg is None and gap is None:
         try:
             ffmpeg = locate_tool('ffmpeg')
         except ToolNotFoundError:
-            log.warning('`ffmpeg` was not found, so the offset gap will be zero.')
+            log.warning('`ffmpeg` was not found; the offset gap will be zero.')
     for path in files:
         target = output_dir or path.with_suffix('')
         try:

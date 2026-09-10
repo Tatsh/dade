@@ -1,8 +1,8 @@
 """
 The ``KDEI`` framing *DDR S+* wraps the shared ``BFCodec`` cipher in.
 
-The block cipher is :py:mod:`dade.common.bfcodec`, which *pop'n rhythmin* and *jubeat plus*
-share: Blowfish with one deviation in its F function, which combines the S-box lookups as
+The block cipher is :py:mod:`dade.common.bfcodec`, shared with *pop'n rhythmin* and *jubeat plus*:
+Blowfish with one deviation in its F function. The F function combines the S-box lookups as
 ``(S0[a] + S1[b]) ^ (S2[c] + S3[d])``. Only the framing and the key differ here.
 
 Where the other two games append a length trailer, *DDR S+* puts a header in front::
@@ -11,15 +11,15 @@ Where the other two games append a length trailer, *DDR S+* puts a header in fro
 
 ``padded_size`` is ``real_size`` rounded up to the eight-byte block. The whole ciphertext is
 deciphered in CBC mode from the fixed initialisation vector and then truncated back to
-``real_size``. Both sizes sit outside the ciphertext, so they catch a truncated file but say
-nothing about whether the key was right; a wrong key yields plaintext-shaped rubbish that only the
-caller's own parse rejects.
+``real_size``. Both sizes sit outside the ciphertext. They catch a truncated file but do not
+verify the key; a wrong key yields plaintext-shaped rubbish that only the caller's own parse
+rejects.
 
 Everything here was read out of ``DDRSPlusUS/ARM-32-cpu0x9``, a 32-bit ARM Mach-O:
 ``C_CRYPT::cipher_init`` at 0x0008e97c loads the key and the vector, ``decipher_get_size`` at
 0x0008e924 validates the header, and ``C_CRYPT::decipher`` at 0x0008e9f4 hands the payload to
-``blowfish_cbc_decrypt``. The key is stored whole rather than derived, which makes it obfuscated
-rather than hidden.
+``blowfish_cbc_decrypt``. The key is stored whole rather than derived. It is obfuscated rather
+than hidden.
 """
 from __future__ import annotations
 
@@ -38,8 +38,8 @@ KDEI_MAGIC = b'KDEI'
 GEN_KEY = bytes.fromhex('C2549A5CF2E5123B9FE6DC09802A51CB')
 """The 16-byte key, read from 0x000c47c0 in the app binary.
 
-``blowfish_cbc_init`` passes it through ``strlen``, which stops at the NUL byte that follows it, so
-all sixteen bytes are used.
+``blowfish_cbc_init`` passes it through ``strlen``, stopping at the NUL byte that follows it.
+All sixteen bytes are used.
 
 :meta hide-value:
 """

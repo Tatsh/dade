@@ -1,9 +1,9 @@
 """
 Decoder for the textures embedded in a ``.PSX`` lighting companion file (``*_L.PSX``).
 
-After the chunk list a lighting file carries, in order: a texture checksum table, a table of
+After the chunk list a lighting file has, in order: a texture checksum table, a table of
 16-colour palettes, a table of 256-colour palettes, and finally a table of texture instances.
-Every table is preceded by its own 32-bit count::
+Every table is preceded by a 32-bit count::
 
     u32 numChecksums, u32 checksum[numChecksums]
     u32 numCluts16,  { u32 id, u16 entry[16], ... }   (9 dwords per record)
@@ -21,8 +21,8 @@ Every table is preceded by its own 32-bit count::
 Palette entries are 16-bit ``BGR555``. Two values are treated as fully transparent and decode to
 magenta so they stand out: zero and ``0x7C1F``.
 
-The level and object scenes place their checksum table after a per-sector array instead, so they
-are read by :py:meth:`dade.thps2pc.psx.Scene.texture_checksums`.
+The level and object scenes place their checksum table after a per-sector array instead. Those are
+read by :py:meth:`dade.thps2pc.psx.Scene.texture_checksums`.
 """
 from __future__ import annotations
 

@@ -3,9 +3,9 @@ State converters: Incoming save, config, and snapshot files to JSON.
 
 The schemas are reverse-engineered from the PC executable (``incoming.exe``). The configuration file
 (``.cfg``) is a concatenation of fixed-size blocks described by the game's internal save-descriptor
-table, so it is split into its named blocks, each decoded into a typed value (text, numeric arrays,
+table. It is split into its named blocks, each decoded into a typed value (text, numeric arrays,
 and the verified checksum). The snapshot files (``.sav``, ``.xxx``, and ``.lev``) are
-``memcpy``-style images of a contiguous region of game globals, so a field table mapping each
+``memcpy``-style images of a contiguous region of game globals. A field table mapping each
 global's offset, type, and name is applied. Every byte is decoded into a typed value: bytes not
 covered by a known field
 (gaps, large pools, and run-time pointer tables) are emitted as ``unknownAt_<offset>`` arrays of
@@ -78,7 +78,7 @@ _CFG_STOP_BITS = ('1', '1.5', '2')
 _CFG_PARITY = ('none', 'odd', 'even', 'mark')
 _CFG_FLOW_CONTROL = ('none', 'xon/xoff', 'rts', 'dtr', 'rts/dtr')
 
-# The keybind block is 4 control-config pages of 10 action slots; each slot holds a DirectInput
+# The keybind block is 4 control-config pages of 10 action slots; each slot stores a DirectInput
 # keyboard scancode (below the special base), or a special input code (at or above it). A 0 slot is
 # unbound (empty name).
 _KEYBIND_PAGES = 4
@@ -120,7 +120,7 @@ _HIGH_SCORE_ENTRY_SIZE = 12
 _HIGH_SCORE_ENTRY_COUNT = 9
 
 # The saved-mission-slot block (from UpdateMissionRestartHighScoreScreen @ 0x46af00) is 10 records
-# of 55 bytes: a name string (empty slots hold a dashes string), then a mission-slot byte and a
+# of 55 bytes: a name string (empty slots store a dashes string), then a mission-slot byte and a
 # level-value byte.
 _MISSION_SLOT_SIZE = 0x37
 _MISSION_SLOT_COUNT = 10
@@ -677,7 +677,7 @@ _SNAPSHOT_FIELDS: tuple[tuple[int, str, str, int], ...] = (
     (0x81130, 'sparkDebrisMatrixPool', 'f', 576),
 )
 
-# The .sav/.xxx region begins 12 bytes before the .lev region (the leading mission-id fields), so
+# The .sav/.xxx region begins 12 bytes before the .lev region (the leading mission-id fields), and
 # both end at the same global; .lev shares this field table shifted by this prefix.
 _LEVEL_PREFIX = 12
 _MISSION_SNAPSHOT_SIZE = 0x81a30
@@ -727,8 +727,8 @@ def _decode_flags(value: int, names: Mapping[int, str]) -> dict[str, bool]:
 
 
 def _decode_gap(data: bytes, start: int, end: int) -> Any:
-    # Every byte must be decoded, never left as an opaque blob. The region is a 32-bit-aligned RAM
-    # image, so an aligned, word-multiple span decodes as unsigned 32-bit words; anything else
+    # Every byte must be decoded, never retained as an opaque blob. The region is a 32-bit-aligned
+    # RAM image. An aligned, word-multiple span decodes as unsigned 32-bit words; anything else
     # decodes as raw byte values.
     span = data[start:end]
     if start % 4 == 0 and len(span) % 4 == 0:
@@ -776,7 +776,7 @@ def sav_to_json(source: Path, dest_dir: Path) -> Path:
     Convert an Incoming ``.sav`` save game to JSON.
 
     The mission-state snapshot region (``SaveMissionStateSnapshot``) is decoded into named fields;
-    bytes not covered by a known field are kept as base64 ``raw_regions``.
+    bytes not covered by a known field are stored as base64 ``raw_regions``.
 
     Parameters
     ----------
@@ -797,8 +797,8 @@ def xxx_to_json(source: Path, dest_dir: Path) -> Path:
     """
     Convert an Incoming ``.xxx`` debug mission snapshot to JSON.
 
-    The ``.xxx`` file uses the same mission-state snapshot format as ``.sav``, so it shares that
-    decoder; bytes not covered by a known field are kept as base64 ``raw_regions``.
+    The ``.xxx`` file uses the same mission-state snapshot format as ``.sav`` and shares that
+    decoder; bytes not covered by a known field are stored as base64 ``raw_regions``.
 
     Parameters
     ----------
@@ -820,7 +820,7 @@ def lev_to_json(source: Path, dest_dir: Path) -> Path:
     Convert an Incoming ``.lev`` level-state snapshot to JSON.
 
     The level snapshot (``SaveLevelStateSnapshot``) shares the mission-snapshot field table without
-    its 12-byte mission-id prefix; bytes not covered by a known field are kept as base64
+    its 12-byte mission-id prefix; bytes not covered by a known field are stored as base64
     ``raw_regions``.
 
     Parameters

@@ -3,7 +3,7 @@ Builders for synthetic Incoming asset bytes.
 
 These construct minimal but valid assets in memory so the converters can be exercised without
 shipping any copyrighted game data. They are shipped as part of the package so downstream code can
-reuse them in its own tests.
+reuse them in its tests.
 """
 from __future__ import annotations
 

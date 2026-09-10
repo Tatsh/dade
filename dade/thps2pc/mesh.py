@@ -1,7 +1,7 @@
 """
 Export of a ``.PSX`` scene's geometry as an interleaved vertex buffer plus a manifest.
 
-The buffer holds ``[x, y, z, u, v]`` as little-endian 32-bit floats per triangle vertex, grouped
+The buffer stores ``[x, y, z, u, v]`` as little-endian 32-bit floats per triangle vertex, grouped
 so every batch draws with a single texture. Vertex positions are the sector-local 16-bit values
 with no placement applied, and the manifest's ``scale`` converts them to the renderer's units.
 
@@ -35,7 +35,7 @@ DEFAULT_SCALE = 1.0 / 256.0
 :meta hide-value:
 """
 UNTEXTURED_KEY = 'untextured'
-"""Batch key used for faces that carry no texture.
+"""Batch key used for faces that have no texture.
 
 :meta hide-value:
 """
@@ -65,7 +65,7 @@ def build_batches(scene: Scene,
     Group every triangle in a scene by the texture it draws with.
 
     Faces whose corner indices fall outside their sector's vertex table are skipped, as are
-    faces whose texture index has no entry in the checksum table, which fall back to the
+    faces whose texture index has no entry in the checksum table. Those fall back to the
     untextured batch.
 
     Parameters

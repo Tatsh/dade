@@ -6,8 +6,8 @@ pair addresses one section, an unused pair is zero, the sections are stored back
 last one ends exactly at end of file. A section either begins with the ``KDEI`` magic, in which
 case :py:mod:`dade.ddrsplus.bfcodec` deciphers it, or it is stored in the clear.
 
-The eight slots always hold the same things, so :py:data:`SECTION_EXTENSIONS` names them by index
-rather than by sniffing:
+The eight slots always store the same things. :py:data:`SECTION_EXTENSIONS` identifies them by
+index rather than by sniffing:
 
 =====  =======  =============================================================
 Index  Cipher   Contents
@@ -28,9 +28,9 @@ Section 5's music id is big-endian, read with ``readSizeForByte:::`` where secti
 ``readSizeForLittleByte:::``.
 
 Which difficulties the Shake mode has is fixed rather than per song:
-``+[SKStageData isExistenceShakeLevel:]`` at 0x00012394 answers yes for slots 1 and 2 only, and
-the table at 0x000bcbe8 maps Shake index 0 to slot 1 and index 1 to slot 2, so the two Shake
-ratings are basic and difficult. Section 7 still stores all four slots.
+``+[SKStageData isExistenceShakeLevel:]`` at 0x00012394 reports yes for slots 1 and 2 only, and
+the table at 0x000bcbe8 maps Shake index 0 to slot 1 and index 1 to slot 2. The two Shake
+ratings are therefore basic and difficult. Section 7 still stores all four slots.
 """
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ DIFFICULTY_SLOTS = ('beginner', 'basic', 'difficult', 'expert')
 :meta hide-value:
 """
 SHAKE_SLOTS = ('basic', 'difficult')
-"""The difficulties the Shake mode has, which are slots 1 and 2.
+"""The difficulties the Shake mode has, slots 1 and 2.
 
 :meta hide-value:
 """
@@ -109,7 +109,7 @@ class GenSection(NamedTuple):
     @property
     def is_enciphered(self) -> bool:
         """
-        Whether the section carries the ``KDEI`` magic.
+        Whether the section has the ``KDEI`` magic.
 
         Returns
         -------
@@ -141,7 +141,7 @@ class SongMetadata(NamedTuple):
     """Section 5: the song's identity and its difficulty ratings."""
 
     music_id: int
-    """The music id, which names the file for downloaded songs."""
+    """The music id, doubling as the file name for downloaded songs."""
     title: str
     """The Japanese title."""
     title_english: str
@@ -153,7 +153,7 @@ class SongMetadata(NamedTuple):
     levels: tuple[int, ...]
     """Six foot ratings: four standard, then the two Shake ones."""
     overrides: tuple[tuple[int | None, ...], ...]
-    """Groove radar overrides per rating, ``None`` where the section leaves the value alone."""
+    """Groove radar overrides per rating, ``None`` where the section makes no override."""
     @property
     def name(self) -> str:
         """
@@ -173,7 +173,7 @@ class SongMetadata(NamedTuple):
         Returns
         -------
         dict[str, Any]
-            Every field the section holds.
+            Every field the section stores.
         """
         def records(offset: int, names: Sequence[str]) -> list[dict[str, Any]]:
             return [{
@@ -215,7 +215,7 @@ class ChartTable(NamedTuple):
         Returns
         -------
         dict[str, Any]
-            Every field the section holds.
+            Every field the section stores.
         """
         return {
             'charts': [{
@@ -235,9 +235,9 @@ def parse_metadata(data: bytes) -> SongMetadata:
     """
     Parse section 5.
 
-    The three text fields each hold a length byte and 72 bytes of UTF-8. The length counts
-    characters rather than bytes, so the text is read to its NUL instead. A groove override of
-    0xFF means the value from section 6 or 7 stands, which is why those bytes are overrides rather
+    The three text fields each store a length byte and 72 bytes of UTF-8. The length counts
+    characters rather than bytes, and the text is therefore read to its NUL instead. A groove
+    override of 0xFF means the value from section 6 or 7 stands. Those bytes are overrides rather
     than padding.
 
     Parameters
@@ -319,7 +319,7 @@ def split_gen(data: bytes) -> tuple[GenSection, ...]:
     Raises
     ------
     InvalidFormatError
-        If the file is too short to hold a directory, or an entry runs past the end of the file.
+        If the file is too short for a directory, or an entry runs past the end of the file.
     """
     if len(data) < _DIRECTORY_SIZE:
         msg = f'Too short for a {_DIRECTORY_SIZE}-byte directory: {len(data)} bytes.'

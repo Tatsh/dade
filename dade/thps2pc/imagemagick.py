@@ -1,7 +1,7 @@
 """
 Location and invocation of the ImageMagick helpers.
 
-Nothing here runs at import time, so the rest of the package can be imported and every decoder
+Nothing here runs at import time. The rest of the package can be imported and every decoder
 exercised without ImageMagick installed. A renderer only needs it when the requested output is
 not already a PPM.
 

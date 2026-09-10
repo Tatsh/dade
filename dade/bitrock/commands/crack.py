@@ -163,7 +163,7 @@ def _format_duration(seconds: float) -> str:
 
 def _format_rate(rate: float) -> str:
     """
-    Format a candidates-per-second rate, keeping precision for slow rates.
+    Format a candidates-per-second rate, preserving precision for slow rates.
 
     Parameters
     ----------
@@ -356,7 +356,7 @@ def crack_main(archive: Path, wordlist: Path | None, charset: str, min_length: i
         sys.stderr.flush()
         sys.stdout.flush()
         if backend == 'cpu':
-            # The CPU pool has already torn down cleanly, so exit normally.
+            # The CPU pool has already torn down cleanly; exit normally.
             raise click.exceptions.Exit(_SIGINT_EXIT_CODE) from None
         # A running CUDA kernel cannot be aborted, and normal shutdown blocks on the GPU context
         # teardown until the in-flight batch drains (tens of seconds). Exit immediately instead.

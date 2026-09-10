@@ -4,12 +4,11 @@ OpenCL backend for the password brute-forcer, built on PyOpenCL.
 The kernel in :file:`kernel.cl` ports the
 :py:func:`~dade.bitrock.crypto.verify_password` oracle to the device: SHA-256, the Twofish block
 cipher, CBC mode, and the InstallBuilder key-derivation loop. The Twofish byte permutations and
-matrices are injected from the constants in :py:mod:`~dade.bitrock.crypto`, so the device and CPU
-cannot diverge on the lookup tables. The kernel targets the OpenCL 1.2 baseline, so it builds with
-each device's default
-standard (the reported platforms range from 2.0 to 3.0).
+matrices are injected from the constants in :py:mod:`~dade.bitrock.crypto`. The device and CPU
+therefore cannot diverge on the lookup tables. The kernel targets the OpenCL 1.2 baseline and
+builds with each device's default standard (the reported platforms range from 2.0 to 3.0).
 
-This module imports :py:mod:`pyopencl`, which is only present with the ``opencl`` extra installed on
+This module imports :py:mod:`pyopencl`, present only with the ``opencl`` extra installed on
 a host with an OpenCL device; :py:mod:`dade.bitrock.password_cracker.crack` treats an
 :py:class:`ImportError` here as 'no OpenCL'.
 """
@@ -171,7 +170,7 @@ def _encode(candidate: str | bytes) -> bytes:
 
 def _display(password: bytes) -> str:
     """
-    Render a candidate for a log message, keeping non-text bytes readable.
+    Render a candidate for a log message, preserving non-text bytes readably.
 
     Parameters
     ----------
@@ -225,7 +224,7 @@ def _run_batch(context: cl.Context, queue: cl.CommandQueue, kernel: cl.Kernel, h
     Because every work item finishes its heavy key derivation only at the very end, a device-side
     'completed' counter would read zero for almost the whole batch. Instead, in-flight progress is
     estimated from elapsed time and ``rate`` (candidates per second measured from prior batches).
-    Polling the event also keeps a :py:class:`KeyboardInterrupt` responsive within
+    Polling the event also lets a :py:class:`KeyboardInterrupt` be handled within
     :py:data:`_POLL_SECONDS`.
 
     Parameters
@@ -389,7 +388,7 @@ def crack_opencl(info: PayloadInfo,
         'Compiling OpenCL kernel on %s (%d units) with a work-group of %d, times=%d. Please '
         'wait...', selected.name.strip(), units, local_size, info.times)
     header = _upload_header(context, info)
-    # Seed an initial rate from a one-group warm-up. Keeping it to a single work-group keeps it
+    # Seed an initial rate from a one-group warm-up. A single work-group stays
     # quick even on a slow CPU device, where a larger warm-up would look like a hang.
     _, warm_elapsed = _run_batch(context,
                                  queue,

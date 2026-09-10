@@ -18,5 +18,5 @@ ddrsplus.add_command(extract_gen)
 
 
 def main() -> None:
-    """Entry point for the ``ddrsplus`` group when it is run on its own."""
+    """Entry point for the ``ddrsplus`` group when it is run directly."""
     ddrsplus()

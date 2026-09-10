@@ -1,10 +1,9 @@
 """
 Password brute-forcer for encrypted InstallBuilder installers.
 
-The per-candidate oracle is :py:func:`~dade.bitrock.crypto.verify_password`, which does the
-minimal work needed to decide whether a password is correct. This module drives that oracle over a
-keyspace,
-selecting a GPU backend when one is available and falling back to pure Python otherwise.
+The per-candidate oracle is :py:func:`~dade.bitrock.crypto.verify_password`. It does the minimal
+work needed to decide whether a password is correct. This module drives that oracle over a
+keyspace, selecting a GPU backend when one is available and falling back to pure Python otherwise.
 """
 from __future__ import annotations
 
@@ -65,8 +64,8 @@ def _worker_init(info: PayloadInfo) -> None:  # pragma: no cover
     info : PayloadInfo
         The parsed payload header, stored for :py:func:`_worker_verify`.
     """
-    # Ignore SIGINT in workers so a Ctrl-C is handled only by the parent, which terminates the
-    # pool; otherwise every worker prints its own KeyboardInterrupt traceback.
+    # Ignore SIGINT in workers so a Ctrl-C is handled only by the parent, and the parent
+    # terminates the pool. Otherwise every worker prints a KeyboardInterrupt traceback.
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     _worker_state['info'] = info
 
@@ -176,7 +175,7 @@ def _as_bytes(candidate: str | bytes) -> bytes:
 
 def _display(password: bytes) -> str:
     """
-    Render a candidate for a log message, keeping non-text bytes readable.
+    Render a candidate for a log message, preserving non-text bytes readably.
 
     Parameters
     ----------
@@ -235,7 +234,7 @@ def _crack_cpu_parallel(info: PayloadInfo, source: Mask | Iterable[str | bytes],
     """
     Test candidates across ``jobs`` worker processes, returning the first match.
 
-    The pool is torn down as soon as a worker reports a match, so the remaining candidates in flight
+    The pool is torn down as soon as a worker reports a match. The remaining candidates in flight
     are abandoned rather than completed.
 
     Parameters
@@ -259,8 +258,8 @@ def _crack_cpu_parallel(info: PayloadInfo, source: Mask | Iterable[str | bytes],
     last_report = time.monotonic()
     pool = multiprocessing.Pool(jobs, initializer=_worker_init, initargs=(info,))
     try:
-        # Poll the iterator with a timeout rather than blocking in it, so a Ctrl-C in the parent is
-        # seen promptly instead of being swallowed deep inside the pool's result wait.
+        # Poll the iterator with a timeout rather than blocking in it. A Ctrl-C in the parent is
+        # then seen promptly instead of being swallowed deep inside the pool's result wait.
         results = pool.imap_unordered(_worker_verify, source)
         latest = b''
         while True:
@@ -363,8 +362,8 @@ def _has_devices(list_devices: Callable[[], list[str]]) -> bool:  # pragma: no c
     """
     Report whether a GPU backend has at least one usable device.
 
-    A backend's optional package can import on a host with no working driver or platform, so
-    importability alone does not mean a device can be used. Enumerating the devices surfaces a
+    A backend's optional package can import on a host with no working driver or platform.
+    Importability alone does not mean a device can be used. Enumerating the devices surfaces a
     broken driver or missing platform, letting ``auto`` fall back to the CPU instead of dispatching
     to a device that would fail.
 

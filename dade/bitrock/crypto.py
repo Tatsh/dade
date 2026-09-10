@@ -81,7 +81,7 @@ def derive_key(password: bytes, password_key: bytes, iv: bytes, times: int) -> b
     """
     Derive the payload key from a password (InstallBuilder scheme).
 
-    The hash of the password is repeatedly Twofish-CBC-encrypted, with the IV carried over from
+    The hash of the password is repeatedly Twofish-CBC-encrypted, with the IV taken over from
     each iteration to the next, then hashed again.
 
     Parameters

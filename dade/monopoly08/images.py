@@ -9,8 +9,8 @@ wrapper), PS2 (SHPS, PSMT8/PSMT4 GS-deswizzle with variable-size CSM1 CLUTs), an
 PS3 SHPX of the same asset hashes; the decode algorithms here are copied faithfully
 from the original standalone scripts and only reorganised. Note that the SHPS width-16
 PAL4 path swizzles in a 16-wide block whose exact byte order could not be solved from
-the few ground-truth samples, so it falls back to a linear read -- a known approximation
-(correct for the near-uniform UI majority, approximate for the rare detailed one); the
+the few reference samples. It falls back to a linear read, a known approximation
+(correct for the near-uniform UI majority, approximate for the rare detailed one). The
 Wii paletted outputs are likewise provisional in colour but geometrically correct.
 """
 
@@ -162,21 +162,21 @@ def _untile(data: bytes, blocks_w: int, blocks_h: int, elem_bytes: int) -> bytes
             d = (y * blocks_w + x) * elem_bytes
             s = lin * elem_bytes
             # Defensive only: the tiled mapping is a bijection over the 32-element-aligned grid
-            # _untile_crop always passes, and that caller pads the data to exactly ``n`` bytes, so
-            # neither bound can be exceeded.
+            # _untile_crop always passes, and that caller pads the data to exactly ``n`` bytes.
+            # Neither bound can be exceeded.
             if d >= 0 and d + elem_bytes <= n and s + elem_bytes <= len(data):  # pragma: no branch
                 out[d:d + elem_bytes] = data[s:s + elem_bytes]
     return bytes(out)
 
 
 def _swap16(b: bytes) -> bytes:
-    # byteswap() is untyped in the NumPy stubs, so bind its result to a typed name.
+    # byteswap() is untyped in the NumPy stubs; bind its result to a typed name.
     swapped: npt.NDArray[np.uint16] = np.frombuffer(b, dtype='<u2').byteswap()
     return swapped.tobytes()
 
 
 def _swap32(b: bytes) -> bytes:
-    # byteswap() is untyped in the NumPy stubs, so bind its result to a typed name.
+    # byteswap() is untyped in the NumPy stubs; bind its result to a typed name.
     swapped: npt.NDArray[np.uint32] = np.frombuffer(b, dtype='<u4').byteswap()
     return swapped.tobytes()
 
@@ -1079,10 +1079,10 @@ def _idx_pal4(raw: npt.NDArray[np.uint8], w: int, h: int) -> npt.NDArray[np.uint
     Deswizzle a PSMT4 index plane to ``[w*h]`` 4-bit indices.
 
     Width-16 PAL4 textures swizzle in a 16-wide block whose exact byte order could
-    not be pinned down (only 5 ground-truth samples exist, insufficient to solve the
+    not be pinned down (only 5 reference samples exist, insufficient to solve the
     256-permutation; the high-detail sample defeats every derivation). They are all
-    small 16x{16,32,64} UI bits, so they fall back to a linear read -- correct for the
-    near-uniform majority, approximate for the rare detailed one.
+    small 16x{16,32,64} UI bits and fall back to a linear read, correct for the
+    near-uniform majority and approximate for the rare detailed one.
 
     Parameters
     ----------
@@ -1115,7 +1115,7 @@ def _idx_pal4(raw: npt.NDArray[np.uint8], w: int, h: int) -> npt.NDArray[np.uint
         # B row/col of the source byte.
         b_r = (yy // 16) * 16 + (bidx // 16)
         b_c = (xx // 32) * 16 + (bidx % 16)
-        # B is laid out (h x w/2); B[r, c] = raw[b_addr[r*(w/2)+c]].
+        # B has shape (h x w/2); B[r, c] = raw[b_addr[r*(w/2)+c]].
         raw_byte = b_addr.reshape(h, w // 2)[b_r, b_c].reshape(-1)
         _pal4_cache[key] = (raw_byte, nib)
     raw_byte, nib = _pal4_cache[key]
@@ -1238,8 +1238,8 @@ def _decode_shps(b: bytes) -> tuple[Image.Image, str, int, int]:
 # 0x16 ARGB8888. N64_CMPR is decoded correctly (GX 8x8 tiles of four 4x4 DXT1
 # sub-blocks, big-endian RGB565 endpoints, 2-bit index pairs reversed per byte ->
 # rebuilt to linear DXT1). Paletted indices de-tile perfectly but the exact
-# index<->TLUT-storage order for this game is not a standard swizzle, so paletted
-# PNGs are written as provisional (correct geometry, approximate colour).
+# index<->TLUT-storage order for this game is not a standard swizzle. Paletted
+# PNGs are therefore written as provisional (correct geometry, approximate colour).
 _TYPE_NAMES = {
     1: 'PAL4_RGBA8888',
     2: 'PAL8_RGBA8888',

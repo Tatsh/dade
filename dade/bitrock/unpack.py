@@ -46,8 +46,9 @@ def _is_executable(contents: bytes) -> bool:
     """
     Decide whether a member should be marked executable.
 
-    InstallBuilder does not store Unix permission bits in the cookfs index, so the executable bit
-    is inferred from the contents. Recognised formats cover the Unix platforms InstallBuilder
+    InstallBuilder does not store Unix permission bits in the cookfs index. The executable bit
+    is therefore inferred from the contents. Recognised formats cover the Unix platforms
+    InstallBuilder
     targets: ELF (including ``.so`` shared objects), Mach-O and ``.dylib`` libraries, XCOFF (AIX
     and OS/400), PA-RISC SOM (HP-UX), and files beginning with a shebang.
 

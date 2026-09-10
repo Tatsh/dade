@@ -33,8 +33,8 @@ def _write_textures(batches: Mapping[str, object], index: Mapping[str, Path], ou
     """
     Convert every referenced texture into a destination directory.
 
-    A batch whose checksum has no matching bitmap is skipped rather than treated as an error, so
-    a partial texture set still produces a usable mesh.
+    A batch whose checksum has no matching bitmap is skipped rather than treated as an error. A
+    partial texture set still produces a usable mesh.
 
     Parameters
     ----------
@@ -118,7 +118,7 @@ def convert_scene(scene: Path,
     """
     Convert SCENE into an interleaved mesh and its textures under OUTDIR.
 
-    Writes ``models/<name>.bin`` holding [x, y, z, u, v] as 32-bit floats per triangle vertex,
+    Writes ``models/<name>.bin`` storing [x, y, z, u, v] as 32-bit floats per triangle vertex,
     ``models/<name>.json`` describing the batches, and one PNG per referenced texture under
     ``textures/<name>``. Textures are resolved by checksum against the BMP directories given with
     --texture-dir and converted with ImageMagick; pass --no-textures to skip that entirely.

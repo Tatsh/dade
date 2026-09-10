@@ -4,10 +4,10 @@ CUDA backend for the password brute-forcer, built on CuPy.
 The kernel in :file:`kernel.cl` (shared with the OpenCL backend via an ``#ifdef`` prelude) ports the
 :py:func:`~dade.bitrock.crypto.verify_password` oracle to the GPU: SHA-256, the Twofish block
 cipher, CBC mode, and the InstallBuilder key-derivation loop. The Twofish byte permutations and
-matrices are injected from the constants in :py:mod:`~dade.bitrock.crypto`, so the GPU and CPU
-cannot diverge on the lookup tables.
+matrices are injected from the constants in :py:mod:`~dade.bitrock.crypto`. The GPU and CPU
+therefore cannot diverge on the lookup tables.
 
-This module imports :py:mod:`cupy`, which is only present with the ``cuda`` extra installed on a
+This module imports :py:mod:`cupy`, present only with the ``cuda`` extra installed on a
 host with an NVIDIA GPU; :py:mod:`~dade.bitrock.password_cracker.crack` treats an
 :py:class:`ImportError` here as 'no GPU'.
 """
@@ -72,7 +72,7 @@ def _block_size(kernel: cp.RawKernel) -> int:
     """
     Choose an occupancy-safe block size for ``kernel`` on the current device.
 
-    The kernel's ``max_threads_per_block`` reflects its register and local-memory usage, so it is a
+    The kernel's ``max_threads_per_block`` reflects its register and local-memory usage and is a
     safe upper bound; it is rounded down to a warp multiple.
 
     Parameters
@@ -110,7 +110,7 @@ def _encode(candidate: str | bytes) -> bytes:
 
 def _display(password: bytes) -> str:
     """
-    Render a candidate for a log message, keeping non-text bytes readable.
+    Render a candidate for a log message, preserving non-text bytes readably.
 
     Parameters
     ----------
@@ -164,8 +164,8 @@ def _run_batch(kernel: cp.RawKernel, header: dict[str, object], batch: list[byte
     Because every thread finishes its heavy key derivation only at the very end, a device-side
     'completed' counter would read zero for almost the whole batch. Instead, in-flight progress is
     estimated from elapsed time and ``rate`` (candidates per second measured from prior batches),
-    which gives a smooth line. Polling ``stream.done`` also keeps a :py:class:`KeyboardInterrupt`
-    responsive within :py:data:`_POLL_SECONDS`.
+    which gives a smooth line. Polling ``stream.done`` also lets a :py:class:`KeyboardInterrupt`
+    be handled within :py:data:`_POLL_SECONDS`.
 
     Parameters
     ----------
@@ -192,7 +192,7 @@ def _run_batch(kernel: cp.RawKernel, header: dict[str, object], batch: list[byte
     buffer, lengths = _upload_batch(batch)
     found = cp.full(1, -1, dtype=cp.int32)
     blocks = (len(batch) + threads - 1) // threads
-    # Finish the uploads (issued on the default stream) before the async launch, since a
+    # Finish the uploads (issued on the default stream) before the async launch. A
     # non-blocking stream does not wait for the default stream and would otherwise read garbage.
     cp.cuda.Stream.null.synchronize()
     stream = cp.cuda.Stream(non_blocking=True)

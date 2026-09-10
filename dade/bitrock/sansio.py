@@ -3,8 +3,8 @@ Sans-I/O core for InstallBuilder installers.
 
 Every byte manipulation lives here and runs against a :py:class:`Reader`: a small protocol that
 returns bytes for a given offset and length. The caller decides where those bytes come from -- a
-:py:class:`bytes` buffer via :py:class:`BytesReader`, a memory-mapped file, or ranged HTTP requests
--- so this module performs no I/O of its own.
+:py:class:`bytes` buffer via :py:class:`BytesReader`, a memory-mapped file, or ranged HTTP requests.
+This module performs no I/O itself.
 
 The container format is a cookfs archive: an opaque prefix (the ELF launcher stub), a run of
 compressed pages, a page directory, and a 16-byte suffix ending in the ``CFS0002`` signature. The
@@ -52,7 +52,7 @@ _DECOMPRESS_COMMAND_RE = re.compile(rb'decompresscommand\s+\{[^}]*\b(zip|lzma|lz
 """
 Extracts the page compression algorithm from the trailing ``cookfsinfo`` ``decompresscommand``.
 
-The obfuscated decompressor procedure name is deliberately not matched, so a future InstallBuilder
+The obfuscated decompressor procedure name is deliberately not matched. A future InstallBuilder
 release that renames it still resolves as long as the algorithm keyword remains a literal argument.
 
 :meta hide-value:

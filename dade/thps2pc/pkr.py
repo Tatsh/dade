@@ -21,14 +21,14 @@ On-disk format (little-endian), reverse-engineered from ``THawk2.exe``::
       +0x28  uint32   uncompSize  = uncompressed size in bytes
       +0x2C  uint32   compSize    = stored size in bytes
 
-A file's full path is its directory's name followed by its own. Each directory owns a contiguous
-run of file records, so the run starts at ``(childOffset - tableBStart) / 48``.
+A file's full path is its directory's name followed by the file name. Each directory owns a
+contiguous run of file records. The run starts at ``(childOffset - tableBStart) / 48``.
 
 The game's loader (``FUN_004e9840``) reads the header then both tables; its reader
 (``FUN_004e9a00``) seeks to ``dataOffset`` and reads ``compSize`` bytes, decompressing via the
-dispatch table in ``FUN_004e97f0``. ``All.pkr`` stores everything uncompressed, so only
+dispatch table in ``FUN_004e97f0``. ``All.pkr`` stores everything uncompressed, and only
 :py:data:`METHOD_STORED` is exercised against real data; the run-length and zlib paths are
-faithful ports of the decompiled codecs kept for completeness.
+faithful ports of the decompiled codecs retained for completeness.
 """
 from __future__ import annotations
 
@@ -211,7 +211,7 @@ def parse(data: bytes) -> PkrArchive:
     Raises
     ------
     ValueError
-        If the data is too small, does not carry the ``PKR2`` magic, or its tables run past the
+        If the data is too small, does not have the ``PKR2`` magic, or its tables run past the
         end of the file.
     """
     if len(data) < HEADER_SIZE:
@@ -326,7 +326,7 @@ def extract_all(data: bytes, dest: Path) -> tuple[int, int]:
     Raises
     ------
     UnsafePathError
-        If an entry names an absolute path or one containing a parent reference.
+        If an entry names an absolute path or one with a parent reference.
     """
     archive = parse(data)
     count = 0

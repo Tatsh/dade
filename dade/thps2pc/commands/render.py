@@ -175,8 +175,8 @@ def render_node_map_command(scene: Path,
     """
     Render SCENE from above to OUTPUT in flat grey with scenery nodes marked.
 
-    The default node list is the seventeen positions the original tool carried for the Hangar, so
-    pass --nodes for any other level. Labels need ImageMagick and a usable font; without one the
+    The default node list is the seventeen positions the original tool used for the Hangar. Pass
+    --nodes for any other level. Labels need ImageMagick and a usable font; without one the
     markers are still drawn.
     """
     marks: Sequence[Point]
@@ -242,7 +242,7 @@ def render_object_models_command(scene: Path,
         tiles.append(destination)
         labels.append(f's{sector.index} v{sector.vertex_count} f{sector.num_faces}')
     if not tiles:
-        click.echo('The scene holds no sectors.', err=True)
+        click.echo('The scene has no sectors.', err=True)
         return
     if no_montage:
         click.echo(f'Rendered {len(tiles)} models into {outdir}.')

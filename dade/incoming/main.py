@@ -99,7 +99,7 @@ def main(source: pathlib.Path,
     """
     Extract and convert Incoming assets from SOURCE into the output directory.
 
-    SOURCE may be a PC disc directory or ISO containing DATA1.CAB (or the DATA1.CAB itself), a
+    SOURCE may be a PC disc directory or ISO with DATA1.CAB (or the DATA1.CAB itself), a
     Dreamcast GDI file, or a directory of already extracted PC or GD-ROM content. The source tree is
     mirrored into the output directory: recognised assets are converted and every other file is
     copied verbatim. The source is never modified.

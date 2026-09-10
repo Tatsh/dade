@@ -1,10 +1,10 @@
 """
 Small software rasteriser used by the scene renderers.
 
-The original tools each carried their own copy of a barycentric triangle fill writing into a flat
-RGB byte buffer, which was then handed to ImageMagick as a binary PPM. That fill lives here once.
-A triangle is covered when a pixel's three edge functions share a sign, so both winding
-directions are drawn and no back-face culling happens.
+The original tools each had a copy of a barycentric triangle fill writing into a flat RGB byte
+buffer, then handed to ImageMagick as a binary PPM. That fill lives here once. A triangle is
+covered when a pixel's three edge functions share a sign. Both winding directions are drawn and no
+back-face culling happens.
 """
 from __future__ import annotations
 
@@ -109,7 +109,7 @@ class Framebuffer:
             Colour to write.
         depth : float | None
             Depth key for the whole triangle. When given, a pixel is written only if this key is
-            nearer than what the depth buffer already holds.
+            nearer than the depth buffer's current value.
         """
         (x0, y0), (x1, y1), (x2, y2) = points[0], points[1], points[2]
         area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)
@@ -175,7 +175,7 @@ def fit(points: Iterable[Point], width: int, height: int, padding: int) -> Proje
     height : int
         Canvas height in pixels.
     padding : int
-        Margin in pixels to leave on every side. A canvas too small to hold twice the padding
+        Margin in pixels at every side. A canvas too small for twice the padding
         still yields at least one usable pixel per axis rather than a mirrored image.
 
     Returns

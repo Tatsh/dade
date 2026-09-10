@@ -111,7 +111,7 @@ class Sector:
 
 @dataclass(frozen=True)
 class Descriptor:
-    """One mesh-section descriptor, which places a sector in the scene's world space."""
+    """One mesh-section descriptor placing a sector in the scene's world space."""
 
     index: int
     """Position of the descriptor in the scene's descriptor table."""
@@ -149,7 +149,7 @@ class Face(NamedTuple):
 
     @property
     def is_textured(self) -> bool:
-        """Whether the face carries texture coordinates and a texture index."""
+        """Whether the face has texture coordinates and a texture index."""
         return bool(self.uvs)
 
     @property
@@ -160,7 +160,7 @@ class Face(NamedTuple):
 
 @dataclass(frozen=True)
 class Scene:
-    """A parsed ``.PSX`` scene, holding its raw bytes alongside the decoded tables."""
+    """A parsed ``.PSX`` scene, storing its raw bytes alongside the decoded tables."""
 
     chunk_list_offset: int
     """Absolute offset of the chunk list."""
@@ -259,7 +259,7 @@ class Scene:
         Raises
         ------
         ValueError
-            If the data is too small to hold a scene header.
+            If the data is too small for a scene header.
         """
         if len(data) < _HEADER_SIZE:
             msg = 'File is too small to be a PSX scene.'
@@ -302,7 +302,7 @@ class Scene:
         """
         Read the texture checksum table that follows the chunk list.
 
-        The table sits after a per-sector array, so the sector count is needed to find it. This
+        The table sits after a per-sector array, and the sector count is needed to find it. This
         layout applies to level and object scenes; the lighting companion file omits the
         per-sector array and is read by :py:func:`dade.thps2pc.textures.parse_lighting`.
 

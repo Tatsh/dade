@@ -2,7 +2,7 @@
 Top-down and isometric renderers for ``.PSX`` scenes.
 
 Every renderer here projects a scene with :py:mod:`dade.thps2pc.raster` and returns a
-:py:class:`dade.thps2pc.raster.Framebuffer`, leaving the caller to decide where the image goes.
+:py:class:`dade.thps2pc.raster.Framebuffer`. The caller decides where the image goes.
 The top-down views drop the y axis and draw x against z; the model view uses an isometric
 projection with a depth buffer instead.
 
@@ -76,7 +76,7 @@ HANGAR_SCENERY_NODES: tuple[SceneryNode,
 """
 The seventeen scenery-node positions the original tool marked on the Hangar.
 
-These were transcribed from an earlier analysis pass whose source is not part of this package, so
+These were transcribed from an earlier analysis pass whose source is not part of this package.
 they are not derived from any file read here and apply only to the Hangar.
 
 :meta hide-value:
@@ -139,7 +139,7 @@ def render_authoritative(scene: Scene,
     height : int
         Canvas height in pixels.
     padding : int
-        Margin in pixels to leave on every side.
+        Margin in pixels at every side.
     placement : bool
         Whether to offset each sector by its descriptor's world position.
     hide : bool
@@ -178,7 +178,7 @@ def render_layers(scene: Scene,
     height : int
         Canvas height in pixels.
     padding : int
-        Margin in pixels to leave on every side.
+        Margin in pixels at every side.
 
     Returns
     -------
@@ -225,12 +225,12 @@ def render_node_map(scene: Scene,
     height : int
         Canvas height in pixels.
     padding : int
-        Margin in pixels to leave on every side.
+        Margin in pixels at every side.
 
     Returns
     -------
     tuple[Framebuffer, tuple[Point, ...]]
-        The rendered image and each node's device-space position, so labels can be added
+        The rendered image and each node's device-space position, allowing labels to be added
         afterwards.
     """
     triangles = [corners for _, corners in _top_down_triangles(scene, hide=True)]
@@ -255,7 +255,7 @@ def render_object_models(scene: Scene,
                          size: int = 220,
                          padding: int = 14) -> Iterator[tuple[Sector, Framebuffer]]:
     """
-    Render every sector of an object scene as its own flat-shaded isometric tile.
+    Render every sector of an object scene as a separate flat-shaded isometric tile.
 
     Parameters
     ----------
@@ -264,7 +264,7 @@ def render_object_models(scene: Scene,
     size : int
         Width and height of each tile in pixels.
     padding : int
-        Margin in pixels to leave on every side of a tile.
+        Margin in pixels around each tile.
 
     Yields
     ------
@@ -325,7 +325,7 @@ def render_objects(level: Scene,
     height : int
         Canvas height in pixels.
     padding : int
-        Margin in pixels to leave on every side.
+        Margin in pixels at every side.
     highlights : dict[int, Rgb] | None
         Explicit colours for particular object sector indices. Any other sector cycles through
         hues derived from its index.

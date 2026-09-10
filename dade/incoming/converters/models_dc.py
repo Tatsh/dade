@@ -119,7 +119,7 @@ def _object_obj_text(obj: _Object, index: int, mtl_name: str) -> str:
         '# Incoming Dreamcast _M.BIN object.',
         '# Incoming is left-handed with up = -Y; OBJ is right-handed with up = +Y.',
         '# Negating Y alone performs that left-to-right-handed conversion and the up flip, and',
-        '# turns the game clockwise-front winding into OBJ counter-clockwise-front (kept as-is).',
+        '# turns the game clockwise-front winding into OBJ counter-clockwise-front (unchanged).',
         '# Texture V is flipped (1 - v) from the game top-left origin to the OBJ bottom-left.',
         f'mtllib {mtl_name}',
         f'o object_{index}',
@@ -149,7 +149,7 @@ def mbin_to_obj(source: Path, dest_dir: Path) -> tuple[Path, ...]:
     Convert an Incoming Dreamcast ``*_M.BIN`` model pack into one OBJ + MTL per object.
 
     A ``*_M.BIN`` is a pack of many independent objects indexed by the matching ``*_ML.BIN``. Each
-    decodable mesh object is written as its own ``<stem>_<NNN>.obj`` and ``.mtl`` in a directory
+    decodable mesh object is written as a separate ``<stem>_<NNN>.obj`` and ``.mtl`` in a directory
     named after the source. Non-mesh objects (sprites and placeholders) are skipped, and each
     object's texture is extracted from the level ``*_T.PVR`` pack and referenced from its material.
 
@@ -173,7 +173,7 @@ def mbin_to_obj(source: Path, dest_dir: Path) -> tuple[Path, ...]:
     offsets = _read_ml_offsets(_find_ml_sibling(source).read_bytes())
     objects = tuple(_iter_objects(source.read_bytes(), offsets))
     if not objects:
-        msg = f'`{source.name}` contains no decodable mesh objects.'
+        msg = f'`{source.name}` includes no decodable mesh objects.'
         raise ConversionError(msg)
     model_dir = dest_dir / source.stem
     model_dir.mkdir(parents=True, exist_ok=True)

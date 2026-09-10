@@ -6,10 +6,10 @@ beside them rather than in place of them: the banner texture also becomes a PNG,
 and 7 also become JSON, and each SSQ also becomes a StepMania simfile.
 
 The two SSQ sections become separate simfiles because they are alternative charts for the same
-song and StepMania cannot hold two ``dance-single`` charts of one difficulty in a single file.
-Only the four-panel standard charts have a recorded foot rating, so the double charts and the
-duplicated Shake slots are written with a meter of 0, which reads as unrated rather than as a
-guess.
+song and StepMania cannot store two ``dance-single`` charts of one difficulty in a single file.
+Only the four-panel standard charts have a recorded foot rating. The double charts and the
+duplicated Shake slots are therefore written with a meter of 0. That reads as unrated rather than
+as a guess.
 """
 from __future__ import annotations
 
@@ -38,27 +38,27 @@ __all__ = ('BANNER_SECTION', 'JSON_SECTIONS', 'MUSIC_SECTION', 'SHAKE_SECTION', 
 log = logging.getLogger(__name__)
 
 MUSIC_SECTION = 0
-"""Index of the section holding the full song.
+"""Index of the section storing the full song.
 
 :meta hide-value:
 """
 BANNER_SECTION = 2
-"""Index of the section holding the banner texture.
+"""Index of the section storing the banner texture.
 
 :meta hide-value:
 """
 STANDARD_SECTION = 3
-"""Index of the section holding the standard step charts.
+"""Index of the section storing the standard step charts.
 
 :meta hide-value:
 """
 SHAKE_SECTION = 4
-"""Index of the section holding the Shake step charts.
+"""Index of the section storing the Shake step charts.
 
 :meta hide-value:
 """
 METADATA_SECTION = 5
-"""Index of the section holding the titles and ratings.
+"""Index of the section storing the titles and ratings.
 
 :meta hide-value:
 """

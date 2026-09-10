@@ -44,8 +44,8 @@ def _glob_ci(directory: Path, suffix: str) -> tuple[Path, ...]:
 
 
 def _isodump_extract(isodump: str, iso: Path, cabinet: Path) -> bool:
-    # isodump -x writes the named file to stdout; iso9660 names carry a ';1' version, while Rock
-    # Ridge names (with -R) keep the original case.
+    # isodump -x writes the named file to stdout; iso9660 names have a ';1' version, while Rock
+    # Ridge names (with -R) preserve the original case.
     for args in (('-x', '/DATA1.CAB;1'), ('-R', '-x', '/data1.cab')):
         try:
             with cabinet.open('wb') as out:
@@ -77,7 +77,7 @@ def prepare_source(source: Path, work_dir: Path) -> PreparedSource:
     """
     Identify *source* and return the tree and loose files to convert.
 
-    Archives are extracted into *work_dir* first: a PC ``DATA1.CAB`` (a file, a directory holding
+    Archives are extracted into *work_dir* first: a PC ``DATA1.CAB`` (a file, a directory with
     one, or one inside an ISO) with unshield, a Dreamcast ``.gdi`` with gdiextract. Already
     extracted directories are mirrored as-is. Dreamcast CDDA ``.raw`` tracks beside a GDI are
     returned as loose files.

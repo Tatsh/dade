@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 @click.option('--tile-size',
               default='96x96',
               show_default=True,
-              help='Geometry each texture is scaled to. Empty keeps the native size.')
+              help='Geometry each texture is scaled to. Empty preserves the native size.')
 @click.option('--per-page',
               default=48,
               show_default=True,

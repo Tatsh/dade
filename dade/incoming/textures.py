@@ -2,7 +2,7 @@
 Resolve and materialise textures referenced by converted models.
 
 Dreamcast ``*_M.BIN`` models reference a sub-texture index into the level's ``*_T.PVR`` pack. PC
-``.ian`` models carry no texture of their own; the referencing ``.odl`` pairs each mesh with a
+``.ian`` models have no texture; the referencing ``.odl`` pairs each mesh with a
 ``.ppm`` texture. This module locates those textures and writes them next to the model output.
 """
 from __future__ import annotations

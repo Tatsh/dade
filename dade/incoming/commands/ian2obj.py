@@ -44,7 +44,7 @@ def ian2obj(model: Path, outdir: Path, *, game_root: Path | None, no_texture: bo
     Convert an Incoming model MODEL to Wavefront OBJ and MTL in OUTDIR.
 
     A PC ``.ian`` model yields a single OBJ and MTL. A Dreamcast ``*_M.BIN`` model pack yields one
-    OBJ and MTL per contained object under ``OUTDIR/<model name>/`` and needs the matching
+    OBJ and MTL per object inside under ``OUTDIR/<model name>/`` and needs the matching
     ``*_ML.BIN`` index beside it. Each texture is resolved from the game root -- ``.odl`` plus
     ``.ppm`` files for a PC model, or the level ``*_T.PVR`` pack (which requires ``spvr2png`` on
     ``PATH``) for a Dreamcast model -- and written next to the material, unless ``--no-texture`` is

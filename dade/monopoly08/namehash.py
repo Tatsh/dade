@@ -6,9 +6,9 @@ filename, and used in the structured-format name-hash fields). It is a classic
 ELF/PJW-style multiplicative hash.
 
 The algorithm was reverse-engineered from ``default.xex`` (``ComputeNameHash`` @
-``0x825198B0``) and verified byte-exact against ground-truth ``(name, hash)`` pairs taken
+``0x825198B0``) and verified byte-exact against reference ``(name, hash)`` pairs taken
 from the unpacked ``.rpk`` manifests (e.g. ``Background01.xmap`` -> ``0x0FEDE6D1``). The
-hash stops at the file extension (the engine passes ``'.'`` as the terminator), so it is
+hash stops at the file extension (the engine passes ``'.'`` as the terminator) and is
 computed over the name *stem* only.
 """
 from __future__ import annotations

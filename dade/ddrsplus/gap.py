@@ -1,19 +1,18 @@
 """
 Estimate where a chart's beat 0 sits inside its MP3.
 
-An SSQ tempo map says beat 0 happens at time 0, but the MP3 shipped beside it does not start
-there. Every file carries the encoder's own delay, about 1105 samples or 25 ms for LAME, and some
-carry real silence and a musical introduction on top. StepMania decodes all of it, so a simfile
-written with ``#OFFSET:0`` starts its notes too early.
+An SSQ tempo map states beat 0 happens at time 0, but the MP3 shipped beside it does not start
+there. Every file has the encoder's own delay, about 1105 samples or 25 ms for LAME, and some
+include real silence and a musical introduction on top. StepMania decodes all of it, and a simfile
+written with ``#OFFSET:0`` therefore starts its notes too early.
 
 The estimate has two parts. The **phase**, the offset within one beat that best matches an energy
 flux onset envelope, is objective; across the songs checked it lands between 0.021 s and 0.046 s,
-straddling the encoder delay, which is the expected answer because the music itself starts on the
-beat and only the encoder pushed it late. The **whole number of measures** is a judgement call,
-and the conservative one is made here: beat 0 goes on the first measure boundary at or after the
-audio becomes audible, and is then walked back a measure at a time until the chart's last note
-falls inside the audio, because a chart cannot outlast its music. That second rule is a fact and
-overrides the first.
+straddling the encoder delay. The music itself starts on the beat and only the encoder pushed it
+late. The **whole number of measures** is a judgement call, and the conservative one is made here.
+Beat 0 goes on the first measure boundary at or after the audio becomes audible, and is then
+walked back a measure at a time until the chart's last note falls inside the audio. A chart cannot
+outlast its music. That second rule is a fact and overrides the first.
 
 On one hand-authored reference the result was 5.354 s against 5.339 s, a 15 ms difference, but
 this remains a heuristic: a song whose introduction runs an odd number of measures needs the
@@ -188,9 +187,9 @@ def estimate_gap(ffmpeg: Path,
     bpm : float
         The chart's tempo.
     beats_per_measure : int
-        How many beats a measure holds.
+        How many beats a measure has.
     chart_end : float
-        Seconds from beat 0 to the last note of any chart. Zero disables the rule that keeps the
+        Seconds from beat 0 to the last note of any chart. Zero disables the rule that retains the
         chart inside the audio.
     sample_rate : int
         The rate to analyse at.

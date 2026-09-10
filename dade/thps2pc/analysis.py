@@ -1,10 +1,10 @@
 """
 Diagnostics that cross-reference a scene's mesh descriptors against its sector geometry.
 
-The report answers the questions the original investigation script asked: whether sector vertices
+The report resolves the questions the original investigation script posed: whether sector vertices
 are stored local to their placement or already baked into world space, whether descriptor *i*
-places sector *i*, and what the chunk list contains. It is a reading aid for reverse engineering
-rather than a converter, so it only ever produces text.
+places sector *i*, and what the chunk list comprises. It is a reading aid for reverse engineering
+rather than a converter, and it only ever produces text.
 """
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ class SectorBounds(NamedTuple):
     extent: Vector3
     """Size of the axis-aligned bounding box."""
     vertex_count: int
-    """Number of vertices the sector holds."""
+    """Number of vertices the sector has."""
 
 
 def sector_bounds(scene: Scene) -> tuple[SectorBounds, ...]:

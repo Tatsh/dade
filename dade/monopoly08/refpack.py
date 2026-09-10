@@ -3,7 +3,7 @@ EA RefPack / QFS decompressor.
 
 A generic EA container compression used across RenderWare-era titles (not specific
 to Monopoly 2008). Header: ``uint16`` signature whose second byte is ``0xFB``; the
-first byte carries flags (``0x80`` = a compressed-size field precedes the
+first byte stores flags (``0x80`` = a compressed-size field precedes the
 uncompressed-size field, ``0x01`` = 4-byte size fields instead of 3, big-endian).
 The body is a stream of 2/3/4-byte copy opcodes, literal runs and an EOF marker.
 """

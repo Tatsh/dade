@@ -51,7 +51,7 @@ def _read_chunk(data: bytes, offset: int, size: int, position: int) -> PackTextu
 
 def iter_pack_textures(data: bytes) -> Iterator[PackTexture]:
     """
-    Iterate over the textures contained in an Incoming PVR pack.
+    Iterate over the textures inside an Incoming PVR pack.
 
     A plain PVRT file (one that begins with the ``PVRT`` magic) is yielded as a single texture.
 

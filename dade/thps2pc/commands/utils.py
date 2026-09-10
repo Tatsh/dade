@@ -67,7 +67,7 @@ def canvas_options(width: int, height: int, padding: int) -> Callable[..., Any]:
         func = click.option('--padding',
                             default=padding,
                             show_default=True,
-                            help='Margin in pixels to leave on every side.')(func)
+                            help='Margin in pixels at every side.')(func)
         func = click.option('--height',
                             default=height,
                             show_default=True,

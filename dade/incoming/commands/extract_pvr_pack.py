@@ -28,7 +28,7 @@ def extract_pvr_pack(pack: Path, outdir: Path, *, png: bool) -> None:
     """
     Unpack an Incoming Dreamcast ``*_T.PVR`` texture pack PACK into OUTDIR.
 
-    This pack container is Dreamcast-specific. Each contained texture is written under
+    This pack container is Dreamcast-specific. Each texture inside is written under
     ``OUTDIR/<pack name>/`` as a separate ``.pvr`` file, or as a PNG when ``--png`` is given (which
     requires ``spvr2png`` on ``PATH``).
     """

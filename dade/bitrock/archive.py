@@ -85,7 +85,7 @@ class InstallBuilderFile:
         return self
 
     def __exit__(self, *_: object) -> None:
-        """Close the archive on leaving a ``with`` block."""
+        """Close the archive on exiting a ``with`` block."""
         self.close()
 
     def __iter__(self) -> Iterator[str]:

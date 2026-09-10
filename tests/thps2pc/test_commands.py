@@ -208,7 +208,7 @@ def test_render_object_models_reports_an_empty_scene(runner: CliRunner, tmp_path
     result = runner.invoke(render_object_models_command,
                            [str(empty), str(tmp_path / 'models'), '--suffix', '.ppm'])
     assert result.exit_code == 0
-    assert 'The scene holds no sectors.' in result.output
+    assert 'The scene has no sectors.' in result.output
 
 
 def test_render_node_map_annotates_with_a_detected_font(runner: CliRunner, scene_file: Path,

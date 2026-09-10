@@ -9,8 +9,8 @@ Dance Dance Revolution S+ (Konami) toolkit.
 - :mod:`dade.ddrsplus.gap` - the ``#OFFSET`` gap, measured from the audio.
 - :mod:`dade.ddrsplus.extract` - unpacking a container into a directory of usable files.
 
-The step charts are SSQ, which :mod:`dade.common.ssq` reads because the format belongs to the
-Dance Dance Revolution series rather than to this game alone.
+The step charts are SSQ, read by :mod:`dade.common.ssq`. The format belongs to the Dance Dance
+Revolution series rather than to this game alone.
 """
 from __future__ import annotations
 

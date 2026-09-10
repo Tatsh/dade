@@ -6,16 +6,16 @@ The 52-byte header is thirteen little-endian words::
     headerSize height width mipMapCount flags dataSize bitCount
     rMask gMask bMask aMask 'PVR!' numSurfs
 
-``flags`` holds the pixel type in its low byte and feature bits above it. Rather than carry a table
-of pixel types, the decoder reads each channel out with the four bit masks the header itself
-supplies, which covers RGBA4444, RGBA5551, RGB565, RGB888, and RGBA8888 without special cases.
-Compressed and mipmapped textures are rejected up front, because for those the masks and the bit
-count do not describe the payload.
+``flags`` stores the pixel type in its low byte and feature bits above it. Rather than reference a
+table of pixel types, the decoder reads each channel out with the four bit masks the header itself
+supplies. That covers RGBA4444, RGBA5551, RGB565, RGB888, and RGBA8888 without special cases.
+Compressed and mipmapped textures are rejected up front. For those the masks and the bit count do
+not describe the payload.
 
 Every banner is a 256x64 texture because the hardware wanted power-of-two dimensions, but the
 artwork occupies only :py:data:`BANNER_SIZE` in the top left. On each banner checked, every pixel
 outside that region is the single fully transparent colour ``(255, 255, 255, 0)`` and the
-non-transparent bounding box is exactly 196x61, so :py:func:`crop` trims the padding away.
+non-transparent bounding box is exactly 196x61. :py:func:`crop` trims the padding away.
 """
 from __future__ import annotations
 
@@ -79,7 +79,7 @@ class PVRHeader(NamedTuple):
     tag: int
     """The ``PVR!`` magic."""
     num_surfaces: int
-    """How many surfaces the file holds."""
+    """How many surfaces the file has."""
     @property
     def has_alpha(self) -> bool:
         """
@@ -156,7 +156,7 @@ def read_header(data: bytes) -> PVRHeader:
     expected = header.width * header.height * header.bit_count // _BITS_PER_BYTE
     if header.data_size != expected:
         msg = (f'Data size {header.data_size} does not match {header.width}x{header.height} at '
-               f'{header.bit_count} bpp, which needs {expected} bytes; pixel type '
+               f'{header.bit_count} bpp and needs {expected} bytes; pixel type '
                f'{header.pixel_type:#04x} is probably compressed.')
         raise InvalidFormatError(msg)
     if len(data) < HEADER_SIZE + header.data_size:
@@ -164,7 +164,7 @@ def read_header(data: bytes) -> PVRHeader:
                f'{len(data) - HEADER_SIZE} follow it.')
         raise InvalidFormatError(msg)
     if not header.r_mask | header.g_mask | header.b_mask:
-        msg = 'The header carries no colour bit masks, so the pixel layout is unknown.'
+        msg = 'The header has no colour bit masks; the pixel layout is unknown.'
         raise InvalidFormatError(msg)
     return header
 
@@ -241,7 +241,7 @@ def crop(texture: Texture, size: tuple[int, int] = BANNER_SIZE) -> Texture:
     texture : Texture
         The decoded texture.
     size : tuple[int, int]
-        The width and height to keep.
+        The width and height to retain.
 
     Returns
     -------

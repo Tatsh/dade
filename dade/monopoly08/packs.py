@@ -1,7 +1,7 @@
 """
 EA RenderWare ``STRM`` resource-pack (``.rpk``) reader.
 
-After RefPack decompression the container is a ``STRM`` chunk holding ``AGRP``
+After RefPack decompression the container is a ``STRM`` chunk with ``AGRP``
 asset groups (each with ``ASET`` 32-byte descriptors), an ``STRS`` string table and
 the asset payloads. The Xbox360/PS3/Wii builds are big-endian; the PS2 build is
 little-endian, where every tag is byte-reversed (``MRTS``/``PRGA``/``TESA``/``SRTS``)
@@ -160,7 +160,7 @@ def parse(path: Path) -> PackInfo:
             strings = tuple(p.decode('latin1') for p in buf[i + 8:i + size].split(b'\x00') if p)
             i += size
         else:
-            break  # Reached the asset-data region; stop the directory scan.
+            break  # Arrived at the asset-data region; stop the directory scan.
     return PackInfo(tuple(assets), strings, buf, endian)
 
 
@@ -208,7 +208,7 @@ def _build_name_index(strings: tuple[str, ...]) -> dict[int, str]:
     Map each asset ``name_hash`` to the real name stem from the ``STRS`` table.
 
     Every path/name-like string in the string table is hashed with the engine name hash
-    (:py:func:`~dade.monopoly08.namehash.name_hash`, which matches the ``ASET``
+    (:py:func:`~dade.monopoly08.namehash.name_hash`, matching the ``ASET``
     ``name_hash``), giving a robust hash-keyed name lookup instead of relying on the
     positional ``TGA`` ordering.
 

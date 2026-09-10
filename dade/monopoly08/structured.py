@@ -88,12 +88,12 @@ _MIN_BLOB_SIZE = 0x10
 :meta hide-value:
 """
 _MIN_SANE_FLOAT = 1e-6
-"""Smallest absolute float magnitude kept when interpreting a word as a float.
+"""Smallest absolute float magnitude retained when interpreting a word as a float.
 
 :meta hide-value:
 """
 _MAX_SANE_FLOAT = 1e9
-"""Largest absolute float magnitude kept when interpreting a word as a float.
+"""Largest absolute float magnitude retained when interpreting a word as a float.
 
 :meta hide-value:
 """
@@ -189,8 +189,8 @@ def _dec_text(b: bytes) -> dict[str, Any]:
     Decode the '  XT' localized UTF-16BE string table.
 
     Records are [a:u32][b:u32][hash:u32][byteLen:u32] then byteLen bytes of UTF-16BE payload
-    (terminated by NUL + the 0x2A2A '**' marker). The very first record's ``a`` slot holds the file
-    magic.
+    (terminated by NUL + the 0x2A2A '**' marker). The very first record's ``a`` slot stores the
+    file magic.
 
     Parameters
     ----------
@@ -573,7 +573,7 @@ def _detect(b: bytes) -> BinDecoder:
         The decoder for the first matching family, or :py:func:`_dec_unknown`.
     """
     # Ordered (predicate, decoder) table: the first matching predicate wins. The leading u32 of the
-    # count-prefixed families is data, not a magic, so those are sniffed by shape.
+    # count-prefixed families is data, not a magic; those are sniffed by shape.
     rules: tuple[tuple[Callable[[bytes], object], BinDecoder], ...] = (
         (lambda d: d[:4] == b'\x66\x60\x00\x01', _dec_place),
         (lambda d: d[:4] == b'  XT', _dec_text),
@@ -624,7 +624,7 @@ def convert_bin(path: str | Path, out: str | Path | None = None) -> tuple[Path, 
 
 
 def _anim_round(x: float, nd: int = 6) -> float:
-    # Keep JSON tidy: round, and turn -0.0 into 0.0.
+    # Round to make JSON tidy, and turn -0.0 into 0.0.
     r = round(x, nd)
     return 0.0 if r == 0 else r
 
