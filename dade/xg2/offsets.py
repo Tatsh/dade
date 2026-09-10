@@ -1,7 +1,7 @@
 """
 ROM offsets for the supported Extreme-G builds.
 
-These are facts about specific ROM revisions rather than user-tunable settings, so they live here
+These are facts about specific ROM revisions rather than user-tunable settings, and they live here
 instead of on the command line. Each game is identified by the four-character code at ROM offset
 ``0x3B``: ``NEGE`` for Extreme-G and ``NG2E`` for Extreme-G XG2, both USA releases.
 """
@@ -48,7 +48,7 @@ XG1_LOAD_ADDRESS_CODE = 0x8004B8A0
 :meta hide-value:
 """
 XG1_MFS_COUNT = 0x7A2DF0
-"""Header of the ``mfs`` directory: entry count, padding, then the first file offset.
+"""Header of the ``mfs`` directory, comprising entry count, padding, then the first file offset.
 
 :meta hide-value:
 """
@@ -94,7 +94,7 @@ XG2_GAME_CODE = b'NG2E'
 :meta hide-value:
 """
 XG2_BOOT_ARCHIVE = 0x1620
-"""Single-entry ``XG2Arch`` holding the LZSS boot blob.
+"""Single-entry ``XG2Arch`` storing the LZSS boot blob.
 
 :meta hide-value:
 """
@@ -114,12 +114,12 @@ XG2_BOOT_LOAD_RAM = 0x8004BA20
 :meta hide-value:
 """
 XG2_MFS_ARCHIVE = 0xA4DF10
-"""``XG2Arch`` holding the ``mfs`` archive.
+"""``XG2Arch`` storing the ``mfs`` archive.
 
 :meta hide-value:
 """
 XG2_SEQUENCE_ARCHIVE = 0xA2B430
-"""``XG2Arch`` holding the music sequences, stored uncompressed.
+"""``XG2Arch`` storing the music sequences, uncompressed.
 
 :meta hide-value:
 """
@@ -134,7 +134,7 @@ XG2_LEVEL_TABLE = 0x15C8
 :meta hide-value:
 """
 XG2_LEVEL_TABLE_END = 0x1620
-"""Exclusive end of the level table, which sits in the loader region.
+"""Exclusive end of the level table, sitting in the loader region.
 
 :meta hide-value:
 """
@@ -154,7 +154,7 @@ XG2_SOUNDBANKS = (0x7DD9E0, 0x962D50)
 :meta hide-value:
 """
 XG2_MELODIC_BANK = 0x962D50
-"""The control bank the music sequences play through; the other holds sound effects.
+"""The control bank the music sequences play through; the other stores sound effects.
 
 :meta hide-value:
 """

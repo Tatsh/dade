@@ -3,7 +3,7 @@ Extreme-G asset toolkit (Probe Entertainment / Acclaim).
 
 ``xg2`` unpacks and converts the assets of Extreme-G (N64) and Extreme-G XG2 (N64 and Windows).
 The two games share their container, codec, texture, and audio formats; the PC port differs only
-in byte order, so one implementation serves both platforms throughout.
+in byte order, and one implementation serves both platforms throughout.
 
 Public surface (all sans-I/O unless noted - they take ``bytes`` and return data structures):
 
@@ -16,7 +16,7 @@ Public surface (all sans-I/O unless noted - they take ``bytes`` and return data 
 - :func:`dade.xg2.alcseq.to_midi` - an ``ALCSeq`` sequence as a standard MIDI file.
 - :func:`dade.xg2.soundfont.build_sf2` - a SoundFont from decoded banks.
 - :func:`dade.xg2.extract_xg1.run`, :func:`dade.xg2.extract_xg2.run`, and
-  :func:`dade.xg2.extract_pc.run` - the three extraction pipelines, which do write to disc.
+  :func:`dade.xg2.extract_pc.run` - the three extraction pipelines, the ones that write to disc.
 
 The ``LHUF`` codec is not implemented; see :mod:`dade.xg2.lzhuf` for what that would need and
 what is skipped in the meantime.

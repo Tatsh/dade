@@ -94,7 +94,7 @@ class BootImage:
 
     def ram_image(self) -> bytes:
         """
-        Build the RAM image: the loader followed by the decompressed segment.
+        Build the RAM image, the loader followed by the decompressed segment.
 
         Returns
         -------
@@ -145,8 +145,8 @@ def normalize_rom(data: bytes) -> bytes:
 
     The same cartridge circulates in three layouts, told apart by how the header's magic word comes
     out: ``.z64`` is big-endian and needs nothing, ``.v64`` has each halfword swapped, and ``.n64``
-    has each word reversed. Every offset in this package is a big-endian ``.z64`` offset, so a
-    wrongly ordered image would not fail loudly -- it would decompress into noise.
+    has each word reversed. Every offset in this package is a big-endian ``.z64`` offset, and a
+    wrongly ordered image would not fail loudly. It would decompress into noise.
 
     Parameters
     ----------
@@ -156,8 +156,8 @@ def normalize_rom(data: bytes) -> bytes:
     Returns
     -------
     bytes
-        The image in ``.z64`` order, or unchanged when the magic matches none of the three, which
-        leaves a non-N64 file to fail in the caller that knows what it wanted.
+        The image in ``.z64`` order, or unchanged when the magic matches none of the three. A
+        non-N64 file then fails in the caller that knows what it wanted.
     """
     magic = data[:4]
     if magic == _Z64_MAGIC or len(data) % 4:
@@ -242,7 +242,7 @@ def xg2_boot(rom: bytes) -> BootImage:
     BootSanityError
         If the segment does not begin with the expected instruction.
     ValueError
-        If the boot container does not hold exactly one LZSS entry.
+        If the boot container does not include exactly one LZSS entry.
     """
     entries = parse_archive(rom, XG2_BOOT_ARCHIVE)
     if len(entries) != 1 or entries[0]['codec'] != 'LZSS':
@@ -274,7 +274,7 @@ def xg1_level_bases(rom: bytes) -> list[int]:
 
 def _xg1_level_table(rom: bytes) -> list[int]:
     """
-    Read the level table in game order, which is how the texture bank table is indexed.
+    Read the level table in game order, the order the texture bank table is indexed by.
 
     Returns
     -------
@@ -294,9 +294,9 @@ def xg1_level_banks(rom: bytes) -> dict[int, int]:
     """
     Map each Extreme-G 1 level to the shared texture bank its geometry draws from.
 
-    The bytecode's two bank opcodes take their pixels from resources the level loader holds in
-    globals rather than from the level's own descriptor table: one bank shared by every level, and
-    one chosen per level by the table that follows the level table.
+    The bytecode's two bank opcodes take their pixels from resources the level loader stores in
+    globals rather than from the level's descriptor table. One bank is shared by every level, and
+    one is chosen per level by the table that follows the level table.
 
     Parameters
     ----------
@@ -306,8 +306,8 @@ def xg1_level_banks(rom: bytes) -> dict[int, int]:
     Returns
     -------
     dict[int, int]
-        Each level container offset mapped to its own bank's offset. Levels listed twice name the
-        same bank both times, so the mapping is unambiguous.
+        Each level container offset mapped to its bank's offset. Levels listed twice select the
+        same bank both times, and the mapping is therefore unambiguous.
     """
     banks = {}
     for index, base in enumerate(_xg1_level_table(rom)):
@@ -363,9 +363,9 @@ def xg2_resource_archives(rom: bytes) -> list[int]:
     """
     Enumerate the model archives referenced by the master resource table.
 
-    These containers hold the bikes, riders, and shared scenery, which is most of the game's
-    textured geometry; the ``mfs`` archive is only a small slice. The dedicated ``mfs`` and
-    sequence containers are excluded, as they have their own extraction paths.
+    These containers include the bikes, riders, and shared scenery, most of the game's textured
+    geometry; the ``mfs`` archive is only a small slice. The dedicated ``mfs`` and sequence
+    containers are excluded, having separate extraction paths.
 
     Parameters
     ----------

@@ -1,11 +1,11 @@
 r"""
-The ``BSF`` skeleton carried inside Extreme-G XG2's rider models.
+The ``BSF`` skeleton stored inside Extreme-G XG2's rider models.
 
-The ``BMC`` motion clips in :py:mod:`dade.xg2.bmc` are 67 bare curves that name the skeleton they
-drive -- ``man2sk.asf``, ``ivask.bsf``, ``albeanosk.bs`` -- and that skeleton has no file of its
-own. It is a region *inside* each rider model, which is why searching the archives for a ``.asf``
-finds nothing: ``bulk/data/iva.cmp`` and its siblings are single-entry ``XG2Arch`` containers whose
-decompressed payload holds it.
+The ``BMC`` motion clips in :py:mod:`dade.xg2.bmc` are 67 bare curves that identify the skeleton
+they drive (``man2sk.asf``, ``ivask.bsf``, ``albeanosk.bs``), and that skeleton has no separate
+file. It is a region *inside* each rider model. Searching the archives for a ``.asf`` therefore
+finds nothing. ``bulk/data/iva.cmp`` and its siblings are single-entry ``XG2Arch`` containers whose
+decompressed payload stores it.
 
 A rider's header is eight segment-five pointers, relocated at load time by masking each with
 ``0xFFFFFF`` and adding the buffer base; the Windows build's loader does this at ``0x004A3142`` and
@@ -17,20 +17,21 @@ names follow immediately as NUL-terminated strings in the same order:
 * header: the magic ``BSF\x80``, the bone count, and the root's degrees of freedom;
 * bone: a signed parent index with ``-1`` for the root, a byte of degrees of freedom, a byte
   counting the axis codes that follow, then those codes, then a unit direction vector in 4.12 fixed
-  point and the rest of the record, which is not decoded yet.
+  point, then the rest of the record, not decoded yet.
 
 The direction is the axis the bone extends along, exactly as an Acclaim skeleton stores it, and it
-reads as a unit vector on every one of the 27 bones. Left and right mirror precisely --
-``lhumerus`` is ``(-63, -4050, -603)`` against ``rhumerus``'s ``(-63, 4050, 604)`` -- which is what
-confirms the field rather than its magnitude alone.
+reads as a unit vector on every one of the 27 bones. Left and right mirror precisely, ``lhumerus``
+being ``(-63, -4050, -603)`` against ``rhumerus``'s ``(-63, 4050, 604)``. That mirroring confirms
+the field rather than its magnitude alone.
 
 Multi-byte fields are big-endian even in the Windows build, though the eight header pointers that
 lead here are little-endian.
 
-**The count that matters**: the root's six degrees of freedom plus the bones' sixty-one make 67,
-which is exactly how many curves every clip carries. Nothing was fitted to reach that -- the
-per-bone counts are read from the file -- so it is the check that the layout is right. It also rules
-out a hand-written table: the hip joints turn out to carry no degrees of freedom at all, and
+**The decisive count.** The root's six degrees of freedom plus the bones' sixty-one make 67,
+exactly how many curves every clip includes. Nothing was fitted to arrive at that, the per-bone
+counts
+being read from the file, and it is therefore the check that the layout is right. It also rules out
+a hand-written table. The hip joints turn out to have no degrees of freedom at all, and
 ``lshoulderj`` and ``lacromial`` both hang off ``thorax`` rather than forming an arm chain.
 """
 from __future__ import annotations
@@ -85,13 +86,13 @@ class Bone(NamedTuple):
     direction: tuple[float, float, float]
     """Unit vector the bone extends along, from 4.12 fixed point."""
     axes: tuple[int, ...]
-    """The skeleton's own codes for which axes this joint turns about.
+    """The skeleton's codes for which axes this joint turns about.
 
     Observed across every rider: ``0x0A`` on all seventeen three-degree joints, ``0x03`` and
-    ``0x04`` on the one-degree ones, and ``lfingers`` carrying two codes, ``0x05`` and ``0x03``,
-    for its two degrees. What each code means as an axis is **not** established -- Acclaim
-    skeletons usually order a three-degree joint ``rz ry rx``, but that is an assumption until it
-    is checked against a clip.
+    ``0x04`` on the one-degree ones, and ``lfingers`` with two codes, ``0x05`` and ``0x03``, for
+    its two degrees. What each code means as an axis is **not** established. Acclaim skeletons
+    usually order a three-degree joint ``rz ry rx``, but that is an assumption until it is checked
+    against a clip.
     """
 
 
@@ -99,7 +100,7 @@ class Skeleton(NamedTuple):
     """A rider's whole skeleton."""
 
     root_dof: int
-    """Degrees of freedom of the root, which the clips place before any bone's."""
+    """Degrees of freedom of the root, placed by the clips before any bone's."""
     bones: list[Bone]
     """The joints, in the order their curves appear."""
     @property
@@ -156,13 +157,13 @@ def parse_skeleton(model: bytes) -> Skeleton | None:
     Returns
     -------
     Skeleton | None
-        The skeleton, or :py:obj:`None` when the model carries none.
+        The skeleton, or :py:obj:`None` when the model includes none.
     """
     if len(model) < _HEADER_POINTERS * 4:
         return None
-    # The header's pointers carry the segment number in the top byte, and their byte order follows
-    # the build: little-endian on Windows, big-endian on the N64. Both are tried and the magic
-    # settles which is right, rather than the caller having to say.
+    # The header's pointers store the segment number in the top byte, and their byte order follows
+    # the build, little-endian on Windows and big-endian on the N64. Both are tried and the magic
+    # settles which is right, rather than the caller having to state it.
     start = 0
     for endian in ('<', '>'):
         candidate = struct.unpack_from(f'{endian}I', model, SKELETON_POINTER)[0] & _SEGMENT_MASK
@@ -204,7 +205,7 @@ def demo() -> None:
     Raises
     ------
     SelfCheckFailed
-        If the rider's skeleton does not match what every rider is known to carry.
+        If the rider's skeleton does not match what every rider is known to have.
     """
     from pathlib import Path  # ruff: ignore[import-outside-top-level]
 
@@ -218,12 +219,12 @@ def demo() -> None:
     model = next(iter(decode_entries(data, parse_archive(data, 0, '<'))))[1]
     skeleton = parse_skeleton(model)
     if skeleton is None:
-        msg = 'The rider model carries no skeleton.'
+        msg = 'The rider model includes no skeleton.'
         raise SelfCheckFailed(msg)
     if len(skeleton.bones) != _DEMO_BONES:
         msg = f'Skeleton has {len(skeleton.bones)} bones, expected {_DEMO_BONES}.'
         raise SelfCheckFailed(msg)
-    # The clips carry 67 curves each, which is what makes this the right reading.
+    # The clips have 67 curves each, and that is what makes this the right reading.
     if skeleton.channels != _DEMO_CHANNELS:
         msg = f'Skeleton has {skeleton.channels} channels, expected {_DEMO_CHANNELS}.'
         raise SelfCheckFailed(msg)

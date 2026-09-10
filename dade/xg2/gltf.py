@@ -2,14 +2,14 @@
 Turn Extreme-G models and levels into binary glTF (``.glb``).
 
 One converter serves all three builds. The N64 games hand their geometry to the RSP as F3DEX2
-display lists and the PC port kept that format wholesale, byte order aside, so
-:py:mod:`dade.xg2.f3dex2` reads every one of them and only the endianness differs. A container
-holding several models becomes one file per model rather than one crowded scene, since the game's
-own grouping is by archive slot and says nothing about what belongs together in space.
+display lists and the PC port retained that format wholesale, byte order aside.
+:py:mod:`dade.xg2.f3dex2` therefore reads every one of them, and only the endianness differs. A
+container with several models becomes one file per model rather than one crowded scene. The game's
+grouping is by archive slot and establishes nothing about what belongs together in space.
 
-Coordinates are written through unchanged. The models are already Y-up, which a bike's own bounds
-say plainly -- 490 wide by 422 tall by 1154 long, the long axis being Z -- and that is glTF's
-convention too, so rotating them only stands them on end.
+Coordinates are written through unchanged. The models are already Y-up, as a bike's bounds show
+plainly (490 wide by 422 tall by 1154 long, the long axis being Z), and that is glTF's convention
+too. Rotating them only stands them on end.
 """
 from __future__ import annotations
 
@@ -66,18 +66,18 @@ _VERTEX_BYTES = 16
 _FRAME_RATE = 30.0
 
 ANGLE_SCALE = math.tau / 65536.0
-"""Radians per unit of a motion curve: a binary angle, a full turn to 65536.
+"""Radians per unit of a motion curve, a binary angle with a full turn to 65536.
 
 Confirmed against anatomy rather than assumed. Taking the widest sweep each single-axis joint makes
 across all seventeen clips, and undoing the wraps first, this scale puts the knees at 130 and 122
-degrees and the elbows at 136 and 145 -- against roughly 135 and 150 for a real one. Four
-independent joints landing that close is not something a wrong scale produces; the next candidate
-up, a turn to 16384, would have knees bending five hundred degrees.
+degrees and the elbows at 136 and 145, against roughly 135 and 150 for a real rider. Four
+independent joints landing that close is no accident of a wrong scale; the next candidate up, a
+turn to 16384, would have knees bending five hundred degrees.
 
 :meta hide-value:
 """
 BONE_LENGTH = 1.0
-"""Length given to every bone, since the skeleton's own lengths have not been located.
+"""Length given to every bone. The skeleton's real lengths have not been located.
 
 **An assumption**, and the reason a played-back clip has the right articulation but uniform limb
 proportions. The bone *directions* are read from the file and are exact.
@@ -91,7 +91,7 @@ def iter_models(blob: bytes, endian: Endian = '>') -> Iterator[tuple[str, bytes]
     Yield each flat model inside a decoded archive entry.
 
     An entry is either a flat model, whose header is a segment-5 pointer table and so begins with
-    ``0x05``, or a sub-archive holding several of them.
+    ``0x05``, or a sub-archive with several of them.
 
     Parameters
     ----------
@@ -103,10 +103,10 @@ def iter_models(blob: bytes, endian: Endian = '>') -> Iterator[tuple[str, bytes]
     Yields
     ------
     tuple[str, bytes]
-        A suffix naming the model within its entry, and the model itself.
+        A suffix identifying the model within its entry, and the model itself.
     """
-    # The table's first entry is a segment-5 address, so the segment number is the first byte on
-    # the N64 and the fourth on the PC.
+    # The table's first entry is a segment-5 address, putting the segment number in the first byte
+    # on the N64 and the fourth on the PC.
     tag = 0 if endian == '>' else 3
 
     def is_model(data: bytes) -> bool:
@@ -123,7 +123,7 @@ def iter_models(blob: bytes, endian: Endian = '>') -> Iterator[tuple[str, bytes]
 
 def pc_bank_size(model: bytes) -> int:
     """
-    Report how many bytes of vertex bank a PC model's display lists reach into.
+    Report how many bytes of vertex bank a PC model's display lists address.
 
     Parameters
     ----------
@@ -133,7 +133,7 @@ def pc_bank_size(model: bytes) -> int:
     Returns
     -------
     int
-        The highest segment-8 offset any vertex load reaches, or zero when none do.
+        The highest segment-8 offset any vertex load addresses, or zero when none do.
     """
     needed = 0
     for start in _entry_points(model, '<'):
@@ -150,8 +150,8 @@ def _euler(x: float, y: float, z: float) -> tuple[float, float, float, float]:
     """
     Turn one frame's three joint curves into a quaternion.
 
-    The axes are applied Z, then Y, then X, which is how Acclaim skeletons order a three-degree
-    joint. That order is **not** confirmed against this game's own data; the skeleton records an
+    The axes are applied Z, then Y, then X, the order Acclaim skeletons use for a three-degree
+    joint. That order is **not** confirmed against this game's data; the skeleton records an
     axis code per joint (:py:attr:`dade.xg2.skeleton.Bone.axes`) whose meaning is still unknown.
 
     Parameters
@@ -166,7 +166,7 @@ def _euler(x: float, y: float, z: float) -> tuple[float, float, float, float]:
     Returns
     -------
     tuple[float, float, float, float]
-        The rotation as ``x, y, z, w``, which is glTF's order.
+        The rotation as ``x, y, z, w``, glTF's order.
     """
     hx, hy, hz = (v * ANGLE_SCALE / 2.0 for v in (x, y, z))
     sx, cx = math.sin(hx), math.cos(hx)
@@ -181,10 +181,10 @@ def _aligned(frames: list[tuple[float, float, float, float]]) \
     """
     Flip whichever frames sit on the far hemisphere from the one before.
 
-    A quaternion and its negation are the same rotation, so a curve is free to cross between them,
-    and the joint angles here do: they are binary angles that wrap. A viewer interpolating between
-    two frames on opposite hemispheres takes the long way round and the limb spins, so each frame is
-    put on the same side as its predecessor first.
+    A quaternion and its negation are the same rotation, and a curve is therefore free to cross
+    between them. The joint angles here do, being binary angles that wrap. A viewer interpolating
+    between two frames on opposite hemispheres takes the long way round and the limb spins, and each
+    frame is therefore put on the same side as its predecessor first.
 
     Parameters
     ----------
@@ -230,9 +230,9 @@ def _material(document: GLBDocument, texture: Texture | None, key: int | None, *
     pbr: dict[str, object] = {'metallicFactor': 0.0, 'roughnessFactor': 0.9}
     if texture is None:
         # An untextured surface drawn by the flat combiner has its primitive colour already folded
-        # into the vertex colours, which are written as COLOR_0 whenever the geometry is unlit, so
-        # the factor stays white and lets them through. A lit mesh writes NORMAL instead and has no
-        # colour of its own, so it keeps the grey stand-in.
+        # into the vertex colours, written as COLOR_0 whenever the geometry is unlit. The factor
+        # therefore stays white and lets them through. A lit mesh writes NORMAL instead and has no
+        # colour, and it therefore retains the grey stand-in.
         pbr['baseColorFactor'] = [1.0, 1.0, 1.0, 1.0] if not lit else list(_FALLBACK_COLOR)
     else:
         png = encode_rgba(texture.width, texture.height, texture.rgba)
@@ -242,7 +242,7 @@ def _material(document: GLBDocument, texture: Texture | None, key: int | None, *
         }
         name = f'{name}_{texture.pixel_format}_{texture.width}x{texture.height}'
     entry: dict[str, object] = {
-        # The ROM itself culls nothing: its only geometry mode writes set G_LIGHTING and clear
+        # The ROM itself culls nothing. Its only geometry mode writes set G_LIGHTING and clear
         # G_CULL_BOTH, and the hardware therefore draws both faces. Culling here regardless is what
         # makes a track readable from the outside. The far wall of a tunnel otherwise draws over the
         # near wall.
@@ -370,14 +370,14 @@ def build_pc_glb(model: bytes,
                  name: str,
                  generator: str = 'dade xg2') -> bytes | None:
     """
-    Build a binary glTF for one Windows model, given the bank holding its vertices.
+    Build a binary glTF for one Windows model, given the bank with its vertices.
 
     Parameters
     ----------
     model : bytes
-        The model blob, holding the display lists and the textures.
+        The model blob, with the display lists and the textures.
     vertices : bytes
-        The buffer segment 8 addresses. The port fills this at run time, so nothing in the
+        The buffer segment 8 addresses. The port fills this at run time, and nothing in the
         game's files supplies it yet; see :py:func:`pc_bank_size` for how much is needed.
     textures : list[dade.xg2.typing.Texture]
         Images decoded from the model blob.
@@ -429,20 +429,20 @@ def build_clip_glb(clip: BmcClip,
                    frame_rate: float = _FRAME_RATE,
                    generator: str = 'dade xg2') -> bytes | None:
     """
-    Build a binary glTF carrying one ``BMC`` motion clip.
+    Build a binary glTF with one ``BMC`` motion clip.
 
     A clip is a run of degree-of-freedom curves rather than a pose per bone. Given the *skeleton*
-    those curves drive -- :py:func:`dade.xg2.skeleton.parse_skeleton` reads it out of any rider
-    model -- each curve can be attached to the joint it belongs to, and the result is a real
-    hierarchy. Without one, the old behaviour stands: a node per channel, driven on Y, which keeps
-    the values exact and plays back as 67 sliders.
+    those curves drive (:py:func:`dade.xg2.skeleton.parse_skeleton` reads it out of any rider
+    model), each curve can be attached to the joint it belongs to, and the result is a real
+    hierarchy. Without one, the fallback applies: a node per channel, driven on Y, preserving the
+    values exactly and playing back as 67 sliders.
 
     Two scales are **assumptions**, flagged here because they change how the motion looks rather
     than whether it is structurally right. :py:data:`ANGLE_SCALE` reads the curves as binary angles,
-    a full turn to 65536, which suits their observed range of roughly plus or minus eight thousand;
-    and :py:data:`BONE_LENGTH` gives every bone the same length, because the field holding the real
-    one has not been found. The hierarchy, the channel-to-joint mapping, and the bone directions are
-    all read from the file and cross-checked on fourteen riders.
+    a full turn to 65536, suiting their observed range of roughly plus or minus eight thousand.
+    :py:data:`BONE_LENGTH` gives every bone the same length, the field with the real one never
+    having been found. The hierarchy, the channel-to-joint mapping, and the bone directions are all
+    read from the file and cross-checked on fourteen riders.
 
     Parameters
     ----------
@@ -454,7 +454,7 @@ def build_clip_glb(clip: BmcClip,
         The skeleton the clip drives. Without it, or when its channel count disagrees with the
         clip's, the node-per-channel fallback is used.
     frame_rate : float
-        Frames per second the keyframe times are laid out at.
+        Frames per second the keyframe times are spaced at.
     generator : str
         Value recorded in the glTF ``asset.generator`` field.
 
@@ -466,7 +466,7 @@ def build_clip_glb(clip: BmcClip,
     Raises
     ------
     UnreachableState
-        If a node this function just wrote does not carry a list of children.
+        If a node this function just wrote has no list of children.
     """
     if not clip.frames or not clip.channels:
         return None
@@ -513,7 +513,7 @@ def build_clip_glb(clip: BmcClip,
             if not bone.dof:
                 continue
             curves = clip.channels[bone.channel:bone.channel + bone.dof]
-            # A joint turning about fewer than three axes leaves the rest at zero.
+            # A joint turning about fewer than three axes has the rest at zero.
             padded = list(curves) + [[0.0] * clip.frames] * (3 - len(curves))
             rotations = list(starmap(_euler, zip(*padded, strict=True)))
             sampler(document.floats(rotations, 'VEC4'), index + 1, 'rotation')
@@ -539,9 +539,9 @@ def build_level_glb(meshes: Sequence[Mesh],
     name : str
         Name for the scene and its node.
     scale : float
-        The game's own ``G_TEXTURE`` factor. Extreme-G issues
-        ``gsSPTexture(0x8000, 0x8000, ...)``, a half, which is why its coordinates otherwise come
-        out at twice the size they should be.
+        The game's ``G_TEXTURE`` factor. Extreme-G issues
+        ``gsSPTexture(0x8000, 0x8000, ...)``, a half. Without it the coordinates come out at twice
+        the size they should be.
     generator : str
         Value recorded in the glTF ``asset.generator`` field.
 
@@ -555,10 +555,10 @@ def build_level_glb(meshes: Sequence[Mesh],
 
 def _icon_mesh(placement: ObjectPlacement, frame: int) -> Mesh:
     """
-    Build one frame of an object's icon, in the object's own space.
+    Build one frame of an object's icon, in the object's space.
 
-    Each face takes a flat colour from its own normal rather than the stored per-vertex ones, and is
-    wound twice: the plates are single sided and are approached from either way round.
+    Each face takes a flat colour from its normal rather than from the stored per-vertex ones, and
+    is wound twice. The plates are single sided and are approached from either way round.
 
     Returns
     -------
@@ -603,8 +603,8 @@ def _add_mesh(document: GLBDocument, mesh: Mesh, textures: Mapping[int, Texture]
     """
     Add one object's mesh and return its index.
 
-    Every object shares a handful of images, so the material each one draws with is made once and
-    reused; making one per mesh embeds the same glow image as many times as the level has objects.
+    Every object shares a handful of images, and the material each one draws with is therefore made
+    once and reused. Making one per mesh embeds the same glow image once per object in the level.
 
     Returns
     -------
@@ -633,15 +633,14 @@ def build_track_glb(meshes: Sequence[Mesh],
     """
     Build a binary glTF from a level's geometry and the objects placed around it.
 
-    Each pickup becomes a node at its record's position, lifted by :py:data:`OBJECT_LIFT`, carrying
-    one child per icon of its cycle. An animation swings the pickup on X and Z the way its update
-    does and steps the children in and out with a scale curve, so the file plays back the icon
-    cycling and the swing together. Flame columns have no icon and contribute only their glow.
+    Each pickup becomes a node at its record's position, lifted by :py:data:`OBJECT_LIFT`, with one
+    child per icon of its cycle. An animation swings the pickup on X and Z the way its update does
+    and steps the children in and out with a scale curve, and the file therefore plays back the
+    icon cycling and the swing together. Flame columns have no icon and contribute only their glow.
 
-    Two things the game does cannot be written into a glTF and are left out: the icons and the glow
-    panels turn to face the eye every frame, which no static scene can express, and the glow's
-    texture scrolls, which needs an animated sampler. The glow is written at the first step of that
-    scroll.
+    Two behaviours cannot be written into a glTF and are omitted. The icons and the glow panels turn
+    to face the eye every frame, beyond what a static scene can express, and the glow's texture
+    scrolls, needing an animated sampler. The glow is written at the first step of that scroll.
 
     Parameters
     ----------
@@ -735,9 +734,9 @@ def _animate(document: GLBDocument, name: str, swung: Sequence[int],
     """
     Add the swing and the icon cycle as one animation.
 
-    Every pickup swings identically -- the update reads no per-object term and they all start
-    together -- so one rotation sampler drives all of them, and one scale sampler drives every node
-    holding the same slot of a cycle of the same length.
+    Every pickup swings identically, the update reading no per-object term and all of them starting
+    together. One rotation sampler therefore drives all of them, and one scale sampler drives every
+    node at the same slot of a cycle of the same length.
 
     Parameters
     ----------
@@ -746,9 +745,9 @@ def _animate(document: GLBDocument, name: str, swung: Sequence[int],
     name : str
         Name for the animation.
     swung : collections.abc.Sequence[int]
-        Nodes carrying a pickup's swing.
+        Nodes given a pickup's swing.
     stepped : collections.abc.Mapping[tuple[int, int], collections.abc.Sequence[int]]
-        Nodes holding one slot of a cycle, keyed by the cycle's length and the slot.
+        Nodes at one slot of a cycle, keyed by the cycle's length and the slot.
     """
     if not swung and not stepped:
         return

@@ -1,7 +1,7 @@
 """
 Nintendo 64 VADPCM decoding, as used by both Extreme-G games.
 
-Each nine-byte frame carries a control byte followed by thirty-two 4-bit residuals, decoding to
+Each nine-byte frame opens with a control byte followed by thirty-two 4-bit residuals, decoding to
 sixteen samples in two vectors of eight. The control byte's high nibble is a scaling shift and its
 low nibble selects one of the codebook's predictors, each of which is ``order`` vectors of eight
 coefficients stored contiguously.
@@ -52,7 +52,7 @@ def decode_vadpcm(data: bytes, coefficients: Sequence[int], order: int, predicto
     data : bytes
         The encoded frames. A trailing partial frame is ignored.
     coefficients : collections.abc.Sequence[int]
-        The codebook, laid out as ``predictors`` groups of ``order`` vectors of eight.
+        The codebook, arranged as ``predictors`` groups of ``order`` vectors of eight.
     order : int
         Predictor order.
     predictors : int
@@ -109,9 +109,9 @@ def find_table_base(rom: bytes,
     """
     Locate the sample table embedded after a control bank's structures.
 
-    The table is shared by every sound in the bank, so the correct base is the one at which all of
-    them frame validly over their full length. A false base inside the structures fails on at
-    least one sound.
+    The table is shared by every sound in the bank, and the correct base is therefore the one at
+    which all of them frame validly over their full length. A false base inside the structures
+    fails on at least one sound.
 
     Parameters
     ----------

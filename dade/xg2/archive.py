@@ -11,9 +11,9 @@ Layout, all fields unsigned 32-bit::
                +0x08  decompressed size
                +0x0C  compressed size
 
-The PC port stores the same structure little-endian, which byte-reverses the codec tags
+The PC port stores the same structure little-endian, byte-reversing the codec tags
 (``SSZL`` for ``LZSS``, ``FUHL`` for ``LHUF``, ``YPOC`` for ``COPY``). Both are handled here by
-passing the appropriate :py:data:`~dade.xg2.typing.Endian` character, so the two platforms share
+passing the appropriate :py:data:`~dade.xg2.typing.Endian` character, and the two platforms share
 one parser.
 """
 from __future__ import annotations
@@ -68,7 +68,7 @@ def parse_archive(data: bytes, base: int = 0, endian: Endian = '>') -> list[Arch
     Parameters
     ----------
     data : bytes
-        Buffer holding the container.
+        Buffer with the container.
     base : int
         Offset of the container header within *data*.
     endian : dade.xg2.typing.Endian
@@ -104,7 +104,7 @@ def decode_entry(data: bytes, entry: ArchEntry) -> bytes:
     Parameters
     ----------
     data : bytes
-        Buffer holding the container.
+        Buffer with the container.
     entry : dade.xg2.typing.ArchEntry
         The record to decode, as returned by :py:func:`parse_archive`.
 
@@ -154,7 +154,7 @@ def decode_entries(data: bytes, entries: list[ArchEntry]) -> Iterator[tuple[Arch
     Parameters
     ----------
     data : bytes
-        Buffer holding the container.
+        Buffer with the container.
     entries : list[dade.xg2.typing.ArchEntry]
         Records to decode, as returned by :py:func:`parse_archive`.
 
@@ -197,7 +197,7 @@ def try_sized_lzss(data: bytes, endian: Endian = '<') -> bytes | None:
 
     Some PC models, notably ``BIKES/*.cmp``, are not containers but a size word followed directly
     by an LZSS stream. Raw level containers whose leading word happens to be a size no larger than
-    the file are rejected, since a real stream must expand.
+    the file are rejected. A real stream must expand.
 
     Parameters
     ----------
@@ -223,6 +223,6 @@ def try_sized_lzss(data: bytes, endian: Endian = '<') -> bytes | None:
     if len(out) >= size and consumed <= len(data) - 4 + 16:
         return out
     # A stream that decodes without raising always produces exactly *size* bytes and never reads
-    # past the end of *data*, so both guards above hold and this is unreachable in practice. It is
-    # kept in case the decompressor's contract ever loosens.
+    # past the end of *data*. Both guards above therefore succeed and this is unreachable in
+    # practice. It stays in case the decompressor's contract ever loosens.
     return None  # pragma: no cover

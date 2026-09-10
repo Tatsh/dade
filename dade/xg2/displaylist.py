@@ -7,12 +7,12 @@ the model file itself. Textures are found by walking the command stream for the 
 
 The PC port replaced the display list with a flat four-word descriptor introduced by the marker
 ``0xAC000000``. Every PC texture is 8-bit colour-indexed against a shared 256-colour palette with
-tightly packed rows, which is far simpler than the N64 side.
+tightly packed rows, far simpler than the N64 side.
 
-Both walkers are heuristic: they infer image dimensions the hardware never had to store. The
-sanity gate in :py:func:`parse_dl_textures` rejects results outside 2 to 512 pixels a side, since
-anything outside that is a mis-parse rather than a game texture. Use the montage commands to
-review the results visually.
+Both walkers are heuristic. They infer image dimensions the hardware never had to store. The sanity
+gate in :py:func:`parse_dl_textures` rejects results outside 2 to 512 pixels a side. Anything
+outside that is a mis-parse rather than a game texture. Use the montage commands to review the
+results visually.
 """
 from __future__ import annotations
 
@@ -62,8 +62,9 @@ def _scan_load_tiles(data: bytes) -> tuple[list[int], dict[int, int]]:
     """
     Collect segment-5 image addresses and the tallest tile run for each.
 
-    A display list draws an atlas as many sub-rectangles, so the bottom edge of the tallest
-    ``G_LOADTILE`` bounds the real image height. Only the first run for an address counts; later
+    A display list draws an atlas as many sub-rectangles, and the bottom edge of the tallest
+    ``G_LOADTILE`` therefore bounds the real image height. Only the first run for an address counts;
+    later
     runs are separate draws of an image already measured.
 
     Returns
@@ -197,8 +198,8 @@ def parse_pc_descriptors(model: bytes) -> Iterator[tuple[int, int, int, int, int
     """
     Yield every valid ``0xAC`` texture descriptor in a PC model blob.
 
-    A descriptor is four little-endian words: the marker, a segment-5 palette pointer, a dimension
-    word whose second byte is ``0x04``, and a segment-5 pixel pointer.
+    A descriptor is four little-endian words, comprising the marker, a segment-5 palette pointer, a
+    dimension word whose second byte is ``0x04``, and a segment-5 pixel pointer.
 
     Parameters
     ----------
@@ -228,8 +229,8 @@ def parse_pc_textures(model: bytes) -> list[Texture]:
     Decode every texture in a PC model blob.
 
     Every PC texture is 8-bit colour-indexed against a shared 256-colour palette with tightly
-    packed rows. Palettes are shared and may sit after the pixels they belong to, so their
-    position carries no information about the pixel depth.
+    packed rows. Palettes are shared and may sit after the pixels they belong to, and their
+    position therefore states nothing about the pixel depth.
 
     Parameters
     ----------

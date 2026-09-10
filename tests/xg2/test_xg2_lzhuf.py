@@ -36,12 +36,12 @@ def test_demo_holds() -> None:
 
 def test_module_entry_point_runs(capsys: pytest.CaptureFixture[str]) -> None:
     runpy.run_path(_MODULE_PATH, run_name='__main__')
-    assert 'tables and tree bookkeeping hold' in capsys.readouterr().out
+    assert 'tables and tree bookkeeping verified' in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(('attr', 'value', 'match'),
-                         [('POSITION_CODES', POSITION_CODES[:-1], 'code table holds'),
-                          ('POSITION_LENGTHS', POSITION_LENGTHS[:-1], 'length table holds'),
+                         [('POSITION_CODES', POSITION_CODES[:-1], 'code table has'),
+                          ('POSITION_LENGTHS', POSITION_LENGTHS[:-1], 'length table has'),
                           ('POSITION_CODES', _codes(**{'0': 1}), 'First position code'),
                           ('POSITION_CODES', _codes(**{'255': 0}), 'Last position code'),
                           ('POSITION_LENGTHS', (3,) * 256, 'Position code lengths'),

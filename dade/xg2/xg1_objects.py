@@ -3,12 +3,12 @@ Extreme-G (N64) track objects: the power-up pads and the flame columns.
 
 A level's track region ends with a typed entity stream. The parser at ``0x8009F310`` reads a type
 byte, calls one of twenty handlers, and advances by the size the handler returns; every record is 32
-bytes carrying an ``s32`` position, which its spawner confirms by loading ``+0x08``, ``+0x0C``, and
-``+0x10`` into the object's x, y, and z.
+bytes with an ``s32`` position, confirmed by its spawner loading ``+0x08``, ``+0x0C``, and ``+0x10``
+into the object's x, y, and z.
 
 Type zero is the generic object. Its sub-type byte indexes a table of id lists, an id from that list
 indexes a model table, and the model is an F3DEX display list. All of that lives in a second code
-segment the ROM keeps LZHUF compressed and which runs at ``0x8009B898``.
+segment the ROM stores LZHUF compressed, running at ``0x8009B898``.
 """
 from __future__ import annotations
 
@@ -82,7 +82,7 @@ OBJECT_LIFT = 100
 TICK_HZ = 30
 """Ticks a second everything animated here is counted in.
 
-The update runs once a displayed frame and the game runs at thirty: a capture shows 29 to 30 frames
+The update runs once a displayed frame and the game runs at thirty. A capture shows 29 to 30 frames
 a second against 59 VI.
 
 :meta hide-value:
@@ -96,26 +96,26 @@ GLOW_STEPS = 64
 """Steps the glow's scroll is baked at.
 
 The update adds 4 to the object's ``+0xD0`` each frame and the draw turns that into the tile's T
-origin as ``(-value >> 1) & 0xFFF`` in 10.2 fixed point, which is half a texel a frame: a 32-texel
-texture wraps every 64 frames.
+origin as ``(-value >> 1) & 0xFFF`` in 10.2 fixed point, half a texel a frame. A 32-texel texture
+therefore wraps every 64 frames.
 
 :meta hide-value:
 """
 
 # The two lights point in exactly opposite directions. The spawner packs each one's direction by
 # multiplying the object's facing vector at +0x94 by a constant, and those constants are +127 and
-# -127: the same axis, opposed, scaled into a signed byte. That also settles what +0x94 holds, a
-# unit direction rather than Euler angles, since only a unit vector packs that way.
+# -127, the same axis opposed, scaled into a signed byte. That also settles what +0x94 stores, a
+# unit direction rather than Euler angles. Only a unit vector packs that way.
 _AMBIENT = 0x80
 _LIGHTS = (((0x00, 0xFF, 0x00), (0, 0, 1)), ((0xFF, 0xFF, 0xFF), (0, 0, -1)))
-# The icon's update at 0x800A037C pushes the turn rate against the sign of the angle, so each axis
-# swings about zero under a constant restoring push. The angles start at 20 with no rate, and only X
-# and Z are driven: the rate for Y is written once at spawn and never touched.
+# The icon's update at 0x800A037C pushes the turn rate against the sign of the angle, and each axis
+# therefore swings about zero under a constant restoring push. The angles start at 20 with no rate,
+# and only X and Z are driven. The rate for Y is written once at spawn and never touched.
 _SPIN_START = 20
 _SPIN_PUSH_X = 0.02
 _SPIN_PUSH_Z = 0.05
 # What an object draws, decided from its model id at 0x800A02EC. Mode two draws no icon and turns
-# its glow red, which is the flame columns standing along a track rather than anything collectable.
+# its glow red, marking the flame columns along a track rather than anything collectable.
 _MODE_ICON_LIMIT = 0x36
 _MODE_FLAME_ID = 0x37
 # The glow every pickup sits inside, drawn by the same routine in a second pass. Its list sets the
@@ -126,14 +126,15 @@ _GLOW_LIST = 0x801064F0
 _GLOW_COLOUR = (0x3C, 0xF0, 0x3C)
 _FLAME_COLOUR = (0xF0, 0x3C, 0x3C)
 # The glow draws through two 32 by 32 four-bit intensity textures. The setup list at 0x80106478
-# loads them onto separate tiles and the scroll names tile one only, so the mottled cloud slides
-# while the soft blob stands still, and multiplying by the blob thins the glow towards the top.
+# loads them onto separate tiles and the scroll selects tile one only. The mottled cloud therefore
+# slides while the soft blob stands still, and multiplying by the blob thins the glow towards the
+# top.
 _GLOW_MASK_SOURCE = 0x80146160
 _GLOW_CLOUD_SOURCE = 0x80146360
 _GLOW_TEXTURE_SIDE = 32
 
 GLOW_ALPHA = 0xFF
-"""Alpha the glow's vertices carry.
+"""Alpha the glow's vertices are given.
 
 :meta hide-value:
 """
@@ -148,9 +149,9 @@ class Entity(NamedTuple):
     """One record of a level's entity stream."""
 
     type: int
-    """Type byte, which selects the handler that reads the rest of the record."""
+    """Type byte, selecting the handler that reads the rest of the record."""
     subtype: int
-    """Sub-type byte, which for a type zero object selects its list of models."""
+    """Sub-type byte, selecting a type zero object's list of models."""
     x: int
     """World X."""
     y: int
@@ -163,7 +164,7 @@ class ObjectModel(NamedTuple):
     """One display list decoded out of the second code segment."""
 
     id: int
-    """The id this model was reached by, which decides the object's mode."""
+    """The id this model was found through, deciding the object's mode."""
     positions: tuple[tuple[int, int, int], ...]
     """Model-space corner positions, one per index."""
     coords: tuple[tuple[int, int], ...]
@@ -233,7 +234,7 @@ def read_entities(rom: bytes, base: int, dialect: Dialect = XG1) -> list[Entity]
 
 def read_code_segment(rom: bytes) -> bytes:
     """
-    Decompress the second code segment, which every level's objects are drawn from.
+    Decompress the second code segment, the source every level's objects are drawn from.
 
     Parameters
     ----------
@@ -274,9 +275,9 @@ def glow_textures(segment: bytes, steps: int = GLOW_STEPS) -> list[Texture]:
     """
     Bake one image per step of the glow's scroll.
 
-    The cloud is shifted against the fixed mask rather than the texture coordinates sliding, which
-    is what keeps the mask still. A step is half a texel, so the rows either side are mixed rather
-    than jumped between.
+    The cloud is shifted against the fixed mask rather than the texture coordinates sliding, and
+    the mask therefore stays still. A step is half a texel, and the rows either side are mixed
+    rather than jumped between.
 
     Parameters
     ----------
@@ -308,11 +309,11 @@ def glow_textures(segment: bytes, steps: int = GLOW_STEPS) -> list[Texture]:
                 value = cloud[near + x] * (1 - blend) + cloud[far + x] * blend
                 at = (y * side + x) * 4
                 pixels[at:at + 3] = b'\xff\xff\xff'
-                # The mask is left at its own scale rather than stretched to full: it peaks around
+                # The mask stays at its stored scale rather than stretched to full. It peaks around
                 # 119, and pushing that to 255 clamps most of the sheet solid and throws away the
                 # falloff that makes the glow a haze instead of a box. Half rounds up rather than to
-                # even, which is what puts every odd step of the blend on the same value the browser
-                # viewer produces.
+                # even, putting every odd step of the blend on the same value the browser viewer
+                # produces.
                 pixels[at + 3] = math.floor(value * mask[y * side + x] / _BYTE_MAX + 0.5)
         out.append(Texture('i8', GLOW_TEXTURE_KEY - step, side, side, bytes(pixels)))
     return out
@@ -329,7 +330,7 @@ def _load_vertices(segment: bytes, word0: int, word1: int,
     segment : bytes
         The decompressed second code segment.
     word0 : int
-        The command's first word: bits 0 to 9 are the block's length in bytes less one, and bits 10
+        The command's first word. Bits 0 to 9 are the block's length in bytes less one, and bits 10
         to 15 the slot it ends at.
     word1 : int
         Address the vertices are read from.
@@ -372,7 +373,7 @@ def _decode_model(segment: bytes, vram: int, depth: int = 0) -> ObjectModel | No
     """
     if depth > _DL_DEPTH:
         return None
-    # Vertices land in a slot buffer at a destination slot rather than in a list: a display list may
+    # Vertices land in a slot buffer at a destination slot rather than in a list. A display list may
     # load several blocks, and the triangles index the buffer.
     buffer: list[tuple[int, int, int] | None] = [None] * _VERTEX_SLOTS
     texel: list[tuple[int, int]] = [(0, 0)] * _VERTEX_SLOTS
@@ -394,7 +395,8 @@ def _decode_model(segment: bytes, vram: int, depth: int = 0) -> ObjectModel | No
             _load_vertices(segment, word0, word1, buffer, texel, normal)
         elif command in {_G_TRI1, _G_TRI2}:
             # A triangle is resolved against the buffer as it stands now. A later G_VTX reloads the
-            # same slots, so deferring the lookup gives every earlier triangle the wrong vertices.
+            # same slots, and deferring the lookup would give every earlier triangle the wrong
+            # vertices.
             for word in ((word0, word1) if command == _G_TRI2 else (word1,)):
                 slots = tuple(((word >> shift) & _BYTE_MAX) >> 1 for shift in (16, 8, 0))
                 if any(slot >= _VERTEX_SLOTS or buffer[slot] is None for slot in slots):
@@ -428,9 +430,9 @@ def read_object_models(segment: bytes) -> list[tuple[ObjectModel, ...]]:
     """
     Read every model a sub-type cycles through, indexed by sub-type.
 
-    The update at ``0x800A01D8`` keeps an index at ``+0xD5`` into this list and steps it on a timer,
-    wrapping at the list's ``-1`` terminator, so a pickup shows each icon in turn rather than one of
-    several variants.
+    The update at ``0x800A01D8`` retains an index at ``+0xD5`` into this list and steps it on a
+    timer, wrapping at the list's ``-1`` terminator. A pickup therefore shows each icon in turn
+    rather than one of several variants.
 
     Parameters
     ----------
@@ -465,8 +467,8 @@ def read_object_models(segment: bytes) -> list[tuple[ObjectModel, ...]]:
             vram = struct.unpack_from('>I', segment, record)[0]
             if vram not in cache:
                 cache[vram] = _decode_model(segment, vram)
-            # The id decides the mode, so it travels with the model rather than the display list,
-            # which several ids share.
+            # The id decides the mode, and it therefore travels with the model rather than with the
+            # display list, shared by several ids.
             if (model := cache[vram]) is not None:
                 frames.append(model._replace(id=identifier))
         out[subtype] = tuple(frames)
@@ -475,7 +477,7 @@ def read_object_models(segment: bytes) -> list[tuple[ObjectModel, ...]]:
 
 def is_flame(model: ObjectModel | None) -> bool:
     """
-    Say whether a model is a flame column rather than a pickup.
+    Report whether a model is a flame column rather than a pickup.
 
     Parameters
     ----------
@@ -541,7 +543,7 @@ def face_colour(model: ObjectModel, triangle: int) -> tuple[int, int, int]:
     """
     Light one of an icon's faces the way its draw path does.
 
-    The normal is taken from the face itself rather than from the stored per-vertex ones: lighting
+    The normal is taken from the face itself rather than from the stored per-vertex ones. Lighting
     an icon from those shades smoothly across each edge and the shape reads as rounded, while these
     icons are flat plates whose faces should stay distinct.
 
@@ -564,8 +566,8 @@ def face_colour(model: ObjectModel, triangle: int) -> tuple[int, int, int]:
     scale = math.hypot(*face) or 1
     unit = [value / scale for value in face]
     # Ambient plus each light by how squarely the face meets it, all in the hardware's 0 to 255 and
-    # clamped there before it modulates the primitive colour, which is what keeps a lit face at full
-    # rather than letting two lights drive it past white.
+    # clamped there before it modulates the primitive colour. That caps a lit face at full rather
+    # than letting two lights drive it past white.
     channels = [float(_AMBIENT)] * 3
     for colour, direction in _LIGHTS:
         lit = max(sum(unit[i] * direction[i] for i in range(3)), 0)
@@ -579,7 +581,7 @@ def face_colour(model: ObjectModel, triangle: int) -> tuple[int, int, int]:
 
 def _swing(frames: float, start: float, push: float) -> float:
     """
-    Say where a constant-push swing has got to after *frames*.
+    Report where a constant-push swing has got to after *frames*.
 
     The motion is four parabolic arcs: down to zero, on to the far side, back to zero, and home.
 

@@ -7,9 +7,10 @@ size, the compressed size, and a *cumulative* end offset. A file's start offset 
 file's end offset, and the first comes from the directory header, but all of them are relative to
 an archive base that is not stored anywhere.
 
-That base is recovered by :py:func:`calibrate_base`, which searches a small window and keeps the
+That base is recovered by :py:func:`calibrate_base`, searching a small window and retaining the
 candidate for which every file decodes and the total slack between files is smallest. A one-byte
-error desynchronises LZSS into rubbish, so a wrong base fails loudly rather than quietly.
+error desynchronises LZSS into rubbish, and a wrong base therefore fails loudly rather than
+quietly.
 """
 from __future__ import annotations
 

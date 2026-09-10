@@ -6,20 +6,20 @@ Every ``BMC`` blob in the ROM is named after a skeleton file: ``man2sk.asf`` thi
 format, and Iva and Albeano are two of the game's riders, who also appear as ``bulk/data/iva.cmp``
 and ``bulk/data/albeano.cmp`` in the Windows executable. These are motion clips, not sounds.
 
-Layout: the magic ``BMC\\x80``, a twelve-byte NUL-padded name, the frame count twice, a constant
-``0x7800``, and a channel count that is always 67 -- the degrees of freedom of a human skeleton, a
-root with six and the joints with one to three each. The payload is then one length-prefixed curve
-per channel, each holding one value per frame:
+The layout is the magic ``BMC\\x80``, a twelve-byte NUL-padded name, the frame count twice, a
+constant ``0x7800``, and a channel count that is always 67. That is the degrees of freedom of a
+human skeleton, a root with six and the joints with one to three each. The payload is then one
+length-prefixed curve per channel, each with one value per frame:
 
-* ``[u16 length][s16 low][s16 high][frames x u8]`` -- eight-bit, rescaled from *low* to *high*;
-* ``[u16 length][frames x s16]`` -- stored outright, when eight bits will not do.
+* ``[u16 length][s16 low][s16 high][frames x u8]``, eight-bit, rescaled from *low* to *high*;
+* ``[u16 length][frames x s16]``, stored outright, when eight bits will not do.
 
 Which one a record is follows from its length, and records are padded to an even boundary. The
-final record carries a length of zero and simply runs to the end of the payload, which is where
-that padding is dropped.
+final record states a length of zero and runs to the end of the payload, where that padding is
+dropped.
 
-Verified against the ROM: all seventeen clips parse to exactly 67 channels and consume every byte.
-That is the check that matters, because a wrong record size desynchronises the rest of the clip.
+Verified against the ROM. All seventeen clips parse to exactly 67 channels and consume every byte.
+That is the decisive check. A wrong record size desynchronises the rest of the clip.
 """
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ class BmcClip(NamedTuple):
     name: str
     """Skeleton the clip animates, as stored in the header."""
     frames: int
-    """Number of frames, which every channel has one value per."""
+    """Number of frames, with one value per channel per frame."""
     channels: list[list[float]]
     """One curve per degree of freedom, each *frames* values long."""
 
@@ -140,7 +140,7 @@ def demo() -> None:
     # An eight-bit channel spanning 0 to 255 maps its bytes straight onto that range.
     first = struct.pack('>H2h', CHANNEL_HEADER_SIZE + _DEMO_FRAMES, 0, 255)
     first += bytes((0, 85, 170, 255))
-    # The last channel carries a zero length and runs to the end.
+    # The last channel states a zero length and runs to the end.
     second = struct.pack('>H2h', 0, _DEMO_LOW, _DEMO_HIGH) + bytes((0, 128, 255, 0))
     clip = parse_bmc(header + first + second)
     if clip is None:

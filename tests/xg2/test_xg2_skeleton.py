@@ -133,7 +133,7 @@ def test_demo_accepts_a_matching_skeleton(mocker: MockerFixture,
 
 
 @pytest.mark.parametrize(('skeleton', 'match'),
-                         [(None, 'carries no skeleton'), (_demo_skeleton(count=26), 'expected 27'),
+                         [(None, 'includes no skeleton'), (_demo_skeleton(count=26), 'expected 27'),
                           (_demo_skeleton(extra_dof=60), 'expected 67'),
                           (_demo_skeleton(first_name='wrong'), 'expected lhipjoint'),
                           (_demo_skeleton(first_dof=1, extra_dof=60), 'expected none')])

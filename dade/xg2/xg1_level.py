@@ -1,22 +1,21 @@
 """
 Extreme-G (N64) level geometry.
 
-The first game does not store its levels as display lists, and it does not store a vertex array
-either. It stores a **bytecode**, LZHUF-compressed, which ``LoadLevelResources`` walks once at load
-time to build the display lists the RSP then draws every frame. Nothing in the ROM assembles a
-``G_VTX`` command outside that function, which is what makes the level data look empty to a
-display-list walker.
+The first game does not store its levels as display lists, and it stores no vertex array. It stores
+a **bytecode**, LZHUF-compressed, walked once at load time by ``LoadLevelResources`` to build the
+display lists the RSP then draws every frame. Nothing in the ROM assembles a ``G_VTX`` command
+outside that function. The level data therefore looks empty to a display-list walker.
 
 The interpreter here is a transcription of that loader, at ``0x8004FDB8``-``0x80051900`` in the
-Extreme-G ROM. Its dispatch is a jump table at ``0x8004BA98`` indexed by a byte from the stream:
-zero ends the level, one to fifteen select a handler. Only the handlers that carry geometry are
-acted on; the rest are still *decoded*, because every opcode consumes a fixed number of bytes and
-skipping one by the wrong amount desynchronises everything after it.
+Extreme-G ROM. Its dispatch is a jump table at ``0x8004BA98`` indexed by a byte from the stream.
+Zero ends the level, and one to fifteen select a handler. Only the handlers with geometry are acted
+on; the rest are still *decoded*. Every opcode consumes a fixed number of bytes, and skipping one by
+the wrong amount desynchronises everything after it.
 
-Vertices arrive ten bytes at a time and are not self-describing: the position is three big-endian
+Vertices arrive ten bytes at a time and are not self-describing. The position is three big-endian
 ``s16``, then one byte indexes the level's ``t4`` table for the texture coordinates, then three
-bytes give a colour. Triangles are a sixteen-bit word holding three five-bit indices into the
-thirty-two-slot vertex buffer, which the loader doubles on its way into ``G_TRI1``.
+bytes give a colour. Triangles are a sixteen-bit word storing three five-bit indices into the
+thirty-two-slot vertex buffer, doubled by the loader on the way into ``G_TRI1``.
 """
 from __future__ import annotations
 
@@ -75,7 +74,7 @@ _OP_FLAT_COMBINE = 7
 _OP_SHARED_BANK = 12
 _OP_LEVEL_BANK = 13
 _OP_MAX = 15
-# Bytes each opcode takes off the stream after its own dispatch byte, counted from the number of
+# Bytes each opcode takes off the stream after its dispatch byte, counted from the number of
 # DecodeLzhufByte calls in each handler. Vertices are the one variable-length case.
 _OPERAND_BYTES = {
     _OP_TEXTURE: 1,
@@ -104,22 +103,22 @@ _MAX_TEXTURES = 256
 _TLUT_ENTRIES = 256
 _CI4_TLUT_ENTRIES = 16
 _CI8_DEPTH = 8
-# Bits per pixel each format tag means. A descriptor proves which is which: a 32 by 32 image with
-# format 1 leaves 0x400 bytes before its palette and one with format 2 leaves 0x200, so format 1 is
-# eight bits a pixel and format 2 is four.
+# Bits per pixel each format tag means. A descriptor proves which is which. A 32 by 32 image with
+# format 1 has 0x400 bytes before its palette and one with format 2 has 0x200, making format 1
+# eight bits a pixel and format 2 four.
 _FORMAT_DEPTH = {1: 8, 2: 4}
 _BANK_TABLE = 8
 _BANK_RECORD = 8
 _MAX_BANK_SIZE = 0x200000
 _MAX_TEXTURE_SIDE = 256
 _TLUT_BYTES = _TLUT_ENTRIES * 2
-# Bank textures share the mesh keyspace with the level pool's pixel offsets, so they are tagged with
-# the bank's own ROM offset to keep the two apart.
+# Bank textures share the mesh keyspace with the level pool's pixel offsets, and they are therefore
+# tagged with the bank's ROM offset to tell the two apart.
 _BANK_KEY_SHIFT = 32
 
 
 class Dialect(NamedTuple):
-    """How one game lays out its level header and its geometry bytecode."""
+    """How one game arranges its level header and its geometry bytecode."""
 
     header_size: int
     """Bytes of header the loader reads."""
@@ -140,24 +139,24 @@ class Dialect(NamedTuple):
     """Whether opcodes twelve and thirteen bind textures from the two shared banks.
 
     Extreme-G's handlers at ``0x80050E20`` and ``0x8005136C`` are the same routine over different
-    globals, and neither reads the level's own descriptor table: each indexes an eight-byte record
-    in a bank the loader put there, one shared by every level and one chosen per level. Levels that
-    lean on them draw a large share of their track through these opcodes.
+    globals, and neither reads the level's descriptor table. Each indexes an eight-byte record in a
+    bank the loader put there, one shared by every level and one chosen per level. Levels that lean
+    on them draw a large share of their track through these opcodes.
     """
     texture_scale: float
-    """Factor the game's own ``G_TEXTURE`` applies to every texture coordinate.
+    """Factor the game's ``G_TEXTURE`` applies to every texture coordinate.
 
-    Extreme-G issues ``gsSPTexture(0x8000, 0x8000, ...)`` -- a half -- which the coordinates bear
-    out: the ``t4`` table steps by 2048, and halving that lands a 32-pixel texture on 0.5 to 31.5
+    Extreme-G issues ``gsSPTexture(0x8000, 0x8000, ...)``, a half, and the coordinates bear that
+    out. The ``t4`` table steps by 2048, and halving that lands a 32-pixel texture on 0.5 to 31.5
     texels, the usual inset that samples pixel centres. Without it every level draws its textures
     at twice the size and tiled. XG2 measures the same way.
     """
     region_fields: tuple[int, int] | None = None
     """Word indices of the track region's offset and decompressed size.
 
-    The region holds the spline, the collision grid, the sprites, and the entity stream. It is
-    :py:obj:`None` for a game that lays the region out differently, as XG2 does: its section offsets
-    sit at words 12, 14, and 16 with no counts beside them.
+    The region includes the spline, the collision grid, the sprites, and the entity stream. It is
+    :py:obj:`None` for a game that arranges the region differently, as XG2 does. XG2's section
+    offsets sit at words 12, 14, and 16 with no counts beside them.
     """
 
 
@@ -215,7 +214,7 @@ XG2 = Dialect(header_size=0x50,
               banked_textures=False,
               texture_scale=0.5)
 """Extreme-G XG2. Twenty opcodes, dispatched through the table at ``0x8004BC10``. Its triangles
-carry a leading visibility byte and its vertices load through F3DEX2 rather than F3D.
+open with a visibility byte and its vertices load through F3DEX2 rather than F3D.
 
 :meta hide-value:
 """
@@ -226,7 +225,7 @@ fields byte-swapped.
 
 The content is otherwise identical: ``aqua1.pcb`` declares 286 objects and a ``0x57D63`` byte
 stream, the same as the ROM's level at ``0x1107E0``, and the two streams differ only in the order
-of each halfword. Nothing else about the format changes, so the same interpreter reads both.
+of each halfword. Nothing else about the format changes, and the same interpreter reads both.
 
 :meta hide-value:
 """
@@ -262,14 +261,14 @@ class LevelHeader(NamedTuple):
 
 
 class DrawState(NamedTuple):
-    """What the display list has selected: an image, a colour, and which of the two combiners."""
+    """What the display list has selected: an image, a colour, and one of the two combiners."""
 
     texture: int | None
     """Pixel offset of the bound image, or :py:obj:`None` before one is chosen."""
     primitive: tuple[int, int, int] | None
     """Colour from the most recent ``G_SETPRIMCOLOR``, used by the flat combiner."""
     flat: bool
-    """Whether the flat combiner is selected, which draws ``PRIMITIVE * SHADE`` and no texture."""
+    """Whether the flat combiner is selected, drawing ``PRIMITIVE * SHADE`` and no texture."""
 
 
 class TextureDescriptor(NamedTuple):
@@ -294,7 +293,7 @@ def read_header(rom: bytes, base: int, dialect: Dialect = XG1) -> LevelHeader:
     Parameters
     ----------
     rom : bytes
-        The whole ROM image, which must be the original rather than the extended one: the extended
+        The whole ROM image, required to be the original rather than the extended one. The extended
         ROM overwrites ``0x14A0``-``0x51498`` with the decompressed code segment.
     base : int
         Offset of the container.
@@ -331,7 +330,7 @@ def read_textures(rom: bytes,
     """
     Decode the ``t1`` descriptor table.
 
-    Width and height are single bytes, not halfwords: the first record of level 5 reads
+    Width and height are single bytes rather than halfwords. The first record of level 5 reads
     ``20 20 01 00`` with its pixels at zero and its palette at ``0x400``, and 32 by 32 pixels is
     exactly the ``0x400`` bytes that gap allows.
 
@@ -405,7 +404,7 @@ def _wrap(value: int) -> int:
 
 def _triangle(word: int) -> tuple[int, int, int]:
     """
-    Unpack the three five-bit vertex indices a triangle word holds.
+    Unpack the three five-bit vertex indices a triangle word stores.
 
     Returns
     -------
@@ -450,9 +449,9 @@ def decode_level_geometry(rom: bytes, base: int, dialect: Dialect = XG1) -> list
     }
     buffer = VertexBuffer()
     at = 0
-    # The loader builds one display list for the whole level, so the texture a `set texture` opcode
-    # chose stays in force until the next one, across object boundaries. Resetting it per object
-    # leaves most of a track drawing untextured.
+    # The loader builds one display list for the whole level, and the texture a `set texture`
+    # opcode chose therefore stays in force until the next one, across object boundaries. Resetting
+    # it per object draws most of a track untextured.
     state = DrawState(None, None, flat=False)
     for index in range(header.object_count):
         origin = _load_box(rom, base + header.objects + index * _OBJECT_RECORD, buffer,
@@ -497,9 +496,9 @@ def _load_box(rom: bytes, at: int, buffer: VertexBuffer, endian: Endian) -> tupl
     """
     Fill slots 0 to 7 with an object's bounding box and return where it sits.
 
-    A record holds an origin and two further points, and the loader keeps only their differences
+    A record stores an origin and two further points, and the loader retains only their differences
     from the origin. Corner ``i`` then takes its X from bit 0, its Y from bit 1, and its Z from bit
-    2, which is a box.
+    2, forming a box.
 
     Parameters
     ----------
@@ -515,20 +514,21 @@ def _load_box(rom: bytes, at: int, buffer: VertexBuffer, endian: Endian) -> tupl
     Returns
     -------
     tuple[int, int, int]
-        The object's position, which its geometry is relative to.
+        The object's position, the origin its geometry is relative to.
     """
     if at + _OBJECT_RECORD > len(rom):
         return (0, 0, 0)
     values = struct.unpack_from(f'{endian}9i', rom, at)
     origin = values[0], values[1], values[2]
-    # The loader subtracts as words and stores the result as a halfword, so a difference that does
-    # not fit wraps. Keeping that wrap is what makes the corners agree with the game's.
+    # The loader subtracts as words and stores the result as a halfword, and a difference that does
+    # not fit therefore wraps. Reproducing that wrap is what makes the corners agree with the
+    # game's.
     spans = [_wrap(values[3 + i] - origin[i % 3]) for i in range(6)]
     corners = ((spans[0], spans[3]), (spans[1], spans[4]), (spans[2], spans[5]))
-    # These eight corners are a cull volume, not geometry: the loader follows them with G_CULLDL
-    # (`lui v0,0xbe00` at 0x8004FE94), which tests them against the frustum and skips the object
-    # when none are visible. Drawing them would paper the level in huge boxes, so only the origin
-    # they are measured from is kept.
+    # These eight corners are a cull volume rather than geometry. The loader follows them with
+    # G_CULLDL (`lui v0,0xbe00` at 0x8004FE94), testing them against the frustum and skipping the
+    # object when none are visible. Drawing them would paper the level in huge boxes, and only the
+    # origin they are measured from is retained.
     del corners
     buffer.slots[:] = [None] * len(buffer.slots)
     return origin
@@ -540,8 +540,8 @@ def _load_vertices(code: bytes, at: int, count: int, buffer: VertexBuffer,
     """
     Read *count* vertices into the buffer's first slots.
 
-    A vertex is ten bytes: three big-endian halfwords of position, one byte indexing the ``t4``
-    table for its texture coordinates, then three of colour.
+    A vertex is ten bytes, comprising three big-endian halfwords of position, one byte indexing the
+    ``t4`` table for its texture coordinates, then three of colour.
 
     Parameters
     ----------
@@ -573,8 +573,8 @@ def _load_vertices(code: bytes, at: int, count: int, buffer: VertexBuffer,
         s, t = coords[index] if index < len(coords) else (0, 0)
         if slot < len(buffer.slots):
             # The loader stores alpha as zero because this game shades from the primitive colour
-            # and the texture rather than from vertex alpha. Carrying that zero into glTF would
-            # make every surface invisible, so it is written opaque.
+            # and the texture rather than from vertex alpha. Passing that zero into glTF would make
+            # every surface invisible, and it is therefore written opaque.
             buffer.slots[slot] = Vertex(x + origin[0], y + origin[1], z + origin[2], s, t,
                                         code[at + 7], code[at + 8], code[at + 9], 0xFF)
         at += _VERTEX_BYTES
@@ -599,27 +599,27 @@ def _run_object(code: bytes, at: int, buffer: VertexBuffer, coords: list[tuple[i
     coords : list[tuple[int, int]]
         The ``t4`` texture coordinate table.
     origin : tuple[int, int, int]
-        Added to every position, so the level comes out as one scene.
+        Added to every position, bringing the level out as one scene.
     descriptors : list[TextureDescriptor]
         The ``t1`` table, used to turn a texture opcode's index into a pixel offset.
     dialect : Dialect
         Which game's opcode set to interpret.
     state : DrawState
-        Texture, primitive colour and combine mode in force on entry, carried over from the
-        previous object.
+        Texture, primitive colour and combine mode in force on entry, inherited from the previous
+        object.
     banks : dict[int, list[int]]
         Texture keys each bank opcode can select, in record order.
 
     Returns
     -------
     tuple[int, DrawState]
-        Where the next object's bytecode begins, and the drawing state left in force.
+        Where the next object's bytecode begins, and the drawing state still in force.
     """
     end = len(code)
     texture, primitive, flat = state
-    # XG2 puts a visibility byte in front of every triangle, which selects the geometry variant a
-    # track shows. Everything it can show is wanted here, so the byte is stepped over rather than
-    # tested.
+    # XG2 puts a visibility byte in front of every triangle, selecting the geometry variant a track
+    # shows. Everything it can show is wanted here, and the byte is therefore stepped over rather
+    # than tested.
     flags = 1 if dialect.triangle_flags else 0
     while at < end:
         opcode = code[at]
@@ -642,13 +642,13 @@ def _run_object(code: bytes, at: int, buffer: VertexBuffer, coords: list[tuple[i
             at += 3
             continue
         if opcode in {_OP_TEXTURED_COMBINE, _OP_FLAT_COMBINE}:
-            # Two G_SETCOMBINE words: opcode 6 is TEXEL0 * SHADE with the texture's alpha, opcode 7
-            # is PRIMITIVE * SHADE forced opaque, which draws no texture at all.
+            # Two G_SETCOMBINE words. Opcode 6 is TEXEL0 * SHADE with the texture's alpha, opcode 7
+            # is PRIMITIVE * SHADE forced opaque, drawing no texture at all.
             flat = opcode == _OP_FLAT_COMBINE
             continue
         if opcode in banks:
-            # A bank opcode names a record rather than a descriptor, and the loader drops the whole
-            # command when the record is out of range, leaving the previous texture bound.
+            # A bank opcode selects a record rather than a descriptor, and the loader drops the
+            # whole command when the record is out of range, with the previous texture still bound.
             keys = banks[opcode]
             index = code[at] if at < end else len(keys)
             if index < len(keys):
@@ -681,12 +681,12 @@ def _run_object(code: bytes, at: int, buffer: VertexBuffer, coords: list[tuple[i
             # G_MODIFYVTX with G_MWO_POINT_ST: retarget one loaded vertex's texture coordinates at
             # another entry of the t4 table.
             #
-            # The loader halves both before writing, which is the game applying its own
-            # `gsSPTexture(0x8000, ...)` by hand: this command writes straight into the vertex
-            # cache, past the point where the RSP would have scaled a loaded vertex. The table
-            # entry is therefore stored here as it stands, and the same scale is applied to every
-            # vertex once, when the coordinates are normalised. Halving here as well quartered
-            # these corners and left one corner of a wall out of step with the other three.
+            # The loader halves both before writing, applying the game's `gsSPTexture(0x8000, ...)`
+            # by hand. This command writes straight into the vertex cache, past the point where the
+            # RSP would have scaled a loaded vertex. The table entry is therefore stored here as it
+            # stands, and the same scale is applied to every vertex once, when the coordinates are
+            # normalised. Halving here as well quartered these corners and put one corner of a wall
+            # out of step with the other three.
             if at + 2 <= end:
                 slot, entry = code[at], code[at + 1]
                 current = buffer.slots[slot] if slot < len(buffer.slots) else None
@@ -696,8 +696,8 @@ def _run_object(code: bytes, at: int, buffer: VertexBuffer, coords: list[tuple[i
             at += 2
             continue
         if opcode == _OP_NORMALS:
-            # Like the vertex opcode, a count followed by that many records: three halfwords each,
-            # written into the array `hdr+0x2C` sizes at six bytes apiece.
+            # Like the vertex opcode, a count followed by that many records of three halfwords
+            # each, written into the array `hdr+0x2C` sizes at six bytes apiece.
             at += 1 + (code[at] if at < end else 0) * _NORMAL_BYTES
             continue
         at += dialect.operands.get(opcode, 0)
@@ -713,7 +713,7 @@ def demo() -> None:
     SelfCheckFailed
         If a word unpacks to the wrong corners, or an opcode has no operand length.
     """
-    # The loader forms each corner as ((word >> n) & 0x1F) * 2, so the halves must line up.
+    # The loader forms each corner as ((word >> n) & 0x1F) * 2, and the halves must line up.
     for word, expected in ((0x0000, (0, 0, 0)), (0x7FFF, (31, 31, 31)), (0x0421, (1, 1, 1)),
                            ((5 << 10) | (9 << 5) | 17, (5, 9, 17))):
         if _triangle(word) != expected:  # pragma: no cover
@@ -728,7 +728,7 @@ def demo() -> None:
             if opcode not in handled and opcode not in dialect.operands:  # pragma: no cover
                 msg = f'Opcode {opcode:#04x} has no operand length in the {dialect} table.'
                 raise SelfCheckFailed(msg)
-    print('xg1_level: triangle unpacking and operand table hold.')  # ruff: ignore[print]
+    print('xg1_level: triangle unpacking and operand table verified.')  # ruff: ignore[print]
 
 
 if __name__ == '__main__':
@@ -758,9 +758,9 @@ def read_bank_descriptors(bank: bytes) -> list[tuple[int, int, int]]:
     """
     Read the descriptor table at the front of a decompressed texture bank.
 
-    The loader indexes this table without a count, so its end is taken from the first record that
-    cannot describe an image. The palette offset in the header confirms where the table stops being
-    read: it equals the end of the last record's pixels.
+    The loader indexes this table without a count, and its end is therefore taken from the first
+    record that cannot describe an image. The palette offset in the header confirms where the table
+    stops being read. It equals the end of the last record's pixels.
 
     Parameters
     ----------
@@ -789,11 +789,11 @@ def read_texture_bank(rom: bytes, offset: int) -> list[Texture]:
     """
     Decode a shared texture bank, the source the bytecode's two bank opcodes draw from.
 
-    A bank sits behind its own decompressed size and is LZHUF-compressed. Expanded it is a word
-    holding the palette's offset, a word the loader never reads, then eight-byte records of a pixel
-    offset, a width, and a height. Every image is eight-bit colour indices against the one 256-entry
-    palette the header points at, which sits last and closes the bank exactly -- 33048 plus 512 is
-    the global bank's 33560 bytes, and 66080 plus 512 is the largest level bank's 66592.
+    A bank sits behind its decompressed size and is LZHUF-compressed. Expanded it is a word storing
+    the palette's offset, a word the loader never reads, then eight-byte records of a pixel offset,
+    a width, and a height. Every image is eight-bit colour indices against the one 256-entry
+    palette the header points at. That palette sits last and closes the bank exactly, 33048 plus
+    512 being the global bank's 33560 bytes and 66080 plus 512 the largest level bank's 66592.
 
     Parameters
     ----------
@@ -838,8 +838,8 @@ def decode_level_textures(rom: bytes, base: int, dialect: Dialect = XG1) -> list
     """
     Decode a level's textures out of its ``r2`` pool.
 
-    Each descriptor names its pixels and its palette as offsets into that pool. Format one is
-    eight-bit colour indices against a 256-entry palette, which is what the loader's own tile setup
+    Each descriptor states its pixels and its palette as offsets into that pool. Format one is
+    eight-bit colour indices against a 256-entry palette, matching what the loader's tile setup
     assumes and what the sizes bear out.
 
     Parameters
@@ -880,8 +880,8 @@ def decode_level_textures(rom: bytes, base: int, dialect: Dialect = XG1) -> list
             continue
         if entry.palette + entries * 2 > len(pool):
             continue
-        # The palette is RGBA5551 halfwords, so it follows the build's byte order. Reading the
-        # Windows tracks big-endian swaps every entry and leaves the colours washed out.
+        # The palette is RGBA5551 halfwords, following the build's byte order. Reading the Windows
+        # tracks big-endian swaps every entry and washes the colours out.
         palette = read_tlut(pool, entry.palette, entries, dialect.endian)
         seen.add(entry.pixels)
         out.append(

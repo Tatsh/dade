@@ -10,7 +10,7 @@ parser yields rubbish textures decoded out of table bytes:
 * a sub-archive of raw environment tiles, each exactly 64 by 32 direct-colour RGBA5551 texels,
   which is how track skyboxes are stored and why they never begin with ``0x05``.
 
-The walker is shared between the N64 and PC builds, which use the identical table layout in their
+The walker is shared between the N64 and PC builds, both using the identical table layout in their
 respective byte orders.
 """
 from __future__ import annotations

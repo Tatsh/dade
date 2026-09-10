@@ -3,12 +3,12 @@ The Nintendo 64 libaudio ``ALBankFile`` control bank, as shipped by both Extreme
 
 A control bank begins with the magic ``B1`` and describes a hierarchy of instruments, sounds, key
 maps, envelopes, and wave tables. The sample data itself lives in a separate table embedded after
-the structures, which is located by :py:func:`~dade.xg2.vadpcm.find_table_base`.
+the structures, located by :py:func:`~dade.xg2.vadpcm.find_table_base`.
 
 The hierarchy maps onto SoundFont concepts directly: an ``ALInstrument`` becomes a preset, an
 ``ALSound`` becomes an instrument zone, an ``ALWaveTable`` becomes a sample, and ``ALKeyMap`` and
 ``ALEnvelope`` supply the zone's ranges and volume envelope. The bank's separate percussion
-pointer is the channel-9 drum kit, which libaudio routes to without a program change.
+pointer is the channel-9 drum kit, routed to by libaudio without a program change.
 """
 from __future__ import annotations
 
@@ -169,8 +169,8 @@ def parse_bank(rom: bytes, control: int) -> ParsedBank | None:
     Returns
     -------
     dade.xg2.typing.ParsedBank | None
-        The parsed bank, or ``None`` when *control* does not hold a plausible bank or its sample
-        table could not be located.
+        The parsed bank, or ``None`` when *control* is not a plausible bank or its sample table
+        could not be located.
     """
     if rom[control:control + 2] != BANK_MAGIC:
         return None

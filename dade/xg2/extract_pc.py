@@ -1,13 +1,13 @@
 """
 Asset extraction for the Windows port of Extreme-G XG2.
 
-The PC port uses the same asset formats as the N64 game but little-endian, which byte-reverses the
-container codec tags and the 16-bit texel and palette data. The LZSS byte stream is identical, so
+The PC port uses the same asset formats as the N64 game but little-endian, byte-reversing the
+container codec tags and the 16-bit texel and palette data. The LZSS byte stream is identical, and
 the same decompressor serves both.
 
-The source tree under ``data1`` holds model containers in ``BULK/DATA``, uncompressed bike models
+The source tree under ``data1`` stores model containers in ``BULK/DATA``, uncompressed bike models
 in ``BIKES``, level containers in ``TRACKS``, loose palettised bitmaps at the root, and ordinary
-WAV sound effects in ``WAVS``. The output mirrors that layout: every container is written out
+WAV sound effects in ``WAVS``. The output mirrors that layout. Every container is written out
 decompressed, its textures are decoded to PNG beside it, bitmaps become PNG, and the sound effects
 are copied verbatim.
 """
@@ -136,7 +136,7 @@ def _process_directory(data1: Path, out: Path, subdirectory: str) -> tuple[int, 
         entries = _decode_file(data)
         if entries is not None:
             containers += 1
-            # A multi-entry archive gets its own directory; a single entry sits alongside.
+            # A multi-entry archive gets a separate directory; a single entry sits alongside.
             base = destination / stem if len(entries) > 1 else destination
             for index, blob in entries:
                 name = f'{index:03d}' if len(entries) > 1 else stem

@@ -1,14 +1,14 @@
 """
 Full asset extraction for Extreme-G (N64, USA).
 
-The game keeps its content in four places: the compressed boot and main code segment, a 50-file
-``mfs`` archive, a set of level containers holding LZHUF sub-blobs, and a master directory of
-small assets. With conversion enabled the texture banks are decoded to PNG and the audio banks to
-WAV, SoundFont, and MIDI.
+The game stores its content in four places: the compressed boot and main code segment, a 50-file
+``mfs`` archive, a set of level containers with LZHUF sub-blobs, and a master directory of small
+assets. With conversion enabled the texture banks are decoded to PNG and the audio banks to WAV,
+SoundFont, and MIDI.
 
-Level sub-blobs and texture banks are LZHUF-compressed, which :py:mod:`dade.xg2.lzhuf` does not
-implement. Those are written out as raw compressed slices instead so nothing is silently lost, and
-every skip is recorded in the run log.
+Level sub-blobs and texture banks are LZHUF-compressed, and :py:mod:`dade.xg2.lzhuf` does not
+implement that. Those are written out as raw compressed slices instead, losing nothing silently,
+and every skip is recorded in the run log.
 """
 from __future__ import annotations
 
@@ -126,7 +126,7 @@ def _extract_levels(rom: bytes, out: Path, run_log: RunLog) -> tuple[int, int]:
                 (level_dir / f'{name}.bin').write_bytes(decompress_lzhuf(rom, source, size))
                 written += 1
             except LzhufError as e:
-                # Keep the compressed slice so a truncated stream can still be inspected.
+                # Retain the compressed slice, letting a truncated stream still be inspected.
                 following = bases[index + 1] if base != bases[-1] else len(rom)
                 (level_dir / f'{name}.lzhuf.raw').write_bytes(
                     rom[source:min(source + size, following)])
@@ -154,7 +154,7 @@ def _extract_texture_banks(rom: bytes, out: Path, run_log: RunLog) -> int:
     directory.mkdir(parents=True, exist_ok=True)
     total = 0
     for offset, name in sorted(xg1_texture_banks(rom).items()):
-        # A size this far out means the pointer is not a bank at all, which is not worth reporting.
+        # A size this far out means the pointer is not a bank at all, and is not worth reporting.
         if not 0 < read_u32(rom, offset) < _MAX_BANK_SIZE:
             continue
         total += _write_texture_bank(rom, offset, directory / name, name, run_log)
@@ -273,8 +273,8 @@ def _extract_audio(rom: bytes, out: Path, run_log: RunLog) -> int:
             banks.append((control, count))
             written += count
     if banks:
-        # The bank with the most sounds is the melodic one; the smaller is the effects bank, which
-        # is passed only as a fallback for a bank without its own percussion pointer.
+        # The bank with the most sounds is the melodic one; the smaller is the effects bank, passed
+        # only as a fallback for a bank with no percussion pointer.
         melodic = max(banks, key=operator.itemgetter(1))[0]
         drums = (min(banks, key=operator.itemgetter(1))[0]
                  if len(banks) >= _MIN_BANKS_FOR_FALLBACK else None)

@@ -5,20 +5,20 @@ This is the Okumura and Yoshizaki ``LZHUF`` lineage: LZSS matches over a 4096-by
 with both the literal/length alphabet and the match offsets entropy-coded. The two halves are coded
 very differently, and that asymmetry is the whole format:
 
-* literals and match lengths share one alphabet of 314 symbols carried by an **adaptive** Huffman
-  tree, rebuilt as it decodes, so the decoder has to run the same tree updates the encoder did and
-  cannot skip ahead;
+* literals and match lengths share one alphabet of 314 symbols under an **adaptive** Huffman tree,
+  rebuilt as it decodes. The decoder has to run the same tree updates the encoder did and cannot
+  skip ahead;
 * a match offset is coded by a **static** table instead. Its top six bits come from a byte looked up
-  in :py:data:`POSITION_CODES`, that byte's entry in :py:data:`POSITION_LENGTHS` says how many bits
-  of it were real, and the low six bits follow raw.
+  in :py:data:`POSITION_CODES`, that byte's entry in :py:data:`POSITION_LENGTHS` states how many
+  bits of it were real, and the low six bits follow raw.
 
-Extreme-G's variant differs from stock LZHUF in two ways, both of which the game's own
-decompressor at ``FUN_80057698`` shows: the ring buffer is zero-filled rather than space-filled,
-and the decompressed size comes from the archive header rather than a 32-bit prefix on the stream.
+Extreme-G's variant differs from stock LZHUF in two ways, both shown by the game's decompressor at
+``FUN_80057698``. The ring buffer is zero-filled rather than space-filled, and the decompressed size
+comes from the archive header rather than a 32-bit prefix on the stream.
 
-A wrong table or an off-by-one in the tree update does not fail loudly -- it desynchronises and
+A wrong table or an off-by-one in the tree update does not fail loudly. It desynchronises and
 produces plausible-looking rubbish. :py:func:`dade.xg2.lzhuf.demo` guards against that by decoding
-a stream this module compresses nothing for, so the check is on the algorithm rather than on a
+a stream this module compresses nothing for, putting the check on the algorithm rather than on a
 fixture.
 """
 from __future__ import annotations
@@ -39,7 +39,7 @@ LOOKAHEAD = 60
 :meta hide-value:
 """
 THRESHOLD = 2
-"""Shortest match worth coding, which biases every coded length.
+"""Shortest match worth coding, biasing every coded length.
 
 :meta hide-value:
 """
@@ -54,7 +54,7 @@ _BITS_PER_BYTE = 8
 _POSITION_BITS = 6
 _POSITION_MASK = (1 << _POSITION_BITS) - 1
 # Runs of the static offset table as (codes, repeats, code length). Each run halves how many byte
-# values share a code and adds a bit to its length, so a near match costs three bits and a distant
+# values share a code and adds a bit to its length, making a near match three bits and a distant
 # one eight.
 _POSITION_RUNS = ((1, 32, 3), (3, 16, 4), (8, 8, 5), (12, 4, 6), (24, 2, 7), (16, 1, 8))
 
@@ -97,8 +97,8 @@ def _start_tree() -> tuple[list[int], list[int], list[int]]:
     """
     Build the initial adaptive Huffman tree, in which every symbol has frequency one.
 
-    The tree is held as three flat arrays rather than nodes: ``freq`` weights, ``son`` left
-    children (a value at or above the table size marks a leaf and names its symbol), and ``prnt``
+    The tree is stored as three flat arrays rather than nodes: ``freq`` weights, ``son`` left
+    children (a value at or above the table size marks a leaf and gives its symbol), and ``prnt``
     parents, whose upper region doubles as the symbol-to-leaf index.
 
     Returns
@@ -126,10 +126,10 @@ def _start_tree() -> tuple[list[int], list[int], list[int]]:
 
 def _rebuild(freq: list[int], prnt: list[int], son: list[int]) -> None:
     """
-    Halve every frequency and rebuild the tree, which the encoder does at the same point.
+    Halve every frequency and rebuild the tree, as the encoder does at the same point.
 
-    Halving keeps the counts bounded without losing their ordering, so the tree stays close to the
-    one the recent symbols justify rather than being reset to uniform.
+    Halving bounds the counts without losing their ordering, and the tree therefore stays close to
+    the one the recent symbols justify rather than being reset to uniform.
 
     Parameters
     ----------
@@ -187,8 +187,8 @@ def _update(symbol: int, freq: list[int], prnt: list[int], son: list[int]) -> No
     while True:
         freq[node] += 1
         weight = freq[node]
-        # The array is kept sorted by weight, so a node that overtakes its neighbour swaps with the
-        # last node it now outweighs, taking its subtree along.
+        # The array stays sorted by weight, and a node that overtakes its neighbour therefore swaps
+        # with the last node it now outweighs, taking its subtree along.
         if weight > freq[node + 1]:
             ahead = node + 2
             while weight > freq[ahead]:
@@ -219,13 +219,13 @@ def decompress_lzhuf(data: bytes, start: int, decompressed_size: int, *, fill: i
     Parameters
     ----------
     data : bytes
-        Buffer holding the compressed stream.
+        Buffer with the compressed stream.
     start : int
         Offset of the stream within *data*.
     decompressed_size : int
-        Number of bytes the stream decodes to, which the format does not record.
+        Number of bytes the stream decodes to, absent from the format itself.
     fill : int
-        Byte the ring buffer starts out holding. Extreme-G uses zero; stock LZHUF uses ``0x20``.
+        Byte the ring buffer starts out filled with. Extreme-G uses zero; stock LZHUF uses ``0x20``.
 
     Returns
     -------
@@ -242,8 +242,8 @@ def decompress_lzhuf(data: bytes, start: int, decompressed_size: int, *, fill: i
     ring = bytearray((fill,)) * RING_SIZE
     cursor = RING_SIZE - LOOKAHEAD
     codes, lengths = POSITION_CODES, POSITION_LENGTHS
-    # The bit reader is inlined throughout: `bits` holds the unconsumed high bits of `held` and the
-    # tree walk below asks for one bit at a time, so a helper call here doubles the decode time.
+    # The bit reader is inlined throughout. `bits` counts the unconsumed high bits of `held`, and
+    # the tree walk below takes one bit at a time, where a helper call would double the decode time.
     at, end = start, len(data)
     held = bits = 0
     while len(out) < decompressed_size:
@@ -262,7 +262,7 @@ def decompress_lzhuf(data: bytes, start: int, decompressed_size: int, *, fill: i
             ring[cursor] = symbol
             cursor = (cursor + 1) & _RING_MASK
             continue
-        # A match: its length was coded in the same alphabet, biased past the literals, and its
+        # A match. Its length was coded in the same alphabet, biased past the literals, and its
         # offset follows in the static code.
         length = symbol - (_LITERALS - 1) + THRESHOLD
         while bits < _BITS_PER_BYTE:
@@ -296,13 +296,13 @@ def demo() -> None:
     Raises
     ------
     SelfCheckFailed
-        If a table or the adaptive tree does not hold to its invariant.
+        If a table or the adaptive tree breaks its invariant.
     """
     if len(POSITION_CODES) != _LITERALS:
-        msg = f'Position code table holds {len(POSITION_CODES)} entries, expected {_LITERALS}.'
+        msg = f'Position code table has {len(POSITION_CODES)} entries, expected {_LITERALS}.'
         raise SelfCheckFailed(msg)
     if len(POSITION_LENGTHS) != _LITERALS:
-        msg = f'Position length table holds {len(POSITION_LENGTHS)} entries, expected {_LITERALS}.'
+        msg = f'Position length table has {len(POSITION_LENGTHS)} entries, expected {_LITERALS}.'
         raise SelfCheckFailed(msg)
     if POSITION_CODES[0] != 0:
         msg = f'First position code is {POSITION_CODES[0]}, expected zero.'
@@ -328,16 +328,16 @@ def demo() -> None:
     for symbol in (0, 255, _SYMBOLS - 1):
         owner = son[prnt[symbol + _TABLE_SIZE]]
         if owner not in {symbol + _TABLE_SIZE, symbol + _TABLE_SIZE - 1}:  # pragma: no cover
-            msg = f'Symbol {symbol} is not a child of its own parent.'
+            msg = f'Symbol {symbol} is not a child of its parent.'
             raise SelfCheckFailed(msg)
-    # Weighting one symbol repeatedly must keep the array sorted by frequency and must survive the
+    # Weighting one symbol repeatedly must retain the frequency ordering and must survive the
     # rebuild that halving triggers.
     for _ in range(_MAX_FREQ):
         _update(65, freq, prnt, son)
     if not all(freq[i] <= freq[i + 1] for i in range(_TABLE_SIZE - 1)):  # pragma: no cover
         msg = 'The adaptive tree is no longer sorted by frequency after rebuilding.'
         raise SelfCheckFailed(msg)
-    # An empty stream cannot satisfy a non-zero size and must say so rather than loop.
+    # An empty stream cannot satisfy a non-zero size and must report that rather than loop.
     try:
         decompress_lzhuf(b'', 0, 1)
     except LzhufError:
@@ -345,7 +345,7 @@ def demo() -> None:
     else:  # pragma: no cover
         msg = 'An empty stream decoded without raising, but it cannot satisfy a non-zero size.'
         raise SelfCheckFailed(msg)
-    print('lzhuf: tables and tree bookkeeping hold.')  # ruff: ignore[print]
+    print('lzhuf: tables and tree bookkeeping verified.')  # ruff: ignore[print]
 
 
 if __name__ == '__main__':

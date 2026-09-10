@@ -44,7 +44,7 @@ class MfsEntry(NamedTuple):
     compressed_size: int
     """Size of the file as stored."""
     end_offset: int
-    """Cumulative end offset, which doubles as the next file's start offset."""
+    """Cumulative end offset, doubling as the next file's start offset."""
 
 
 class Texture(NamedTuple):
@@ -105,7 +105,7 @@ class ParsedBank(TypedDict):
     instruments: list[list[SoundZone]]
     """Melodic instruments, each a list of zones, indexed by program number."""
     percussion: list[SoundZone]
-    """Zones of the channel-9 drum kit, which may be empty."""
+    """Zones of the channel-9 drum kit, possibly empty."""
     samples: list[list[int]]
     """Decoded 16-bit PCM for every sound referenced by the bank."""
 

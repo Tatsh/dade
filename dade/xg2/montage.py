@@ -1,9 +1,9 @@
 """
 Contact sheets for reviewing decoded textures.
 
-The display-list and descriptor walkers infer dimensions the hardware never stored, so a mis-parse
-shows up as a striped or skewed image rather than an error. Tiling every texture into one sheet
-makes those obvious at a glance, which is what these sheets are for.
+The display-list and descriptor walkers infer dimensions the hardware never stored, and a mis-parse
+therefore shows up as a striped or skewed image rather than an error. Tiling every texture into one
+sheet makes those obvious at a glance.
 
 Each texture is fitted into a fixed cell with nearest-neighbour sampling, never enlarged, and
 composited over a checkerboard so transparent regions stay visible.
@@ -99,7 +99,7 @@ def build_index(textures: Sequence[Texture],
     labels : collections.abc.Sequence[str]
         A source label per texture.
     columns : int
-        Number of cells per row, which must match the sheet.
+        Number of cells per row, required to match the sheet.
 
     Returns
     -------

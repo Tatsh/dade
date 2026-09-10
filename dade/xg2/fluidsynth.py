@@ -28,7 +28,7 @@ def find_fluidsynth(override: Path | None = None) -> str | None:
     Parameters
     ----------
     override : pathlib.Path | None
-        An explicit path supplied by the caller, which is used as-is when given.
+        An explicit path supplied by the caller, used as-is when given.
 
     Returns
     -------
@@ -47,7 +47,7 @@ def render_directory(directory: Path, soundfont: Path, override: Path | None = N
     Parameters
     ----------
     directory : pathlib.Path
-        Directory holding the ``.mid`` files.
+        Directory with the ``.mid`` files.
     soundfont : pathlib.Path
         SoundFont to play them through.
     override : pathlib.Path | None

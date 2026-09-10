@@ -1,13 +1,13 @@
 """
 Texture and image decoders shared by the N64 and PC builds.
 
-Both platforms use the same three pixel formats -- 4- and 8-bit colour-indexed against a shared
-RGBA5551 palette, and direct RGBA5551 -- and differ only in the byte order of their 16-bit values.
-Every decoder here therefore takes a :py:data:`~dade.xg2.typing.Endian` character, so one
+Both platforms use the same three pixel formats (4- and 8-bit colour-indexed against a shared
+RGBA5551 palette, and direct RGBA5551) and differ only in the byte order of their 16-bit values.
+Every decoder here therefore takes a :py:data:`~dade.xg2.typing.Endian` character, and one
 implementation serves both.
 
-Rows may be padded: the N64 pads each row of a tile to a 64-bit boundary, so the stride can exceed
-the visible width. Callers pass the stride in bytes explicitly.
+Rows may be padded. The N64 pads each row of a tile to a 64-bit boundary, and the stride can
+therefore exceed the visible width. Callers pass the stride in bytes explicitly.
 """
 from __future__ import annotations
 
@@ -64,7 +64,7 @@ def read_tlut(data: bytes, offset: int, count: int, endian: Endian = '>') -> lis
     Parameters
     ----------
     data : bytes
-        Buffer holding the palette.
+        Buffer with the palette.
     offset : int
         Offset of the first entry.
     count : int
@@ -91,7 +91,7 @@ def decode_ci(data: bytes, offset: int, width: int, height: int, tlut: Sequence[
     Parameters
     ----------
     data : bytes
-        Buffer holding the pixel data.
+        Buffer with the pixel data.
     offset : int
         Offset of the first row.
     width : int
@@ -103,7 +103,7 @@ def decode_ci(data: bytes, offset: int, width: int, height: int, tlut: Sequence[
     bpp : int
         Bits per pixel, either 4 or 8. At 4bpp the high nibble is the left-hand pixel.
     stride : int
-        Bytes per source row, which may exceed the visible width.
+        Bytes per source row, possibly exceeding the visible width.
 
     Returns
     -------
@@ -140,7 +140,7 @@ def decode_rgba16(data: bytes,
     Parameters
     ----------
     data : bytes
-        Buffer holding the pixel data.
+        Buffer with the pixel data.
     offset : int
         Offset of the first row.
     width : int
@@ -148,14 +148,14 @@ def decode_rgba16(data: bytes,
     height : int
         Height in pixels.
     stride : int
-        Bytes per source row, which may exceed twice the visible width.
+        Bytes per source row, possibly exceeding twice the visible width.
     endian : dade.xg2.typing.Endian
         Byte order of the 16-bit texels.
 
     Returns
     -------
     bytes
-        Pixel data, four bytes per pixel. Texels past the end of *data* are left transparent.
+        Pixel data, four bytes per pixel. Texels past the end of *data* come out transparent.
     """
     out = bytearray(width * height * 4)
     for y in range(height):
@@ -175,7 +175,7 @@ def decode_i8(data: bytes, width: int, height: int) -> bytes:
     Parameters
     ----------
     data : bytes
-        Buffer holding exactly the pixel data.
+        Buffer with exactly the pixel data.
     width : int
         Width in pixels.
     height : int
@@ -215,8 +215,8 @@ def bmp_to_png(source: Path, destination: Path) -> bool:
     """
     Convert an 8-bit palettised Windows bitmap to PNG.
 
-    Only the 8-bit colour-indexed bitmaps the PC port ships are handled; anything else is left
-    alone so the caller can copy it verbatim.
+    Only the 8-bit colour-indexed bitmaps the PC port ships are handled. Anything else is returned
+    unchanged for the caller to copy verbatim.
 
     Parameters
     ----------

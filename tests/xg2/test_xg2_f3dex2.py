@@ -89,7 +89,7 @@ def test_demo_holds() -> None:
 
 def test_module_entry_point_runs(capsys: pytest.CaptureFixture[str]) -> None:
     runpy.run_path(_MODULE_PATH, run_name='__main__')
-    assert 'command decoding holds' in capsys.readouterr().out
+    assert 'command decoding verified' in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(('meshes', 'match'), [

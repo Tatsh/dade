@@ -1,12 +1,12 @@
 """
 Geometry extraction from F3DEX2 display lists.
 
-The Extreme-G XG2 builds, on both the N64 and the PC, keep a model as a table of segment-5 display
-list pointers followed by the command stream those point into. The microcode is F3DEX2, which the
-data says plainly: the end marker is ``G_ENDDL`` (``0xDF``) rather than F3D's ``0xB8``, vertices
+The Extreme-G XG2 builds, on both the N64 and the PC, store a model as a table of segment-5 display
+list pointers followed by the command stream those point into. The microcode is F3DEX2, and the
+data shows it plainly. The end marker is ``G_ENDDL`` (``0xDF``) rather than F3D's ``0xB8``, vertices
 load with ``0x01`` rather than ``0x04``, and a ``G_TRI2`` such as ``06000204 00040600`` decodes as
-the triangles ``(0, 1, 2)`` and ``(2, 3, 0)`` -- a quad split the obvious way, which a wrong
-microcode guess would not produce.
+the triangles ``(0, 1, 2)`` and ``(2, 3, 0)``, a quad split the obvious way that a wrong microcode
+guess would not produce.
 
 Only the commands that affect geometry are interpreted. Everything about how a surface is shaded
 beyond which image it samples (the combiner, the blender, fog, and lighting) is skipped. None of it
@@ -133,8 +133,8 @@ class Mesh(NamedTuple):
     """Pixel offset of the image, matching :py:attr:`dade.xg2.typing.Texture.offset`, or
     :py:obj:`None` for triangles drawn before any image was set."""
     lit: bool
-    """Whether ``G_LIGHTING`` was on, which decides what the vertices' four colour bytes hold: a
-    packed normal when it is, a vertex colour when it is not."""
+    """Whether ``G_LIGHTING`` was on, deciding what the vertices' four colour bytes store, a packed
+    normal when it is and a vertex colour when it is not."""
     vertices: list[Vertex]
     """The vertices the triangles index."""
     triangles: list[tuple[int, int, int]]
@@ -145,8 +145,8 @@ class VertexBuffer:
     """
     The microcode's 32-slot vertex buffer, plus the flattened output built as triangles arrive.
 
-    A display list reloads slots constantly, so a slot index means nothing outside the moment it is
-    referenced. Every corner is therefore copied into a per-image output list as its triangle is
+    A display list reloads slots constantly, and a slot index therefore means nothing outside the
+    moment it is referenced. Every corner is copied into a per-image output list as its triangle is
     read, and identical corners are folded together so the result is indexed rather than a soup of
     loose triangles.
     """
@@ -191,8 +191,8 @@ class VertexBuffer:
         """
         Record one triangle drawn with the current image.
 
-        A corner naming an empty slot means the display list drew before loading, which is a
-        mis-parse rather than something the game does, so the triangle is dropped.
+        A corner referencing an empty slot means the display list drew before loading. That is a
+        mis-parse rather than a behaviour of the game, and the triangle is dropped.
 
         Parameters
         ----------
@@ -205,8 +205,8 @@ class VertexBuffer:
         tint : tuple[int, int, int] | None
             Primitive colour to fold into the vertex colours, for a combiner that multiplies the
             primitive colour by the shade rather than sampling a texture. The product is stored on
-            the vertices so the result needs no material of its own, and alpha goes opaque because
-            that combiner forces it to one.
+            the vertices, letting the result need no separate material, and alpha goes opaque
+            because that combiner forces it to one.
 
         Raises
         ------
@@ -258,12 +258,12 @@ def _entry_points(data: bytes, endian: Endian) -> list[int]:
     """
     Read the table of display list pointers a flat model begins with.
 
-    The table is not counted, and its entries are in no particular order: the PC models list
-    theirs starting at ``0x6BA4`` when the smallest is ``0x20``. What bounds the table is the
-    *lowest* address it points at, because the command stream begins immediately after it. Reading
-    the first entry as the end works on most N64 models by luck and truncates the rest.
+    The table is not counted, and its entries are in no particular order. The PC models list theirs
+    starting at ``0x6BA4`` when the smallest is ``0x20``. The *lowest* address it points at bounds
+    the table, the command stream beginning immediately after it. Reading the first entry as the end
+    works on most N64 models by luck and truncates the rest.
 
-    A zero word is a hole in the table rather than the end of it, so it is stepped over.
+    A zero word is a hole in the table rather than the end of it, and it is stepped over.
 
     Parameters
     ----------
@@ -326,8 +326,8 @@ def _commands(data: bytes, start: int, endian: Endian) -> Iterator[tuple[int, in
                 target = w1 & 0xFFFFFF
                 if (w1 >> 24) != _SEGMENT_5 or not 0 < target < len(data):
                     break
-                # The low bit of the parameter byte distinguishes a call, which returns here, from
-                # a branch, which does not.
+                # The low bit of the parameter byte distinguishes a call, returning here, from a
+                # branch, returning nowhere.
                 if not (w0 >> 16) & _NO_PUSH:
                     if len(stack) >= _MAX_DEPTH:
                         break
@@ -341,10 +341,10 @@ def _is_pc_display_list(data: bytes, start: int) -> bool:
     """
     Report whether a table entry leads to a display list rather than to data.
 
-    A PC model's table mixes the two: of one bike's eight entries, one leads to the command stream
+    A PC model's table mixes the two. Of one bike's eight entries, one leads to the command stream
     and the rest to vertices, coordinates, and images. Walking a data region as commands does not
-    fail; it invents them -- one bike appeared to want a 15 MB vertex bank when the file holds 32 KB
-    -- so an entry is only walked once it looks like code.
+    fail; it invents them, one bike appearing to want a 15 MB vertex bank when the file is 32 KB. An
+    entry is therefore only walked once it looks like code.
 
     Parameters
     ----------
@@ -368,7 +368,7 @@ def _is_pc_display_list(data: bytes, start: int) -> bool:
             break
         op = data[at + 3]
         if skip:
-            # The word after the texture marker's palette holds dimensions, whose top byte is not
+            # The word after the texture marker's palette stores dimensions, whose top byte is not
             # an opcode at all.
             skip = False
             continue
@@ -386,24 +386,25 @@ def parse_pc_display_lists(data: bytes, vertices: bytes) -> list[Mesh]:
     """
     Decode every triangle a PC model draws.
 
-    The Windows port kept the console's display lists but swapped three things: vertices load with
-    F3DEX's ``0x04`` rather than F3DEX2's ``0x01``, triangle pairs come as ``0xB1`` rather than
+    The Windows port retained the console's display lists but swapped three details. Vertices load
+    with F3DEX's ``0x04`` rather than F3DEX2's ``0x01``, triangle pairs come as ``0xB1`` rather than
     ``0x06``, and the whole texture-setup sequence collapses into the four-word ``0xAC`` descriptor
     that :py:func:`dade.xg2.displaylist.parse_pc_descriptors` reads.
 
     The vertices themselves are not in the model. They live in a separate bank addressed through
-    segment 8, which is why *vertices* is a second buffer rather than a slice of *data*.
+    segment 8, and *vertices* is therefore a second buffer rather than a slice of *data*.
 
-    The field layout is taken from the port's own interpreter, ``MakeMatN64`` at ``0x0040BF10`` in
-    ``xg2pc.exe``, not inferred. It byte-swaps the first word before doing anything with it, so a
-    command word is read big-endian here and the opcode is its low byte. The vertex handler at
+    The field layout is taken from the port's interpreter, ``MakeMatN64`` at ``0x0040BF10`` in
+    ``xg2pc.exe``, rather than inferred. It byte-swaps the first word before doing anything with it,
+    and a command word is therefore read big-endian here with the opcode in its low byte. The vertex
+    handler at
     ``0x0040C5E9`` then does ``SHR EAX,0x12 / AND EAX,0x3F`` for the count and
     ``SHR ECX,0x9 / AND ECX,0x7F`` for the first slot.
 
     Parameters
     ----------
     data : bytes
-        The model blob, holding the display lists and the textures.
+        The model blob, with the display lists and the textures.
     vertices : bytes
         The vertex bank segment 8 addresses.
 
@@ -420,8 +421,8 @@ def parse_pc_display_lists(data: bytes, vertices: bytes) -> list[Mesh]:
             continue
         for op, w0, w1 in _commands(data, start, '<'):
             if expecting:
-                # The word after the marker and its palette holds the dimensions, and the one after
-                # that the pixels, which is the key a decoded texture is reported under.
+                # The word after the marker and its palette stores the dimensions, and the one after
+                # that the pixels, the key a decoded texture is reported under.
                 expecting = False
                 texture = w1 & 0xFFFFFF if (w1 >> 24) == _SEGMENT_5 else None
                 continue
@@ -469,7 +470,7 @@ def parse_display_lists(data: bytes, endian: Endian = '>') -> list[Mesh]:
                 if (w1 >> 24) == _SEGMENT_5:
                     buffer.load(data, w1 & 0xFFFFFF, count, first, endian)
             elif op == _G_GEOMETRYMODE:
-                # The first word carries the bits to keep, already inverted, and the second the
+                # The first word states the bits to retain, already inverted, and the second the
                 # bits to set.
                 mode = (mode & (w0 & 0xFFFFFF)) | w1
             elif op == _G_TRI1:
@@ -480,7 +481,7 @@ def parse_display_lists(data: bytes, endian: Endian = '>') -> list[Mesh]:
             elif op == _G_SETTIMG:
                 pending = (w1 & 0xFFFFFF) if (w1 >> 24) == _SEGMENT_5 else None
             elif op == _G_LOADTLUT:
-                # That image was a palette rather than pixels, so it does not name the surface.
+                # That image was a palette rather than pixels, and it does not identify the surface.
                 pending = None
             elif op == _G_SETTILE and pending is not None:
                 texture = pending
@@ -491,13 +492,12 @@ def _corners(word: int) -> tuple[int, int, int]:
     """
     Read the three slot indices packed into a triangle command word.
 
-    Every index is stored doubled, because the microcode uses it as a byte offset into the vertex
-    buffer.
+    Every index is stored doubled. The microcode uses it as a byte offset into the vertex buffer.
 
     Parameters
     ----------
     word : int
-        The command word holding the corners.
+        The command word with the corners.
 
     Returns
     -------
@@ -520,7 +520,7 @@ def texcoords(vertex: Vertex, width: int, height: int, scale: float = 1.0) -> tu
     height : int
         Height of the image in pixels.
     scale : float
-        Extra factor from ``G_TEXTURE``, which is one in every model seen so far.
+        Extra factor from ``G_TEXTURE``, one in every model seen so far.
 
     Returns
     -------
@@ -539,9 +539,9 @@ def demo() -> None:
     Raises
     ------
     SelfCheckFailed
-        If a command decodes to something other than what the encoding dictates.
+        If a command decodes to a value other than what the encoding dictates.
     """
-    # G_TRI2 06000204 00040600 must give (0, 1, 2) and (2, 3, 0): the two halves of a quad.
+    # G_TRI2 06000204 00040600 must give (0, 1, 2) and (2, 3, 0), the two halves of a quad.
     if _corners(0x06000204) != (0, 1, 2):  # pragma: no cover
         msg = f'First half of the quad unpacked to {_corners(0x06000204)}, expected (0, 1, 2).'
         raise SelfCheckFailed(msg)
@@ -549,7 +549,7 @@ def demo() -> None:
         msg = (f'Second half of the quad unpacked to {_corners(0x00040600 | 0x06000000)}, '
                'expected (2, 3, 0).')
         raise SelfCheckFailed(msg)
-    # G_VTX 0100F01E loads 15 vertices ending at slot 15, so it starts at slot 0.
+    # G_VTX 0100F01E loads 15 vertices ending at slot 15, and therefore starts at slot 0.
     w0 = 0x0100F01E
     count = (w0 >> 12) & 0xFF
     if count != _DEMO_COUNT:  # pragma: no cover
@@ -560,7 +560,7 @@ def demo() -> None:
         raise SelfCheckFailed(msg)
 
     header = struct.pack('>2I', 0x05000008, 0)
-    # S and T are 10.5 fixed point, so one full wrap of a 32-pixel image is 32 * 32.
+    # S and T are 10.5 fixed point, making one full wrap of a 32-pixel image 32 * 32.
     vertices = b''.join(
         struct.pack('>3hH2h4B', x, y, 0, 0, x * 32 * 32, y * 32 * 32, 255, 255, 255, 255)
         for x, y in ((0, 0), (1, 0), (1, 1), (0, 1)))
@@ -599,7 +599,7 @@ def demo() -> None:
     if parse_display_lists(header + struct.pack('>2I', 0xDE000000, 0x05FFFFFF)):
         msg = 'A branch past the end of the data was followed instead of ending the list.'
         raise SelfCheckFailed(msg)
-    print('f3dex2: command decoding holds.')  # ruff: ignore[print]
+    print('f3dex2: command decoding verified.')  # ruff: ignore[print]
 
 
 if __name__ == '__main__':

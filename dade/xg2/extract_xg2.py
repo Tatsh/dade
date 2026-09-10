@@ -1,15 +1,15 @@
 """
 Full asset extraction for Extreme-G XG2 (N64, USA).
 
-XG2 keeps almost everything in ``XG2Arch`` containers. The ``mfs`` archive holds named sound
-effects and resource directories, a separate container holds the music sequences uncompressed, and
+XG2 stores almost everything in ``XG2Arch`` containers. The ``mfs`` archive includes titled sound
+effects and resource directories, a separate container stores the music sequences uncompressed, and
 the master resource table indexes the model archives where most of the game's textures live. Level
 containers are written out raw, as their internal layout has not been reversed.
 
-The music is sequenced rather than streamed, in the same ``ALCSeq`` format the first game uses, so
-the same converter handles both. XG2 is not General MIDI: it uses channel 10 as an ordinary bass
-part, which a General MIDI player would force to percussion, so that channel is moved aside when a
-free one exists.
+The music is sequenced rather than streamed, in the same ``ALCSeq`` format the first game uses, and
+the same converter handles both. XG2 is not General MIDI. It uses channel 10 as an ordinary bass
+part. A General MIDI player would force that channel to percussion, and it is therefore moved aside
+when a free one exists.
 """
 from __future__ import annotations
 

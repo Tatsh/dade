@@ -120,7 +120,7 @@ def test_demo_holds() -> None:
 
 def test_module_entry_point_runs(capsys: pytest.CaptureFixture[str]) -> None:
     runpy.run_module('dade.xg2.xg1_level', run_name='__main__')
-    assert 'triangle unpacking and operand table hold' in capsys.readouterr().out
+    assert 'triangle unpacking and operand table verified' in capsys.readouterr().out
 
 
 def test_read_textures_ignores_an_out_of_range_count() -> None:

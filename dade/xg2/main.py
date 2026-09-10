@@ -127,8 +127,8 @@ def extract_xg1(rom: Path, out: Path, *, convert: bool = False) -> None:
     Extract every Extreme-G (N64) asset from ROM into OUT.
 
     The boot segment, the mfs archive, the level containers, and the master directory are always
-    written. Level sub-blobs and texture banks are LZHUF-compressed, which is not implemented, so
-    those are written out as raw compressed slices and noted in OUT/extract.log.
+    written. Level sub-blobs and texture banks are LZHUF-compressed, and that is not implemented
+    here. Those are written out as raw compressed slices and noted in OUT/extract.log.
     """
     counts = run_xg1(_read_rom(rom, XG1_GAME_CODE), out, convert=convert)
     click.echo(f'boot: {counts["boot"]}, mfs: {counts["mfs"]}, '
@@ -156,7 +156,7 @@ def extract_xg2(rom: Path,
     """
     Extract every Extreme-G XG2 (N64) asset from ROM into OUT.
 
-    The ``mfs`` archive's ``BMC`` entries are skeletal motion clips rather than sound effects, so
+    The ``mfs`` archive's ``BMC`` entries are skeletal motion clips rather than sound effects, and
     they are written out as they are and described in the manifest. With --convert the sequences
     are also rendered to WAV when FluidSynth is available.
     """
@@ -204,7 +204,7 @@ def unpack_xg1_rom(rom: Path, out: Path, *, prefix: str = 'extreme-g') -> None:
     Write the raw Extreme-G (N64) boot images and mfs files from ROM into OUT.
 
     Alongside the decompressed boot segment and a RAM image, an extended ROM is written with the
-    segment placed at the offset it runs from, so a disassembler can see the main code.
+    segment placed at the offset it runs from, letting a disassembler see the main code.
     """
     counts = unpack_xg1(_read_rom(rom, XG1_GAME_CODE), out, prefix)
     click.echo(f'boot images: 3, mfs files: {counts["files"]} ({counts["bytes"]} bytes)')
@@ -238,7 +238,7 @@ def unpack_xg2_rom(rom: Path, out: Path, *, prefix: str = 'extreme-g-2') -> None
               type=click.Choice(('xg', 'generic')),
               default='xg',
               show_default=True,
-              help='Keep the game drum keys, or remap them onto General MIDI percussion.')
+              help='Retain the game drum keys, or remap them onto General MIDI percussion.')
 @click.option('-p',
               '--drum-program',
               type=click.IntRange(0, 127),
@@ -249,9 +249,9 @@ def convert_midi(midi: Path, out: Path, *, mode: str = 'xg', drum_program: int =
     """
     Add XG initialisation to the standard MIDI file MIDI and write it to OUT.
 
-    In xg mode the note numbers are left alone, which is faithful to the game but needs its
-    SoundFont to sound right. In generic mode the drum notes are remapped onto General MIDI
-    percussion so the result plays recognisably on any device.
+    In xg mode the note numbers are unchanged, faithful to the game but needing its SoundFont to
+    sound right. In generic mode the drum notes are remapped onto General MIDI percussion, and the
+    result plays recognisably on any device.
     """
     converted = to_xg(midi.read_bytes(),
                       drum_map=GM_DRUM_MAP if mode == 'generic' else None,
@@ -307,7 +307,7 @@ def make_sf2(rom: Path,
 
 def _write_glbs(blobs: Iterable[tuple[str, bytes]], out: Path, endian: Endian) -> tuple[int, int]:
     """
-    Convert every model in a set of archive entries to its own ``.glb``.
+    Convert every model in a set of archive entries to a separate ``.glb``.
 
     Parameters
     ----------
@@ -339,7 +339,7 @@ def _write_glbs(blobs: Iterable[tuple[str, bytes]], out: Path, endian: Endian) -
 
 def _write_montage(textures: list[Texture], labels: list[str], out: Path, index_path: Path | None,
                    cell: int, columns: int) -> None:
-    """Render a contact sheet and, when asked, the index mapping cells back to their sources."""
+    """Render a contact sheet and, when requested, the index mapping cells to their sources."""
     width, height, rgba = build_montage(textures, cell, columns)
     write_png(out, width, height, rgba)
     if index_path is not None:
@@ -349,7 +349,7 @@ def _write_montage(textures: list[Texture], labels: list[str], out: Path, index_
 
 def _write_levels(image: bytes, bases: list[int], out: Path, dialect: Dialect) -> tuple[int, int]:
     """
-    Convert every level container to its own ``.glb``.
+    Convert every level container to a separate ``.glb``.
 
     Parameters
     ----------
@@ -368,12 +368,12 @@ def _write_levels(image: bytes, bases: list[int], out: Path, dialect: Dialect) -
         Files written, and containers that drew nothing.
     """
     out.mkdir(parents=True, exist_ok=True)
-    # The objects a track places are drawn from a second code segment every level shares, so it is
-    # decompressed once. Only Extreme-G has it; XG2 keeps its objects elsewhere.
+    # The objects a track places are drawn from a second code segment every level shares, and it is
+    # therefore decompressed once. Only Extreme-G has it; XG2 stores its objects elsewhere.
     segment = read_code_segment(image) if dialect.region_fields else b''
     models = read_object_models(segment) if segment else []
     panels = glow_model(segment) if segment else None
-    # The glow scrolls, which a glTF cannot express, so only the first step of it is written.
+    # The glow scrolls, beyond what a glTF can express, and only its first step is written.
     glow_images = glow_textures(segment, 1) if segment else []
     written = empty = 0
     for index, base in enumerate(bases):
@@ -402,8 +402,8 @@ def xg1_to_glb(rom: Path, out: Path) -> None:
     ROM must be the original image. The extended one overwrites the level table's neighbourhood
     with the decompressed code segment, and its offsets no longer mean anything.
 
-    A level's geometry is a compressed bytecode rather than a display list, so this runs the same
-    interpreter the game's loader does and collects the triangles it would have drawn.
+    A level's geometry is a compressed bytecode rather than a display list. This therefore runs the
+    same interpreter the game's loader does and collects the triangles it would have drawn.
     """
     image = _read_rom(rom, XG1_GAME_CODE)
     written, empty = _write_levels(image, xg1_level_bases(image), out, XG1)
@@ -425,7 +425,7 @@ def xg2_to_glb(rom: Path, out: Path) -> None:
     image = _read_rom(rom, XG2_GAME_CODE)
     levels, skipped = _write_levels(image, xg2_level_bases(image), out, XG2)
     written, empty = _write_glbs(iter_n64_model_blobs(image), out, '>')
-    # Riders carry the skeleton the clips drive; any of them will do, as they are identical.
+    # Riders include the skeleton the clips drive; any of them will do, as they are identical.
     skeleton = next(
         (s for _, blob in iter_n64_model_blobs(image) if (s := parse_skeleton(blob)) is not None),
         None)
@@ -438,7 +438,7 @@ def _write_clips(blobs: Iterable[tuple[str, bytes]],
                  out: Path,
                  skeleton: Skeleton | None = None) -> int:
     """
-    Convert every ``BMC`` motion clip to its own ``.glb``.
+    Convert every ``BMC`` motion clip to a separate ``.glb``.
 
     Parameters
     ----------
@@ -447,7 +447,7 @@ def _write_clips(blobs: Iterable[tuple[str, bytes]],
     out : pathlib.Path
         Output directory, created if missing.
     skeleton : dade.xg2.skeleton.Skeleton | None
-        Skeleton the clips drive, which turns them from loose curves into a real hierarchy.
+        Skeleton the clips drive, turning them from loose curves into a real hierarchy.
 
     Returns
     -------
@@ -479,10 +479,10 @@ def xg2_pc_to_glb(data1: Path, out: Path) -> None:
 
     DATA1 is the port's data1 directory, or the disc it came on as an ISO image or a cue/bin pair.
 
-    The port's tracks are the console levels with their multi-byte fields byte-swapped, so the same
-    bytecode interpreter reads both. Its bikes are not converted: those are display lists that take
-    their vertices from segment 8, which the engine fills at run time, so the vertices are not in
-    the game's files at all.
+    The port's tracks are the console levels with their multi-byte fields byte-swapped, and the same
+    bytecode interpreter reads both. Its bikes are not converted. Those are display lists that take
+    their vertices from segment 8. The engine fills that segment at run time, and the vertices are
+    not in the game's files at all.
     """
     out.mkdir(parents=True, exist_ok=True)
     written = empty = 0
@@ -490,8 +490,8 @@ def xg2_pc_to_glb(data1: Path, out: Path) -> None:
         for path in find_by_suffix(source, '.pcb'):
             data = path.read_bytes()
             meshes = decode_level_geometry(data, 0, XG2PC)
-            # ISO 9660 upper-cases its names, so the stem is folded to keep a disc and an
-            # installation writing the same file names.
+            # ISO 9660 upper-cases its names, and the stem is folded so a disc and an installation
+            # write the same file names.
             name = f'track_{path.stem.lower()}'
             glb = (build_level_glb(meshes, decode_level_textures(data, 0, XG2PC), name,
                                    XG2PC.texture_scale) if meshes else None)
@@ -530,8 +530,8 @@ def montage_n64(rom: Path,
     """
     Tile every Extreme-G XG2 (N64) texture in ROM into one contact sheet at OUT.
 
-    The display-list walker infers dimensions the hardware never stored, so a mis-parse shows up as
-    a striped or skewed cell rather than an error. This sheet is how those are spotted.
+    The display-list walker infers dimensions the hardware never stored, and a mis-parse therefore
+    shows up as a striped or skewed cell rather than an error. This sheet is how those are spotted.
     """
     textures: list[Texture] = []
     labels: list[str] = []

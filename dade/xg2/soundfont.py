@@ -3,7 +3,7 @@ SoundFont 2 writer for the decoded ``ALBankFile`` banks.
 
 The libaudio hierarchy maps onto SF2 as follows: an ``ALInstrument`` becomes a preset backed by
 one instrument, each of its ``ALSound`` entries becomes an instrument zone, and every
-``ALWaveTable`` becomes a sample carrying its loop points. Key and velocity ranges, root key, fine
+``ALWaveTable`` becomes a sample with its loop points. Key and velocity ranges, root key, fine
 tuning, pan, attenuation, and the volume envelope all come straight from the bank.
 
 Melodic instruments are written to bank 0 with the program number taken from the instrument array
@@ -201,7 +201,7 @@ def sample_meta(bank: ParsedBank) -> list[SampleMeta]:
     Returns
     -------
     list[dade.xg2.typing.SampleMeta]
-        One entry per decoded sample, carrying the loop points of the zone that uses it.
+        One entry per decoded sample, with the loop points of the zone that uses it.
     """
     meta: list[SampleMeta] = [{
         'pcm': pcm,
@@ -304,10 +304,10 @@ def build_combined(rom: bytes,
                    name: str = 'ExtremeG',
                    drum_key_offset: int = 0) -> bytes:
     """
-    Build one SoundFont holding a bank's melodic instruments and its drum kit.
+    Build one SoundFont with a bank's melodic instruments and its drum kit.
 
     Melodic instruments go to bank 0 with the program taken from the instrument array index. The
-    drum kit is read from the bank's own percussion pointer, where each sound already carries its
+    drum kit is read from the bank's percussion pointer, where each sound already states its
     key range and root; *drums* is used only as a fallback for a bank without one, in which case
     each of its first instrument's sounds is spread across consecutive keys.
 

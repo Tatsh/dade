@@ -21,24 +21,24 @@ __all__ = ('DRUM_CHANNEL', 'GM_DRUM_MAP', 'read_vlq', 'remap_channel', 'split_tr
            'used_channels', 'write_vlq')
 
 GM_DRUM_MAP = {
-    36: 38,  # Snare: mid and high body, no lows.
-    38: 42,  # Closed hi-hat: 94% high band, 100ms.
-    39: 49,  # Crash cymbal: 2.2s, bright.
+    36: 38,  # Snare, mid and high body, no lows.
+    38: 42,  # Closed hi-hat, 94% high band, 100ms.
+    39: 49,  # Crash cymbal, 2.2s, bright.
     40: 46,  # Open hi-hat.
-    42: 42,  # Closed hi-hat: 37ms.
-    43: 36,  # Bass drum: all energy below 400Hz, tonal, the most used.
+    42: 42,  # Closed hi-hat, 37ms.
+    43: 36,  # Bass drum, all energy below 400Hz, tonal, the most used.
     44: 46,  # Open hi-hat.
     45: 46,  # Open hi-hat.
     46: 46,  # Open hi-hat.
     48: 42,  # Closed hi-hat, the workhorse.
-    50: 51,  # Ride cymbal: very bright, 807ms.
+    50: 51,  # Ride cymbal, very bright, 807ms.
     52: 45,  # Low tom.
-    53: 39,  # Hand clap: mid-body click.
-    54: 41,  # Low floor tom: 84% low band.
+    53: 39,  # Hand clap, mid-body click.
+    54: 41,  # Low floor tom, 84% low band.
     55: 57,  # Crash cymbal 2.
     56: 47,  # Low-mid tom.
-    57: 37,  # Side stick: short mid click.
-    58: 55,  # Splash cymbal: long swelling tail.
+    57: 37,  # Side stick, short mid click.
+    58: 55,  # Splash cymbal, long swelling tail.
     62: 49,  # Crash cymbal.
     64: 48,  # Hi-mid tom.
     65: 50,  # High tom.
@@ -47,7 +47,7 @@ GM_DRUM_MAP = {
 """Game drum key to General MIDI percussion note.
 
 These identities were judged from the acoustic character of the samples rather than read from the
-game, so treat them as a starting point and audition the extracted drums before relying on them.
+game. Treat them as a starting point and audition the extracted drums before relying on them.
 
 :meta hide-value:
 """
