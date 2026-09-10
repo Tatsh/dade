@@ -1,11 +1,11 @@
 """
-Reader for the ``.LVL`` containers that hold each level's cooked assets.
+Reader for the ``.LVL`` containers that store each level's cooked assets.
 
 A container starts with a little-endian ``u32`` sub-asset count, twelve unused bytes, and then one
 40-byte index record per sub-asset. Each record is an absolute offset, a length, and a 32-byte name
 buffer.
 
-The name buffer is not cleared before use, so anything past the terminating NUL is leftover memory
+The name buffer is not cleared before use. Anything past the terminating NUL is leftover memory
 from the machine that built the disc and must be ignored.
 """
 from __future__ import annotations
@@ -84,7 +84,7 @@ def read_index(data: bytes) -> tuple[LevelEntry, ...]:
 
 def extract(path: Path, output_dir: Path) -> tuple[Path, ...]:
     """
-    Write every sub-asset of a ``.LVL`` container to its own file.
+    Write every sub-asset of a ``.LVL`` container to a separate file.
 
     Zero-length sub-assets are skipped: they mark an asset kind the level does not use.
 

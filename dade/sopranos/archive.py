@@ -1,13 +1,13 @@
 """
 Reader for the ``.FS`` archives shipped with The Sopranos: Road to Respect (PS2).
 
-An archive stores its table of contents at the end. The final four bytes hold the absolute offset of
+An archive stores its table of contents at the end. The final four bytes give the absolute offset of
 a chunk stream, and each chunk is a four-character tag followed by a little-endian ``u32`` length.
-Only three tags occur, each padded to four characters with a trailing space: ``STR`` holds the
-NUL-separated file names, ``DIR`` holds fixed 16-byte directory entries, and ``END`` terminates the
+Only three tags occur, each padded to four characters with a trailing space: ``STR`` stores the
+NUL-separated file names, ``DIR`` stores fixed 16-byte directory entries, and ``END`` terminates the
 stream.
 
-The game itself never reads the names. It resolves files by the CRC-32 of the lowercased name, which
+The game itself never reads the names. It resolves files by the CRC-32 of the lowercased name, and
 is why directory entries are sorted by that hash rather than by name.
 """
 from __future__ import annotations
@@ -80,7 +80,7 @@ def name_hash(name: str) -> int:
     Compute the archive's lookup hash for a file name.
 
     This is a most-significant-bit-first CRC-32 with polynomial ``0x04C11DB7``, an initial and final
-    value of ``0xFFFFFFFF``, and no reflection. The name is lowercased first, which makes lookups
+    value of ``0xFFFFFFFF``, and no reflection. The name is lowercased first, making lookups
     case-insensitive.
 
     Parameters
@@ -187,7 +187,7 @@ def _read_chunks(
         fp.seek(base + size - 4)
         toc = struct.unpack('<I', fp.read(4))[0]
         if not toc and _looks_blank(fp, base, size):
-            msg = (f'`{path.name}` contains only zero bytes. Some ISO mounters misread PlayStation '
+            msg = (f'`{path.name}` is entirely zero bytes. Some ISO mounters misread PlayStation '
                    f'2 discs and hand back a blank file; read the archive from the disc image '
                    f'itself instead.')
             raise InvalidFormatError(msg)
@@ -226,7 +226,7 @@ def read_directory(path: Path, base: int = 0, length: int | None = None) -> tupl
     Parameters
     ----------
     path : Path
-        The ``.FS`` archive to read, or a disc image containing one.
+        The ``.FS`` archive to read, or a disc image with one inside.
     base : int
         Byte offset of the archive within *path*, for reading one out of a disc image in place.
     length : int | None
@@ -240,7 +240,7 @@ def read_directory(path: Path, base: int = 0, length: int | None = None) -> tupl
     Raises
     ------
     InvalidFormatError
-        If the file is too short, holds only zero bytes, has a table of contents offset out of
+        If the file is too short, is entirely zero bytes, has a table of contents offset out of
         range, or has no directory chunk.
     """  # ruff: ignore[docstring-extraneous-exception]
     names, rows = _read_chunks(path, base, length)
@@ -268,7 +268,7 @@ def iter_entries(path: Path,
     Parameters
     ----------
     path : Path
-        The ``.FS`` archive to read, or a disc image containing one.
+        The ``.FS`` archive to read, or a disc image with one inside.
     base : int
         Byte offset of the archive within *path*, for reading one out of a disc image in place.
     length : int | None

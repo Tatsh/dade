@@ -5,16 +5,16 @@ Everything the viewer needs lands in one file: positions, texture coordinates, v
 triangle indices, the material list, and the PNG for each material's texture, all packed into the
 GLB binary chunk.
 
-The game stores geometry Z-up while glTF is Y-up, so positions are rewritten as ``(x, z, -y)``.
+The game stores geometry Z-up while glTF is Y-up, and positions are rewritten as ``(x, z, -y)``.
 
-Every material is written double-sided, because the console never culls a back face. The Graphics
-Synthesizer has no such hardware, and the engine's own cull test -- ``ss_MiniGL_v1``'s
-``mCullFace``/``mFrontFace`` state, read by one function at ``0x001D9AF0`` -- is reachable only from
+Every material is written double-sided. The console never culls a back face. The Graphics
+Synthesizer has no such hardware, and the engine's cull test (``ss_MiniGL_v1``'s
+``mCullFace``/``mFrontFace`` state, read by one function at ``0x001D9AF0``) is available only from
 the immediate-mode ``mBegin``/``mEnd`` path. Neither the level renderer (``t_EnvMesh``) nor the prop
-renderer uses it: both build DMA chains straight to VIF1 and run a VU1 microprogram whose only
+renderer uses it. Both build DMA chains straight to VIF1 and run a VU1 microprogram whose only
 rejection is a whole packet failing an eight-corner bounding-box frustum test. Winding was therefore
-never load-bearing, and the cooker left plenty of it inconsistent, so culling on export drops
-surfaces the game genuinely draws.
+never load-bearing, the cooker made plenty of it inconsistent, and culling on export drops surfaces
+the game genuinely draws.
 """
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ _SKIN_HINTS = ('body', 'suit', 'torso', 'head', 'face')
 _ALPHA_CLEAR = 0.02
 _ALPHA_PARTIAL = 0.20
 _TRIANGLE_CORNERS = 3
-# GS TEST_1 alpha test: ATST GEQUAL with AREF 8 on the PS2's 0..128 scale, so 16 of 255 here.
+# GS TEST_1 alpha test: ATST GEQUAL with AREF 8 on the PS2's 0..128 scale, giving 16 of 255 here.
 _CUTOUT_REF = 16 / 255
 _SHORT_INDEX_LIMIT = 0xFFFF
 
@@ -83,8 +83,8 @@ def _finite(value: float) -> float:
     """
     Replace a non-finite coordinate with zero.
 
-    A few of the game's vertices carry NaN or infinite texture coordinates. glTF accessors may not
-    hold those, and a validator rejects the whole file over them.
+    A few of the game's vertices store NaN or infinite texture coordinates. glTF accessors may not
+    include those, and a validator rejects the whole file over them.
 
     Parameters
     ----------
@@ -129,9 +129,9 @@ def _mesh_arrays(mesh: Mesh, *, glow: bool = False) -> tuple[bytes, bytes, bytes
             positions += struct.pack('<3f', _finite(v.x), _finite(v.z), -_finite(v.y))
             texcoords += struct.pack('<2f', _finite(v.u), 1.0 - _finite(v.v))
             red, green, blue = (min(255, v.red * 2), min(255, v.green * 2), min(255, v.blue * 2))
-            # A glow sprite is additive on hardware, so its brightness is how much it shows through.
-            # Ordinary blending cannot brighten, only cover, so the strength is held well down to
-            # keep it a haze over whatever it lights rather than a wash that hides it.
+            # A glow sprite is additive on hardware, and its brightness is how much it shows
+            # through. Ordinary blending cannot brighten, only cover, and the strength is therefore
+            # set well down, making it a haze over whatever it lights rather than a wash hiding it.
             luminance = (red * 2 + green * 5 + blue) // 8
             alpha = int(luminance * _GLOW_STRENGTH) if glow else 255
             colors += bytes((red, green, blue, alpha))
@@ -147,10 +147,10 @@ def _cooked_mode(image: Image, blend_mode: BlendMode) -> tuple[str, Image]:
     """
     Turn the cooker's blend mode into the nearest glTF alpha mode.
 
-    glTF has neither the engine's additive ``Cs + Cd`` nor its subtractive ``Cd - Cs``, so both are
-    recast as ordinary alpha blending with alpha taken from luminance, which is right in direction
-    because a black texel neither adds nor subtracts and so must be transparent. A subtractive
-    texture additionally goes black, so blending toward black by luminance darkens as intended.
+    glTF has neither the engine's additive ``Cs + Cd`` nor its subtractive ``Cd - Cs``, and both are
+    therefore recast as ordinary alpha blending with alpha taken from luminance. That is right in
+    direction. A black texel neither adds nor subtracts and must be transparent. A subtractive
+    texture additionally goes black, and blending toward black by luminance darkens as intended.
 
     Parameters
     ----------
@@ -162,7 +162,7 @@ def _cooked_mode(image: Image, blend_mode: BlendMode) -> tuple[str, Image]:
     Returns
     -------
     tuple[str, Image]
-        The glTF ``alphaMode`` and the image to store, which the overlay modes rewrite.
+        The glTF ``alphaMode`` and the image to store, rewritten by the overlay modes.
     """
     match blend_mode:
         case BlendMode.CUTOUT:
@@ -173,8 +173,8 @@ def _cooked_mode(image: Image, blend_mode: BlendMode) -> tuple[str, Image]:
             return 'BLEND', _as_overlay(image, darkening=blend_mode is BlendMode.SUBTRACTIVE)
         case _:
             # A pure white glow sprite is cooked as DEFAULT, and drawn as-is it is an opaque white
-            # slab over whatever it was meant to light, so it keeps the treatment the pass alone
-            # cannot give it.
+            # slab over whatever it was meant to light. It therefore gets the treatment the pass
+            # alone cannot give it.
             return ('GLOW' if _is_glow(image) else 'OPAQUE'), image
 
 
@@ -218,8 +218,8 @@ def _prop_images(data: bytes) -> dict[str, tuple[bytes, str]]:
     """
     Render a ``.SGP2`` library's embedded textures and key them by base name.
 
-    Sections name their texture rather than pointing at it, so the images have to be reachable by
-    name.
+    Sections identify their texture by name rather than pointing at it, and the images therefore
+    have to be addressable by name.
 
     Parameters
     ----------
@@ -234,12 +234,12 @@ def _prop_images(data: bytes) -> dict[str, tuple[bytes, str]]:
     images = _material_images(data)
     by_name: dict[str, tuple[bytes, str]] = {}
     for texture in iter_geometry_textures(data):
-        # Every texture this walk yields was rendered by the walk above, so the key is always there.
+        # Every texture this walk yields was rendered by the walk above, and the key is always set.
         found = images[texture.data_offset - _IMAGE_RECORD_BIAS]
         name = texture.name.rsplit('/', 1)[-1].lower()
         png, mode = found
-        # Skin and clothing are never cut out. A few of these maps keep a small margin of clear
-        # texels, enough to be taken for a stencil, which punches holes in a face.
+        # Skin and clothing are never cut out. A few of these maps retain a small margin of clear
+        # texels, enough to be taken for a stencil, and that punches holes in a face.
         if mode == 'MASK' and any(hint in name for hint in _SKIN_HINTS):
             found = (png, 'OPAQUE')
         by_name.setdefault(name, found)
@@ -250,11 +250,11 @@ def _prop_meshes(section: bytes) -> list[tuple[str, tuple[str, ...], bytes, byte
     """
     Flatten a ``.SGP2`` section into one entry per draw group.
 
-    Each item's command list says which material draws which stretch of its geometry, so no guessing
-    is needed: the group's material gives the texture outright. Where an item is one of a set of
-    interchangeable pieces -- a crowd character carries a wardrobe of jackets and shoes in the one
-    model, and the game dresses each passer-by by handing the renderer a bitmask -- only the first
-    of each set is kept, since drawing them all leaves the alternatives fighting in the same space.
+    Each item's command list states which material draws which stretch of its geometry, and no
+    guessing is needed. The group's material gives the texture outright. Where an item is one of a
+    set of interchangeable pieces (a crowd character stores a wardrobe of jackets and shoes in the
+    one model, and the game dresses each passer-by by handing the renderer a bitmask), only the
+    first of each set is retained. Drawing them all sets the alternatives fighting in one space.
 
     Parameters
     ----------
@@ -302,7 +302,7 @@ def _is_glow(image: Image) -> bool:
     Report whether a texture is a plain white glow sprite.
 
     Several levels light windows and signs with a small texture that is a single pure white colour.
-    White contributes nothing to a multiply, so on hardware the sprite's appearance comes entirely
+    White contributes nothing to a multiply, and on hardware the sprite's appearance comes entirely
     from its vertex colours under an additive blend. Drawn normally it is an opaque white slab that
     hides whatever it was meant to light, such as the Bada Bing sign.
 
@@ -323,15 +323,15 @@ def _as_overlay(image: Image, *, darkening: bool) -> Image:
     """
     Approximate a subtractive or additive decal as a blended texture.
 
-    Neither blend is expressible in core glTF, so both are recast as ordinary alpha blending with
-    alpha taken from luminance. That works because both operations scale with how bright the source
-    is: a nearly black texel adds nothing and subtracts nothing, so it should be nearly invisible
-    either way.
+    Neither blend is expressible in core glTF, and both are therefore recast as ordinary alpha
+    blending with alpha taken from luminance. That works because both operations scale with how
+    bright the source is. A nearly black texel adds nothing and subtracts nothing, and should be
+    nearly invisible in both cases.
 
-    A subtractive decal computes ``dest - src``, so its colour is replaced with black and blending
-    toward black by ``luminance`` reproduces the darkening. These textures are very dark to begin
-    with -- the shadow, scum, and crack decals average 19 to 32 out of 255 -- so treating a dark
-    texel as *more* opaque instead of less turns a faint smudge into a solid black patch.
+    A subtractive decal computes ``dest - src``. Its colour is therefore replaced with black, and
+    blending toward black by ``luminance`` reproduces the darkening. These textures are very dark to
+    begin with, the shadow, scum, and crack decals averaging 19 to 32 out of 255, and treating a
+    dark texel as *more* opaque instead of less turns a faint smudge into a solid black patch.
 
     Parameters
     ----------
@@ -355,15 +355,15 @@ def _alpha_mode(image: Image) -> str:
     """
     Choose the glTF alpha mode that suits an image's alpha channel.
 
-    Anything fully opaque is ``OPAQUE``. Cut-out art such as foliage keeps crisp edges with
+    Anything fully opaque is ``OPAQUE``. Cut-out art such as foliage retains crisp edges with
     ``MASK``. The game's ``add_`` and ``sub_`` overlays are soft gradients and only look right with
     ``BLEND``; drawn opaque they appear as solid black patches.
 
     A texture is only treated as see-through when a meaningful share of it actually is. Some maps
-    carry an alpha channel that is not transparency at all: Tony's face has 0.4% of its texels near
-    zero and 4% partly on, against 40% and 60% for a hair texture that really does need to be
-    drawn with holes. Taking that face for translucent made him semi-transparent, so his own
-    skull showed through from the front and his face showed through from behind.
+    include an alpha channel that is not transparency at all. Tony's face has 0.4% of its texels
+    near zero and 4% partly on, against 40% and 60% for a hair texture that really does need to be
+    drawn with holes. Taking that face for translucent made him semi-transparent, with his skull
+    showing through from the front and his face showing through from behind.
 
     Parameters
     ----------
@@ -393,13 +393,13 @@ def build_glb(  # ruff: ignore[complex-structure, too-many-locals]
     """
     Build a binary glTF for one ``.EGP2`` geometry blob.
 
-    A level's props and cast are not part of its geometry: they are held once each in a ``.SGP2``
-    library and placed by the level's ``.OLV``. Given both, every placement becomes a node carrying
-    the object's position and turn, so the doors, chairs, and vehicles appear where the game puts
-    them rather than in a file of their own. Objects placed more than once share a single mesh.
+    A level's props and cast are not part of its geometry. They are stored once each in a ``.SGP2``
+    library and placed by the level's ``.OLV``. Given both, every placement becomes a node with the
+    object's position and turn, and the doors, chairs, and vehicles therefore appear where the game
+    puts them rather than in a separate file. Objects placed more than once share a single mesh.
 
-    A level's cast is spread over several libraries, so more than one may be given; the first to
-    name an object supplies it. A placement whose object no library holds is skipped.
+    A level's cast is spread over several libraries, and more than one may therefore be given; the
+    first to list an object supplies it. A placement whose object no library stores is skipped.
 
     Parameters
     ----------
@@ -415,14 +415,14 @@ def build_glb(  # ruff: ignore[complex-structure, too-many-locals]
     Returns
     -------
     bytes | None
-        The ``.glb`` file, or ``None`` when the blob holds no decodable geometry.
+        The ``.glb`` file, or ``None`` when the blob includes no decodable geometry.
     """
     meshes = read_meshes(data)
     if not meshes:
         return None
     materials = read_materials(data)
     images = _material_images(data, cooked=True)
-    # A material belongs to exactly one pass, so the meshes give each one its pass.
+    # A material belongs to exactly one pass, and the meshes give each one its pass.
     pass_of = {m.material: m.render_pass for m in meshes if m.material >= 0}
     document = GLBDocument(generator)
     gltf_meshes = document.meshes
@@ -443,7 +443,7 @@ def build_glb(  # ruff: ignore[complex-structure, too-many-locals]
             glowing.add(index)
             mode = 'BLEND'
         elif mode == 'OPAQUE' and pass_of.get(index, 1) in BLEND_PASSES:
-            # The mode left it open, so the pass decides, and the pass this material sits in blends.
+            # The mode is open here, and the pass decides. The pass this material sits in blends.
             mode = 'BLEND'
         used[index] = len(gltf_materials)
         entry: dict[str, Any] = {
@@ -593,7 +593,7 @@ def build_glb(  # ruff: ignore[complex-structure, too-many-locals]
                 prop_meshes[key] = prop_mesh(key)
             if (drawn := prop_meshes[key]) is None:
                 continue
-            # The game turns an object about its vertical axis, which is Z there and Y here.
+            # The game turns an object about its vertical axis, Z there and Y here.
             half = placement.rotation / 2
             nodes.append({
                 'name': placement.name,
@@ -611,11 +611,12 @@ def build_prop_glb(data: bytes, *, generator: str = 'dade') -> bytes | None:
     """
     Build a binary glTF for a ``.SGP2`` prop and character library.
 
-    Each object section becomes its own node, keeping the object-local coordinates the file stores.
-    A section names its textures rather than pointing at them, so each is matched to the file's
-    embedded image records by base name. Where a section names as many textures as it has runs of
-    packets, each run takes its own; otherwise every run falls back to the first texture that
-    resolves, so a character whose maps outnumber its runs still gets one of them throughout.
+    Each object section becomes a separate node, retaining the object-local coordinates the file
+    stores. A section identifies its textures by name rather than pointing at them, and each is
+    therefore matched to the file's embedded image records by base name. Where a section lists as
+    many textures as it has runs of packets, each run takes one; otherwise every run falls back to
+    the first texture that resolves, and a character whose maps outnumber its runs still gets one of
+    them throughout.
 
     Parameters
     ----------
@@ -627,7 +628,7 @@ def build_prop_glb(data: bytes, *, generator: str = 'dade') -> bytes | None:
     Returns
     -------
     bytes | None
-        The ``.glb`` file, or ``None`` when the library holds no decodable geometry.
+        The ``.glb`` file, or ``None`` when the library includes no decodable geometry.
     """
     by_name = _prop_images(data)
     document = GLBDocument(generator)

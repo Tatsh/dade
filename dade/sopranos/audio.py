@@ -4,12 +4,12 @@ Convert the game's PlayStation 2 audio to WAV.
 Sound effects and speech ship as a ``.MSH`` header paired with a ``.MSB`` body. The header lists
 every sound's offset, length, and sample rate; the body is nothing but concatenated PS-ADPCM.
 
-Music ships as a ``.MIH`` header paired with a ``.MIB`` body, which is Sony's MultiStream layout:
+Music ships as a ``.MIH`` header paired with a ``.MIB`` body, Sony's MultiStream layout:
 the channels are interleaved in fixed-size blocks and the header records the block size, the channel
 count, and the sample rate.
 
 Spoken dialogue lives in ``.VO2`` files inside ``AUDIO_P.FS``. Those are chunk streams that
-interleave ``AUDO`` blocks of PS-ADPCM with ``TIME``, ``GTAG``, and ``LSYN`` lip-sync records, so
+interleave ``AUDO`` blocks of PS-ADPCM with ``TIME``, ``GTAG``, and ``LSYN`` lip-sync records, and
 the audio has to be stitched back together from the ``AUDO`` payloads alone.
 """
 from __future__ import annotations
@@ -34,7 +34,7 @@ __all__ = ('VOICE_RATE', 'convert_bank', 'convert_stream', 'convert_voice', 'dec
 log = logging.getLogger(__name__)
 
 VOICE_RATE = 48000
-"""Sample rate in Hz of the ``.VO2`` dialogue, which the files do not record directly.
+"""Sample rate in Hz of the ``.VO2`` dialogue, absent from the files themselves.
 
 :meta hide-value:
 """
@@ -52,10 +52,10 @@ def read_sound_bank(data: bytes) -> tuple[SoundEntry, ...]:
     Parse a ``.MSH`` sound bank header.
 
     Entries are 16 bytes each and start at offset ``0x0C``. An entry is playable only when both its
-    length and its sample rate are non-zero: some banks reserve the first slot to carry a default
+    length and its sample rate are non-zero. Some banks reserve the first slot for a default
     rate, and that slot's offset overlaps the first real sound.
 
-    The second word is a sequential index in some banks and a name hash in others, so it is reported
+    The second word is a sequential index in some banks and a name hash in others. It is reported
     verbatim as :py:attr:`SoundEntry.identifier` while :py:attr:`SoundEntry.number` counts playable
     entries.
 
@@ -72,7 +72,7 @@ def read_sound_bank(data: bytes) -> tuple[SoundEntry, ...]:
     Raises
     ------
     InvalidFormatError
-        If the header is truncated or declares more entries than it can hold.
+        If the header is truncated or declares more entries than it has room for.
     """
     if len(data) < _BANK_ENTRY_OFFSET:
         msg = 'Sound bank header is too small.'
@@ -99,7 +99,7 @@ def convert_bank(header: Path, body: Path, output_dir: Path) -> tuple[Path, ...]
     header : Path
         The ``.MSH`` file.
     body : Path
-        The ``.MSB`` file holding the PS-ADPCM data.
+        The ``.MSB`` file with the PS-ADPCM data.
     output_dir : Path
         Directory to write into. It is created if missing.
 
@@ -129,8 +129,8 @@ def read_voice_adpcm(data: bytes) -> bytes:
     """
     Stitch the PS-ADPCM out of a ``.VO2`` dialogue file.
 
-    The file interleaves ``AUDO`` blocks with lip-sync records, so only the ``AUDO`` payloads are
-    kept. Each block's header records the block's total length, including the 16-byte header, and a
+    The file interleaves ``AUDO`` blocks with lip-sync records, and only the ``AUDO`` payloads are
+    retained. Each block's header records the block's total length, including the header, and a
     further 48-byte sub-header precedes the samples. Decoding those 48 bytes as audio would drive
     the ADPCM history to zero once per block and put an audible tick at every block boundary.
 
@@ -142,7 +142,7 @@ def read_voice_adpcm(data: bytes) -> bytes:
     Returns
     -------
     bytes
-        The concatenated PS-ADPCM, empty when the file carries no audio.
+        The concatenated PS-ADPCM, empty when the file includes no audio.
     """
     out = bytearray()
     at = 0
@@ -173,7 +173,7 @@ def convert_voice(path: Path, destination: Path, *, rate: int = VOICE_RATE) -> P
     Returns
     -------
     Path | None
-        The file written, or ``None`` when the ``.VO2`` holds only lip-sync data.
+        The file written, or ``None`` when the ``.VO2`` stores only lip-sync data.
     """
     if not (adpcm := read_voice_adpcm(path.read_bytes())):
         return None
@@ -254,7 +254,7 @@ def convert_stream(header: Path, body: Path, destination: Path) -> Path:
     header : Path
         The ``.MIH`` file.
     body : Path
-        The ``.MIB`` file holding the interleaved PS-ADPCM data.
+        The ``.MIB`` file with the interleaved PS-ADPCM data.
     destination : Path
         The WAV file to write.
 

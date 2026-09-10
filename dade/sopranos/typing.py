@@ -31,7 +31,7 @@ class BlendMode(IntEnum):
     """
 
     DEFAULT = 0
-    """No override; the render pass decides, which for a level means opaque."""
+    """No override; the render pass decides, and for a level that means opaque."""
     CUTOUT = 1
     """``TEST_1`` with ATE set, ATST ``GEQUAL`` and AREF 8 on the PS2's 0..128 alpha scale."""
     BLEND = 2

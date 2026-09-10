@@ -96,7 +96,7 @@ def test_read_directory_rejects_an_offset_past_the_end(tmp_path: Path) -> None:
 def test_read_directory_explains_a_blank_archive(tmp_path: Path) -> None:
     archive = tmp_path / 'a.fs'
     archive.write_bytes(bytes(SECTOR_SIZE * 4))
-    with pytest.raises(InvalidFormatError, match='only zero bytes'):
+    with pytest.raises(InvalidFormatError, match='entirely zero bytes'):
         read_directory(archive)
 
 

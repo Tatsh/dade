@@ -2,26 +2,26 @@
 Reader for the props and characters stored in ``.SGP2`` libraries.
 
 A ``.SGP2`` file is a whole level's cast: doors, furniture, vehicles, and people. After the file
-header come the embedded texture records, then a chain of named sections, one per object. Each
-section's header gives its own length at ``0x0C`` and a string-table offset at ``0x08``, so the
-chain is walked by adding the length.
+header come the embedded texture records, then a chain of titled sections, one per object. Each
+section's header gives its length at ``0x0C`` and a string-table offset at ``0x08``, and the chain
+is walked by adding the length.
 
-A section is not a single mesh. It is a list of named items -- ``VITO_BODY``, ``VITO_HAIR_s4``,
-``*BODY17`` -- each of which owns a small command list that names the material to draw it with. The
-layout below is taken from the game's own accessors rather than guessed: ``t_SGP2`` reaches its
-tables through one-line functions that add a header field to the section pointer, so
-``FUN_001c6ab8`` gives ``section + section[0x54]`` for the items, ``FUN_001854e0`` gives
-``section + section[0x50]`` for the materials, and the renderer at ``FUN_001c3938`` walks the
-commands, switching material whenever it meets opcode 1.
+A section is not a single mesh. It is a list of titled items (``VITO_BODY``, ``VITO_HAIR_s4``,
+``*BODY17``), each of which owns a small command list stating the material to draw it with. The
+layout below is taken from the game's accessors rather than guessed. ``t_SGP2`` addresses its tables
+through one-line functions that add a header field to the section pointer, and ``FUN_001c6ab8``
+gives ``section + section[0x54]`` for the items, ``FUN_001854e0`` gives ``section +
+section[0x50]`` for the materials, and the renderer at ``FUN_001c3938`` walks the commands,
+switching material whenever it meets opcode 1.
 
 Geometry is packetised the same way as in a ``.EGP2`` level, behind the same GIFtag, but the vertex
-layout differs: two quadwords per vertex rather than the level format's four-vertex groups. The
-first holds the position and the second the texture coordinate. Positions are object-local, so each
-section sits at the origin rather than in world space; the level's ``.OLV`` says where each one
-stands.
+layout differs, with two quadwords per vertex rather than the level format's four-vertex groups. The
+first stores the position and the second the texture coordinate. Positions are object-local, and
+each section therefore sits at the origin rather than in world space; the level's ``.OLV`` states
+where each one stands.
 
-The GIFtag advertises three or four registers, which would be forty-eight or sixty-four bytes of
-output, while the data is thirty-two bytes per vertex. There is no contradiction: what follows the
+The GIFtag advertises three or four registers, amounting to forty-eight or sixty-four bytes of
+output, while the data is thirty-two bytes per vertex. There is no contradiction. What follows the
 tag is the input VU1 transforms, not the output it sends to the GS.
 """
 from __future__ import annotations
@@ -211,8 +211,8 @@ def is_alternate(name: str) -> bool:
     """
     Report whether an item is one of several interchangeable pieces.
 
-    A crowd character is dressed at random from a wardrobe held in the one model: the bum trucker
-    carries both ``*BODY17`` and ``*BODY18``, and two pairs of shoes, all occupying the same space.
+    A crowd character is dressed at random from a wardrobe stored in the one model. The bum trucker
+    includes both ``*BODY17`` and ``*BODY18``, and two pairs of shoes, all occupying one space.
     The game shows one of each by passing the renderer a bitmask of the items to draw. The star is
     the cooker's mark for a piece that takes part in that choice.
 
@@ -244,22 +244,21 @@ def wardrobe_key(name: str) -> str:
     """
     Give the set an interchangeable item belongs to.
 
-    ``*BODY17`` and ``*BODY18`` are two jackets for the same torso, so both answer ``BODY``. Every
-    digit goes, not just the trailing ones, because a wardrobe numbers its alternatives in the
-    middle of a name as readily as at the end.
+    ``*BODY17`` and ``*BODY18`` are two jackets for the same torso, and both resolve to ``BODY``.
+    Every digit goes, not just the trailing ones. A wardrobe numbers its alternatives in the middle
+    of a name as readily as at the end.
 
-    Head, headwear, eyewear, hair, and footwear each answer with the one word, since a body has a
-    single head and wears a single hat, a single pair of glasses, a single hairstyle, and a single
-    pair of shoes however the pieces are named. Headphones and a bandage go over a head rather than
-    instead of one, so they keep their own families. For example: a dock hand offers
-    ``*HATBANDANA2``, ``*HATSKULLCAP15``, and ``*HATCAP22``, three families by name and three hats
-    on one head in practice, and a dealer's ``*BunBlack03``, ``*PONYTAILBLONDE06``, and
-    ``*HAIRBLONDESIDE04`` are one hairstyle's worth of names. Colour goes the same way as a digit,
-    since ``*BunBlack03`` and ``*BunBLONDE04`` are the one bun in two shades. Otherwise an ``_s0``
-    shading suffix and a ``_Face_0`` one both mark a
-    variant of one piece rather than a different piece, so they go first. Without that,
-    ``*HEAD8_s0_Face_0`` and ``*HEAD9_Face_0`` are two families, and a character wears both heads at
-    once.
+    Head, headwear, eyewear, hair, and footwear each resolve to one word. A body has a single head
+    and wears a single hat, a single pair of glasses, a single hairstyle, and a single pair of shoes
+    however the pieces are titled. Headphones and a bandage go over a head rather than instead of
+    one, and they therefore form separate families. A dock hand offers ``*HATBANDANA2``,
+    ``*HATSKULLCAP15``, and ``*HATCAP22``, three families by name and three hats on one head in
+    practice, and a dealer's ``*BunBlack03``, ``*PONYTAILBLONDE06``, and ``*HAIRBLONDESIDE04`` are
+    one hairstyle's worth of names. Colour goes the same way as a digit. ``*BunBlack03`` and
+    ``*BunBLONDE04`` are the one bun in two shades. Otherwise an ``_s0`` shading suffix and a
+    ``_Face_0`` one both mark a variant of one piece rather than a different piece, and they go
+    first. Without that, ``*HEAD8_s0_Face_0`` and ``*HEAD9_Face_0`` are two families, and a
+    character wears both heads at once.
 
     A piece named for its outfit rather than its slot still escapes this: a waiter's
     ``*Water_Body17`` and ``*Cook_jacket16`` are one torso under two names, and nothing here pairs
@@ -329,11 +328,11 @@ def read_items(section: bytes) -> tuple[PropItem, ...]:
     """
     Read a section's items and the material each of their draw groups uses.
 
-    An item points at a block of geometry, which opens with a small header giving where its command
-    list starts and how long it is. Walking that list yields the groups: opcode 1 names the material
-    to use from here on, and opcodes 7, 8, 0x1007 and 0x1008 close a group, carrying the byte offset
+    An item points at a block of geometry opening with a small header that gives where its command
+    list starts and how long it is. Walking that list yields the groups. Opcode 1 gives the material
+    to use from here on, and opcodes 7, 8, 0x1007 and 0x1008 close a group, stating the byte offset
     and quadword length of the packets it covers. Summed over an item, the triangle counts those
-    commands report match the item's own total for every one of the game's 8440 items.
+    commands report match the item's stated total for every one of the game's 8440 items.
 
     Parameters
     ----------
@@ -388,12 +387,12 @@ def read_packets(section: bytes,
     """
     Yield the draw packets in a stretch of a section.
 
-    Packets are found by their GIFtag rather than by walking a table, because the tag is
-    self-describing: its NLOOP field gives the vertex count, PRIM the primitive type, and NREG the
-    per-vertex register count, which is three or four here -- the four-register form pads with a NOP
-    and carries the same thirty-two byte vertex. A candidate is accepted only when the whole vertex
-    block fits and every coordinate is finite and of a sane magnitude, which rejects the occasional
-    word that looks like a tag by chance.
+    Packets are found by their GIFtag rather than by walking a table. The tag is self-describing.
+    Its NLOOP field gives the vertex count, PRIM the primitive type, and NREG the per-vertex
+    register count, three or four here, the four-register form padding with a NOP and storing the
+    same thirty-two byte vertex. A candidate is accepted only when the whole vertex block fits and
+    every coordinate is finite and of a sane magnitude, rejecting the occasional word that looks
+    like a tag by chance.
 
     Parameters
     ----------
@@ -418,7 +417,7 @@ def read_packets(section: bytes,
         primitive = (tag >> _PRIM_SHIFT) & 7
         finish = at + _CHUNK_HEADER_SIZE + count * VERTEX_SIZE
         # A packet belongs to the group whose range its tag starts in, and the last one in a group
-        # may run a few bytes past the length the command reports, so only the tag is bounded.
+        # may run a few bytes past the length the command reports. Only the tag is bounded.
         if (not (low >> 15) & 1 or not 0 < count < _MAX_NLOOP
                 or primitive not in {TRIANGLE_LIST, TRIANGLE_STRIP}
                 or (tag >> _NREG_SHIFT) & 0xF not in _EXPECTED_NREG or finish > len(section)):

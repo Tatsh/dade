@@ -38,12 +38,12 @@ def _prop_libraries(path: Path) -> tuple[tuple[bytes, ...], tuple[Placement, ...
     """
     Find the prop libraries and placements belonging to a geometry file's level.
 
-    A level is split across sibling directories: the ``p_c`` one holds the objects every part of
-    the level shares along with the placements for all of them, and the others hold variants of the
-    geometry, each covering the whole level and carrying the slice of the cast it needs. So a
-    geometry file is matched to its level by name, allowing for the ``_hub`` suffix the variants
-    carry, and then offered its own library first, the shared one next, and the remaining variants
-    last, so that every placed object can be drawn wherever its geometry happens to live.
+    A level is split across sibling directories. The ``p_c`` one stores the objects every part of
+    the level shares along with the placements for all of them, and the others store variants of the
+    geometry, each covering the whole level and including the slice of the cast it needs. A geometry
+    file is therefore matched to its level by name, allowing for the ``_hub`` suffix the variants
+    take, and then offered its matching library first, the shared one next, and the remaining ones
+    last, letting every placed object be drawn wherever its geometry happens to live.
 
     Parameters
     ----------
@@ -206,7 +206,7 @@ def _convert_extracted(root: Path, *, ignore_failures: bool) -> int:
     Parameters
     ----------
     root : Path
-        Directory holding the extracted archive tree.
+        Directory with the extracted archive tree.
     ignore_failures : bool
         Log and skip a conversion failure instead of stopping.
 
@@ -215,7 +215,7 @@ def _convert_extracted(root: Path, *, ignore_failures: bool) -> int:
     int
         The number of files written.
     """
-    # Levels are expanded first so that the textures they contain are converted by the same pass.
+    # Levels are expanded first, letting the textures inside them be converted by the same pass.
     written = sum(
         _guarded(_expand_level, path, ignore_failures=ignore_failures)
         for path in sorted(root.rglob('*.lvl')))
@@ -247,10 +247,10 @@ def archive_directory(name: str) -> str:
     """
     Give the directory an archive's contents belong in.
 
-    Every archive the cooker writes carries a ``_P`` tag, ``DATA_P.FS`` and so on. It is not a
-    region code -- the NTSC-U disc, ``SLUS-21388``, uses it as well -- and it says nothing about
-    what is inside, so it is dropped: ``DATA_P.FS`` unpacks into ``data``. An archive without the
-    tag keeps its whole stem.
+    Every archive the cooker writes takes a ``_P`` tag, ``DATA_P.FS`` and so on. It is not a region
+    code, the NTSC-U disc ``SLUS-21388`` using it as well, and it establishes nothing about what is
+    inside. It is therefore dropped, and ``DATA_P.FS`` unpacks into ``data``. An archive without the
+    tag retains its whole stem.
 
     Parameters
     ----------
@@ -271,7 +271,7 @@ def iter_sources(paths: Iterable[Path]) -> Iterator[tuple[Path, str, int, int | 
     Expand what the user named into the archives to read.
 
     A path may be a disc image, in which case every ``.FS`` on it is read in place without being
-    copied out first; a directory, which is searched for archives however they happen to be cased;
+    copied out first; a directory, searched for archives however they happen to be cased;
     or an archive itself.
 
     Parameters
@@ -318,8 +318,8 @@ def unpack(sources: tuple[Path, ...],
     """
     Extract everything from a disc image, a directory of archives, or the archives themselves.
 
-    Each archive lands in its own directory named after it, so unpacking a disc image gives the
-    whole game in one command.
+    Each archive lands in a directory titled after it, and unpacking a disc image gives the whole
+    game in one command.
     """  # ruff: ignore[docstring-missing-exception]
     found = list(iter_sources(sources))
     if not found:

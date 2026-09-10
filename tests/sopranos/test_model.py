@@ -90,7 +90,7 @@ def test_read_meshes_warns_when_a_block_does_not_follow_its_data(
     struct.pack_into('<I', data, block + 8, 99)
     with caplog.at_level('WARNING'):
         assert read_meshes(bytes(data)) == ()
-    assert 'does not follow its own data' in caplog.text
+    assert 'does not follow its data' in caplog.text
 
 
 def test_read_meshes_ignores_a_table_slot_holding_zero() -> None:

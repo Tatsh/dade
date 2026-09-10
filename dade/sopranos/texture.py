@@ -2,7 +2,7 @@
 Decode ``.TEX2`` texture banks to PNG.
 
 A bank begins with a ``0x64`` magic, a reserved word, an image count, and then one absolute offset
-per image. Each image begins with a ``0x65`` magic and carries its own dimensions, pixel format,
+per image. Each image begins with a ``0x65`` magic and states its dimensions, pixel format,
 pixel-data offset, palette offset, and source path.
 
 Pixels are stored linearly, but paletted images use the PlayStation 2 CLUT ordering and every alpha
@@ -68,10 +68,10 @@ def iter_textures(data: bytes) -> Iterator[TextureInfo]:
     """
     Yield a description of every image in a ``.TEX2`` bank.
 
-    A bank reserves a slot for every image the code that reads it may ask for by number, and a slot
-    the build had nothing to put in holds a zero offset instead of an address. Those are skipped.
-    The game's own HUD banks are mostly holes -- one is nothing but a header and five empty slots,
-    32 bytes in total, with no image data at all -- so an empty slot is ordinary, not damage.
+    A bank reserves a slot for every image the code that reads it may request by number, and a slot
+    the build had nothing to put in stores a zero offset instead of an address. Those are skipped.
+    The game's HUD banks are mostly holes, one being nothing but a header and five empty slots, 32
+    bytes in total, with no image data at all. An empty slot is therefore ordinary, not damage.
 
     Parameters
     ----------
@@ -81,7 +81,7 @@ def iter_textures(data: bytes) -> Iterator[TextureInfo]:
     Yields
     ------
     TextureInfo
-        One entry per image the bank actually holds, in the order it lists them.
+        One entry per image the bank actually stores, in the order it lists them.
 
     Raises
     ------
@@ -116,7 +116,7 @@ def _read_image(data: bytes, offset: int) -> tuple[TextureInfo, int]:
     Parameters
     ----------
     data : bytes
-        The buffer holding the record.
+        The buffer with the record.
     offset : int
         Byte offset of the record.
 
@@ -139,8 +139,8 @@ def _read_image(data: bytes, offset: int) -> tuple[TextureInfo, int]:
     if (pixel_format := _PIXEL_FORMATS.get(stored)) is None:
         msg = f'Image at 0x{offset:x} has unsupported pixel format {stored}.'
         raise InvalidFormatError(msg)
-    # Byte 0x1B is the cooker's blend mode. A value the enum does not name means the record is not
-    # one of the cooked kinds, so it falls back to letting the render pass decide.
+    # Byte 0x1B is the cooker's blend mode. A value the enum does not list means the record is not
+    # one of the cooked kinds, and it falls back to letting the render pass decide.
     stored_blend = data[offset + 0x1B]
     blend_mode = (BlendMode(stored_blend) if stored_blend in _BLEND_MODES else BlendMode.DEFAULT)
     data_offset, palette_offset = struct.unpack_from('<2I', data, offset + 0x24)
@@ -156,7 +156,7 @@ def iter_geometry_textures(data: bytes) -> Iterator[TextureInfo]:
 
     Both kinds store a run of bare image records rather than a bank with an offset table. A skinned
     ``.SGP2`` blob puts them at ``0x80`` and records their end in the header word at ``0x0C``; an
-    environment ``.EGP2`` blob leaves that word zero and instead points at the run from ``0x4C``.
+    environment ``.EGP2`` blob sets that word to zero and instead points at the run from ``0x4C``.
     Either way the run ends at the first word that is not an image magic.
 
     Parameters
@@ -189,8 +189,8 @@ def decode(data: bytes, texture: TextureInfo) -> Image.Image:
     """
     Decode one image from a ``.TEX2`` bank.
 
-    Rows are stored bottom-up, following the ``.tga`` sources the cooker read, so the result is
-    flipped vertically to put the origin back at the top left.
+    Rows are stored bottom-up, following the ``.tga`` sources the cooker read, and the result is
+    therefore flipped vertically to put the origin back at the top left.
 
     Parameters
     ----------
@@ -327,7 +327,7 @@ def _write_all(data: bytes, output_dir: Path, *, banked: bool) -> tuple[Path, ..
     seen: dict[str, int] = {}
     for texture in textures:
         stem = PurePosixPath(texture.name).stem
-        # Names repeat across a level's meshes, so later duplicates get a numeric suffix.
+        # Names repeat across a level's meshes, and later duplicates get a numeric suffix.
         count = seen.get(stem, 0)
         seen[stem] = count + 1
         destination = output_dir / (f'{stem}.png' if not count else f'{stem}_{count}.png')

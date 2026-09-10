@@ -1,20 +1,20 @@
 """
 Export the geometry in ``.EGP2`` and ``.SGP2`` blobs to Wavefront OBJ and MTL.
 
-A blob holds an array of mesh pointers. Each pointer addresses a small block of
+A blob stores an array of mesh pointers. Each pointer addresses a small block of
 ``[u32 index][u32 data_offset][u32 quadword_count]``, and that block sits immediately after the
-vertex data it describes, so ``data_offset + quadword_count * 16`` equals the block's own address.
+vertex data it describes, making ``data_offset + quadword_count * 16`` equal the block's address.
 
 Inside a mesh the data is a run of packets. A packet begins with two float4 rows forming its
-bounding box (both with ``w`` exactly ``1.0``), then a GIFtag, then 80-byte groups holding four
-vertices each: four ``[u, v, x, y]`` rows followed by one row carrying the four ``z`` values. The
-low byte of each float in a vertex row carries an RGBA vertex colour, and the fourth low byte is
-always ``0x80`` because PlayStation 2 alpha is on a ``0..128`` scale.
+bounding box (both with ``w`` exactly ``1.0``), then a GIFtag, then 80-byte groups of four vertices
+each, four ``[u, v, x, y]`` rows followed by one row of the four ``z`` values. The low byte of each
+float in a vertex row is an RGBA vertex colour, and the fourth low byte is always ``0x80`` because
+PlayStation 2 alpha is on a ``0..128`` scale.
 
-The GIFtag is what the hardware itself would have consumed, so it settles how to triangulate: its
-NLOOP field is the vertex count and its PRIM field says whether the packet is an independent
-triangle list or a strip. Its ``NREG``/``REGS`` fields name the per-vertex registers as ST, RGBAQ,
-and XYZ2, matching the decoded layout.
+The GIFtag is what the hardware itself would have consumed, and it therefore settles how to
+triangulate. Its NLOOP field is the vertex count and its PRIM field states whether the packet is an
+independent triangle list or a strip. Its ``NREG``/``REGS`` fields list the per-vertex registers as
+ST, RGBAQ, and XYZ2, matching the decoded layout.
 
 Materials are 84-byte records naming a texture and pointing at its image record. Each material also
 owns a run of draw lists that name the meshes drawn with it.
@@ -39,7 +39,7 @@ __all__ = ('BLEND_PASSES', 'GROUP_SIZE', 'TRIANGLE_LIST', 'TRIANGLE_STRIP', 'Mat
 log = logging.getLogger(__name__)
 
 GROUP_SIZE = 80
-"""Size in bytes of one vertex group, which holds four vertices.
+"""Size in bytes of one vertex group, four vertices in all.
 
 :meta hide-value:
 """
@@ -60,7 +60,7 @@ BLEND_PASSES = frozenset({2, 6})
 
 ``t_EnvMesh``'s pass setup calls ``mBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)`` for these and
 ``mBlendFunc(GL_ONE, GL_ZERO)`` for every other one, with no per-material override. Levels only ever
-fill passes 1 and 2, so pass 2 is the decal pass: shadows, stains, ivy, and road detail.
+fill passes 1 and 2, making pass 2 the decal pass: shadows, stains, ivy, and road detail.
 
 :meta hide-value:
 """
@@ -180,9 +180,9 @@ def _read_packets(data: bytes, start: int, quadwords: int) -> Iterator[MeshPacke
     Yield the packets stored between *start* and *start + quadwords * 16*.
 
     A packet is located by its bounding box, two consecutive rows whose ``w`` is exactly ``1.0``.
-    The row after them is the packet's GIFtag: its NLOOP field gives the exact vertex count and its
-    PRIM field gives the primitive type, so the groups are read by count and triangulated according
-    to what the hardware would have drawn.
+    The row after them is the packet's GIFtag. Its NLOOP field gives the exact vertex count and its
+    PRIM field the primitive type, and the groups are therefore read by count and triangulated
+    according to what the hardware would have drawn.
 
     Parameters
     ----------
@@ -203,7 +203,7 @@ def _read_packets(data: bytes, start: int, quadwords: int) -> Iterator[MeshPacke
         at = start + i * _QUADWORD
         low = struct.unpack_from('<4f', data, at)
         high = struct.unpack_from('<4f', data, at + _QUADWORD)
-        # The marker words are stored as exactly 1.0, so an exact comparison identifies them.
+        # The marker words are stored as exactly 1.0, and an exact comparison identifies them.
         if not (low[3] == _BOX_W and high[3] == _BOX_W and all(low[j] <= high[j] for j in range(3))
                 and any(high[j] - low[j] > _MIN_BOX_EXTENT for j in range(3))):
             i += 1
@@ -236,12 +236,12 @@ def read_meshes(data: bytes) -> tuple[Mesh, ...]:
     Read every mesh in a geometry blob.
 
     Meshes are enumerated from the materials' draw lists rather than from the mesh table at header
-    word ``0x64``. That table holds only about half of them; the draw lists reference every mesh the
-    level actually draws, and each reference also names the material to use. Any table entry the
+    word ``0x64``. That table lists only about half of them; the draw lists reference every mesh the
+    level actually draws, and each reference also states the material to use. Any table entry the
     lists happen to miss is still included.
 
-    Meshes whose block arithmetic does not close are skipped and logged rather than raising, since a
-    blob may list slots it does not use.
+    Meshes whose block arithmetic does not close are skipped and logged rather than raising. A blob
+    may list slots it does not use.
 
     Parameters
     ----------
@@ -267,7 +267,7 @@ def read_meshes(data: bytes) -> tuple[Mesh, ...]:
             continue
         number, start, quadwords = struct.unpack_from('<3I', data, block)
         if start + quadwords * _QUADWORD != block:
-            log.warning('The block at 0x%x does not follow its own data.', block)
+            log.warning('The block at 0x%x does not follow its data.', block)
             continue
         if packets := tuple(_read_packets(data, start, quadwords)):
             material, render_pass = by_block.get(block, (-1, 1))
@@ -279,18 +279,18 @@ def _material_by_mesh(data: bytes) -> dict[int, tuple[int, int]]:
     """
     Map each mesh block address to the material that claims it.
 
-    The table at header word ``0x58`` holds one 16-byte record per material. Its first word is the
+    The table at header word ``0x58`` stores one 16-byte record per material. Its first word is the
     material index and its third points at that material's draw lists. The indices are not simply
-    the records' positions: some are skipped, so the stored index has to be used or every material
-    after a gap is read with the wrong texture.
+    the records' positions. Some are skipped, and the stored index therefore has to be used, or
+    every material after a gap is read with the wrong texture.
 
     A descriptor is a run of eight-byte ``(count, start)`` pairs, one per render pass, and ``start``
     addresses eight-byte entries in the mesh pointer array.
 
-    The pairs chain: each pass begins where the previous one ended, and the last pass of a material
-    ends where the next material's first pass begins, so the mesh entries form a single contiguous
-    array partitioned between materials. How many passes a material has varies, so a descriptor is
-    read up to the next descriptor rather than for a fixed length.
+    The pairs chain. Each pass begins where the previous one ended, and the last pass of a material
+    ends where the next material's first pass begins. The mesh entries therefore form a single
+    contiguous array partitioned between materials. How many passes a material has varies, and a
+    descriptor is therefore read up to the next descriptor rather than for a fixed length.
 
     Parameters
     ----------
@@ -304,8 +304,8 @@ def _material_by_mesh(data: bytes) -> dict[int, tuple[int, int]]:
     """
     table, count, meshes = (struct.unpack_from('<I', data, at)[0]
                             for at in (_MATERIAL_MESHES_AT, _MATERIAL_COUNT_AT, _MESH_COUNT_AT))
-    # The file partitions the records between passes with its own prefix sums: pass p owns the
-    # records [sums[p - 1], sums[p]).
+    # The file partitions the records between passes with prefix sums. Pass p owns the records
+    # [sums[p - 1], sums[p]).
     passes, sums_at = (struct.unpack_from('<I', data, at)[0]
                        for at in (_PASS_COUNT_AT, _PASS_TABLE_AT))
     pass_of = [1] * count
@@ -369,9 +369,9 @@ def to_obj(meshes: Sequence[Mesh], *, material_library: str | None = None) -> st
     """
     Encode decoded meshes as Wavefront OBJ text.
 
-    Degenerate strip triangles, which the cooker inserts to stitch strips together, are dropped.
-    The V coordinate is flipped so it matches the PNGs written by
-    :py:func:`dade.sopranos.texture.convert_geometry`, which are stored top-down.
+    Degenerate strip triangles, inserted by the cooker to stitch strips together, are dropped.
+    The V coordinate is flipped to match the PNGs written by
+    :py:func:`dade.sopranos.texture.convert_geometry`, stored top-down.
 
     Parameters
     ----------

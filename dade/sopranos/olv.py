@@ -1,15 +1,15 @@
 """
-Reader for the object level (``.OLV``) file, which places a level's props and cast.
+Reader for the object level (``.OLV``) file, placing a level's props and cast.
 
-An ``.OLV`` is not a chunk stream but a memory image of the runtime object manager, so every array
-sits at a fixed offset that the game hard-codes. The file header repeats those offsets and the
+An ``.OLV`` is not a chunk stream but a memory image of the runtime object manager, and every array
+therefore sits at a fixed offset the game hard-codes. The file header repeats those offsets and the
 compiled size of each record, and the loader refuses a file whose numbers disagree with the
-executable's own, which is what makes them safe to rely on here.
+executable's. That refusal is what makes them safe to rely on here.
 
-Two tables matter. The prototype table names each kind of object the level can place, and the
-instance table places them: a world position, a turn about the vertical axis, and the index of the
-prototype to draw. A prototype's name matches a section of the level's ``.SGP2`` library, which is
-where the geometry lives.
+Two tables matter. The prototype table lists each kind of object the level can place, and the
+instance table places them, with a world position, a turn about the vertical axis, and the index of
+the prototype to draw. A prototype's name matches a section of the level's ``.SGP2`` library, where
+the geometry lives.
 
 Positions are three whole-unit ``s16`` followed by a ``-1`` filler. Height matters: a level with
 more than one storey puts its furniture on the upper floor, and the kitchen's pots and pans stand on
@@ -71,8 +71,8 @@ class Placement(NamedTuple):
     rotation: float
     """Turn about the vertical axis, in radians, anticlockwise seen from above.
 
-    The file measures its heading the other way round and from the opposite axis, so this is half a
-    turn less the stored angle. Two independent checks agree: every one of Vesuvio's thirty-two
+    The file measures its heading the other way round and from the opposite axis, making this half a
+    turn less the stored angle. Two independent checks agree. Every one of Vesuvio's thirty-two
     dining chairs then faces the table it belongs to, with a mean cosine of 0.993, and the
     bathroom's urinals turn to stand three units off the wall behind them rather than nineteen
     units in front of it.
@@ -125,12 +125,12 @@ def read_placements(data: bytes) -> tuple[Placement, ...]:
     -------
     tuple[Placement, ...]
         One entry per placed object, in file order. Entries whose prototype has no name are
-        dropped, which covers the unused tail of the table.
+        dropped, covering the unused tail of the table.
 
     Raises
     ------
     InvalidFormatError
-        If the file does not carry the expected table offsets.
+        If the file does not state the expected table offsets.
     """
     if len(data) <= _INSTANCE_TABLE_END:
         msg = f'File is {len(data)} bytes, too short to be a .OLV.'
