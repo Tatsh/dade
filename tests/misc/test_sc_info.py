@@ -583,7 +583,7 @@ def test_bundle_selects_one_by_its_last_component(tmp_path: Path, sinf_bytes: by
 
 
 def test_an_unknown_bundle_is_rejected(sc_info_ipa: Path) -> None:
-    with pytest.raises(ValueError, match="No bundle named 'Nope' in"):
+    with pytest.raises(ValueError, match="No bundle titled 'Nope' in"):
         read_bundles(sc_info_ipa, bundle='Nope')
 
 
@@ -591,7 +591,7 @@ def test_main_bundle_with_no_application_is_rejected(tmp_path: Path, sinf_bytes:
     path = tmp_path / 'OnlyExtension.ipa'
     with zipfile.ZipFile(path, 'w') as archive:
         archive.writestr('Payload/Example.app/PlugIns/Widget.appex/SC_Info/Widget.sinf', sinf_bytes)
-    with pytest.raises(ValueError, match='so there is no application to read'):
+    with pytest.raises(ValueError, match='There is no application to read'):
         read_bundles(path, main_only=True)
 
 

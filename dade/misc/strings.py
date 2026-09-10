@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 __all__ = ('read_strings',)
 
-# `"key" = "value";`, with either side allowed to contain escaped quotes.
+# `"key" = "value";`, with either side allowed to include escaped quotes.
 _TEXT_ENTRY = re.compile(r'"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"\s*;')
 _COMMENT = re.compile(r'/\*.*?\*/|//[^\n]*', re.DOTALL)
 _ESCAPES = {'n': '\n', 't': '\t', 'r': '\r', '"': '"', '\\': '\\'}
@@ -30,7 +30,7 @@ def _unescape(text: str) -> str:
     -------
     str
         The text with its escapes resolved. An unrecognised escape yields the character it
-        preceded, which is what the format's own readers do.
+        preceded, matching what the format's readers do.
     """
     return re.sub(r'\\(.)', lambda match: _ESCAPES.get(match.group(1), match.group(1)), text)
 
@@ -42,8 +42,8 @@ def _parse_text(data: bytes) -> dict[str, str]:
     Parameters
     ----------
     data : bytes
-        The file's contents. A byte order mark selects UTF-16, otherwise UTF-8 is assumed, which is
-        what the format allows.
+        The file's contents. A byte order mark selects UTF-16, otherwise UTF-8 is assumed, as the
+        format allows.
 
     Returns
     -------
@@ -59,10 +59,10 @@ def read_strings(path: Path) -> dict[str, str]:
     """
     Read a ``.strings`` table in either of the two forms it ships in.
 
-    Xcode compiles a table into a flat binary plist holding a dictionary of key to localised string,
+    Xcode compiles a table into a flat binary plist storing a dictionary of key to localised string,
     and that is what ships inside an application bundle. An uncompiled table is instead the
-    old-style text form, so both are tried: the plist first, since it is the common case, and the
-    text parse when the file turns out not to be a plist at all.
+    old-style text form. Both are therefore tried, the plist first as the common case, and the text
+    parse when the file turns out not to be a plist at all.
 
     Parameters
     ----------
@@ -77,7 +77,7 @@ def read_strings(path: Path) -> dict[str, str]:
     Raises
     ------
     ValueError
-        When the file is a plist whose root is not a dictionary, so it is not a table.
+        When the file is a plist whose root is not a dictionary and is therefore not a table.
     """
     data = path.read_bytes()
     try:
@@ -86,7 +86,7 @@ def read_strings(path: Path) -> dict[str, str]:
         return _parse_text(data)
     if not isinstance(loaded, dict):
         msg = f'{path} is a plist but its root is not a dictionary.'
-        # The complaint is about the file's contents rather than the argument's type, so this is a
-        # ValueError even though the check that found it is an isinstance.
+        # The complaint is about the file's contents rather than the argument's type, and this is
+        # therefore a ValueError even though the check that found it is an isinstance.
         raise ValueError(msg)  # ruff: ignore[type-check-without-type-error]
     return loaded

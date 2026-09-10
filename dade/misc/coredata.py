@@ -4,8 +4,8 @@ Convert compiled Core Data model artefacts (``.cdm``, ``.mom``) to JSON.
 Both formats are ``NSKeyedArchiver`` binary plists: a ``.cdm`` is a compiled ``.xcmappingmodel``
 whose root is an ``NSMappingModel``, and a ``.mom`` is a compiled ``.xcdatamodel`` whose root is an
 ``NSManagedObjectModel``. The ``.omo`` beside the current-version ``.mom`` is deliberately
-unsupported: it is Core Data's undocumented load-time cache of that same model (``momv2$<digest>``
-magic, custom offset-table binary) and carries no information the ``.mom`` lacks.
+unsupported. It is Core Data's undocumented load-time cache of that same model (``momv2$<digest>``
+magic, custom offset-table binary) and adds no information the ``.mom`` lacks.
 
 **Default (deserialised object):** replicates what ``NSKeyedUnarchiver`` plus Core Data would
 materialise, dispatching on the archive's root class.
@@ -27,18 +27,18 @@ For an ``NSManagedObjectModel`` (``.mom``):
 
 * each ``NSEntityDescription`` becomes an object with its class name, super/sub-entities, renaming
   identifier, and properties;
-* each ``NSAttributeDescription`` carries its readable type (integer32, string, date, ...), value
+* each ``NSAttributeDescription`` includes its readable type (integer32, string, date, ...), value
   class name, optionality, indexed flag, default value, and validation predicates rendered as
-  readable strings (``SELF >= 0``); relationships carry destination, inverse, count bounds, and
+  readable strings (``SELF >= 0``); relationships include destination, inverse, count bounds, and
   delete rule.
 
 **Archive mode (lossless keyed-archive dump):** decodes the raw archive object graph instead (of
 any ``NSKeyedArchiver`` plist, whatever its root class), as close to lossless as JSON allows:
 
-* every archived instance becomes an object carrying its ``$class`` name and all archived fields,
+* every archived instance becomes an object with its ``$class`` name and all archived fields,
   with ``UID`` references resolved in place;
 * objects referenced more than once are emitted in full on first use with an ``$id`` marker, and as
-  ``{"$ref": id}`` afterwards, so shared structure and cycles survive the conversion;
+  ``{"$ref": id}`` afterwards, letting shared structure and cycles survive the conversion;
 * ``NSArray``/``NSSet`` variants become ``{"$class": ..., "items": [...]}`` and ``NSDictionary``
   variants ``{"$class": ..., "entries": {...}}``;
 * binary data (the entity version hashes) is hex-encoded under ``$data``;
@@ -50,8 +50,8 @@ statements the migration amounts to, using Core Data's ``Z`` conventions (table 
 columns ``Z<ATTRIBUTE>`` plus ``Z_PK``/``Z_ENT``/``Z_OPT``, and the ``Z_PRIMARYKEY`` bookkeeping
 table). Each copy mapping becomes the single-statement ``INSERT INTO ... SELECT`` equivalent
 against an ``ATTACH``\ ed old store; add mappings contribute only their ``CREATE TABLE``. Core Data
-really routes every row through ``NSMigrationManager`` in memory, so this is the net effect, not a
-transcript. Passing the column types of the compiled *destination* model (see
+really routes every row through ``NSMigrationManager`` in memory, and this is therefore the net
+effect rather than a transcript. Passing the column types of the compiled *destination* model (see
 :func:`load_mom_column_types`) gives columns their real types and numbers ``Z_ENT`` from the full
 entity list; without them, columns are emitted untyped (valid in SQLite) from the mapping alone.
 Anything untranslatable (a predicate other than ``TRUEPREDICATE``, a value expression that is not
@@ -103,7 +103,7 @@ EXPRESSION_TYPES: Mapping[int, str] = {
 }
 """``NSExpressionType`` (``Foundation/NSExpression.h``) to its readable name.
 
-The private values 10 and 50, which appear in compiled mapping models, are included.
+The private values 10 and 50, appearing in compiled mapping models, are included.
 
 :meta hide-value:
 """
@@ -160,7 +160,7 @@ COMPOUND_PREDICATE_JOINERS: Mapping[int, str] = {
 }
 """``NSCompoundPredicateType`` to the text that joins its subpredicates.
 
-A NOT predicate has only one subpredicate, so its joiner never appears.
+A NOT predicate has only one subpredicate, and its joiner therefore never appears.
 
 :meta hide-value:
 """
@@ -192,8 +192,8 @@ ATTRIBUTE_SQL_TYPES: Mapping[int, str] = {
 :meta hide-value:
 """
 
-# The ``NSExpressionType`` values rendered specially. The rest fall through to a description naming
-# the type, since they carry no canonical source-string form worth reproducing.
+# The ``NSExpressionType`` values rendered specially. The rest fall through to a description
+# identifying the type. They have no canonical source-string form worth reproducing.
 _EXPRESSION_CONSTANT = 0
 _EXPRESSION_SELF = 1
 _EXPRESSION_VARIABLE = 2
@@ -244,12 +244,12 @@ class _ArchiveDecoder:
         Parameters
         ----------
         instance : Mapping[str, Any]
-            An archived instance carrying a ``$class`` reference.
+            An archived instance with a ``$class`` reference.
 
         Returns
         -------
         str
-            The class name, or ``'?'`` when the descriptor holds none.
+            The class name, or ``'?'`` when the descriptor includes none.
         """
         descriptor = self.objects[instance['$class'].data]
         return str(descriptor.get('$classname', '?'))
@@ -273,7 +273,7 @@ class _ArchiveDecoder:
             return None
         if not isinstance(obj, dict):
             return self.decode_value(obj)
-        # Instances only: share and cycle handling applies to the object graph.
+        # For instances only. Share and cycle handling applies to the object graph.
         if (self.share_refs and uid in self.emitted) or uid in self.in_progress:
             return {'$ref': uid}
         self.in_progress.add(uid)
@@ -298,10 +298,10 @@ class _ArchiveDecoder:
         Returns
         -------
         dict[str, Any]
-            The decoded object, carrying its ``$class`` name alongside its fields.
+            The decoded object, with its ``$class`` name alongside its fields.
         """
         if '$classname' in instance:
-            # A class descriptor reached directly (unusual); emit verbatim.
+            # A class descriptor encountered directly (unusual); emit verbatim.
             return dict(instance)
         name = self.class_name(instance)
         if name in COLLECTION_CLASSES:
@@ -319,7 +319,7 @@ class _ArchiveDecoder:
         if 'NS.string' in instance:
             return {'$class': name, 'string': self.decode_value(instance['NS.string'])}
         # Decode fields in sorted key order so that, with the key-sorted JSON output, shared
-        # objects are expanded at the first position a reader encounters and later positions carry
+        # objects are expanded at the first position a reader encounters and later positions get
         # the ``$ref``.
         decoded: dict[str, Any] = {'$class': name}
         for key, value in sorted(instance.items()):
@@ -433,20 +433,20 @@ def _render_expression(exp: Mapping[str, Any] | None) -> str | None:
     """
     Render a decoded ``NSExpression`` tree as its canonical source string.
 
-    This mirrors the ``description`` conventions of Foundation's expression classes, which are also
+    This mirrors the ``description`` conventions of Foundation's expression classes. Those are also
     the strings the Xcode mapping-model editor shows (``$source.category``, ``FUNCTION(...)``,
     ``FETCH(...)``).
 
     Parameters
     ----------
     exp : Mapping[str, Any] | None
-        The decoded expression, or ``None`` where the archive holds no expression at all.
+        The decoded expression, or ``None`` where the archive includes no expression at all.
 
     Returns
     -------
     str | None
         The source string, or ``None`` when there was no expression. An expression type with no
-        canonical form yields a description naming the type rather than being dropped.
+        canonical form yields a description identifying the type rather than being dropped.
     """
     if exp is None:
         return None
@@ -491,7 +491,7 @@ def _render_predicate(predicate: Any) -> Any:
     -------
     Any
         The rendered string. Anything unrecognised falls back to the simplified raw structure
-        rather than being dropped, so nothing is lost by a gap in the rendering.
+        rather than being dropped, and a gap in the rendering therefore loses nothing.
     """
     if not isinstance(predicate, dict):
         return _simplify_value(predicate)
@@ -525,7 +525,7 @@ def _simplify_value(value: Any) -> Any:
     Parameters
     ----------
     value : Any
-        A decoded value, which may be a wrapper around a container.
+        A decoded value, possibly a wrapper around a container.
 
     Returns
     -------
@@ -585,7 +585,7 @@ def _build_entity_mapping(em: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _build_model(root: Mapping[str, Any]) -> dict[str, Any]:
-    # NSEntityMappingsByName is derived (keyed by mapping name), so it is not repeated here.
+    # NSEntityMappingsByName is derived (keyed by mapping name) and is not repeated here.
     group = root.get('NSEntityMappings') or {}
     return {'entityMappings': [_build_entity_mapping(em) for em in group.get('items', [])]}
 
@@ -689,8 +689,8 @@ def load_mom_column_types(path: Path) -> dict[str, dict[str, str]]:
     Raises
     ------
     ValueError
-        When the archive's root is not an ``NSManagedObjectModel``, so the file is not a compiled
-        model.
+        When the archive's root is not an ``NSManagedObjectModel`` and the file is therefore not a
+        compiled model.
     """
     archive = plistlib.loads(path.read_bytes())
     root = _ArchiveDecoder(archive, share_refs=False).decode_value(archive['$top']['root'])
@@ -750,7 +750,7 @@ def _sql_for_entity_mapping(em: Mapping[str, Any], ordinals: Mapping[str, int],
         lines.append('-- Relationship mappings are present but not translated here.')
     source_expression = em['sourceExpression']
     if source_expression is None:
-        lines += [f'-- {em["mappingType"]} mapping: the table starts empty.', '']
+        lines += [f'-- {em["mappingType"]} mapping. The table starts empty.', '']
         return lines
     if (match := _FETCH_PATTERN.fullmatch(source_expression)) is None:
         lines += [f'-- Source expression not translated: {source_expression}', '']
@@ -781,10 +781,9 @@ def build_sql(model: Mapping[str, Any], mom_types: Mapping[str, Mapping[str, str
     """
     Emit the effective SQLite script for a deserialised mapping model.
 
-    ``Z_ENT`` ordinals follow Core Data's own assignment, which is a position in the model's
-    name-sorted entity list. Given the destination model they come from its full entity list;
-    without it they come from the mapped entities alone, which agrees only when the mapping covers
-    every entity.
+    ``Z_ENT`` ordinals follow Core Data's assignment, a position in the model's name-sorted entity
+    list. Given the destination model they come from its full entity list; without it they come
+    from the mapped entities alone. That agrees only when the mapping covers every entity.
 
     Parameters
     ----------
@@ -831,8 +830,8 @@ def build_sql(model: Mapping[str, Any], mom_types: Mapping[str, Mapping[str, str
     ]
     for destination in destinations:
         lines.append('INSERT INTO Z_PRIMARYKEY (Z_ENT, Z_NAME, Z_SUPER, Z_MAX)')
-        # This builds a script as text and never executes it, so the injection rule does not apply;
-        # the names interpolated come from the model being converted in any case.
+        # This builds a script as text and never executes it, and the injection rule therefore does
+        # not apply. The names interpolated come from the model being converted in any case.
         lines.append(
             f"  SELECT {ordinals[destination]}, '{destination}', 0, "  # ruff: ignore[hardcoded-sql-expression]
             f'COALESCE(MAX(Z_PK), 0) FROM Z{destination.upper()};')

@@ -36,7 +36,7 @@ def coredata(model: Path, mom: Path | None, *, archive: bool, sql: bool) -> None
     A ``.cdm`` is a compiled mapping model and a ``.mom`` a compiled managed object model; both are
     keyed archives, and each is dispatched on the class at its root. The ``.omo`` beside a
     current-version ``.mom`` is deliberately unsupported: it is Core Data's undocumented load-time
-    cache of that same model and carries nothing the ``.mom`` lacks.
+    cache of that same model and adds nothing the ``.mom`` lacks.
     """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', model)
     try:

@@ -27,7 +27,7 @@ def strings(table: Path) -> None:
     Convert the localisation table STRINGS to JSON on standard output.
 
     Both forms are read: the flat binary plist a compiled table ships as, and the old-style text
-    form an uncompiled one keeps.
+    form an uncompiled one retains.
     """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', table)
     try:

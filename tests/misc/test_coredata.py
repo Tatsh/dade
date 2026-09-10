@@ -377,7 +377,7 @@ def test_sql_mapping_without_a_source_expression(tmp_path: Path) -> None:
     root = _copy_mapping_model(builder, {})
     path = tmp_path / 'empty_source.cdm'
     path.write_bytes(builder.build(root))
-    assert 'the table starts empty.' in build_sql(convert(path), None)
+    assert 'The table starts empty.' in build_sql(convert(path), None)
 
 
 def test_sql_mapping_with_an_untranslatable_source(tmp_path: Path) -> None:

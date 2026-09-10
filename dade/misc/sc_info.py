@@ -1,7 +1,7 @@
 """
 Reading of the ``SC_Info`` directory Apple puts inside a purchased ``.app`` bundle.
 
-An App Store download carries its FairPlay bookkeeping in ``Payload/<App>.app/SC_Info``, beside the
+An App Store download stores its FairPlay bookkeeping in ``Payload/<App>.app/SC_Info``, beside the
 encrypted executable. This reads that directory and describes it, either from an unpacked tree or
 from inside an ``.ipa`` without unpacking it; it decrypts nothing, and none of the material it
 prints is a key.
@@ -9,42 +9,44 @@ prints is a key.
 - ``Manifest.plist`` lists the supporting files, normally under ``SinfPaths`` and
   ``SinfReplicationPaths``.
 - ``<App>.sinf`` is a QuickTime atom tree, the same ``sinf`` protection-scheme box a FairPlay MP4
-  carries. Its ``schi`` holds the purchase record: the buying account's numeric identifier and
-  name, the purchase and transaction times, an initialisation vector, a ``righ`` block of
+  uses. Its ``schi`` stores the purchase record, comprising the buying account's numeric identifier
+  and name, the purchase and transaction times, an initialisation vector, a ``righ`` block of
   four-character tags, and the encrypted ``priv`` blob, with a signature over the lot in ``sign``.
-- ``<App>.supf`` is a run of length-prefixed blocks: a four-byte magic, a 72-byte body carrying an
+- ``<App>.supf`` is a run of length-prefixed blocks: a four-byte magic, a 72-byte body with an
   identifier and a 32-byte key blob, a DER-encoded Apple FairPlay certificate, and a signature.
 - ``<App>.supp`` mirrors it, with the same identifier, a counted table of 32-byte records whose
   last entry is the ``.supf`` key blob, a second and different Apple FairPlay certificate, and a
   signature.
 - ``<App>.supx`` is a length-prefixed run of tagged entries closed by a zero terminator.
 
-Those four share a stem and make one record, and a directory can hold more than one: a set for
-another architecture, or one left behind by a renamed executable. Every set is read, the one the
-bundle's executable uses first.
+Those four share a stem and make one record, and a directory can include more than one: a set for
+another architecture, or a remnant of a renamed executable. Every set is read, the one the bundle's
+executable uses first.
 
-The ``.sinf`` is the only one of these with a published shape; the three supplements are described
-from what independently obtained bundles agree on. Every length prefix in them accounts for the
-whole file with nothing left over, in every bundle, which is what the layouts above rest on.
+The ``.sinf`` is the only one of the four with a published shape; the three supplements are
+described from what independently obtained bundles agree on. Every length prefix in them accounts
+for the whole file with no remainder, in every bundle, and that agreement is what the layouts above
+rest on.
 
-What genuinely cannot be broken down further is the cryptographic material itself: the RSA
-signatures, the ``.supf`` key blob, the ``.supp`` records, the ``.supx`` entry values, and the body
-of ``priv``, which is ciphertext. What the two supplements count, on the other hand, is now known:
-both size a table against the executable's encrypted region, one 32-byte entry per 4096-byte page.
+The cryptographic material itself genuinely cannot be broken down further: the RSA signatures, the
+``.supf`` key blob, the ``.supp`` records, the ``.supx`` entry values, and the ciphertext body of
+``priv``. What the two supplements count is now known. Both size a table against the executable's
+encrypted region, one 32-byte entry per 4096-byte page.
 
-An ``.ipa`` holds more than the application: an app extension under ``PlugIns`` and a watch app
-under ``Watch`` are bundles in their own right, each with its own ``SC_Info``, and every one of
-them is read. The application is the one bundle at ``Payload/<name>.app`` and nothing else is,
-which is how it is told apart. The application's own ``Manifest.plist`` corroborates this, since
-its ``SinfReplicationPaths`` names the sub-bundles' records by path and its own without one.
+An ``.ipa`` includes more than the application. An app extension under ``PlugIns`` and a watch app
+under ``Watch`` are bundles in themselves, each with an ``SC_Info``, and every one is read. The
+application is the one bundle at ``Payload/<name>.app`` and nothing else is, and that is how it is
+told apart. The application's ``Manifest.plist`` corroborates the rule. Its
+``SinfReplicationPaths`` lists the sub-bundles' records by path, and the application's record
+without one.
 
 Much of what is asserted here was measured against the 1,935 purchased applications of a private
-archive, covering 3,401 bundles, and checked against each one's ``iTunesMetadata.plist``. Where a
-claim rests on that corpus the docstring says what was counted, so that a later sample can
+archive, covering 3,401 bundles, and checked against every bundle's ``iTunesMetadata.plist``. Where
+a claim rests on that corpus the docstring states what was counted. A later sample can therefore
 contradict it.
 
-Times are seconds since the QuickTime epoch of 1904-01-01 UTC, which is the only one of the usual
-candidates that puts the sample bundles' purchase dates in the plausible past.
+Times are seconds since the QuickTime epoch of 1904-01-01 UTC. That epoch is the only one of the
+usual candidates that puts the sample bundles' purchase dates in the plausible past.
 """
 from __future__ import annotations
 
@@ -101,8 +103,9 @@ __all__ = (
 APP_STORE_URL = 'https://apps.apple.com/app/id{item}'
 """Template a store item identifier is turned into a link with when the storefront is unknown.
 
-Apple resolves this form from wherever the reader is, which finds the item when it is sold there
-and not otherwise, so a regional link is preferred whenever the storefront can be established.
+Apple resolves this form from wherever the reader is. That finds the item when it is sold there and
+not otherwise, and a regional link is therefore preferred whenever the storefront can be
+established.
 
 :meta hide-value:
 """
@@ -292,7 +295,7 @@ ATOM_DESCRIPTIONS: Mapping[str, str] = {
     'sinf': 'Protection scheme information',
     'user': 'Apple account ID',
 }
-"""Atom type to a readable description, for the ones an ``SC_Info`` ``.sinf`` carries.
+"""Atom type to a readable description, for the ones an ``SC_Info`` ``.sinf`` includes.
 
 :meta hide-value:
 """
@@ -308,7 +311,7 @@ RIGHTS_TAGS: Mapping[str, str] = {
 }
 """Rights tag to a readable description.
 
-A ``righ`` block carries these eight tags, always in the order ``veID plat aver tran song tool
+A ``righ`` block includes these eight tags, always in the order ``veID plat aver tran song tool
 medi mode``, and then sixteen zero bytes.
 
 Two of them are certain, having been checked against the ``iTunesMetadata.plist`` of 1,935
@@ -317,22 +320,23 @@ purchased applications covering 3,385 bundles, agreeing in every one:
 - ``song`` is ``itemId``, the store item, over 187 distinct values.
 - ``veID`` is ``vendorId``, the seller, over 138 distinct values.
 
-``tran`` is a timestamp rather than an opaque transaction number: from tool ``P512`` onward a
+``tran`` is a timestamp rather than an opaque transaction number. From tool ``P512`` onward a
 ``crdt`` atom sits beside it, and the two agree to the second in 1,878 of 2,021 bundles and differ
 by exactly one second in the rest.
 
-``aver`` is not the application version. It never varies: every one of those 3,385 bundles carries
+``aver`` is not the application version. It never varies. Every one of those 3,385 bundles stores
 ``0x01010100``, across 187 applications and hundreds of releases. That is the value the metadata
-calls ``versionRestrictions``, which is likewise constant, so the two agree everywhere without that
-proving anything. ``medi`` (always ``0x00000080``) and ``mode`` (always zero, as is the metadata's
-``drmVersionNumber``) are constant for the same reason and named only by convention.
+calls ``versionRestrictions``. The metadata value is likewise constant, and the two therefore agree
+everywhere without that proving anything. ``medi`` (always ``0x00000080``) and ``mode`` (always
+zero, as is the metadata's ``drmVersionNumber``) are constant for the same reason and titled only
+by convention.
 
 ``plat`` is not the platform. Every application in the corpus is an iOS application, yet ``plat``
 is 2 in 2,115 bundles, 5 in 1,213, and 0 in 57. It is a property of the download rather than of the
 binary, being the same for every bundle of a download in 1,923 of 1,924 of them, and it tracks the
 era of the store client: ``plat`` 2 accompanies the iOS 7 and 8 SDKs and ``plat`` 5 the iOS 9 ones.
-It is not the device, which is mixed across all three values, nor the architecture, since 1,354
-``plat`` 2 bundles and 1,029 ``plat`` 5 bundles alike carry arm64.
+It is not the device, mixed as the device is across all three values. It is not the architecture.
+1,354 ``plat`` 2 bundles and 1,029 ``plat`` 5 bundles alike use arm64.
 
 ``tool`` is text: ``P454`` through ``P516`` in this corpus.
 
@@ -481,9 +485,9 @@ class Sinf(NamedTuple):
     atoms: tuple[Atom, ...]
     """The whole atom tree, for anything this does not surface directly."""
     original_format: str | None
-    """The ``frma`` format the protection wraps, which is ``game`` for an application."""
+    """The ``frma`` format the protection wraps. It is ``game`` for an application."""
     scheme: str | None
-    """The ``schm`` scheme type, which is ``itun`` for a store purchase."""
+    """The ``schm`` scheme type. It is ``itun`` for a store purchase."""
     account_id: int | None
     """The buying Apple account's numeric identifier."""
     account_name: str | None
@@ -491,14 +495,14 @@ class Sinf(NamedTuple):
     purchased: datetime | None
     """When the purchase was recorded.
 
-    This is the ``crdt`` atom, which only newer records carry: it appears from tool ``P512``
+    This is the ``crdt`` atom, present only in newer records. It appears from tool ``P512``
     onward and never before, in all 3,385 bundles of the corpus. Where it is absent the same
-    instant is still in the ``righ`` block's ``tran``, which it agrees with to the second.
+    instant is still in the ``righ`` block's ``tran``, and the two agree to the second.
     """
     asset_type: int | None
     """The ``asdt`` value."""
     key_index: int | None
-    """The ``key`` value, which selects a key rather than being one.
+    """The ``key`` value. It selects a key rather than being one.
 
     It follows the tool generation rather than the title: 2 for tools ``P454`` to ``P501``, 21 for
     ``P502`` to ``P509``, and 29 for ``P510`` to ``P516``.
@@ -518,35 +522,35 @@ class Sinf(NamedTuple):
 class Supf(NamedTuple):
     """A parsed ``.supf`` supplement.
 
-    The file is a run of length-prefixed blocks: a four-byte magic, then a body holding the
-    identifier and key blob, then the certificate, then the signature over it.
+    The file is a run of length-prefixed blocks: a four-byte magic, then a body with the identifier
+    and key blob, then the certificate, then the signature over it.
     """
 
     version: int
     """The leading byte, 3 in every sample seen."""
     tag: str
-    """The three printable bytes after it, which run from ``309`` to ``325`` in the corpus."""
+    """The three printable bytes after it, running from ``309`` to ``325`` in the corpus."""
     header_words: tuple[int, ...]
     """The four ``uint32`` opening the body.
 
     The second is the size in bytes of a table of 32-byte entries covering the encrypted region:
-    ``32 * (ceil(cryptsize / 4096) + 1)``, exactly, in all 2,562 bundles of the corpus that carry a
-    ``.supf``. The other three barely move: the first is 2 (2,443 bundles), 3 (78), or 1 (25); the
+    ``32 * (ceil(cryptsize / 4096) + 1)``, exactly, in all 2,562 bundles of the corpus with a
+    ``.supf``. The other three barely move. The first is 2 (2,443 bundles), 3 (78), or 1 (25); the
     third is 12 and the fourth 9 in all but a handful.
     """
     identifier: bytes
     """The 20-byte identifier the ``.supp`` repeats."""
     key_blob: bytes
-    """The 32-byte block closing the body. Key material, so there is nothing inside it to read."""
+    """The 32-byte block closing the body. It is key material, with nothing inside it to read."""
     certificate: CertificateSummary | None
     """The embedded certificate's summary, when one could be read.
 
     It will almost always be expired, and that is normal rather than a sign of a damaged file.
-    Every one of the 5,962 certificates in the corpus, in both supplements alike, carries the same
+    Every one of the 5,962 certificates in the corpus, in both supplements alike, states the same
     validity window of 2008-07-08 to 2013-07-07, and they come from a pool of only twelve serials
     of the form ``3333AF080708AF0001AF0000NN`` whose subject is an ``AP.<serial>`` under Apple
-    FairPlay. 5,929 of them were already past ``notAfter`` on the day the application was bought,
-    so whatever consumes these does not check their expiry. The serial carries the issue date
+    FairPlay. 5,929 of them were already past ``notAfter`` on the day the application was bought.
+    Whatever consumes them therefore does not check their expiry. The serial records the issue date
     itself, ``080708`` for 2008-07-08, agreeing with ``notBefore``.
     """
     certificate_der: bytes | None
@@ -556,7 +560,7 @@ class Supf(NamedTuple):
     signature: bytes
     """The length-prefixed signature closing the file, 128 bytes for the 1024-bit keys seen."""
     trailer: bytes
-    """Anything after the signature, which is empty in every sample seen."""
+    """Anything after the signature, empty in every sample seen."""
 
 
 class Supp(NamedTuple):
@@ -571,7 +575,7 @@ class Supp(NamedTuple):
     tag: str
     """The three printable bytes after it, matching the ``.supf``."""
     identifier: bytes
-    """The 20-byte identifier the ``.supf`` carries too."""
+    """The 20-byte identifier the ``.supf`` repeats."""
     records: tuple[bytes, ...]
     """The 32-byte records, of which the last is the ``.supf`` key blob.
 
@@ -582,19 +586,19 @@ class Supp(NamedTuple):
     measured, with no exceptions.
 
     Finding that last Mach-O means scanning the file's page boundaries for the magic rather than
-    trusting the fat header, which can under-declare: 117 of those executables carry an appended
-    slice their fat header does not list, and every one of them satisfies the rule once it is found
-    by scanning.
+    trusting the fat header. The fat header can under-declare. 117 of those executables include an
+    appended slice their fat header does not list, and every one satisfies the rule once the slice
+    is found by scanning.
 
-    So the count is a function of how big the encrypted code is, not of anything about the
+    The count is therefore a function of how big the encrypted code is, not of anything about the
     purchase, and it runs from 8 to 26,000 across the corpus. Each record is still 256 bits with
     nothing inside it to read: no record repeats, none is shared between bundles, and none is
     derivable from another or from anything else in the directory.
     """
     certificate: CertificateSummary | None
-    """The embedded certificate's summary, which is a different one from the ``.supf``'s.
+    """The embedded certificate's summary, a different certificate from the ``.supf``'s.
 
-    Expect it to be expired: see :py:class:`Supf` for what the corpus says about these.
+    Expect it to be expired. :py:class:`Supf` documents what the corpus shows.
     """
     certificate_der: bytes | None
     """The embedded certificate, DER-encoded."""
@@ -619,7 +623,7 @@ class Supx(NamedTuple):
     version: int
     """The leading ``uint32``."""
     length: int
-    """The declared body length, which excludes the eight-byte header."""
+    """The declared body length, excluding the eight-byte header."""
     entries: tuple[SupxEntry, ...]
     """The tagged entries, up to the zero terminator."""
     trailer: bytes
@@ -630,18 +634,18 @@ class SCRecord(NamedTuple):
     """
     One executable's protection files inside an ``SC_Info`` directory.
 
-    A directory usually holds one set, named after the bundle's executable, but it can hold more:
-    62 of the 3,401 bundles measured hold two. One shape is an architecture-specific set beside the
-    main one, as ``BofA_armv7.sinf`` and ``BofA_armv7.supp`` sit beside ``BofA.sinf``; the other is
-    a set left behind by a renamed executable, as ``Chase.sinf`` sits beside ``Chase iPad.sinf``.
-    Every set is read, in the same way that every bundle of a download is.
+    A directory usually stores one set, titled after the bundle's executable, but it can include
+    more. 62 of the 3,401 bundles measured include two. One shape is an architecture-specific set
+    beside the main one, as ``BofA_armv7.sinf`` and ``BofA_armv7.supp`` sit beside ``BofA.sinf``.
+    The other is a remnant of a renamed executable, as ``Chase.sinf`` sits beside
+    ``Chase iPad.sinf``. Every set is read, in the same way that every bundle of a download is.
 
-    The files of a set share a stem, and not every set is complete: of the sets in those 62
-    directories, 38 carry a ``.supf`` and a ``.supp``, 33 only a ``.supp``, and 53 neither.
+    The files of a set share a stem, and not every set is complete. Of the sets in those 62
+    directories, 38 include a ``.supf`` and a ``.supp``, 33 only a ``.supp``, and 53 neither.
     """
 
     name: str
-    """The stem the set's files share, which is the executable's name."""
+    """The stem the set's files share, taken from the executable's name."""
     sinf: Sinf | None
     """The parsed ``.sinf``, when the set has one."""
     supf: Supf | None
@@ -654,9 +658,9 @@ class SCRecord(NamedTuple):
     """
     Whether this is the set the bundle's own executable uses.
 
-    The ``Manifest.plist`` settles it where there is one, since its ``SinfPaths`` names that one
-    record and no other. Failing that the set named after the bundle wins, and failing that the
-    first in name order.
+    The ``Manifest.plist`` settles it where there is one. Its ``SinfPaths`` lists that one record
+    and no other. Failing that the set titled after the bundle wins, and failing that the first in
+    name order.
     """
 
 
@@ -674,7 +678,7 @@ class SCInfo(NamedTuple):
     metadata: dict[str, Any] | None
     """The bundle's ``iTunesMetadata.plist``, when one was found beside it."""
     region_override: str | None
-    """A country code the caller supplied, for when nothing beside the bundle carries one."""
+    """A country code the caller supplied, for when nothing beside the bundle states one."""
     bundle: str
     """Which bundle this is, as its path inside the container, such as ``Payload/Example.app``."""
     is_main: bool
@@ -687,7 +691,7 @@ class SCInfo(NamedTuple):
         Returns
         -------
         SCRecord | None
-            The set, or ``None`` when the directory holds none at all.
+            The set, or ``None`` when the directory includes none at all.
         """
         return next((record for record in self.records if record.is_main),
                     self.records[0] if self.records else None)
@@ -745,9 +749,9 @@ class SCInfo(NamedTuple):
         """
         The bundle's App Store link.
 
-        A store item is only reachable in the storefront it was sold in, so the link is regional
-        wherever the storefront can be established. Without one it falls back to the region-less
-        form, which Apple resolves from wherever the reader is.
+        A store item is available only in the storefront it was sold in. The link is therefore
+        regional wherever the storefront can be established. Without one it falls back to the
+        region-less form, and Apple resolves that form from wherever the reader is.
 
         Returns
         -------
@@ -766,8 +770,8 @@ class SCInfo(NamedTuple):
         """
         Country code of the storefront the bundle was bought from.
 
-        A code the caller supplied wins, since only they can know it when nothing beside the
-        bundle records it.
+        A code the caller supplied wins. Only the caller can know it when nothing beside the bundle
+        records it.
 
         Returns
         -------
@@ -781,12 +785,12 @@ class SCInfo(NamedTuple):
     @property
     def metadata_item_id(self) -> int | None:
         """
-        The store item identifier the ``iTunesMetadata.plist`` carries.
+        The store item identifier the ``iTunesMetadata.plist`` states.
 
         Returns
         -------
         int | None
-            The identifier, or ``None`` without metadata carrying one.
+            The identifier, or ``None`` without metadata stating one.
         """
         if self.metadata is not None and isinstance(self.metadata.get('itemId'), int):
             return int(self.metadata['itemId'])
@@ -795,12 +799,12 @@ class SCInfo(NamedTuple):
     @property
     def record_item_id(self) -> int | None:
         """
-        The store item identifier the purchase record's ``song`` tag carries.
+        The store item identifier the purchase record's ``song`` tag states.
 
         Returns
         -------
         int | None
-            The identifier, or ``None`` without a record carrying one.
+            The identifier, or ``None`` without a record stating one.
         """
         if self.sinf is None:
             return None
@@ -812,14 +816,14 @@ class SCInfo(NamedTuple):
         """
         The store item identifier.
 
-        The purchase record wins over the metadata, because it sits inside the bundle and so is
-        bound to it, whereas the metadata sits outside and could belong to something else. Where
-        both are present and disagree, the cross-references say so.
+        The purchase record wins over the metadata. The record sits inside the bundle and is bound
+        to it, whereas the metadata sits outside and could belong to another bundle. Where both are
+        present and disagree, the cross-references report the disagreement.
 
         Returns
         -------
         int | None
-            The identifier, or ``None`` when neither carries one.
+            The identifier, or ``None`` when neither states one.
         """
         return self.record_item_id if self.record_item_id is not None else self.metadata_item_id
 
@@ -829,7 +833,7 @@ class SCInfo(NamedTuple):
         The Apple storefront identifier the bundle was bought from.
 
         This comes from the ``iTunesMetadata.plist`` beside the bundle; the ``SC_Info`` directory
-        itself carries no storefront anywhere.
+        itself states no storefront anywhere.
 
         Returns
         -------
@@ -851,8 +855,8 @@ def _quicktime_time(seconds: int) -> datetime:
     """
     Convert a QuickTime timestamp to a date.
 
-    The whole ``uint32`` range these fields hold lands between 1904 and 2040, so no value one can
-    carry falls outside what :py:mod:`datetime` covers.
+    The whole ``uint32`` range these fields store lands between 1904 and 2040. No value one can
+    store falls outside what :py:mod:`datetime` covers.
 
     Parameters
     ----------
@@ -879,12 +883,12 @@ def parse_atoms(data: bytes, base: int = 0) -> tuple[Atom, ...]:
     data : bytes
         The buffer to parse.
     base : int
-        File offset the buffer starts at, so that reported offsets are absolute.
+        File offset the buffer starts at, making reported offsets absolute.
 
     Returns
     -------
     tuple[Atom, ...]
-        The atoms at this level, each carrying whatever nested atoms it holds.
+        The atoms at this level, each with whatever nested atoms it includes.
     """
     atoms: list[Atom] = []
     offset = 0
@@ -957,7 +961,7 @@ def find_atom(atoms: Sequence[Atom], kind: str) -> Atom | None:
     Returns
     -------
     Atom | None
-        The atom, or ``None`` when the tree holds none of that type.
+        The atom, or ``None`` when the tree includes none of that type.
     """
     return next((atom for atom in iter_atoms(atoms) if atom.kind == kind), None)
 
@@ -988,8 +992,8 @@ def _parse_rights(body: bytes) -> tuple[tuple[Right, ...], bytes]:
     """
     Split a ``righ`` payload into its tagged entries.
 
-    Parsing stops at the first tag that is not printable, because the eight bytes at the end of
-    every sample are not a tagged entry.
+    Parsing stops at the first tag that is not printable. The eight bytes at the end of every
+    sample are not a tagged entry.
 
     Parameters
     ----------
@@ -1025,17 +1029,17 @@ def parse_sinf(data: bytes) -> Sinf:
     Returns
     -------
     Sinf
-        The parsed record. Fields whose atoms are absent come back as ``None``, so a truncated or
-        unfamiliar record still yields whatever it does carry.
+        The parsed record. Fields whose atoms are absent come back as ``None``. A truncated or
+        unfamiliar record still yields whatever it does include.
 
     Raises
     ------
     ValueError
-        If the file holds no atoms at all, so it is not a ``.sinf``.
+        If the file includes no atoms at all and is therefore not a ``.sinf``.
     """
     atoms = parse_atoms(data)
     if not atoms:
-        msg = f'Not a sinf: no atom header at the start of {len(data)} bytes.'
+        msg = f'Not a sinf. No atom header at the start of {len(data)} bytes.'
         raise ValueError(msg)
     frma = find_atom(atoms, 'frma')
     schm = find_atom(atoms, 'schm')
@@ -1073,8 +1077,8 @@ def _leading_tag(data: bytes) -> tuple[int, str]:
     tuple[int, str]
         The version byte and the tag, the latter empty when it is not printable.
     """
-    # Both callers length-check the file before reading its tag, so this short-input guard is
-    # unreachable through them; it keeps the reader correct for any other caller.
+    # Both callers length-check the file before reading its tag, and this short-input guard is
+    # therefore unreachable through them. It retains correctness for any other caller.
     if len(data) < 1 + _TAG_TEXT_SIZE:  # pragma: no cover
         return (data[0] if data else 0), ''
     tag = data[1:1 + _TAG_TEXT_SIZE]
@@ -1183,7 +1187,7 @@ def parse_supp(data: bytes) -> Supp:
 
 def parse_supx(data: bytes) -> Supx:
     """
-    Parse a ``.supx`` supplement, which is a header then tagged entries.
+    Parse a ``.supx`` supplement, a header then tagged entries.
 
     Parameters
     ----------
@@ -1198,7 +1202,7 @@ def parse_supx(data: bytes) -> Supx:
     Raises
     ------
     ValueError
-        If the file is too short to hold the header.
+        If the file is too short for the header.
     """
     if len(data) < _SUPX_HEADER:
         msg = f'Too short for a supx: {len(data)} bytes.'
@@ -1223,9 +1227,9 @@ def _locate(path: Path) -> Path:
     """
     Resolve whatever the caller pointed at to an ``SC_Info`` directory.
 
-    The ``SC_Info`` directory, the ``.app`` bundle holding it, the ``Payload`` directory holding
-    that, and a directory holding ``Payload`` all work, so an unpacked ``.ipa`` can be named at
-    whichever level is to hand.
+    The ``SC_Info`` directory, the ``.app`` bundle around it, the ``Payload`` directory above the
+    bundle, and a directory with ``Payload`` inside all work. An unpacked ``.ipa`` can therefore be
+    given at whichever level is to hand.
 
     Parameters
     ----------
@@ -1240,7 +1244,7 @@ def _locate(path: Path) -> Path:
     Raises
     ------
     ValueError
-        If no ``SC_Info`` directory can be reached from there, or a ``Payload`` directory holds
+        If no ``SC_Info`` directory is found from there, or a ``Payload`` directory includes
         anything other than exactly one bundle.
     """
     if path.name == _SC_INFO_NAME and path.is_dir():
@@ -1248,9 +1252,9 @@ def _locate(path: Path) -> Path:
     if (direct := path / _SC_INFO_NAME).is_dir():
         return direct
     payload = path if path.name == _PAYLOAD_NAME else path / _PAYLOAD_NAME
-    # ``_payload_of`` returns any path that is or holds ``Payload`` before ``_locate`` runs, so a
-    # ``Payload`` directory never reaches here through ``read_bundles``; the branch stays for a
-    # caller that resolves one directly.
+    # ``_payload_of`` returns any path that is or includes ``Payload`` before ``_locate`` runs, and
+    # a ``Payload`` directory therefore never arrives here through ``read_bundles``. The branch
+    # stays for a caller that resolves one directly.
     if payload.is_dir():  # pragma: no cover
         bundles = sorted(
             entry for entry in payload.iterdir() if entry.is_dir() and entry.suffix == _APP_SUFFIX)
@@ -1265,8 +1269,8 @@ def _locate(path: Path) -> Path:
             return found
         msg = f'No {_SC_INFO_NAME} directory in {bundles[0]}.'
         raise ValueError(msg)
-    msg = (f'No {_SC_INFO_NAME} directory at or below {path}; name the SC_Info directory, the '
-           f'bundle, the {_PAYLOAD_NAME} directory, or the directory holding it.')
+    msg = (f'No {_SC_INFO_NAME} directory at or below {path}; specify the SC_Info directory, the '
+           f'bundle, the {_PAYLOAD_NAME} directory, or the directory above it.')
     raise ValueError(msg)
 
 
@@ -1274,8 +1278,8 @@ def _find_metadata_path(directory: Path) -> Path | None:
     """
     Locate the ``iTunesMetadata.plist`` sitting beside the bundle, if there is one.
 
-    In an unpacked ``.ipa`` the file sits next to ``Payload``, two levels above the ``.app``, so
-    the search walks up from the ``SC_Info`` directory rather than looking in one fixed place.
+    In an unpacked ``.ipa`` the file sits next to ``Payload``, two levels above the ``.app``. The
+    search therefore walks up from the ``SC_Info`` directory rather than looking in one fixed place.
 
     Parameters
     ----------
@@ -1297,12 +1301,12 @@ def _build(path: Path, contents: dict[str, bytes], metadata: bytes | None, regio
     Assemble the reading of one ``SC_Info`` directory from its files' bytes.
 
     The bytes come from a directory or from inside an ``.ipa``, and everything after that is the
-    same, so both routes end here.
+    same. Both routes therefore end here.
 
     Parameters
     ----------
     path : pathlib.Path
-        Where the directory is, for the report to name.
+        Where the directory is, for the report to state.
     contents : dict[str, bytes]
         File name to contents, for the files in the ``SC_Info`` directory.
     metadata : bytes | None
@@ -1312,13 +1316,13 @@ def _build(path: Path, contents: dict[str, bytes], metadata: bytes | None, regio
     bundle : str
         Which bundle this is, as its path inside the container.
     is_main : bool
-        Whether this is the application rather than something beside it.
+        Whether this is the application rather than a bundle beside it.
 
     Returns
     -------
     SCInfo
         Everything that could be read. A file that is absent, and a file that is present but
-        unreadable, both leave their field ``None``, so a partial directory still describes itself.
+        unreadable, both set their field to ``None``. A partial directory still describes itself.
     """
     files = tuple((name, len(data), hashlib.sha256(data).hexdigest())
                   for name, data in sorted(contents.items()))
@@ -1338,14 +1342,14 @@ def _main_record_name(names: Sequence[str], manifest: Mapping[str, Any] | None, 
     manifest : Mapping[str, Any] | None
         The parsed ``Manifest.plist``, when there is one.
     bundle : str
-        The bundle's path inside the container, whose last component names the application.
+        The bundle's path inside the container, whose last component identifies the application.
 
     Returns
     -------
     str
-        The stem of the main set. The ``Manifest.plist`` settles it where there is one, since its
-        ``SinfPaths`` names that record and no other; failing that the set named after the bundle
-        wins, and failing that the first in name order.
+        The stem of the main set. The ``Manifest.plist`` settles it where there is one, its
+        ``SinfPaths`` listing that record and no other; failing that the set titled after the
+        bundle wins, and failing that the first in name order.
     """
     for path in (manifest or {}).get(_MANIFEST_SINF_PATHS, ()):
         if (isinstance(path, str) and (stem := path.rsplit('/', 1)[-1]).endswith(_SINF_SUFFIX)
@@ -1374,8 +1378,8 @@ def _records(contents: dict[str, bytes], manifest: Mapping[str, Any] | None,
     -------
     tuple[SCRecord, ...]
         One entry per stem, the main one first and the rest in name order. A set need not be
-        complete: 16 of the 3,401 directories measured carry supplements with no ``.sinf`` beside
-        them, so a stem seen on any of the four suffixes makes a set.
+        complete. 16 of the 3,401 directories measured include supplements with no ``.sinf`` beside
+        them, and a stem seen on any of the four suffixes therefore makes a set.
     """
     names = sorted({
         name[:-len(suffix)]
@@ -1423,10 +1427,10 @@ def _parse_file(data: bytes | None, parse: Callable[[bytes], Any]) -> Any:
     Parameters
     ----------
     data : bytes | None
-        The file's bytes, or ``None`` when the set does not carry that file.
+        The file's bytes, or ``None`` when the set does not include that file.
     parse : Callable[[bytes], Any]
-        The parser to hand the bytes to. The return type follows the parser, which is why this is
-        annotated loosely; each call site knows what it asked for.
+        The parser to hand the bytes to. The return type follows the parser, and this is therefore
+        annotated loosely. Each call site knows what it requested.
 
     Returns
     -------
@@ -1443,11 +1447,11 @@ def _parse_file(data: bytes | None, parse: Callable[[bytes], Any]) -> Any:
 
 def _bundles_in_tree(payload: Path) -> list[tuple[str, Path]]:
     """
-    Find every bundle under an unpacked ``Payload`` that carries an ``SC_Info``.
+    Find every bundle under an unpacked ``Payload`` that includes an ``SC_Info``.
 
     An application's extensions live under ``PlugIns`` and its watch app under ``Watch``, each a
-    bundle with its own FairPlay record. Only those two places are looked in, so this stays a few
-    directory listings rather than a walk of the whole application.
+    bundle with a FairPlay record. Only those two places are looked in. This stays a few directory
+    listings rather than a walk of the whole application.
 
     Parameters
     ----------
@@ -1501,11 +1505,11 @@ def _directory_contents(directory: Path) -> dict[str, bytes]:
 
 def is_main_bundle(bundle: str) -> bool:
     """
-    Decide whether a bundle path names the application rather than something beside it.
+    Decide whether a bundle path identifies the application rather than a bundle beside it.
 
     An application is ``Payload/<Name>.app`` and nothing else is. Everything nested deeper is a
-    sub-bundle: an app extension under ``PlugIns``, a watch app under ``Watch``, and so on. Each
-    carries its own FairPlay record, which is why several turn up in one download.
+    sub-bundle: an app extension under ``PlugIns``, a watch app under ``Watch``, and so on. Each has
+    a FairPlay record, and several therefore turn up in one download.
 
     Parameters
     ----------
@@ -1525,18 +1529,18 @@ def is_main_bundle(bundle: str) -> bool:
 def _select(bundles: Sequence[str], where: Path, wanted: str | None, *,
             main_only: bool) -> list[str]:
     """
-    Narrow the bundles found to those the caller asked for.
+    Narrow the bundles found to those the caller requested.
 
     Parameters
     ----------
     bundles : Sequence[str]
-        Every bundle carrying an ``SC_Info``, in the order found.
+        Every bundle with an ``SC_Info``, in the order found.
     where : pathlib.Path
         The container, for the message when the request matches nothing.
     wanted : str | None
-        One bundle to keep, named in full or by its final component.
+        One bundle to retain, identified in full or by its final component.
     main_only : bool
-        Keep only the application.
+        Retain only the application.
 
     Returns
     -------
@@ -1546,21 +1550,21 @@ def _select(bundles: Sequence[str], where: Path, wanted: str | None, *,
     Raises
     ------
     ValueError
-        If nothing matches what was asked for.
+        If nothing matches what was requested.
     """
     if wanted is not None:
         chosen = [
             bundle for bundle in bundles if bundle == wanted or bundle.rsplit('/', 1)[-1] == wanted
         ]
         if not chosen:
-            msg = (f'No bundle named {wanted!r} in {where}; it holds {", ".join(bundles)}.')
+            msg = (f'No bundle titled {wanted!r} in {where}; it includes {", ".join(bundles)}.')
             raise ValueError(msg)
         return chosen
     if main_only:
         chosen = [bundle for bundle in bundles if is_main_bundle(bundle)]
         if not chosen:
-            msg = (f'No {_PAYLOAD_NAME}/<name>{_APP_SUFFIX} in {where}, so there is no application '
-                   f'to read; it holds {", ".join(bundles)}.')
+            msg = (f'No {_PAYLOAD_NAME}/<name>{_APP_SUFFIX} in {where}. There is no application '
+                   f'to read; it includes {", ".join(bundles)}.')
             raise ValueError(msg)
         return chosen
     return list(bundles)
@@ -1568,7 +1572,7 @@ def _select(bundles: Sequence[str], where: Path, wanted: str | None, *,
 
 def _archive_bundles(archive: zipfile.ZipFile) -> tuple[list[str], list[str]]:
     """
-    List the bundles in an archive that carry an ``SC_Info``.
+    List the bundles in an archive that include an ``SC_Info``.
 
     Parameters
     ----------
@@ -1617,13 +1621,13 @@ def _payload_of(path: Path) -> Path | None:
     """
     Find the ``Payload`` directory a path stands for, when it stands for one.
 
-    Naming the ``SC_Info`` directory or a bundle picks that bundle alone, so neither yields a
-    payload; naming ``Payload`` or the directory holding it means every bundle inside.
+    Specifying the ``SC_Info`` directory or a bundle picks that bundle alone, and neither yields a
+    payload. Specifying ``Payload`` or the directory above it means every bundle inside.
 
     Parameters
     ----------
     path : pathlib.Path
-        The directory the caller named.
+        The directory the caller specified.
 
     Returns
     -------
@@ -1645,21 +1649,21 @@ def read_bundles(path: Path,
     """
     Read every bundle's ``SC_Info``, from a directory tree or from inside an ``.ipa``.
 
-    A download holds more than the application: an app extension under ``PlugIns`` and a watch app
-    under ``Watch`` are bundles in their own right, each with its own record, and all of them are
-    read unless the caller narrows it. Naming the ``SC_Info`` directory or one bundle picks that
-    one on its own.
+    A download includes more than the application. An app extension under ``PlugIns`` and a watch
+    app under ``Watch`` are bundles in themselves, each with a record, and all of them are read
+    unless the caller narrows the selection. Specifying the ``SC_Info`` directory or one bundle
+    picks that bundle alone.
 
     Parameters
     ----------
     path : pathlib.Path
-        An ``.ipa``, or the ``SC_Info`` directory, the ``.app`` bundle holding it, the ``Payload``
-        directory holding that, or a directory holding ``Payload``.
+        An ``.ipa``, or the ``SC_Info`` directory, the ``.app`` bundle around it, the ``Payload``
+        directory above the bundle, or a directory with ``Payload`` inside.
     region : str | None
         A country code to build the App Store link with, for a bundle with no
         ``iTunesMetadata.plist`` beside it to read the storefront from.
     bundle : str | None
-        One bundle to read, named in full or by its final component.
+        One bundle to read, identified in full or by its final component.
     main_only : bool
         Read only the application.
 
@@ -1671,11 +1675,11 @@ def read_bundles(path: Path,
     Raises
     ------
     ValueError
-        If no ``SC_Info`` directory can be reached, or nothing matches what was asked for.
+        If no ``SC_Info`` directory is found, or nothing matches what was requested.
     """
     if path.is_file():
         if not zipfile.is_zipfile(path):
-            msg = f'{path} is a file but not an .ipa; name an .ipa or an unpacked directory.'
+            msg = f'{path} is a file but not an .ipa; specify an .ipa or an unpacked directory.'
             raise ValueError(msg)
         with zipfile.ZipFile(path) as archive:
             found, names = _archive_bundles(archive)
@@ -1727,8 +1731,8 @@ def read_sc_info(path: Path, region: str | None = None) -> SCInfo:
     Parameters
     ----------
     path : pathlib.Path
-        An ``.ipa``, or the ``SC_Info`` directory, the ``.app`` bundle holding it, the ``Payload``
-        directory holding that, or a directory holding ``Payload``.
+        An ``.ipa``, or the ``SC_Info`` directory, the ``.app`` bundle around it, the ``Payload``
+        directory above the bundle, or a directory with ``Payload`` inside.
     region : str | None
         A country code to build the App Store link with.
 
@@ -1765,7 +1769,7 @@ def _split_private(private: bytes) -> tuple[bytes, bytes]:
     """
     Split the ``priv`` blob into its ciphertext and the zero bytes after it.
 
-    Both sample bundles carry 432 bytes, a whole number of 16-byte cipher blocks matching the
+    Both sample bundles include 432 bytes, a whole number of 16-byte cipher blocks matching the
     record's own initialisation vector, inside a 440-byte field. What is inside the ciphertext
     cannot be read without the key, but where it ends can be.
 
@@ -1786,12 +1790,12 @@ def _split_private(private: bytes) -> tuple[bytes, bytes]:
 
 def _lines(pairs: Sequence[tuple[str, str]], indent: str = '  ') -> list[str]:
     """
-    Lay out label and value pairs in an aligned column.
+    Align label and value pairs in a column.
 
     Parameters
     ----------
     pairs : Sequence[tuple[str, str]]
-        The pairs to lay out.
+        The pairs to align.
     indent : str
         Text put before each label.
 
@@ -1869,7 +1873,7 @@ def _atom_lines(atoms: Sequence[Atom], depth: int = 0) -> list[str]:
     atoms : Sequence[Atom]
         The atoms at this level.
     depth : int
-        How deep this level is, which sets the indent.
+        How deep this level is, setting the indent.
 
     Returns
     -------
@@ -1898,11 +1902,10 @@ def _cross_references(info: SCInfo) -> list[tuple[str, str, bool]]:
     """
     Check the relationships the parts of a bundle have with each other.
 
-    These cover the main record, since that is the one the bundle's executable uses; every record's
-    own checks travel with it in :py:func:`sc_info_to_json` and the report.
+    These cover the main record, the one the bundle's executable uses. Every record's checks travel
+    with it in :py:func:`sc_info_to_json` and the report.
 
-    Both sample bundles agree on all of these, so a mismatch means the files do not belong
-    together.
+    Both sample bundles agree on all of these. A mismatch means the files do not belong together.
 
     Parameters
     ----------
@@ -1987,7 +1990,7 @@ def _record_lines(record: SCRecord) -> list[str]:
     Returns
     -------
     list[str]
-        A heading naming the executable the set protects, then each file it carries.
+        A heading identifying the executable the set protects, then each file it includes.
     """
     lines = ['', f'Record: {record.name}' + ('' if record.is_main else ' (not the main record)')]
     if record.sinf is not None:
@@ -2024,8 +2027,8 @@ def _record_lines(record: SCRecord) -> list[str]:
         if supp.signature:
             pairs.append(('Signature', _digest(supp.signature)))
         lines += _lines(pairs)
-        # A widely released title carries hundreds of these, which would bury the rest of the
-        # report; the JSON still carries every one.
+        # A widely released title includes hundreds of these, and they would bury the rest of the
+        # report. The JSON still includes every one.
         for index, blob in enumerate(supp.records[:_MAX_LISTED_RECORDS]):
             lines.append(f'    [{index:3d}]  {blob.hex()}')
         if (remaining := len(supp.records) - _MAX_LISTED_RECORDS) > 0:
@@ -2103,7 +2106,7 @@ def _atom_text(body: bytes) -> str | None:
     """
     Read an atom's payload as text, when the whole of it is text.
 
-    The trailing NUL padding a fixed-size field carries is stripped first, but a payload with bytes
+    The trailing NUL padding in a fixed-size field is stripped first, but a payload with bytes
     that are not printable anywhere inside it is not text at all and yields nothing.
 
     Parameters
@@ -2185,10 +2188,10 @@ def _atom_to_json(atom: Atom) -> dict[str, Any]:
     """
     Render one atom as JSON-ready values.
 
-    A container carries its children; a leaf carries one ``value`` in whatever type the payload
-    turns out to be, so a reader never has to know which key to look under.
+    A container includes its children; a leaf includes one ``value`` in whatever type the payload
+    turns out to be. A reader therefore never has to know which key to look under.
 
-    Offsets and sizes are left to :func:`render_text`, whose tree is the structural map; here they
+    Offsets and sizes belong to :func:`render_text`, whose tree is the structural map; here they
     would only restate where the walk already put each atom.
 
     Parameters
@@ -2215,7 +2218,8 @@ def sc_info_to_json(info: SCInfo) -> dict[str, Any]:
     """
     Render an ``SC_Info`` directory as JSON-ready values.
 
-    Opaque blobs are hex-encoded in full, so the output carries everything the report summarises.
+    Opaque blobs are hex-encoded in full, and the output therefore includes everything the report
+    summarises.
 
     Parameters
     ----------
@@ -2259,8 +2263,8 @@ def _record_to_json(record: SCRecord) -> dict[str, Any]:
     Returns
     -------
     dict[str, Any]
-        The set's name, whether it is the main one, each file it carries, and the checks between
-        them. A file the set does not carry comes back as ``None``.
+        The set's name, whether it is the main one, each file it includes, and the checks between
+        them. A file the set does not include comes back as ``None``.
     """
     rendered: dict[str, Any] = {
         'name': record.name,

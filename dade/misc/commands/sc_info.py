@@ -33,7 +33,7 @@ def sc_info() -> None:
 @click.option('--json', 'as_json', is_flag=True, help='Print JSON instead of a readable report.')
 @click.option('--main-bundle',
               is_flag=True,
-              help='Read only the application, leaving its extensions and watch app alone.')
+              help='Read only the application, skipping its extensions and watch app.')
 @click.option('--region',
               metavar='CC',
               help='Country code to build the App Store link with, such as jp, when the bundle '
@@ -44,13 +44,14 @@ def dump(path: Path, bundle: str | None, region: str | None, *, as_json: bool,
     """
     Describe the SC_Info content at PATH.
 
-    PATH may be an ``.ipa``, which is read without being unpacked, or the SC_Info directory
-    itself, the ``.app`` bundle holding it, the ``Payload`` directory holding that, or a directory
-    holding ``Payload``.
+    PATH may be an ``.ipa``, read without being unpacked, or the SC_Info directory itself, the
+    ``.app`` bundle around it, the ``Payload`` directory above the bundle, or a directory with
+    ``Payload`` inside.
 
-    A download holds more than the application: an app extension under PlugIns and a watch app
-    under Watch each carry an SC_Info of their own, and every one of them is read. Narrow that with
-    --main-bundle or --bundle. Naming the SC_Info directory or one bundle directly reads that one.
+    A download includes more than the application. An app extension under PlugIns and a watch app
+    under Watch each have an SC_Info, and every one is read. Narrow the selection with
+    --main-bundle or --bundle. Specifying the SC_Info directory or one bundle directly reads only
+    that bundle.
 
     Nothing here is decrypted and none of it is a key: the report covers the purchase record, the
     embedded Apple FairPlay certificates, and the length and digest of the key material.

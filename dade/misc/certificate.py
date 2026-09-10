@@ -3,10 +3,10 @@ Summaries of the X.509 certificates embedded in other files.
 
 This wraps :py:mod:`cryptography.x509` into a flat, JSON-ready summary and a block of report lines.
 It describes a certificate; it does not validate one. No signature is checked, no chain is built,
-and no trust decision is made or implied, so an expired or self-signed certificate is summarised as
-readily as any other.
+and no trust decision is made or implied. An expired or self-signed certificate is therefore
+summarised as readily as any other.
 
-:func:`find_certificates` scans a buffer for embedded DER, which is how the Apple FairPlay
+:func:`find_certificates` scans a buffer for embedded DER. That scan is how the Apple FairPlay
 certificate is recovered from an ``SC_Info`` supplement file.
 """
 from __future__ import annotations
@@ -70,7 +70,7 @@ class ExtensionInfo(NamedTuple):
     fields: tuple[tuple[str, Any], ...]
     """The extension's own fields, in order, for the types broken out here."""
     summary: str
-    """A one-line rendering, which is all there is for a type not broken out here."""
+    """A one-line rendering, all there is for a type not broken out here."""
 
 
 class CertificateSummary(NamedTuple):
@@ -95,11 +95,11 @@ class CertificateSummary(NamedTuple):
     public_key: PublicKeyInfo
     """What the public key is."""
     fingerprint_sha256: str
-    """SHA-256 over the DER encoding, which is the fingerprint tools print."""
+    """SHA-256 over the DER encoding, the fingerprint tools print."""
     extensions: tuple[ExtensionInfo, ...]
     """Every extension, in the order the certificate lists them."""
     der: bytes
-    """The certificate itself, DER-encoded, so callers can re-export it."""
+    """The certificate itself, DER-encoded, for callers to re-export."""
     @property
     def pem(self) -> str:
         """
@@ -169,8 +169,8 @@ def _oid_name(oid: x509.ObjectIdentifier) -> str:
         The registered name, or the dotted-decimal form when the identifier is not one
         :py:mod:`cryptography` has a name for.
     """
-    # cryptography exposes the registered name only as a private attribute, and its own repr is
-    # built from it. Falling back to the dotted form keeps this working whatever it does next.
+    # cryptography exposes the registered name only as a private attribute, and its repr is built
+    # from it. Falling back to the dotted form retains correctness whatever it does next.
     return getattr(oid, '_name', None) or oid.dotted_string
 
 
@@ -187,7 +187,7 @@ def _key_usage_fields(value: x509.KeyUsage) -> tuple[tuple[str, Any], ...]:
     -------
     tuple[tuple[str, Any], ...]
         One pair per flag. The last two are only meaningful with key agreement set, and
-        :py:mod:`cryptography` refuses to read them otherwise, so they are omitted then.
+        :py:mod:`cryptography` refuses to read them otherwise, and they are omitted then.
     """
     fields: list[tuple[str, Any]] = [
         ('digitalSignature', value.digital_signature),
@@ -205,7 +205,7 @@ def _key_usage_fields(value: x509.KeyUsage) -> tuple[tuple[str, Any], ...]:
 
 def _extension_fields(value: x509.ExtensionType) -> tuple[tuple[str, Any], ...]:
     """
-    Break an extension into its own fields, for the types worth breaking out.
+    Break an extension into its fields, for the types worth breaking out.
 
     Parameters
     ----------
@@ -216,7 +216,7 @@ def _extension_fields(value: x509.ExtensionType) -> tuple[tuple[str, Any], ...]:
     -------
     tuple[tuple[str, Any], ...]
         The fields in order, or empty for a type this does not break out, whose one-line summary
-        then carries everything.
+        then includes everything.
     """
     if isinstance(value, x509.KeyUsage):
         return _key_usage_fields(value)
@@ -286,8 +286,9 @@ def _der_size(data: bytes, offset: int) -> int | None:
         The total size, header included, or ``None`` when there is no readable definite-length
         header there.
     """
-    # The sole caller only scans for the long-form marker ``\x30\x82``, so the tag and short-form
-    # guards below cannot be reached through it; they keep the reader correct for any other caller.
+    # The sole caller only scans for the long-form marker ``\x30\x82``, and the tag and short-form
+    # guards below are therefore unreachable through it. They retain correctness for any other
+    # caller.
     if offset + 2 > len(data) or data[offset] != _DER_SEQUENCE:  # pragma: no cover
         return None
     first = data[offset + 1]
@@ -303,8 +304,8 @@ def find_certificates(data: bytes) -> tuple[tuple[int, bytes], ...]:
     """
     Find every DER certificate embedded in a buffer.
 
-    Each candidate sequence is parsed before being accepted, so unrelated bytes that happen to
-    start like one are not reported.
+    Each candidate sequence is parsed before being accepted. Unrelated bytes that happen to start
+    like one are therefore not reported.
 
     Parameters
     ----------
@@ -338,8 +339,8 @@ def _extension_to_json(extension: ExtensionInfo) -> dict[str, Any]:
     """
     Render one extension as JSON-ready values.
 
-    A type broken into fields carries those and nothing else; only a type this does not break down
-    falls back to the one-line summary, so no rendered object repeats itself.
+    A type broken into fields includes the fields and nothing else; only a type this does not break
+    down falls back to the one-line summary. No rendered object therefore repeats itself.
 
     Parameters
     ----------

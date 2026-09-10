@@ -119,7 +119,7 @@ def test_dump_bundle_option(runner: CliRunner, nested_ipa: Path) -> None:
 def test_dump_bundle_option_rejects_an_unknown_name(runner: CliRunner, nested_ipa: Path) -> None:
     result = runner.invoke(sc_info, ('dump', str(nested_ipa), '--bundle', 'Nope'))
     assert result.exit_code == 1
-    assert "No bundle named 'Nope'" in result.output
+    assert "No bundle titled 'Nope'" in result.output
 
 
 def test_dump_separates_the_bundles_it_reports(runner: CliRunner, nested_ipa: Path) -> None:

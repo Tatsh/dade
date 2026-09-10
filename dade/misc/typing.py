@@ -35,7 +35,7 @@ class MachOArchDict(TypedDict):
     dylibs: list[str]
     """Every linked library's install name, in load order."""
     encryption: dict[str, Any] | None
-    """The ``LC_ENCRYPTION_INFO`` command, when the slice carries one."""
+    """The ``LC_ENCRYPTION_INFO`` command, when the slice includes one."""
     entitlements: dict[str, Any] | None
     """The entitlements embedded in the code signature, when they can be read."""
     file_type: str
@@ -59,7 +59,7 @@ class MachOArchDict(TypedDict):
 
 
 class MachODict(TypedDict):
-    """A whole Mach-O image, which may hold more than one architecture."""
+    """A whole Mach-O image, possibly with more than one architecture."""
 
     architectures: list[MachOArchDict]
     """One entry per slice; a thin image has exactly one."""

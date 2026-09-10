@@ -37,7 +37,7 @@ def dump(path: Path) -> None:
     The report covers the header and its flags, the segments and their sections, the libraries the
     image links, its UUID and source version, the minimum OS it declares, the entitlements inside
     its code signature, and, for an image bought from the App Store, the LC_ENCRYPTION_INFO command
-    that says its text is still enciphered. Nothing is decrypted and no code is disassembled.
+    reporting its text as still enciphered. Nothing is decrypted and no code is disassembled.
     """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', path)
     try:

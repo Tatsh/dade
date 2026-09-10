@@ -1,14 +1,15 @@
 """
 A reader for the properties of a Mach-O executable.
 
-The game ships one thin ``arm64`` executable, but a download from another era may hold a universal
-image with several slices, so both are handled. Nothing here decrypts anything: an App Store
-executable is still enciphered, which the ``LC_ENCRYPTION_INFO`` command in the result reports.
+The game ships one thin ``arm64`` executable, but a download from another era may include a
+universal image with several slices, and both are handled. Nothing here decrypts anything. An App
+Store executable is still enciphered, and the ``LC_ENCRYPTION_INFO`` command in the result reports
+that.
 
-Only what describes the image is read - its header, its segments and sections, the libraries it
-links, its UUID, its minimum OS, and the entitlements inside its code signature. The entitlements
-are the one part that is not a load command: the signature is a super-blob of length-prefixed
-blobs, and the entitlements are the one whose magic is ``0xfade7171``, holding an XML property
+Only what describes the image is read, meaning its header, its segments and sections, the libraries
+it links, its UUID, its minimum OS, and the entitlements inside its code signature. The entitlements
+are the one part that is not a load command. The signature is a super-blob of length-prefixed
+blobs, and the entitlements are the one whose magic is ``0xfade7171``, wrapping an XML property
 list.
 """
 from __future__ import annotations
@@ -225,7 +226,7 @@ def _entitlements(image: bytes, offset: int, size: int) -> dict[str, Any] | None
 
 
 # Fold one load command into the slice being built. The image and its slice offset are still
-# needed because the code-signature command points at bytes outside its own body.
+# needed because the code-signature command points at bytes outside its body.
 def _apply_command(arch: MachOArchDict, command: int, body: bytes, image: bytes,
                    offset: int) -> None:
     if command in {_LC_SEGMENT, _LC_SEGMENT_64}:
@@ -327,7 +328,7 @@ def read_macho(path: Path) -> MachODict:
     Raises
     ------
     ValueError
-        If the file is too short to hold a header, or its magic is neither a universal header nor a
+        If the file is too short for a header, or its magic is neither a universal header nor a
         little-endian Mach-O.
     """
     image = path.read_bytes()
@@ -341,8 +342,8 @@ def read_macho(path: Path) -> MachODict:
         count = struct.unpack_from('>I', image, 4)[0]
         wide = magic == _FAT_MAGIC_64
         stride = _FAT_ARCH_SIZE_64 if wide else _FAT_ARCH_SIZE
-        # A fat_arch entry opens with its CPU type and subtype, so the slice offset is eight bytes
-        # in whichever width the entry is; only the offset field's own width differs.
+        # A fat_arch entry opens with its CPU type and subtype, and the slice offset is therefore
+        # eight bytes in whichever width the entry is. Only the offset field's width differs.
         offsets = [
             struct.unpack_from('>Q' if wide else '>I', image, 8 + i * stride + 8)[0]
             for i in range(count)

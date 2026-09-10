@@ -24,5 +24,5 @@ misc.add_command(strings)
 
 
 def main() -> None:
-    """Entry point for the ``misc`` group when it is run on its own."""
+    """Entry point for the ``misc`` group when it is run directly."""
     misc()
