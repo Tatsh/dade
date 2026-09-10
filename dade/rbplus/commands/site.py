@@ -44,7 +44,7 @@ _INDEX_NAME = 'index.json'
 :meta hide-value:
 """
 
-# The three ordinary difficulties, hardest last. A package holding only the first of these and
+# The three ordinary difficulties, hardest last. A package with only the first of these and
 # nothing in the other two is an extend note, whose one chart is harder than any of them.
 _DIFFICULTIES = ('note_bas', 'note_med', 'note_har')
 _PACKAGE_SUFFIX = '.rb'
@@ -74,8 +74,9 @@ class _Tune:
         self.path = path
         self.info = info
         self.charts = charts
-        # The conditional binds looser than `or`, so the parentheses are what make this read the
-        # way it looks: the metadata's own identifier, or the file name when it is a number.
+        # The conditional binds looser than `or`, and the parentheses are what make this read the
+        # way it looks. The value is the metadata's identifier, or the file name when it is a
+        # number.
         self.id = info.get('ID') or (int(path.stem) if path.stem.isdigit() else 0)
         self.extend = is_extend_note(charts)
 
@@ -89,20 +90,21 @@ class _Tune:
 
 
 # One chart, or nothing when the entry is absent or will not parse. A chart that will not parse is
-# reported and left out rather than stopping the run.
+# reported and omitted rather than stopping the run.
 def _chart(tune: TunePackage, entry: str) -> ChartDict | None:
     if entry not in tune.names:
         return None
     try:
         return parse_chart(tune.read(entry))
     except ChartError:
-        log.warning('`%s` holds a %s chart that will not parse.', tune.path.name, entry)
+        log.warning('`%s` includes a %s chart that will not parse.', tune.path.name, entry)
         return None
 
 
 def _read(path: Path) -> _Tune | None:
-    # One package, or nothing when it will not open. A collection is often part rubbish, so a
-    # package that cannot be read is reported and stepped over rather than stopping the run.
+    # One package, or nothing when it will not open. A collection is often part rubbish, and a
+    # package that cannot be read is therefore reported and stepped over rather than stopping the
+    # run.
     try:
         with open_package(path) as tune:
             return _Tune(path, tune.info(), {entry: _chart(tune, entry) for entry in _DIFFICULTIES})
@@ -112,8 +114,8 @@ def _read(path: Path) -> _Tune | None:
 
 
 def _entry(tune: _Tune, special: _Tune | None) -> dict[str, Any]:
-    # One tune as the site lists it. Both readings are romanised, since the shipped packages leave
-    # the metadata's own romanised fields empty and a Latin keyboard has nothing else to match.
+    # One tune as the site lists it. Both readings are romanised. The shipped packages omit the
+    # metadata's romanised fields, and a Latin keyboard has nothing else to match.
     title_reading = tune.info.get('MusicNameHira') or ''
     artist_reading = tune.info.get('ArtistNameHira') or ''
     title_romaji = to_romaji(title_reading)
@@ -122,7 +124,7 @@ def _entry(tune: _Tune, special: _Tune | None) -> dict[str, Any]:
         for entry in _DIFFICULTIES if tune.charts.get(entry)
     }
     if special is not None:
-        # An extend note's level is in the catalogue, which an offline reader has not got.
+        # An extend note's level is in the catalogue, absent from an offline reader.
         levels[SPECIAL_DIFFICULTY] = chart_level(special.info, 'note_bas')
     return {
         'artist': tune.artist,
@@ -130,7 +132,7 @@ def _entry(tune: _Tune, special: _Tune | None) -> dict[str, Any]:
         'artistRomaji': to_romaji(artist_reading),
         'bpm': [tune.info.get('BpmMin'), tune.info.get('BpmMax')],
         'id': tune.id,
-        # A title already written in letters is filed under its own first one; only a title that
+        # A title already written in letters is filed under its first letter; only a title that
         # gives no letter falls back to its reading. Otherwise *Gymnopedie* would be filed under J,
         # its reading being ジムノペディ.
         'letter': initial(tune.title, title_romaji),
@@ -154,8 +156,8 @@ def _charts(tune: _Tune, special: _Tune | None) -> dict[str, ChartDict]:
     return charts
 
 
-# Each extend note against the tune it extends. One whose tune is not in the collection is left to
-# stand on its own, since dropping it would lose a chart that is nowhere else.
+# Each extend note against the tune it extends. One whose tune is not in the collection stands
+# alone. Dropping it would lose a chart that is nowhere else.
 def _pair(tunes: Sequence[_Tune]) -> tuple[list[_Tune], dict[int, _Tune]]:
     by_id = {tune.id: tune for tune in tunes if not tune.extend}
     attached: dict[int, _Tune] = {}
@@ -165,7 +167,7 @@ def _pair(tunes: Sequence[_Tune]) -> tuple[list[_Tune], dict[int, _Tune]]:
             continue
         parent = by_id.get(extended_tune_id(tune.id))
         if parent is None:
-            log.warning('`%s` extends tune %d, which is not here.', tune.path.name,
+            log.warning('`%s` extends tune %d, absent from this collection.', tune.path.name,
                         extended_tune_id(tune.id))
             orphans.append(tune)
         else:
@@ -187,10 +189,10 @@ def _at_base(page: str, base: str) -> str:
     """
     Tell a page where it is served from.
 
-    Two things are written in. A ``<base>`` element, so that every relative address the page
-    holds - its script, its stylesheet, and the chart data it fetches - is resolved against the
-    site's own root rather than against whatever path the reader happens to be at. And the base on
-    the root element, which is what the site reads to work out which tune a path names.
+    Two values are written in. A ``<base>`` element resolves every relative address the page uses
+    (its script, its stylesheet, and the chart data it fetches) against the site's root rather than
+    against whatever path the reader happens to be at. The base also goes on the root element,
+    where the site reads it to work out which tune a path identifies.
 
     Parameters
     ----------
@@ -207,15 +209,15 @@ def _at_base(page: str, base: str) -> str:
     Raises
     ------
     PackageError
-        If the built page does not hold what has to be written into. A page that went unaddressed
-        would look right and then fail to find its own script, so it is refused rather than
+        If the built page lacks what has to be written into. A page that went unaddressed would
+        look right and then fail to find its script, and it is therefore refused rather than
         written.
     """
     where = html.escape(base)
     addressed = page.replace('<html', f'<html data-base="{where}"', 1)
     addressed = addressed.replace('<head>', f'<head><base href="{where}">', 1)
     if addressed == page:
-        msg = 'The built page holds no `<html>` and no `<head>`, so it cannot be told where it is.'
+        msg = 'The built page has no `<html>` and no `<head>`. It cannot be told where it is.'
         raise PackageError(msg)
     return addressed
 
@@ -231,15 +233,15 @@ def _copy_assets(output_dir: Path, base: str | None) -> None:
         if asset.name == 'index.html' and base is not None:
             page = _at_base(asset.read_text(encoding='utf-8'), base)
             (output_dir / asset.name).write_text(page, encoding='utf-8')
-            # GitHub Pages answers a path it holds no file for with `404.html`. Making that the
-            # page is what lets a link to one tune be opened directly: the site is served, reads
-            # the path it was asked for, and shows that tune. Without it every link but the root
-            # would be a not-found page.
+            # GitHub Pages responds to a path it has no file for with `404.html`. Making that the
+            # page is what lets a link to one tune be opened directly. The site is served, reads
+            # the path it was given, and shows that tune. Without it every link but the root would
+            # be a not-found page.
             (output_dir / '404.html').write_text(page, encoding='utf-8')
             copied += 2
             continue
-        # Read and written rather than copied, since what the assets are read from is whatever the
-        # package was installed as and need not be a file on disk.
+        # Read and written rather than copied. The assets are read from whatever the package was
+        # installed as, and that need not be a file on disk.
         (output_dir / asset.name).write_bytes(asset.read_bytes())
         copied += 1
     if not copied:
@@ -252,14 +254,14 @@ def _write(payload: object, path: Path) -> None:
 
 
 # The site itself: the page and its bundle, one file of charts per tune, and the list the page
-# opens with, which is written last so that a run cut short leaves no index promising charts that
-# are not there.
+# opens with. The list is written last, and a run cut short therefore produces no index promising
+# charts that are not there.
 def _build(listed: Sequence[_Tune], attached: Mapping[int, _Tune], output_dir: Path,
            base: str | None) -> list[dict[str, Any]]:
     data = output_dir / _DATA_DIRECTORY
     data.mkdir(parents=True, exist_ok=True)
-    # GitHub Pages runs Jekyll over what it serves unless told not to, and Jekyll leaves out
-    # anything whose name begins with an underscore.
+    # GitHub Pages runs Jekyll over what it serves unless told not to, and Jekyll omits anything
+    # whose name begins with an underscore.
     (output_dir / '.nojekyll').touch()
     _copy_assets(output_dir, base)
     entries = []
@@ -297,8 +299,8 @@ def _report(listed: Sequence[dict[str, Any]]) -> Iterator[str]:
               callback=_slashed,
               help='Where the site will be served from, as in `/rbpcharts/` for a GitHub Pages '
               'project site. Given one, the site addresses tunes by path and a 404.html is written '
-              'so that a link to one opens it. Without one it addresses them by fragment, which '
-              'needs no such thing and works from anywhere.')
+              'to let a link to one open it. Without one it addresses them by fragment, needing no '
+              'extra file and working from anywhere.')
 @click.option('-o',
               '--output-dir',
               default=Path('site'),
@@ -309,15 +311,15 @@ def site(sources: tuple[Path, ...], output_dir: Path, base: str | None) -> None:
     """
     Build a browsable site from the tune packages in SOURCES.
 
-    SOURCES may name ``.rb`` packages, directories holding them, or both. A directory is searched
-    all the way down.
+    SOURCES may list ``.rb`` packages, directories with packages inside, or both. A directory is
+    searched all the way down.
 
-    Every tune's charts are written as JSON and the page draws them, so the site is static and can
-    be served from anywhere, GitHub Pages included.
+    Every tune's charts are written as JSON and the page draws them. The site is therefore static
+    and can be served from anywhere, GitHub Pages included.
 
-    A package holding one chart in the basic entry and nothing in the other two is an extend note:
-    a SPECIAL chart, harder than hard, sold for a tune that already exists. It is filed under that
-    tune rather than listed on its own. Which tune is worked out from the numbering, an extend note
+    A package with one chart in the basic entry and nothing in the other two is an extend note, a
+    SPECIAL chart, harder than hard, sold for a tune that already exists. It is filed under that
+    tune rather than listed separately. Which tune is worked out from the numbering, an extend note
     sitting 50000 above the tune it extends.
     """  # ruff: ignore[docstring-missing-exception]
     tunes = [tune for path in _packages(sources) if (tune := _read(path)) is not None]

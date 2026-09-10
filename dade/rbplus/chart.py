@@ -6,12 +6,12 @@ bytes the parser does not read. Versions 10 to 14 take the layout below; 6 and 7
 the shipped packages do not use, and anything else is rejected.
 
 The chart header follows at offset sixteen, then the notes, then the tempo events, then the slide
-records. A note is variable length: it carries an inline array of path points whose count it
-declares, and a twelve-byte chain block that is present only when flag bit 3 is set. Because of
-that, a mis-sized field desynchronises the cursor rather than merely yielding wrong values, so a
-chart that parses to exactly the end of its buffer is strong evidence the layout is right.
+records. A note is variable length. It includes an inline array of path points whose count it
+declares, and a twelve-byte chain block that is present only when flag bit 3 is set. A mis-sized
+field therefore desynchronises the cursor rather than merely yielding wrong values, and a chart
+that parses to exactly the end of its buffer is strong evidence the layout is right.
 
-Times are milliseconds. A note's ``time`` may be negative: a chart begins before its audio does.
+Times are milliseconds. A note's ``time`` may be negative, a chart beginning before its audio does.
 """
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ MODERN_VERSIONS = frozenset(range(10, 15))
 :meta hide-value:
 """
 LEGACY_VERSIONS = frozenset((6, 7))
-"""The format versions the game reads with an older parser, which no shipped chart uses.
+"""The format versions the game reads with an older parser, used by no shipped chart.
 
 :meta hide-value:
 """
@@ -109,8 +109,8 @@ def _read_note(data: bytes, offset: int) -> tuple[NoteDict, int]:
     flags = _FLAGS.unpack_from(data, offset)[0]
     offset += _FLAGS.size
     # The engine reads these four fields into its staging record and never unpacks them again.
-    # They are read here too rather than stepped over, so that a chart ending inside them is caught
-    # rather than silently accepted.
+    # They are read here too rather than stepped over, catching a chart that ends inside them
+    # rather than silently accepting it.
     _TRAILER.unpack_from(data, offset)
     offset += _TRAILER.size
     chain: tuple[int, int, int, int] | None = None
@@ -144,8 +144,8 @@ def _read_tempo_event(data: bytes, offset: int) -> TempoEventDict:
 
 
 def _read_notes(data: bytes, offset: int, count: int) -> tuple[list[NoteDict], int]:
-    # Every note and the offset just past the last one. A note is variable length, so the notes
-    # cannot be addressed individually the way the fixed-size records after them can.
+    # Every note and the offset just past the last one. A note is variable length, and the notes
+    # therefore cannot be addressed individually the way the fixed-size records after them can.
     notes = []
     for _ in range(count):
         note, offset = _read_note(data, offset)
@@ -176,8 +176,8 @@ def _read_records(
         data: bytes, *, note_count: int, slide_record_count: int,
         tempo_event_count: int) -> tuple[list[NoteDict], list[TempoEventDict], list[SlideDict]]:
     # The notes, tempo events, and slide records that follow the chart header, in stream order. A
-    # mis-sized field desynchronises the cursor, so running off the end is reported as a chart
-    # error rather than left as a struct error.
+    # mis-sized field desynchronises the cursor, and running off the end is therefore reported as a
+    # chart error rather than as a struct error.
     offset = _FILE_HEADER_SIZE + _NOTES_OFFSET
     try:
         notes, offset = _read_notes(data, offset, note_count)
@@ -238,7 +238,7 @@ def parse_chart(data: bytes) -> ChartDict:
         raise ChartError(msg)
     version = _FLAGS.unpack_from(data, _VERSION_OFFSET)[0]
     if version not in MODERN_VERSIONS:
-        known = 'the legacy layout, which is not read here' if version in LEGACY_VERSIONS else (
+        known = 'the legacy layout, not read here' if version in LEGACY_VERSIONS else (
             'no known layout')
         msg = f'Chart format version {version} uses {known}.'
         raise ChartError(msg)

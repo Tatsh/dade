@@ -133,7 +133,7 @@ def test_a_file_that_is_not_a_zip_is_rejected(tmp_path: Path) -> None:
 
 
 def test_a_package_without_info_is_rejected(make_package: Callable[..., Path]) -> None:
-    with pytest.raises(PackageError, match='holds no info entry'):
+    with pytest.raises(PackageError, match='includes no info entry'):
         open_package(make_package(omit_info=True))
 
 

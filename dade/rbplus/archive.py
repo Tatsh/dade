@@ -2,17 +2,17 @@
 The downloadable asset archives.
 
 The game fetches its textures as three ZIP archives, one per device class: ``iPad``, ``iPad2x``,
-and ``iPhone@2x``. Each holds a little over two thousand entries under a single top-level directory
-named after itself.
+and ``iPhone@2x``. Each includes a little over two thousand entries under a single top-level
+directory titled after itself.
 
-They are encrypted with ZipCrypto under a password the executable carries in the clear,
-``kArchivePassword`` in ``DownloadResourceManager.m``. That is the whole protection: the entries
+They are encrypted with ZipCrypto under a password the executable stores in the clear,
+``kArchivePassword`` in ``DownloadResourceManager.m``. That is the whole protection. The entries
 themselves are ordinary PNGs once the archive is opened. Some are Apple-optimised and some are not,
-so each is examined rather than assumed.
+and each is therefore examined rather than assumed.
 
-Beside the textures sits a ``list`` entry, which is a second encrypted ZIP under the same password
-holding one entry named ``lists``: the archive's own index, one asset path per line. The two names
-are ``kManifestArchiveSuffix`` and ``kManifestListSuffix`` in the same file.
+Beside the textures sits a ``list`` entry, a second encrypted ZIP under the same password with one
+entry titled ``lists``, the archive's index, one asset path per line. The two names are
+``kManifestArchiveSuffix`` and ``kManifestListSuffix`` in the same file.
 """
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ ARCHIVE_PASSWORD = b'mt972'
 :meta hide-value:
 """
 MANIFEST_ENTRY = 'list'
-"""The entry, under the archive root, holding the nested manifest archive.
+"""The entry, under the archive root, storing the nested manifest archive.
 
 :meta hide-value:
 """
@@ -83,7 +83,7 @@ def open_archive(path: Path, password: bytes = ARCHIVE_PASSWORD) -> zipfile.ZipF
 
 def entry_names(archive: zipfile.ZipFile) -> Iterator[zipfile.ZipInfo]:
     """
-    Every file entry in an archive, directories left out.
+    Every file entry in an archive, directories omitted.
 
     Parameters
     ----------
@@ -115,8 +115,8 @@ def archive_root(archive: zipfile.ZipFile) -> str:
         The directory name, or the empty string when the entries are not under a common one.
     """
     names = [name for name in archive.namelist() if name]
-    # An entry with no separator sits at the top level itself, so there is no common directory to
-    # strip even when every other entry shares one.
+    # An entry with no separator sits at the top level itself, and there is therefore no common
+    # directory to strip even when every other entry shares one.
     if not names or any('/' not in name for name in names):
         return ''
     roots = {name.split('/', 1)[0] for name in names}
@@ -132,12 +132,12 @@ def read_manifest(archive: zipfile.ZipFile, password: bytes = ARCHIVE_PASSWORD) 
     archive : zipfile.ZipFile
         The opened archive.
     password : bytes
-        The password the nested archive uses, which is the same as the outer one's.
+        The password the nested archive uses, the same as the outer archive's.
 
     Returns
     -------
     tuple[str, ...]
-        One asset path per line, blank lines dropped. Empty when the archive carries no manifest.
+        One asset path per line, blank lines dropped. Empty when the archive has no manifest.
 
     Raises
     ------
@@ -149,7 +149,7 @@ def read_manifest(archive: zipfile.ZipFile, password: bytes = ARCHIVE_PASSWORD) 
     try:
         nested = archive.read(name)
     except KeyError:
-        log.debug('No `%s` entry; the archive carries no manifest.', name)
+        log.debug('No `%s` entry; the archive has no manifest.', name)
         return ()
     try:
         with zipfile.ZipFile(io.BytesIO(nested)) as inner:

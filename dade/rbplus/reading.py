@@ -1,28 +1,28 @@
 """
 What a tune's kana reading is good for.
 
-A tune's metadata has room for a romanised title and artist, but the shipped packages leave both
-empty and fill in the kana reading instead. The reading is therefore the only thing a Latin
-keyboard can be matched against, and the only thing that says where a tune is filed when its title
-is not written in letters.
+A tune's metadata has room for a romanised title and artist, but the shipped packages omit both and
+fill in the kana reading instead. The reading is therefore the only text a Latin keyboard can be
+matched against, and the only text that establishes where a tune is filed when its title is not
+written in letters.
 
-The romanisation is meant for searching rather than for reading: the long vowel mark is dropped
-rather than written as a macron, and anything that is not kana is carried through as it stands, so
-a reading already in Latin letters comes back as it was but in lowercase.
+The romanisation is meant for searching rather than for reading. The long vowel mark is dropped
+rather than written as a macron, and anything that is not kana passes through as it stands. A
+reading already in Latin letters therefore comes back as it was but in lowercase.
 """
 from __future__ import annotations
 
 __all__ = ('GOJUON_ROWS', 'gojuon_row', 'initial', 'to_romaji')
 
 GOJUON_ROWS = ('ア', 'カ', 'サ', 'タ', 'ナ', 'ハ', 'マ', 'ヤ', 'ラ', 'ワ')
-"""The ten rows of the gojūon, in their own order, each named by the kana that heads it.
+"""The ten rows of the gojūon, in gojūon order, each identified by the kana that heads it.
 
 :meta hide-value:
 """
 
 _HIRAGANA_TO_KATAKANA = 0x60
 _HIRAGANA = range(0x3041, 0x3097)
-# A set rather than a string: the last kana of a reading is followed by the empty string, and that
+# A set rather than a string. The last kana of a reading is followed by the empty string, and that
 # is a substring of every string.
 _SMALL_Y = frozenset('ャュョ')
 _LONG_MARK = 'ーヽヾ'
@@ -50,7 +50,7 @@ _PLAIN = {
     'ャ': 'ya', 'ュ': 'yu', 'ョ': 'yo',
     'ヮ': 'wa', 'ヵ': 'ka', 'ヶ': 'ke'
 }
-"""Each kana against the letters it is written with on its own.
+"""Each kana against the letters it is written with when it stands alone.
 
 :meta hide-value:
 """
@@ -59,10 +59,10 @@ _DIGRAPHS = {
     'キ': 'k', 'ギ': 'g', 'シ': 'sh', 'ジ': 'j', 'チ': 'ch', 'ヂ': 'j', 'ニ': 'n', 'ヒ': 'h',
     'ビ': 'b', 'ピ': 'p', 'ミ': 'm', 'リ': 'r', 'ヴ': 'v'
 }
-"""The kana that take a small ya, yu, or yo, against the sound they keep when one follows.
+"""The kana that take a small ya, yu, or yo, against the sound they retain when one follows.
 
-A kana written ``shi`` and its like loses its ``i`` and the small kana loses its ``y``, so ``シ``
-and ``ャ`` together are ``sha`` rather than ``shiya``.
+A kana written ``shi`` and its like loses its ``i`` and the small kana loses its ``y``. ``シ`` and
+``ャ`` together are therefore ``sha`` rather than ``shiya``.
 
 :meta hide-value:
 """
@@ -102,7 +102,7 @@ _ROW_BY_SOUND = {
 
 
 def _katakana(text: str) -> str:
-    # Hiragana and katakana sit a fixed distance apart, so one becomes the other by arithmetic and
+    # Hiragana and katakana sit a fixed distance apart. One becomes the other by arithmetic, and
     # the tables only have to be written once.
     return ''.join(
         chr(ord(mark) + _HIRAGANA_TO_KATAKANA) if ord(mark) in _HIRAGANA else mark for mark in text)
@@ -115,13 +115,13 @@ def to_romaji(reading: str) -> str:
     Parameters
     ----------
     reading : str
-        The reading, in either kana. Anything that is not kana is carried through as it stands.
+        The reading, in either kana. Anything that is not kana passes through as it stands.
 
     Returns
     -------
     str
         The reading in lowercase Latin letters, with the long vowel and repetition marks dropped.
-        Everything carried through is lowercased along with the rest.
+        Everything passed through is lowercased along with the rest.
     """
     marks = _katakana(reading)
     out: list[str] = []
@@ -130,8 +130,8 @@ def to_romaji(reading: str) -> str:
         mark = marks[at]
         following = marks[at + 1] if at + 1 < len(marks) else ''
         if mark in _LONG_MARK:
-            # The mark lengthens the vowel before it. A search is typed without the length, so it
-            # is dropped rather than written twice.
+            # The mark lengthens the vowel before it. A search is typed without the length, and it
+            # is therefore dropped rather than written twice.
             at += 1
         elif mark == _GEMINATE:
             # The next sound's first letter is written twice. At the end of a reading there is no
@@ -140,13 +140,13 @@ def to_romaji(reading: str) -> str:
             out.append(rest[:1] + rest)
             break
         elif (pair := _SMALL_VOWEL_PAIRS.get(mark, {}).get(following)) is not None:
-            # A pair named outright wins over the general rule below, which is what lets `テュ` be
+            # A pair listed outright wins over the general rule below. That is what lets `テュ` be
             # `tyu` rather than the `teyu` the two kana would otherwise come to.
             out.append(pair)
             at += 2
         elif following in _SMALL_Y and mark in _DIGRAPHS:
-            # A base already written with a palatal takes the bare vowel, so it is `sha` and not
-            # `shya`; every other base keeps the small kana's own `y`.
+            # A base already written with a palatal takes the bare vowel, giving `sha` and not
+            # `shya`; every other base retains the small kana's `y`.
             base = _DIGRAPHS[mark]
             vowel = _PLAIN[following].removeprefix('y')
             out.append(base + vowel if base in _PALATAL else base + 'y' + vowel)

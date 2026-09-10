@@ -3,38 +3,39 @@ Chart images.
 
 A chart records no lane for a note, and the game has no fixed one to record.
 ``CMusicSheet2::AssignChartLanes`` allocates each ordinary note's lane at run time through
-``NoteLaneTracker``, seeded from ``rand()`` when play starts, so one chart lays out differently on
-every play. A picture that placed notes across the bar would be inventing the one thing neither the
-file nor the game holds still.
+``NoteLaneTracker``, seeded from ``rand()`` when play starts. One chart therefore falls differently
+on every play. A picture that placed notes across the bar would be inventing the one property
+neither the file nor the game fixes.
 
-What the file does hold is the chain. A note's chain block names the note before it and the note
-after it by identifier, with -1 at each end, so walking the links recovers each run in the order it
-is struck. A note carrying no chain block stands alone.
+The file does record the chain. A note's chain block identifies the note before it and the note
+after it, with -1 at each end. Walking the links therefore recovers each run in the order it is
+struck. A note with no chain block stands alone.
 
 The engine's one fixed lane rule is that a chain member inherits the lane of the segment before it,
-so a chain runs straight up a single lane. That is what is drawn here. Notes one side strikes
-together cannot share a lane, so they take neighbouring ones.
+and a chain therefore runs straight up a single lane. That rule is what is drawn here. Notes one
+side strikes together cannot share a lane, and they take neighbouring lanes instead.
 
-*REFLEC BEAT* is a versus game, so a note also belongs to one of two sides. The two are separate
-sets of notes rather than one set divided, so each is drawn on its own and counted on its own.
+*REFLEC BEAT* is a versus game, and a note therefore belongs to one of two sides. The two are
+separate sets of notes rather than one set divided, and each is drawn and counted separately.
 
-Each image is a strip. Time runs **upward**, the way the notes fall, so the start of the tune is at
-the bottom of a column and the columns read left to right. One column holds
+Each image is a strip. Time runs **upward**, the way the notes fall, putting the start of the tune
+at the bottom of a column with the columns reading left to right. One column covers
 :py:data:`SECONDS_PER_COLUMN` seconds, ruled on every quarter note when the tune's tempo is known.
 
-A note left to choose its own target is green, each note of a chain is joined to the next by a
+A note free to choose a target is green, each note of a chain is joined to the next by a
 line, and a speed change rules its column across. A hold extends as a bar to the moment it is
 released, capped where it ends. A slide draws the track the finger takes, from the note across to
-each of its waypoints. The image carries a drawn legend saying so.
+each of its waypoints. The image includes a drawn legend documenting these conventions.
 
-A note's route selector decides whether the tracker ever sees it. One naming a lane, 0 to 6, comes
-straight down into that lane and is not randomised: that is every slide and every vertical note. One
-naming 7, 8, or 9 is aimed at an alternative target and drawn green. Only a note naming nothing is
-laid out from the seed.
+A note's route selector decides whether the tracker ever sees it. One specifying a lane, 0 to 6,
+comes straight down into that lane and is not randomised. Slides and vertical notes are all placed
+from the chart. One specifying 7, 8, or 9 is aimed at an alternative target and drawn green. Only a
+note
+specifying nothing is positioned from the seed.
 
 Which notes are green follows ``AssignGreenTargets``, whose availability bitmap starts with the
 seven lanes set and three further slots clear. Those three are the alternative targets, and a note
-is green when its route selector names one of them.
+is green when its route selector specifies one of them.
 """
 from __future__ import annotations
 
@@ -82,26 +83,26 @@ __all__ = (
 
 ALTERNATE_TARGETS = (7, 8, 9)
 """
-The route selectors naming a target beyond the seven lanes, which the game draws green.
+The route selectors specifying a target beyond the seven lanes, drawn green by the game.
 
-``AssignGreenTargets`` starts a note's availability bitmap with slots 0 to 6 set and 7 to 9 clear,
-so the seven are the lanes a note can be given and these three are the alternative targets a chart
-has to name outright. A hold reaches them as its colour tone plus seven, matching the engine's
-three-slot side scan.
+``AssignGreenTargets`` starts a note's availability bitmap with slots 0 to 6 set and 7 to 9 clear.
+The seven are therefore the lanes a note can be given, and these three are the alternative targets
+a chart has to state outright. A hold arrives at them as its colour tone plus seven, matching the
+engine's three-slot side scan.
 
 :meta hide-value:
 """
 HOLD_NOTE_TYPE = 1
-"""The note type that is held, the engine's ``kNoteTypeHold``, whose first target coordinate is how
-long for.
+"""The note type the player sustains, the engine's ``kNoteTypeHold``, whose first target coordinate
+is how long for.
 
 :meta hide-value:
 """
 SLIDE_NOTE_TYPE = 2
 """
-The note type that slides, which the engine remaps to its own ``kNoteTypeSlide`` on load.
+The note type that slides, remapped by the engine to ``kNoteTypeSlide`` on load.
 
-None of the five tunes shipped with the game holds one; a downloaded library does.
+None of the five tunes shipped with the game includes one; a downloaded library does.
 
 :meta hide-value:
 """
@@ -112,7 +113,7 @@ HOLD_HEAD_KIND = 1
 """
 FREE_NOTE_START_TIME = -1
 """
-The group value that marks a free note, which belongs to no chain.
+The group value that marks a free note, belonging to no chain.
 
 The engine calls these free. They are struck like any other note and are drawn and counted as such;
 they simply have no chain to inherit a lane from. The opening pair of a tune is usually two of
@@ -123,15 +124,15 @@ them.
 
 DEFAULT_SEED = None
 """
-The seed the lane layout uses when none is asked for, meaning a fresh one each run.
+The seed the lane layout uses when none is requested, meaning a fresh one each run.
 
-The game seeds the tracker with ``SetRandSeed(rand())``, so a chart lays out differently every
-time it is played. Passing a seed pins the layout, which is what a replay does.
+The game seeds the tracker with ``SetRandSeed(rand())``, and a chart therefore falls differently
+every time it is played. Passing a seed pins the layout, as a replay does.
 
 :meta hide-value:
 """
 DEFAULT_SCALE = 1.0
-"""The output scale used when none is asked for.
+"""The output scale used when none is requested.
 
 :meta hide-value:
 """
@@ -139,14 +140,14 @@ SCALE_RANGE = (1.0, 3.0)
 """
 The smallest and largest output scale.
 
-The image is laid out at three times its size and reduced once at the end, so a scale of three
-keeps every pixel that was drawn and smooths nothing. Ask for a larger image when it is to be
+The image is drawn at three times its size and reduced once at the end. A scale of three therefore
+retains every pixel that was drawn and smooths nothing. Request a larger image when it is to be
 looked at on a display that would otherwise have to enlarge it.
 
 :meta hide-value:
 """
 DEFAULT_SPEED = 1.0
-"""The speed modifier used when none is asked for, which is the chart's own spacing.
+"""The speed modifier used when none is requested, the chart's spacing.
 
 :meta hide-value:
 """
@@ -161,7 +162,7 @@ SPEED_STEP = 0.1
 :meta hide-value:
 """
 SECONDS_PER_COLUMN = 30
-"""How many seconds of chart one column holds by default.
+"""How many seconds of chart one column covers by default.
 
 :meta hide-value:
 """
@@ -175,14 +176,14 @@ SIDE_LABELS = ('Pink', 'Blue')
 What the game shows each side as.
 
 Established from the opening of *威風堂々*, whose first notes are a pair on side 0 at 2308 ms
-answered by a pair on side 1 at 2885 ms. That gap is 577 ms, one quarter note at the tune's 104
+matched by a pair on side 1 at 2885 ms. That gap is 577 ms, one quarter note at the tune's 104
 beats per minute, and the pink player is the one who opens.
 
 :meta hide-value:
 """
 LANE_COUNT = 7
 """
-How many lanes the field has, which is the engine's own ``NoteLaneTracker::kLaneCount``.
+How many lanes the field has, the engine's ``NoteLaneTracker::kLaneCount``.
 
 The lane table places them symmetrically about a centre lane, at fractions of the half-width in
 sevenths of a third: -0.777778, -0.518519, -0.259259, 0, and the three mirrors of those.
@@ -195,12 +196,12 @@ NOTE_COLORS = ((255, 120, 180), (80, 220, 255))
 :meta hide-value:
 """
 NOTE_COLOR = NOTE_COLORS[1]
-"""The colour of an ordinary note on side 1, which the hold and chain glyphs draw in.
+"""The colour of an ordinary note on side 1, also used by the hold and chain glyphs.
 
 :meta hide-value:
 """
 ALTERNATE_TARGET_COLOR = (110, 235, 130)
-"""The colour of a note aimed at one of the alternative targets, which the game draws green.
+"""The colour of a note aimed at one of the alternative targets, drawn green by the game.
 
 :meta hide-value:
 """
@@ -208,14 +209,14 @@ SIDE_OBJECT_FLAG = 0x20
 """
 The note flag marking a note that travels to the other side, to be swiped back.
 
-The engine calls this ``kSideObjectFlag`` and counts the notes carrying it per side. It is the same
-bit as ``kNoteFlagHasPath``, so such a note is exactly one carrying path points, and those points
-name the notes on the far side it links to.
+The engine calls this ``kSideObjectFlag`` and counts the notes with it per side. It is the same bit
+as ``kNoteFlagHasPath``, and such a note is therefore exactly one with path points. Those points
+identify the notes on the far side it links to.
 
 :meta hide-value:
 """
 SIDE_OBJECT_COLOR = (255, 200, 70)
-"""The colour of a note that travels to the other side, which the game draws gold.
+"""The colour of a note that travels to the other side, drawn gold by the game.
 
 :meta hide-value:
 """
@@ -223,7 +224,7 @@ SLIDE_COLOR = (200, 150, 255)
 """
 The colour a slide's track is drawn in.
 
-A slide is neither side's colour, being a path rather than a note, so it takes one of its own.
+A slide is neither side's colour, being a path rather than a note. It takes a separate colour.
 
 :meta hide-value:
 """
@@ -236,8 +237,9 @@ ALTERNATE_TARGET_LANES = (5, 3, 1)
 """
 Which lane each of the three alternative targets is drawn in, in route-selector order.
 
-The targets sit above the lanes rather than among them, so any placement is a choice. These three
-are spaced evenly and symmetrically about the middle lane of the seven. The selectors run right to
+The targets sit above the lanes rather than among them, and any placement is therefore a choice.
+The three are spaced evenly and symmetrically about the middle lane of the seven. The selectors run
+right to
 left, matching where the game puts the three objects on the pink side.
 
 :meta hide-value:
@@ -303,8 +305,8 @@ class _Rng:
     A small deterministic generator, seeded by a whole number.
 
     The generator is mulberry32, chosen over the standard library's because a page has to reproduce
-    it exactly to lay a chart out again under a new seed. Which layout a given seed names is
-    arbitrary either way: the game seeds its own tracker from ``rand()``.
+    it exactly to place a chart again under a new seed. Which layout a given seed produces is
+    arbitrary in any case. The game seeds its tracker from ``rand()``.
     """
     def __init__(self, seed: int) -> None:
         self._state = seed & _MASK
@@ -323,7 +325,7 @@ class _Rng:
         Parameters
         ----------
         among : collections.abc.Sequence[int]
-            The candidates, which must not be empty.
+            The candidates, required to be non-empty.
 
         Returns
         -------
@@ -346,7 +348,7 @@ _SMALL_SIZE = 11 * _SUPERSAMPLE
 
 def _timing_selector(note: NoteDict, version: int) -> int:
     # The engine's route selector, as InstallParsedNotes derives it from the second target
-    # coordinate. A value inside 0..9 names a target outright; anything else leaves the note to
+    # coordinate. A value inside 0..9 specifies a target outright; anything else defers the note to
     # choose one.
     unsigned = note['target'][1] & 0xFFFF
     route = unsigned - 0x10000 if unsigned >= _SIGN_BIT else unsigned
@@ -366,8 +368,8 @@ def _timing_selector(note: NoteDict, version: int) -> int:
 
 
 def _vertical(note: NoteDict, version: int) -> bool:
-    # Whether a note comes straight down into a lane the chart names, rather than taking a path the
-    # tracker lays out. A slide names its lane the same way, so the caller rules those out.
+    # Whether a note comes straight down into a lane the chart states, rather than taking a path
+    # the tracker builds. A slide states its lane the same way, and the caller rules those out.
     return 0 <= _timing_selector(note, version) < LANE_COUNT
 
 
@@ -387,8 +389,8 @@ def _note_color(note: NoteDict, version: int) -> tuple[int, int, int]:
 
 
 def _claimed_until(note: NoteDict) -> int:
-    # The last moment a note holds its lane against another. A hold keeps its lane for as long as it
-    # is held, so nothing may land in that lane until it is released.
+    # The last moment a note occupies its lane against another. A hold occupies its lane for as long
+    # as it runs, and nothing may land in that lane until it is released.
     return note['hit_time'] + _hold_length(note)
 
 
@@ -400,9 +402,9 @@ def _draw_note_head(canvas: Canvas,
                     flip: bool = False,
                     side_object: bool = False,
                     vertical: bool = False) -> None:
-    # One note's disc. A note that travels to the other side keeps its own colour on the half
-    # nearest the player and takes gold on the half it leaves by, so it says both whose it is and
-    # that it has to be swiped back. A note that comes straight down carries a V cut into it.
+    # One note's disc. A note that travels to the other side retains its colour on the half nearest
+    # the player and takes gold on the half it departs by. It therefore shows both whose it is and
+    # that it has to be swiped back. A note that comes straight down has a V cut into it.
     with canvas.head():
         _draw_disc(canvas, center, y, color, flip=flip, side_object=side_object, vertical=vertical)
 
@@ -412,7 +414,7 @@ def _draw_disc(canvas: Canvas, center: int, y: int, color: tuple[int, int, int],
     box = (center - _NOTE_RADIUS, y - _NOTE_RADIUS, center + _NOTE_RADIUS, y + _NOTE_RADIUS)
     canvas.ellipse(box, fill=color)
     if side_object:
-        # The gold half is the one the note leaves by, which is whichever way time runs.
+        # The gold half is the one the note departs by, whichever way time runs.
         start, end = ((0, _HALF_TURN) if flip else (_HALF_TURN, _FULL_TURN))
         canvas.pieslice(box, start, end, fill=SIDE_OBJECT_COLOR)
     if vertical:
@@ -425,22 +427,22 @@ def _draw_disc(canvas: Canvas, center: int, y: int, color: tuple[int, int, int],
 
 
 def _hold_length(note: NoteDict) -> int:
-    # How long a hold note is held, in milliseconds, or zero when it is not one. A hold carries its
-    # length in the first target coordinate, which is zero on every other note. The engine scales
-    # that coordinate exactly as it scales the note's times, and the lengths it yields are whole
-    # quarter notes at the tune's own tempo.
+    # How long a hold note runs, in milliseconds, or zero when it is not one. A hold stores its
+    # length in the first target coordinate, zero on every other note. The engine scales that
+    # coordinate exactly as it scales the note's times, and the lengths it yields are whole quarter
+    # notes at the tune's tempo.
     return note['target'][0] if note['type'] == HOLD_NOTE_TYPE else 0
 
 
 def _playable(notes: Sequence[NoteDict], side: int) -> int:
-    # How many notes one side holds. The two sides are separate sets, so each is counted alone.
+    # How many notes one side has. The two sides are separate sets, and each is counted alone.
     return sum(1 for note in notes if note['side'] == side)
 
 
 def _column_span(notes: Sequence[NoteDict], end_time: int) -> tuple[int, int]:
     # The first and last millisecond the image has to cover. The end is taken from the notes rather
-    # than the chart's own end time, which can fall a little past the last of them; a hold reaches
-    # past the note that starts it and is counted.
+    # than the chart's end time, able to fall a little past the last of them; a hold extends past
+    # the note that starts it and is counted.
     if not notes:
         return 0, max(end_time, 1)
     first = min(*(note['hit_time'] for note in notes), 0)
@@ -450,13 +452,13 @@ def _column_span(notes: Sequence[NoteDict], end_time: int) -> tuple[int, int]:
 
 def _fixed_lane(note: NoteDict, version: int) -> int | None:
     # The slot a note is pinned to, or None when the game is free to choose one. A note aimed at an
-    # alternative target names it outright, so it is drawn in that target's own slot and no
-    # randomness touches it.
+    # alternative target states it outright, and it is drawn in that target's slot with no
+    # randomness touching it.
     selector = _timing_selector(note, version)
     if selector in ALTERNATE_TARGETS:
         return ALTERNATE_TARGET_LANES[ALTERNATE_TARGETS.index(selector)]
-    # A selector naming one of the seven lanes is a note that comes straight down into it, which is
-    # every slide and every vertical note. The tracker never sees these, so no seed moves them.
+    # A selector stating one of the seven lanes is a note that comes straight down into it, covering
+    # every slide and every vertical note. The tracker never sees them, and no seed moves them.
     return selector if 0 <= selector < LANE_COUNT else None
 
 
@@ -468,12 +470,12 @@ def _lanes(notes: Sequence[NoteDict],
 
     Three rules, in the order ``CMusicSheet2::AssignChartLanes`` applies them. A note aimed at one
     of the three alternative targets is pinned to that target's slot, and no randomness touches it.
-    A chain member takes the slot of the segment before it, so a chain runs straight up rather than
-    stepping sideways. Everything else the engine allocates at run time through ``NoteLaneTracker``,
-    which shuffles its candidates with ``rand()`` and so lays one chart out differently on every
-    play.
+    A chain member takes the slot of the segment before it, and a chain therefore runs straight up
+    rather than stepping sideways. Everything else the engine allocates at run time through
+    ``NoteLaneTracker``. The tracker shuffles its candidates with ``rand()``, placing one chart
+    differently on every play.
 
-    Only that last rule is approximated: the shuffle here is driven by *seed*, so passing one pins
+    Only that last rule is approximated. The shuffle here is driven by *seed*, and passing one pins
     a layout the way a replay does.
 
     Parameters
@@ -481,7 +483,7 @@ def _lanes(notes: Sequence[NoteDict],
     notes : collections.abc.Sequence[NoteDict]
         The chart's notes.
     version : int
-        The chart version, which decides how a note's route selector is read.
+        The chart version, deciding how a note's route selector is read.
     seed : int | None
         Chooses between the layouts the game would pick between. ``None`` takes a fresh one, as the
         game itself does.
@@ -496,26 +498,26 @@ def _lanes(notes: Sequence[NoteDict],
 
 
 def _pick_seed(seed: int | None) -> int:
-    # The seed a layout is drawn from: the one named, or a fresh one each run as the game itself
-    # takes.
+    # The seed a layout is drawn from, either the one given or a fresh one each run as the game
+    # itself takes.
     return (random.randrange(_WORD)  # ruff: ignore[suspicious-non-cryptographic-random-usage]
             if seed is None else seed)
 
 
 def _lane_plan(notes: Sequence[NoteDict], version: int) -> tuple[dict[int, int], list[_Claim]]:
     # Everything about the layout that the seed does not touch: which notes are pinned to a target's
-    # own slot, and, for the rest, the runs competing for a lane in the order they are dealt with.
-    # Only the choice among the lanes still free is left to the seed, so a page given this can lay
-    # the chart out again without knowing how any of it was worked out.
-    # A chain claims its lane from its first note to its last, so the spans can be compared.
+    # slot, and, for the rest, the runs competing for a lane in the order they are dealt with.
+    # Only the choice among the lanes still free belongs to the seed, and a page given this can
+    # place the chart again without knowing how any of it was worked out.
+    # A chain occupies its lane from its first note to its last, letting the spans be compared.
     spans: list[tuple[int, int, int, list[int]]] = []
     singles: dict[tuple[int, int], list[int]] = {}
     for members in _groups(notes):
         side = notes[members[0]]['side']
         side = side if 0 <= side < SIDE_COUNT else 0
         if len(members) < _CHAIN_MINIMUM:
-            # A note in no chain still cannot share a lane with one struck beside it, so the ones a
-            # side strikes together are laid out as a group.
+            # A note in no chain still cannot share a lane with one struck beside it, and the ones
+            # a side strikes together are therefore placed as a group.
             singles.setdefault((side, notes[members[0]]['hit_time']), []).append(members[0])
             continue
         times = [_claimed_until(notes[index]) for index in members]
@@ -528,8 +530,8 @@ def _lane_plan(notes: Sequence[NoteDict], version: int) -> tuple[dict[int, int],
     fixed: dict[int, int] = {}
     plan: list[_Claim] = []
     for start, end, side, members in spans:
-        # A note aimed at an alternative target sits in that target's own slot, so it neither needs
-        # a lane nor takes one from the notes struck beside it.
+        # A note aimed at an alternative target sits in that target's slot, and it therefore neither
+        # needs a lane nor takes one from the notes struck beside it.
         aimed = {
             index: slot
             for index in members if (slot := _fixed_lane(notes[index], version)) is not None
@@ -552,7 +554,7 @@ def _lane_plan(notes: Sequence[NoteDict], version: int) -> tuple[dict[int, int],
 def _assign(fixed: Mapping[int, int], plan: Sequence[_Claim], rng: _Rng) -> dict[int, int]:
     # Hand each run the first lane free when it starts, choosing among those free from the seed.
     lanes = dict(fixed)
-    # taken[side] holds, per lane, the time the lane is claimed until.
+    # taken[side] stores, per lane, the time the lane is occupied until.
     taken = [[-math.inf] * LANE_COUNT for _ in range(SIDE_COUNT)]
     for claim in plan:
         free = [
@@ -573,9 +575,9 @@ def _assign(fixed: Mapping[int, int], plan: Sequence[_Claim], rng: _Rng) -> dict
 def _groups(notes: Sequence[NoteDict]) -> list[list[int]]:
     # Every chain, as the indices of its notes in the order they are struck.
     #
-    # A chain is a doubly linked run: a note's chain block names the note before it and the note
-    # after it by identifier, with -1 at each end. Walking forward from every head recovers the
-    # runs. A note carrying no chain block is a run of one.
+    # A chain is a doubly linked run. A note's chain block identifies the note before it and the
+    # note after it, with -1 at each end. Walking forward from every head recovers the runs. A note
+    # with no chain block is a run of one.
     by_id = {note['id']: index for index, note in enumerate(notes)}
     runs: list[list[int]] = []
     seen: set[int] = set()
@@ -583,7 +585,7 @@ def _groups(notes: Sequence[NoteDict]) -> list[list[int]]:
         if index in seen:
             continue
         chain = note['chain']
-        # Start only from a head, so a run is walked once and in order.
+        # Start only from a head, walking each run once and in order.
         if chain is not None and chain[0] in by_id:
             continue
         run: list[int] = []
@@ -595,7 +597,7 @@ def _groups(notes: Sequence[NoteDict]) -> list[list[int]]:
             after = following[1] if following is not None else -1
             step = by_id.get(after) if after != -1 else None
         runs.append(run)
-    # A run whose links form a ring has no head, so it is picked up from wherever it is met.
+    # A run whose links form a ring has no head, and it is picked up from wherever it is met.
     runs.extend([index] for index in range(len(notes)) if index not in seen)
     return runs
 
@@ -630,14 +632,14 @@ class _Layout(NamedTuple):
         span_ms = seconds_per_column * int(_MILLISECONDS)
         columns = max(1, math.ceil((end_ms - start_ms) / span_ms))
         # The speed modifier spreads the notes further apart without changing how much time a
-        # column holds, exactly as it does in play.
+        # column covers, exactly as it does in play.
         pixels_per_second = round(_PIXELS_PER_SECOND * speed)
         column_height = seconds_per_column * pixels_per_second
-        # Every lane is drawn whether the chart uses it or not, since an empty lane is part of the
-        # field rather than wasted width.
+        # Every lane is drawn whether the chart uses it or not. An empty lane is part of the field
+        # rather than wasted width.
         lanes = LANE_COUNT
         column_width = _GUTTER + lanes * _LANE_PX
-        # Each side gets a panel of its own holding the whole of that side's chart, and the two sit
+        # Each side gets a separate panel covering the whole of that side's chart, and the two sit
         # beside each other rather than interleaving column by column.
         panel_width = columns * column_width + (columns - 1) * _COLUMN_GAP
         top = _MARGIN + _HEADER
@@ -674,7 +676,7 @@ class _Layout(NamedTuple):
 
     def place(self, time_ms: int) -> tuple[int, int] | None:
         # The column and pixel row a time lands on, or None when it falls outside the image. Time
-        # runs upward, so the earliest moment in a column sits at its bottom edge.
+        # runs upward, putting the earliest moment in a column at its bottom edge.
         offset = time_ms - self.start_ms
         column = offset // self.span_ms
         if not 0 <= column < self.columns:
@@ -683,18 +685,17 @@ class _Layout(NamedTuple):
         return int(column), self.top + int(within) if self.flip else self.bottom - int(within)
 
     def later(self, y: float, distance: float) -> float:
-        # Where a moment *distance* further on lands, which is the way a hold runs from its note.
+        # Where a moment *distance* further on lands, the way a hold runs from its note.
         return y + distance if self.flip else y - distance
 
     def limit(self) -> float:
-        # The band edge a hold is clipped to, being the one time runs towards.
+        # The band edge a hold is clipped to, the one time runs towards.
         return self.bottom if self.flip else self.top
 
 
 def _draw_beats(canvas: Canvas, layout: _Layout, bpm: float) -> None:
     # A line on every quarter note, with a brighter one every fourth, in both panels. The grid is
-    # anchored at time zero, which is where the tune's own clock starts; a chart may begin before
-    # it.
+    # anchored at time zero, where the tune's clock starts; a chart may begin before it.
     beat_ms = _SECONDS_PER_MINUTE * _MILLISECONDS / bpm
     last_beat = math.ceil((layout.start_ms + layout.columns * layout.span_ms) / beat_ms)
     for beat in range(math.floor(layout.start_ms / beat_ms), last_beat + 1):
@@ -723,10 +724,10 @@ def _draw_grid(canvas: Canvas, layout: _Layout, bpm: float | None) -> None:
                         fill=_TRACK_COLOR,
                         outline=_TRACK_EDGE,
                         width=_SUPERSAMPLE)
-    # The two rulings are drawn apart from the panels they lie on, and from each other, so that a
-    # page can leave either out without the track going with it. Each group is kept to one column,
-    # or to one line across it, because a page files a shape under the seconds its box reaches into
-    # and a group spanning the chart would be filed under all of them.
+    # The two rulings are drawn apart from the panels they sit on, and from each other, letting a
+    # page omit one without the track going with it. Each group is restricted to one column, or to
+    # one line across it. A page files a shape under the seconds its box covers, and a group
+    # spanning the chart would be filed under all of them.
     for side in range(SIDE_COUNT):
         for column in range(layout.columns):
             left = layout.column_origin(side, column) + _GUTTER
@@ -778,7 +779,7 @@ def _draw_tempo_events(canvas: Canvas, layout: _Layout, events: Sequence[TempoEv
 def _spot(layout: _Layout, notes: Sequence[NoteDict], lanes: Mapping[int, int],
           index: int) -> tuple[int, int, int] | None:
     # The column and the pixel position a note is drawn at, or None when it is not drawn at all. A
-    # free note asks nothing of the player, so it is left out rather than shown.
+    # free note requires nothing of the player, and it is omitted rather than shown.
     note = notes[index]
     if (placed := layout.place(note['hit_time'])) is None:
         return None
@@ -790,7 +791,7 @@ def _spot(layout: _Layout, notes: Sequence[NoteDict], lanes: Mapping[int, int],
 def _draw_chains(canvas: Canvas, layout: _Layout, notes: Sequence[NoteDict],
                  lanes: Mapping[int, int], version: int) -> None:
     # A line joins each note of a chain to the next, drawn under the notes themselves. Nothing is
-    # drawn before the first note or after the last, and a pair split across two columns is left
+    # drawn before the first note or after the last, and a pair split across two columns goes
     # without a line, there being nowhere to run one.
     for members in _groups(notes):
         if len(members) < _CHAIN_MINIMUM:
@@ -799,8 +800,8 @@ def _draw_chains(canvas: Canvas, layout: _Layout, notes: Sequence[NoteDict],
         for (_, before), (index, after) in itertools.pairwise(placed):
             if before is None or after is None or before[0] != after[0]:
                 continue
-            # Every note of a chain shares one lane, so the line between two of them stands upright
-            # and follows either of the pair wherever the lane goes.
+            # Every note of a chain shares one lane, and the line between two of them therefore
+            # stands upright and follows either of the pair wherever the lane goes.
             with canvas.tied(index):
                 canvas.line((before[1], before[2], after[1], after[2]),
                             fill=_note_color(notes[index], version),
@@ -812,9 +813,9 @@ def _slide_paths(notes: Sequence[NoteDict],
     """
     Work out the lane a slide is in at each moment it is drawn through.
 
-    A slide's records are its waypoints. Each carries the lane the finger is to be in and, in the
-    same shape a note's own timing takes, a spawn time and a travel time whose sum is the moment it
-    is to be there. The note itself is the first point, since that is where the finger goes down.
+    A slide's records are its waypoints. Each states the lane the finger is to be in and, in the
+    same shape a note's timing takes, a spawn time and a travel time whose sum is the moment it is
+    to be there. The note itself is the first point, where the finger goes down.
 
     Parameters
     ----------
@@ -844,7 +845,7 @@ def _slide_paths(notes: Sequence[NoteDict],
 def _draw_slides(canvas: Canvas, layout: _Layout, notes: Sequence[NoteDict],
                  lanes: Mapping[int, int], slides: Sequence[SlideDict]) -> None:
     # The track a finger takes: down on the note, then across to each waypoint in turn. It is drawn
-    # under the notes, and a leg whose two ends fall in different columns is left out, there being
+    # under the notes, and a leg whose two ends fall in different columns is omitted, there being
     # nowhere to run it.
     for index, path in _slide_paths(notes, slides).items():
         side = notes[index]['side'] if 0 <= notes[index]['side'] < SIDE_COUNT else 0
@@ -868,8 +869,8 @@ def _draw_slides(canvas: Canvas, layout: _Layout, notes: Sequence[NoteDict],
 
 def _note_details(note: NoteDict, index: int, lane: int | None, version: int, *, held: int,
                   sliding: bool, vertical: bool) -> dict[str, str]:
-    # What one note says about itself when it is clicked. Everything here is read off the record or
-    # worked out beside it, so the page reports the chart rather than a summary of it.
+    # What one note reports about itself when it is clicked. Everything here is read off the record
+    # or worked out beside it, and the page therefore reports the chart rather than a summary.
     kinds = []
     if held > 0:
         kinds.append('Hold')
@@ -920,8 +921,8 @@ def _draw_notes(canvas: Canvas,
         color = _note_color(note, version)
         vertical = index not in sliding and _vertical(note, version)
         held = _hold_length(note)
-        # Everything the note is drawn from goes in one group, so a surface that can be clicked
-        # through answers for the whole mark rather than one shape of it.
+        # Everything the note is drawn from goes in one group, letting a surface that can be
+        # clicked through respond for the whole mark rather than one shape of it.
         with canvas.note(
                 _note_details(note,
                               index,
@@ -932,8 +933,8 @@ def _draw_notes(canvas: Canvas,
                               vertical=vertical)):
             if held > 0:
                 # A hold runs from the note up to the moment it is released, clipped to the column.
-                # It is drawn wide, with a cap at the release, so that a hold sitting at the end of
-                # a chain cannot be taken for the narrower line joining the chain.
+                # It is drawn wide, with a cap at the release, letting a hold sitting at the end of
+                # a chain be told apart from the narrower line joining the chain.
                 reach = int(held / _MILLISECONDS * layout.pixels_per_second)
                 end = (min(layout.later(y, reach), layout.limit()) if layout.flip else max(
                     layout.later(y, reach), layout.limit()))
@@ -964,7 +965,7 @@ def _draw_header(canvas: Canvas, layout: _Layout, chart: ChartDict, *, artist: s
     parts = [difficulty or 'chart']
     if level is not None:
         parts.append(f'level {level}')
-    # Each side is counted on its own: the two are separate sets of notes, not one total split
+    # Each side is counted separately. The two are separate sets of notes, not one total split
     # between them.
     parts.extend(f'{SIDE_LABELS[side]}: {_playable(chart["notes"], side)} notes'
                  for side in range(SIDE_COUNT))
@@ -979,7 +980,7 @@ def _draw_header(canvas: Canvas, layout: _Layout, chart: ChartDict, *, artist: s
 
 
 def _draw_legend(canvas: Canvas, layout: _Layout) -> None:
-    # One drawn example of every mark, so the picture explains itself.
+    # One drawn example of every mark, letting the picture explain itself.
     per_row = _legend_columns(layout.width)
     base = layout.height - _MARGIN - layout.legend_rows * _LEGEND_ROW
     for index, (label, glyph) in enumerate(_LEGEND):
@@ -1027,7 +1028,7 @@ def _glyph_hold(canvas: Canvas, x: int, y: int) -> None:
 
 
 def _glyph_chain(canvas: Canvas, x: int, y: int) -> None:
-    # Three notes, since a chain runs to as many as five and two would read as a special case.
+    # Three notes. A chain runs to as many as five, and two would read as a special case.
     spots = [(x + (step - 1) * _LEGEND_CHAIN, y) for step in range(3)]
     canvas.line(spots[0] + spots[-1], fill=NOTE_COLOR, width=_BAR_WIDTH)
     for spot_x, spot_y in spots:
@@ -1035,7 +1036,7 @@ def _glyph_chain(canvas: Canvas, x: int, y: int) -> None:
 
 
 def _glyph_slide(canvas: Canvas, x: int, y: int) -> None:
-    # A finger going down and stepping sideways twice, which is what a slide asks for.
+    # A finger going down and stepping sideways twice, the motion a slide requires.
     spots = ((x - _LEGEND_CHAIN, y + _LEGEND_CHAIN), (x, y), (x + _LEGEND_CHAIN, y - _LEGEND_CHAIN))
     for before, after in itertools.pairwise(spots):
         canvas.line(before + after, fill=SLIDE_COLOR, width=_SLIDE_WIDTH)
@@ -1106,13 +1107,13 @@ def render_chart_image(chart: ChartDict,
         The tune's artist, drawn in the header.
     bpm : float | None
         The tune's tempo. Given one, a line is drawn on every quarter note and a brighter one on
-        every bar. A tempo that is absent or not positive leaves the beat grid off.
+        every bar. A tempo that is absent or not positive omits the beat grid.
     difficulty : str | None
         The difficulty name, drawn in the header.
     level : int | None
         The chart's level, drawn in the header.
     seconds_per_column : int
-        How many seconds each column holds before wrapping.
+        How many seconds each column covers before wrapping.
     flip : bool
         Read each column top to bottom instead of bottom to top. The notes then fall down the page
         the way they fall down the screen, and a hold runs down from its note rather than up.
@@ -1121,12 +1122,12 @@ def render_chart_image(chart: ChartDict,
         is unchanged; only the number of pixels it is written at differs.
     seed : int | None
         Chooses between the lane layouts the game would pick between. The game shuffles with
-        ``rand()`` and so lays a chart out differently on every play, which ``None`` matches by
-        taking a fresh seed; passing one pins the layout the way a replay does.
+        ``rand()`` and places a chart differently on every play. ``None`` matches that by taking a
+        fresh seed; passing one pins the layout the way a replay does.
     speed : float
         The speed modifier, from 1.0 to 2.0 in steps of 0.1 as the game offers it. A higher one
-        spreads the notes further apart without changing how much time a column holds, so the image
-        grows taller.
+        spreads the notes further apart without changing how much time a column covers, and the
+        image therefore grows taller.
 
     Returns
     -------
@@ -1158,6 +1159,6 @@ def render_chart_image(chart: ChartDict,
                  title=title)
     _draw_legend(canvas, layout)
     # The layout is in units a whole multiple of the finished size. A raster surface draws there
-    # and reduces once at the end, which smooths every edge in one pass; a vector one carries the
-    # same numbers as its view box and needs no such thing.
+    # and reduces once at the end, smoothing every edge in one pass; a vector one uses the same
+    # numbers as its view box and needs no reduction.
     return canvas.save(path, scale=scale, supersample=_SUPERSAMPLE)

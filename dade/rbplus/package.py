@@ -2,17 +2,18 @@
 The ``.rb`` tune package.
 
 A package is an ordinary ZIP named after the tune identifier (``%09d.rb``) whose every entry is
-enciphered. Nothing inside is compressed in a way that matters here: the ZIP is unpacked with the
-standard library and each entry is deciphered afterwards.
+enciphered. Nothing inside is compressed in a way that affects this reader. The ZIP is unpacked
+with the standard library and each entry is deciphered afterwards.
 
 Which of the two keys a package uses is not recorded anywhere in it. ``MusicData +dataWithPath:ID:``
 deciphers the ``info`` entry with the first key, and moves to the second when the result is not a
-property list; :py:func:`open_package` does the same, so a package that uses neither raises rather
+property list. :py:func:`open_package` does the same, and a package that uses neither raises rather
 than yielding rubbish.
 
-The five packages that ship with the game carry sixteen entries. ``MusicData.m`` names sixteen more
-that no shipped package holds - per-difficulty audio, artwork, and name strips, and the ``note_*2``
-light charts - so an unknown entry is classified by its name rather than rejected.
+The five packages that ship with the game include sixteen entries. ``MusicData.m`` lists sixteen
+more that no shipped package includes (per-difficulty audio, artwork, and name strips, and the
+``note_*2`` light charts). An unknown entry is therefore classified by its name rather than
+rejected.
 """
 from __future__ import annotations
 
@@ -40,7 +41,7 @@ __all__ = ('AUDIO_ENTRIES', 'CHART_ENTRIES', 'INFO_ENTRY', 'SPECIAL_DIFFICULTY',
            'is_extend_note', 'open_package', 'read_chart_file')
 
 INFO_ENTRY = 'info'
-"""The entry holding the tune metadata, and the one the decode type is established from.
+"""The entry with the tune metadata, and the one the decode type is established from.
 
 :meta hide-value:
 """
@@ -63,8 +64,8 @@ SPECIAL_ID_OFFSET = 50000
 """How far an extend note's identifier sits above the tune it belongs to.
 
 The catalogue tells the game which tune an extend note extends, and an offline reader has no
-catalogue. What it has is the numbering: every extend note observed is ``100050xxx`` and its tune is
-the same number less this.
+catalogue. The numbering is what remains. Every extend note observed is ``100050xxx``, and its tune
+is the same number less this.
 
 :meta hide-value:
 """
@@ -94,7 +95,7 @@ class PackageError(Exception):
 
 
 class EntryKind:
-    """The kinds of entry a package holds, by what the deciphered bytes are."""
+    """The kinds of entry a package includes, by what the deciphered bytes are."""
 
     AUDIO = 'audio'
     """An MPEG-4 audio stream."""
@@ -108,7 +109,7 @@ class EntryKind:
 
 def classify_entry(name: str) -> str:
     """
-    Say what an entry's deciphered bytes are, from its name.
+    Report what an entry's deciphered bytes are, from its name.
 
     Parameters
     ----------
@@ -118,8 +119,8 @@ def classify_entry(name: str) -> str:
     Returns
     -------
     str
-        One of the :py:class:`EntryKind` values. Anything unrecognised is an image, which is what
-        every remaining entry the game names turns out to be.
+        One of the :py:class:`EntryKind` values. Anything unrecognised is an image, matching every
+        remaining entry the game lists.
     """
     match name:
         case _ if name == INFO_ENTRY:
@@ -150,15 +151,15 @@ def chart_level(info: TuneInfoDict, name: str) -> int | None:
     """
     if (key := _CHART_LEVEL_KEYS.get(name)) is None:
         return None
-    # The metadata is a property list, so a value of the wrong type is possible and is treated the
-    # same as an absent one.
+    # The metadata is a property list, and a value of the wrong type is therefore possible. It is
+    # treated the same as an absent one.
     value = cast('Mapping[str, object]', info).get(key)
     return value if isinstance(value, int) else None
 
 
 def chart_difficulty(name: str) -> str:
     """
-    Name the difficulty a chart entry holds.
+    Identify the difficulty a chart entry stores.
 
     Parameters
     ----------
@@ -175,13 +176,13 @@ def chart_difficulty(name: str) -> str:
 
 def is_extend_note(charts: Mapping[str, ChartDict | None]) -> bool:
     """
-    Report whether a package holds an extend note rather than an ordinary tune.
+    Report whether a package stores an extend note rather than an ordinary tune.
 
     An extend note is a SPECIAL chart sold for a tune that already exists. The game learns which
     tune from the catalogue and reads the chart with
-    ``[[MusicData dataWithPath:… ID:ExtMusicID] sheetBasic]``, so the SPECIAL chart is stored where
-    the basic chart of an ordinary tune goes and the other two difficulties are left empty. That
-    shape is the only thing a reader without the catalogue can go on.
+    ``[[MusicData dataWithPath:… ID:ExtMusicID] sheetBasic]``. The SPECIAL chart is therefore stored
+    where the basic chart of an ordinary tune goes, and the other two difficulties stay empty. That
+    shape is the only evidence a reader without the catalogue can go on.
 
     Parameters
     ----------
@@ -192,7 +193,7 @@ def is_extend_note(charts: Mapping[str, ChartDict | None]) -> bool:
     Returns
     -------
     bool
-        Whether the package holds one chart, in the basic entry, and nothing in the other two.
+        Whether the package stores one chart, in the basic entry, and nothing in the other two.
     """
     def filled(name: str) -> bool:
         chart = charts.get(name)
@@ -222,7 +223,7 @@ class TunePackage:
     """
     One ``.rb`` tune package, opened and with its decode type established.
 
-    Use :py:func:`open_package` rather than constructing this directly, since the decode type has to
+    Use :py:func:`open_package` rather than constructing this directly. The decode type has to
     be discovered before any entry can be read.
     """
     def __init__(self, path: Path, archive: zipfile.ZipFile, decode_type: int) -> None:
@@ -245,7 +246,7 @@ class TunePackage:
         return self
 
     def __exit__(self, *args: object) -> None:
-        """Close the underlying archive on leaving the block."""
+        """Close the underlying archive on exiting the block."""
         self.close()
 
     @property
@@ -264,7 +265,7 @@ class TunePackage:
         Parameters
         ----------
         name : str
-            The entry name. One the package does not hold raises :py:class:`KeyError`.
+            The entry name. One the package does not include raises :py:class:`KeyError`.
 
         Returns
         -------
@@ -295,7 +296,7 @@ class TunePackage:
 
     def charts(self) -> Iterator[tuple[str, bytes]]:
         """
-        Yield every chart entry the package holds, difficulty order.
+        Yield every chart entry the package includes, difficulty order.
 
         Yields
         ------
@@ -325,7 +326,7 @@ def open_package(path: Path) -> TunePackage:
     Raises
     ------
     PackageError
-        If the file is not a ZIP, holds no ``info`` entry, or that entry deciphers to a property
+        If the file is not a ZIP, includes no ``info`` entry, or that entry deciphers to a property
         list under neither key.
     """
     try:
@@ -337,7 +338,7 @@ def open_package(path: Path) -> TunePackage:
         raw = archive.read(INFO_ENTRY)
     except KeyError as e:
         archive.close()
-        msg = f'`{path.name}` holds no {INFO_ENTRY} entry.'
+        msg = f'`{path.name}` includes no {INFO_ENTRY} entry.'
         raise PackageError(msg) from e
     for decode_type, key in enumerate(chart_keys()):
         try:
@@ -353,11 +354,11 @@ def open_package(path: Path) -> TunePackage:
 
 def read_chart_file(path: Path, *, key: bytes | None = None, iv: bytes = DEFAULT_IV) -> bytes:
     """
-    Read one note chart from a file of its own, rather than from a package.
+    Read one note chart from a separate file, rather than from a package.
 
     The file may be as it is stored, enciphered under either of the game's keys, or already
-    deciphered. A chart opens with :py:data:`~dade.rbplus.chart.MAGIC`, so plain bytes are
-    recognised outright and each key is otherwise tried in turn.
+    deciphered. A chart opens with :py:data:`~dade.rbplus.chart.MAGIC`, and plain bytes are
+    therefore recognised outright. Each key is otherwise tried in turn.
 
     Parameters
     ----------
@@ -366,7 +367,7 @@ def read_chart_file(path: Path, *, key: bytes | None = None, iv: bytes = DEFAULT
     key : bytes | None
         A key to use instead of the game's own, for a chart enciphered under neither.
     iv : bytes
-        The eight-byte initialisation vector, which only differs from the game's alongside *key*.
+        The eight-byte initialisation vector, differing from the game's only alongside *key*.
 
     Returns
     -------
@@ -402,7 +403,7 @@ def read_chart_file(path: Path, *, key: bytes | None = None, iv: bytes = DEFAULT
 
 def infer_difficulty(path: Path) -> str | None:
     """
-    Work out which difficulty a bare chart file holds, from its name.
+    Work out which difficulty a bare chart file stores, from its name.
 
     Parameters
     ----------
@@ -412,7 +413,7 @@ def infer_difficulty(path: Path) -> str | None:
     Returns
     -------
     str | None
-        The chart entry name, or ``None`` when the name says nothing.
+        The chart entry name, or ``None`` when the name states nothing.
     """
     stem = path.name.split('.')[0].casefold()
     return next((entry for entry in CHART_ENTRIES if stem == entry or stem == entry[len('note_'):]),

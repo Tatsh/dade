@@ -5,8 +5,8 @@ Every entry of a ``.rb`` tune package is enciphered with the ``BFCodec`` Blowfis
 :py:mod:`dade.common.bfcodec`, the same one *pop'n rhythmin* and *jubeat plus* use. Only the key
 differs.
 
-There are two keys. Neither passphrase appears in the executable: each is stored as a byte array
-with every byte reduced by its own index, so adding the index back recovers the passphrase, and its
+There are two keys, and neither passphrase appears in the executable. Each is stored as a byte
+array with every byte reduced by its index. Adding the index back recovers the passphrase, and its
 MD5 is the sixteen-byte Blowfish key. The two recovered passphrases are
 ``Konami ReflecBeat For iOS.`` and ``Konami ReflecBeatplus.``.
 
@@ -44,7 +44,7 @@ def deobfuscate(obfuscated: bytes) -> bytes:
     """
     Recover a passphrase from its obfuscated form.
 
-    Each byte carries its own index subtracted, so adding the index back undoes it. The arithmetic
+    Each byte has its index subtracted, and adding the index back undoes it. The arithmetic
     wraps at a byte, as it does in the executable.
 
     Parameters

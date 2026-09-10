@@ -11,20 +11,20 @@ class NoteDict(TypedDict):
     """One note as it is stored in an RBFF chart."""
 
     spawn_time: int
-    """When the note appears, in milliseconds. A chart starts before its audio, so this is often
+    """When the note appears, in milliseconds. A chart starts before its audio, making this often
     negative."""
     travel_time: int
-    """How long the note takes to reach the player, in milliseconds."""
+    """How long the note takes to arrive at the player, in milliseconds."""
     hit_time: int
     """When the note must be hit: :py:attr:`spawn_time` plus :py:attr:`travel_time`. Notes are
     stored in this order, and two notes sharing it are simultaneous."""
     id: int
-    """The note identifier, which another note's chain fields refer to."""
+    """The note identifier, referred to by another note's chain fields."""
     start_time: int
     """
     The chain the note belongs to, or ``-1`` when the note is free.
 
-    The reconstruction names this field for a time, but it holds neither one: it is a group
+    The reconstruction titles this field for a time, but it stores neither one. It is a group
     number that climbs through the chart, and every note sharing it with the same side is one
     chain the player takes in succession. A free note belongs to no chain.
     """
@@ -32,18 +32,18 @@ class NoteDict(TypedDict):
     """
     The note's place in its chain, counting from zero.
 
-    A chain's places run ``0`` to ``n-1`` with no gaps, so this also gives the chain's length.
+    A chain's places run ``0`` to ``n-1`` with no gaps, and this therefore gives the chain's length.
     """
     side: int
     """The play side the note belongs to, ``0`` or ``1``. The two sides are separate sets."""
     hold_kind: int
-    """``1`` marks a hold's head, which the engine calls ``kHoldKindHead``."""
+    """``1`` marks a hold's head, called ``kHoldKindHead`` by the engine."""
     type: int
     """
     The note type.
 
-    ``1`` is a hold, whose length is the first target coordinate. ``2`` is a slide, which the
-    engine remaps to ``3`` on load; no chart in the shipped packages carries one.
+    ``1`` is a hold, whose length is the first target coordinate. ``2`` is a slide, remapped by the
+    engine to ``3`` on load; no chart in the shipped packages includes one.
     """
     target: tuple[int, int, int, int]
     """
@@ -56,9 +56,9 @@ class NoteDict(TypedDict):
     flags: int
     """The note flag bits. See :py:data:`dade.rbplus.chart.NOTE_FLAGS`."""
     path_points: tuple[int, ...]
-    """The note's path-point coordinates, empty when it carries no path."""
+    """The note's path-point coordinates, empty when it has no path."""
     chain: tuple[int, int, int, int] | None
-    """The chain block a long-note head carries, or ``None``."""
+    """The chain block a long-note head stores, or ``None``."""
 
 
 class TempoEventDict(TypedDict):
@@ -71,7 +71,7 @@ class TempoEventDict(TypedDict):
     speed: int
     """The scroll speed the event installs, meaningful for kind ``3``."""
     raw: str
-    """The whole thirty-six byte event as hexadecimal, since most of it is undocumented."""
+    """The whole thirty-six byte event as hexadecimal, most of it being undocumented."""
 
 
 class SlideDict(TypedDict):
@@ -101,7 +101,7 @@ class ChartHeaderDict(TypedDict):
     seed: int
     """The chart's seed value."""
     note_count: int
-    """How many notes the chart holds."""
+    """How many notes the chart includes."""
     tempo_event_count: int
     """How many tempo events follow the notes."""
     free_note_count: int
@@ -124,10 +124,10 @@ class ChartDict(TypedDict):
 
 
 class TuneInfoDict(TypedDict, total=False):
-    """The tune metadata an ``info`` entry carries. Every key is optional."""
+    """The tune metadata an ``info`` entry stores. Every key is optional."""
 
     ID: int
-    """The tune identifier, which matches the package's file name."""
+    """The tune identifier, matching the package's file name."""
     MusicName: str
     """The display title."""
     MusicNameHira: str

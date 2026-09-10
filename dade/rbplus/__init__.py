@@ -5,14 +5,14 @@ REFLEC BEAT plus (Konami) toolkit.
 open outside iOS:
 
 - :py:mod:`dade.rbplus.cipher` - the two Blowfish keys, each the MD5 of a passphrase the binary
-  stores with every byte reduced by its own index.
+  stores with every byte reduced by its index.
 - :py:mod:`dade.rbplus.package` - the ``.rb`` tune packages, whose every entry is enciphered.
 - :py:mod:`dade.rbplus.chart` - the RBFF note charts inside a tune package.
 - :py:mod:`dade.rbplus.render` - a chart drawn as a two-track time strip.
-- :py:mod:`dade.rbplus.canvas` - the surfaces that strip is drawn on: a raster image or a vector
+- :py:mod:`dade.rbplus.canvas` - the surfaces that strip is drawn on, a raster image or a vector
   one.
-- :py:mod:`dade.rbplus.reading` - what a tune's kana reading gives you: the letters to type when
-  searching for it, and where it is filed.
+- :py:mod:`dade.rbplus.reading` - what a tune's kana reading yields, meaning the letters to type
+  when searching for it and where it is filed.
 - :py:mod:`dade.rbplus.archive` - the downloadable texture archives and their nested manifest.
 - :py:mod:`dade.rbplus.pipeline` - the whole download, converted in one pass.
 

@@ -48,31 +48,31 @@ debug_option = bascom.debug_option({'dade.common': {}, 'dade.rbplus': {}})
 """
 
 
-# The tune metadata and the parsed chart of one difficulty. A package that holds no chart of that
-# difficulty is a user error rather than a parse failure, so it reports what it does hold.
+# The tune metadata and the parsed chart of one difficulty. A package with no chart of that
+# difficulty is a user error rather than a parse failure, and it reports what is present.
 def _read_package(package: Path, entry: str) -> tuple[TuneInfoDict, ChartDict]:
     with open_package(package) as tune:
         info = tune.info()
         if entry not in tune.names:
             held = ', '.join(name for name in CHART_ENTRIES if name in tune.names)
-            msg = f'`{package.name}` holds no {entry} chart. It holds: {held}.'
+            msg = f'`{package.name}` includes no {entry} chart. It includes: {held}.'
             raise PackageError(msg)
         return info, parse_chart(tune.read(entry))
 
 
-# One chart read from a file of its own. There is no metadata beside it, so the difficulty has to
+# One chart read from a separate file. There is no metadata beside it, and the difficulty has to
 # come from the file name or from the caller.
 def _read_bare(path: Path, difficulty: str | None, *, key: bytes | None,
                iv: bytes) -> tuple[TuneInfoDict, str, ChartDict]:
     entry = _DIFFICULTIES[difficulty] if difficulty else infer_difficulty(path)
     if entry is None:
-        msg = (f'`{path.name}` does not say which difficulty it is. '
-               f'Name it, as in `{path.name} har`.')
+        msg = (f'`{path.name}` does not state which difficulty it is. '
+               f'Specify it, as in `{path.name} har`.')
         raise PackageError(msg)
     return cast('TuneInfoDict', {}), entry, parse_chart(read_chart_file(path, iv=iv, key=key))
 
 
-# A key or an initialisation vector given as hex, which is how both are usually written down.
+# A key or an initialisation vector given as hex, the form both are usually written down in.
 def _hex(ctx: click.Context, param: click.Parameter, value: str | None) -> bytes | None:
     if value is None:
         return None
@@ -115,7 +115,7 @@ def _hex(ctx: click.Context, param: click.Parameter, value: str | None) -> bytes
 @click.option('--seed',
               type=int,
               default=DEFAULT_SEED,
-              help='Pin the lane layout --image draws, which is otherwise fresh each run.')
+              help='Pin the lane layout --image draws, otherwise fresh each run.')
 @click.option('--speed',
               type=click.FloatRange(*SPEED_RANGE),
               default=DEFAULT_SPEED,
@@ -136,15 +136,15 @@ def dump_chart(package: Path,
     """
     Write the DIFFICULTY chart of the tune package PACKAGE as JSON.
 
-    PACKAGE may be a ``.rb`` tune package, or one note chart in a file of its own, either as the
+    PACKAGE may be a ``.rb`` tune package, or one note chart in a separate file, either as the
     package stores it or already deciphered.
 
-    DIFFICULTY is ``bas``, ``med``, or ``har``. Given a package it names which chart to read and
+    DIFFICULTY is ``bas``, ``med``, or ``har``. Given a package it selects which chart to read and
     defaults to ``bas``. Given a single chart it is only needed when the file name does not already
-    say, as ``note_har`` and ``har`` both do.
+    state it, as ``note_har`` and ``har`` both do.
 
-    A chart in a file of its own is deciphered under whichever of the game's keys fits, or read as
-    it stands when it is already plain. Give --key, and --iv if it also differs, for one enciphered
+    A chart in a separate file is deciphered under whichever of the game's keys fits, or read as it
+    stands when it is already plain. Give --key, and --iv if it also differs, for one enciphered
     under neither.
 
     The JSON goes to standard output.
@@ -153,12 +153,12 @@ def dump_chart(package: Path,
     the whole of side 0 in the left panel and the whole of side 1 in the right. A note aimed at an
     alternative target is green, one that travels to the other side to be swiped back is gold, a
     hold extends as a bar to its release, and each note of a chain is joined to the next by a line.
-    The image carries a legend. With --flip time runs downward instead, so the notes fall down the
-    page the way they fall down the screen.
+    The image includes a legend. With --flip time runs downward instead, and the notes fall down
+    the page the way they fall down the screen.
     """  # ruff: ignore[docstring-missing-exception]
     try:
-        # A file named .rb is meant as a package whether or not it opens as one, so a broken one
-        # says so rather than being taken for a chart.
+        # A file with the .rb suffix is meant as a package whether or not it opens as one, and a
+        # broken one reports that rather than being taken for a chart.
         if package.suffix.casefold() == _PACKAGE_SUFFIX or zipfile.is_zipfile(package):
             entry = _DIFFICULTIES[difficulty or _DEFAULT_DIFFICULTY]
             info, chart = _read_package(package, entry)
@@ -181,8 +181,8 @@ def dump_chart(package: Path,
                                speed=speed,
                                title=info.get('MusicName'))
         except (OSError, ValueError) as e:
-            # The suffix chooses the form, so naming one nothing writes is a user error rather
-            # than a fault, and is reported as one.
+            # The suffix chooses the form, and giving one nothing writes is a user error rather
+            # than a fault. It is reported as one.
             click.echo(str(e), err=True)
             raise click.Abort from e
         log.info('Wrote `%s`.', image)

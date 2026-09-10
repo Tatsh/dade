@@ -35,7 +35,7 @@ debug_option = bascom.debug_option({'dade.common': {}, 'dade.rbplus': {}})
               help='Process-pool size (defaults to the CPU count).')
 @click.option('--no-audio', is_flag=True, help='Copy the .caf sound effects instead of converting.')
 @click.option('--no-images', is_flag=True, help='Skip the rendered chart strips.')
-@click.option('--no-png', is_flag=True, help='Leave the PNGs Apple-optimised.')
+@click.option('--no-png', is_flag=True, help='Retain the PNGs in Apple-optimised form.')
 @click.option('-o',
               '--output-dir',
               default=Path(),
@@ -49,7 +49,7 @@ debug_option = bascom.debug_option({'dade.common': {}, 'dade.rbplus': {}})
 @click.option('--seed',
               type=int,
               default=DEFAULT_SEED,
-              help='Pin the lane layout the chart images draw, which is otherwise fresh each run.')
+              help='Pin the lane layout the chart images draw, otherwise fresh each run.')
 @click.option('--speed',
               type=click.FloatRange(*SPEED_RANGE),
               default=DEFAULT_SPEED,
@@ -73,16 +73,16 @@ def unpack(source: Path,
     """
     Unpack and convert the REFLEC BEAT plus download at SOURCE.
 
-    SOURCE may be an ``.ipa``, the ``.app`` bundle, the ``Payload`` directory, or a directory
-    holding ``Payload``. It is only read; everything is written under --output-dir, into a
-    directory named after the bundle.
+    SOURCE may be an ``.ipa``, the ``.app`` bundle, the ``Payload`` directory, or a directory with
+    ``Payload`` inside. It is only read; everything is written under --output-dir, into a
+    directory titled after the bundle.
 
-    Every ``.rb`` tune package becomes a directory holding its metadata as JSON, its images as
+    Every ``.rb`` tune package becomes a directory with its metadata as JSON, its images as
     ordinary PNGs, each note chart as both JSON and a rendered strip, and its audio as ``.m4a``.
     Apple-optimised PNGs are rewritten as ordinary ones, ``.caf`` sound effects become WAV,
     property lists and localisation tables and Core Data models become JSON, and the ``SC_Info``
-    bookkeeping is described in one report. Mach-O images are left behind entirely. Every other
-    file is copied unchanged.
+    bookkeeping is described in one report. Mach-O images are omitted entirely. Every other file is
+    copied unchanged.
     """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s`.', source)
     try:

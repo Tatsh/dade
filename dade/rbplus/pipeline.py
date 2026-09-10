@@ -1,17 +1,17 @@
 """
 A whole *REFLEC BEAT plus* download, converted in one pass.
 
-The bundle is mirrored into the output directory: every file keeps its place, and a file with a
+The bundle is mirrored into the output directory. Every file retains its place, and a file with a
 converter gets its converted form in the same spot. Nothing is written back to the source.
 
-Mach-O images are the one thing not carried over at all: neither the executable nor the debug copy
-under ``.dSYM`` is read, converted, or copied.
+Mach-O images are the one class omitted entirely. Neither the executable nor the debug copy under
+``.dSYM`` is read, converted, or copied.
 
-Audio is split by container. A ``.caf`` holds PCM in a wrapper little outside Apple's frameworks
-reads, so it becomes a WAV. An ``.m4a`` is already portable, so it is copied rather than expanded
-to several times its size.
+Audio is split by container. A ``.caf`` stores PCM in a wrapper little outside Apple's frameworks
+reads, and it therefore becomes a WAV. An ``.m4a`` is already portable, and it is copied rather
+than expanded to several times its size.
 
-A ``.rb`` tune package becomes a directory of its own: the metadata as JSON, every image as an
+A ``.rb`` tune package becomes a separate directory: the metadata as JSON, every image as an
 ordinary PNG, every chart both as JSON and as a rendered strip, and both audio streams as ``.m4a``.
 """
 from __future__ import annotations
@@ -126,7 +126,7 @@ def extract_ipa(archive: Path, destination: Path) -> Path:
     Raises
     ------
     ValueError
-        If the archive holds no ``Payload`` directory.
+        If the archive includes no ``Payload`` directory.
     """
     with zipfile.ZipFile(archive) as zipped:
         zipped.extractall(destination)
@@ -144,7 +144,7 @@ def find_bundle(root: Path) -> Path:
     Parameters
     ----------
     root : pathlib.Path
-        The ``.app`` bundle, the ``Payload`` directory, or a directory holding ``Payload``.
+        The ``.app`` bundle, the ``Payload`` directory, or a directory with ``Payload`` inside.
 
     Returns
     -------
@@ -174,7 +174,7 @@ def _is_macho(path: Path) -> bool:
 
 
 def _action_for(source: Path, executables: set[Path]) -> str | None:
-    # The action for one file, or None when it is not carried over at all.
+    # The action for one file, or None when it is omitted entirely.
     if source in executables:
         return None
     suffix = source.suffix.lower()
@@ -208,7 +208,7 @@ def _destination_for(action: str, source: Path, out_dir: Path) -> Path:
 
 
 def _executables(bundle: Path) -> set[Path]:
-    # Every Mach-O image in the bundle, which is the executable and its debug copy.
+    # Every Mach-O image in the bundle, meaning the executable and its debug copy.
     return {path for path in bundle.rglob('*') if path.is_file() and _is_macho(path)}
 
 
@@ -244,7 +244,7 @@ def _convert_package(job: _Job) -> None:
                                        title=info.get('MusicName'))
                 continue
             if is_m4a(data):
-                # Already a portable container, so it is written out rather than transcoded.
+                # Already a portable container, and written out rather than transcoded.
                 (out / f'{name}.m4a').write_bytes(data)
                 continue
             raw = out / f'{name}.png'
@@ -345,7 +345,7 @@ def _write_sc_info(bundle: Path, out_root: Path) -> StepStats:
         log.info('No SC_Info to describe: %s', e)
         return StepStats(0, 0)
     if not infos:
-        log.info('SC_Info holds no records; no report written.')
+        log.info('SC_Info includes no records; no report written.')
         return StepStats(0, 0)
     write_json(out_root / 'SC_Info.json', [sc_info_to_json(info) for info in infos],
                ensure_ascii=False,
@@ -375,7 +375,7 @@ def _extract_chunk(chunk: _Chunk) -> tuple[int, int, tuple[str, ...]]:
                 data = archive.read(name)
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 destination.write_bytes(data)
-                # Only a PNG that really carries the CgBI chunk is worth a pngdefry process; the
+                # Only a PNG that really includes the CgBI chunk is worth a pngdefry process; the
                 # shipped archives are almost entirely ordinary PNGs.
                 if chunk.pngdefry is not None and is_apple_optimized(data):
                     write_defried_png(destination, destination, chunk.pngdefry)
@@ -421,7 +421,7 @@ def extract_assets(archive_path: Path,
     if manifest:
         write_json(out_root / 'manifest.json', list(manifest), ensure_ascii=False)
     strip = f'{root}/' if root else ''
-    # The manifest lives inside its own nested archive, which is written out decoded instead.
+    # The manifest lives inside a nested archive, written out decoded instead.
     payload = [name for name in names if name != f'{strip}{MANIFEST_ENTRY}']
     size = max(1, (len(payload) + workers - 1) // workers)
     chunks = [
@@ -465,8 +465,8 @@ def unpack(source: Path,
     Parameters
     ----------
     source : pathlib.Path
-        An ``.ipa``, the ``.app`` bundle, the ``Payload`` directory, or a directory holding
-        ``Payload``. It is only ever read. One holding no bundle raises :py:class:`ValueError`.
+        An ``.ipa``, the ``.app`` bundle, the ``Payload`` directory, or a directory with
+        ``Payload`` inside. It is only ever read. One with no bundle raises :py:class:`ValueError`.
     output_dir : pathlib.Path
         Where to write. The bundle is mirrored into a directory named after it.
     ffmpeg : pathlib.Path | None

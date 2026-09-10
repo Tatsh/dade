@@ -160,7 +160,7 @@ def test_dump_chart_reports_an_absent_difficulty(runner: CliRunner, make_package
     package = make_package(entries={'note_bas': chart_bytes})
     result = runner.invoke(rbplus, ('dump-chart', str(package), 'har'))
     assert result.exit_code == 1
-    assert 'holds no note_har chart' in result.output
+    assert 'includes no note_har chart' in result.output
     assert 'note_bas' in result.output
 
 
@@ -212,7 +212,7 @@ def test_dump_chart_needs_a_difficulty_when_the_name_is_silent(
         runner: CliRunner, make_chart_file: Callable[..., Path]) -> None:
     result = runner.invoke(rbplus, ('dump-chart', str(make_chart_file('mystery')), '--summary'))
     assert result.exit_code != 0
-    assert 'does not say which difficulty' in result.output
+    assert 'does not state which difficulty' in result.output
 
 
 def test_dump_chart_takes_a_key_and_an_iv(runner: CliRunner,

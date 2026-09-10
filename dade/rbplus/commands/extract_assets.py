@@ -32,7 +32,7 @@ debug_option = bascom.debug_option({'dade.common': {}, 'dade.rbplus': {}})
               type=int,
               default=None,
               help='Process-pool size (defaults to the CPU count).')
-@click.option('--no-png', is_flag=True, help='Leave any Apple-optimised PNG as it is.')
+@click.option('--no-png', is_flag=True, help='Retain any Apple-optimised PNG as it is.')
 @click.option('-o',
               '--output-dir',
               default=Path(),
@@ -51,7 +51,7 @@ def extract_assets(archive: Path,
     Extract the downloadable texture archive ARCHIVE.
 
     ARCHIVE is one of the three the game fetches: ``iPad``, ``iPad2x``, or ``iPhone@2x``. Each is
-    encrypted with ZipCrypto under a password the executable carries, and holds a little over two
+    encrypted with ZipCrypto under a password the executable stores, and includes a little over two
     thousand PNG textures under one top-level directory.
 
     The archive's own index, a second encrypted ZIP stored as the ``list`` entry, is written out as

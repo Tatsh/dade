@@ -24,5 +24,5 @@ rbplus.add_command(unpack)
 
 
 def main() -> None:
-    """Entry point for the ``rbplus`` group when it is run on its own."""
+    """Entry point for the ``rbplus`` group when it is run directly."""
     rbplus()

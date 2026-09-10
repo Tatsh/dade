@@ -1,17 +1,17 @@
 """
-The surfaces a chart is drawn on.
+Surfaces a chart is drawn on.
 
-:py:mod:`dade.rbplus.render` lays a chart out once and draws it through one of these, so the same
-geometry comes out as a raster image or as a vector one. The drawing calls follow Pillow's, since
-that is where they started.
+:py:mod:`dade.rbplus.render` places a chart once and draws it through one of these, and the same
+geometry therefore comes out as a raster image or as a vector one. The drawing calls follow
+Pillow's, where they started.
 
-Coordinates are always in the layout's own units, which are a whole multiple of the finished size
-so that the raster surface can be reduced once at the end and smoothed by it. A vector surface has
-no such need, and carries the same numbers as its view box instead.
+Coordinates are always in the layout's units, a whole multiple of the finished size, letting the
+raster surface be reduced once at the end and smoothed by it. A vector surface needs no reduction,
+and uses the same numbers as its view box instead.
 
 Nothing here writes a page. A chart read in a browser is the business of
-:py:mod:`dade.rbplus.commands.site`, which hands the chart over as data and lets the page lay it
-out for the window it is opened in.
+:py:mod:`dade.rbplus.commands.site`. That module hands the chart over as data and lets the page
+place it for the window it is opened in.
 """
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ def _rgb(color: tuple[int, int, int]) -> str:
 
 
 def _on_ellipse(cx: float, cy: float, rx: float, ry: float, degrees: float) -> tuple[float, float]:
-    # Where an angle lands on an ellipse, measured the way the raster surface measures it: clockwise
+    # Where an angle lands on an ellipse, measured the way the raster surface measures it, clockwise
     # from three o'clock, with the y axis running down the image.
     radians = math.radians(degrees)
     return cx + rx * math.cos(radians), cy + ry * math.sin(radians)
@@ -105,7 +105,7 @@ class Canvas(Protocol):
         xy : collections.abc.Sequence[float]
             Left, top, right, and bottom.
         fill : tuple[int, int, int] | None
-            The colour to fill with, or ``None`` to leave it hollow.
+            The colour to fill with, or ``None`` for a hollow shape.
         outline : tuple[int, int, int] | None
             The colour to outline with, or ``None`` for no outline.
         width : int
@@ -127,7 +127,7 @@ class Canvas(Protocol):
         xy : collections.abc.Sequence[float]
             Left, top, right, and bottom of the box.
         fill : tuple[int, int, int] | None
-            The colour to fill with, or ``None`` to leave it hollow.
+            The colour to fill with, or ``None`` for a hollow shape.
         outline : tuple[int, int, int] | None
             The colour to outline with, or ``None`` for no outline.
         width : int
@@ -176,13 +176,13 @@ class Canvas(Protocol):
         """
         Mark everything drawn inside the block as belonging to one note.
 
-        A surface that reports a note carries *details* so the note can describe itself. One that
-        cannot ignores them.
+        A surface that reports a note stores *details* for the note to describe itself with. One
+        that cannot ignores them.
 
         Parameters
         ----------
         details : collections.abc.Mapping[str, typing.Any]
-            What the note says about itself.
+            What the note reports about itself.
 
         Yields
         ------
@@ -196,8 +196,8 @@ class Canvas(Protocol):
         """
         Mark everything drawn inside the block as ruling of one kind.
 
-        A page offers to leave a kind of ruling out, so it keeps them apart. A surface that draws
-        once ignores it.
+        A page offers to omit a kind of ruling, and it therefore stores them apart. A surface that
+        draws once ignores it.
 
         Parameters
         ----------
@@ -216,8 +216,8 @@ class Canvas(Protocol):
         """
         Mark everything drawn inside the block as following one note's lane.
 
-        A page lays a chart out again under another seed by moving what the seed decides, and this
-        says what moves with what. A surface that draws once ignores it.
+        A page places a chart again under another seed by moving what the seed decides, and this
+        records what moves with what. A surface that draws once ignores it.
 
         Parameters
         ----------
@@ -234,10 +234,10 @@ class Canvas(Protocol):
     @contextmanager
     def head(self) -> Iterator[None]:
         """
-        Mark a note's own disc, apart from anything that runs on from it.
+        Mark a note's disc, apart from anything that runs on from it.
 
-        A page stretches a column to spread its notes, and keeps whatever is marked here from being
-        stretched with it. A picture has nothing to do with this.
+        A page stretches a column to spread its notes, and prevents whatever is marked here from
+        being stretched with it. A picture has nothing to do with this.
 
         Yields
         ------
@@ -382,12 +382,12 @@ class PillowCanvas:
             details: Mapping[str, Any]  # ruff: ignore[unused-method-argument]
     ) -> Iterator[None]:
         """
-        Draw one note. A drawn image reports nothing, so the details are dropped.
+        Draw one note. A drawn image reports nothing, and the details are dropped.
 
         Parameters
         ----------
         details : collections.abc.Mapping[str, typing.Any]
-            What the note would say about itself.
+            What the note would report about itself.
 
         Yields
         ------
@@ -402,7 +402,7 @@ class PillowCanvas:
             kind: str  # ruff: ignore[unused-method-argument]
     ) -> Iterator[None]:
         """
-        Draw ruling of one kind, which a drawn image always shows.
+        Draw ruling of one kind, always shown by a drawn image.
 
         Parameters
         ----------
@@ -422,7 +422,7 @@ class PillowCanvas:
             index: int  # ruff: ignore[unused-method-argument]
     ) -> Iterator[None]:
         """
-        Draw what follows a note's lane, which a drawn image lays out only once.
+        Draw what follows a note's lane, placed only once by a drawn image.
 
         Parameters
         ----------
@@ -439,7 +439,7 @@ class PillowCanvas:
     @contextmanager
     def head(self) -> Iterator[None]:  # ruff: ignore[no-self-use]
         """
-        Draw a note's own disc, which a drawn image has no reason to keep apart.
+        Draw a note's disc, stored apart only where a page needs it.
 
         Yields
         ------
@@ -476,9 +476,9 @@ class SVGCanvas:
     """
     A vector surface.
 
-    Every shape is written at the layout's own coordinates and the view box carries the same
-    numbers, so the picture is identical to the raster one and scales without loss. Each shape is
-    kept with the box it occupies, which is what lets the page file it under a column.
+    Every shape is written at the layout's coordinates and the view box uses the same numbers. The
+    picture is therefore identical to the raster one and scales without loss. Each shape is stored
+    with the box it occupies, letting the page file it under a column.
     """
     def __init__(self, width: int, height: int, background: tuple[int, int, int]) -> None:
         self.width = width
@@ -515,8 +515,8 @@ class SVGCanvas:
         width : int
             How thick the line is.
         joint : str | None
-            How to finish the corners between segments. ``'curve'`` rounds them, which is what the
-            raster surface's own curve joint does.
+            How to finish the corners between segments. ``'curve'`` rounds them, matching the
+            raster surface's curve joint.
         """
         xs, ys = list(xy[::2]), list(xy[1::2])
         points = ' '.join(f'{x:g},{y:g}' for x, y in zip(xs, ys, strict=True))
@@ -601,7 +601,7 @@ class SVGCanvas:
         rx, ry = (right - left) / 2, (bottom - top) / 2
         start_x, start_y = _on_ellipse(cx, cy, rx, ry, start)
         end_x, end_y = _on_ellipse(cx, cy, rx, ry, end)
-        # The y axis runs down, so a clockwise sweep in the caller's terms is a positive sweep here.
+        # The y axis runs down, and a clockwise sweep in the caller's terms is positive here.
         large = 1 if (end - start) % _FULL_TURN > _HALF_TURN else 0
         self._add(
             f'<path d="M {cx:g} {cy:g} L {start_x:g} {start_y:g} '
@@ -635,12 +635,12 @@ class SVGCanvas:
     @contextmanager
     def note(self, details: Mapping[str, Any]) -> Iterator[None]:
         """
-        Wrap everything drawn inside the block in a group carrying the note's details.
+        Wrap everything drawn inside the block in a group with the note's details.
 
         Parameters
         ----------
         details : collections.abc.Mapping[str, typing.Any]
-            What the note says about itself.
+            What the note reports about itself.
 
         Yields
         ------
@@ -662,7 +662,7 @@ class SVGCanvas:
     @contextmanager
     def marks(self, kind: str) -> Iterator[None]:
         """
-        Wrap ruling of one kind, so that a page can offer to leave it out.
+        Wrap ruling of one kind, letting a page offer to omit it.
 
         Parameters
         ----------
@@ -683,7 +683,7 @@ class SVGCanvas:
     @contextmanager
     def tied(self, index: int) -> Iterator[None]:
         """
-        Wrap what follows one note's lane, so that laying the chart out again can move it too.
+        Wrap what follows one note's lane, letting a fresh placement of the chart move it too.
 
         Parameters
         ----------
@@ -704,7 +704,7 @@ class SVGCanvas:
     @contextmanager
     def head(self) -> Iterator[None]:
         """
-        Wrap a note's own disc, so a page can keep it round while it stretches everything else.
+        Wrap a note's disc, letting a page retain its shape while it stretches everything else.
 
         Yields
         ------
@@ -719,8 +719,8 @@ class SVGCanvas:
 
     @contextmanager
     def _collect(self) -> Iterator[list[_Part]]:
-        # Gather what is drawn inside the block instead of writing it out, so that it can be
-        # wrapped or filed away. Nesting is not needed and is not supported.
+        # Gather what is drawn inside the block instead of writing it out, letting it be wrapped or
+        # filed away. Nesting is not needed and is not supported.
         previous, self._buffer = self._buffer, []
         collected = self._buffer
         try:
@@ -735,7 +735,7 @@ class SVGCanvas:
         Parameters
         ----------
         scale : float
-            How large the document asks to be drawn.
+            How large the document requests to be drawn.
         supersample : int
             The multiple the layout's units are of the finished size.
 
@@ -752,7 +752,7 @@ class SVGCanvas:
 
     def pixel_size(self, *, scale: float, supersample: int) -> tuple[int, int]:
         """
-        Work out the size the document asks to be drawn at.
+        Work out the size the document requests to be drawn at.
 
         Parameters
         ----------
@@ -809,9 +809,9 @@ def canvas_for(suffix: str, width: int, height: int, background: tuple[int, int,
     suffix : str
         The output file's suffix, with its dot, in any case.
     width : int
-        The layout's width in its own units.
+        The layout's width in layout units.
     height : int
-        The layout's height in its own units.
+        The layout's height in layout units.
     background : tuple[int, int, int]
         What to fill before drawing.
 
@@ -831,8 +831,8 @@ def canvas_for(suffix: str, width: int, height: int, background: tuple[int, int,
         case '.svg':
             return SVGCanvas(width, height, background)
         case '.htm' | '.html':
-            # A chart read in a browser is a whole site rather than one picture, since the page
-            # lays the chart out for the window it is opened in rather than for a size chosen here.
+            # A chart read in a browser is a whole site rather than one picture. The page places
+            # the chart for the window it is opened in rather than for a size chosen here.
             msg = ('A chart is not drawn as a page. Use `dade rbplus site` to build one that can '
                    'be read in a browser.')
             raise ValueError(msg)
