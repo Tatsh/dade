@@ -27,7 +27,7 @@ def decode_vag_adpcm(data: bytes, start: int = 0, max_bytes: int | None = None) 
     Parameters
     ----------
     data : bytes
-        The buffer containing VAG frames.
+        The buffer of VAG frames.
     start : int
         Byte offset of the first frame.
     max_bytes : int | None

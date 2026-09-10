@@ -4,7 +4,7 @@ from __future__ import annotations
 __all__ = ('align_up', 'pluralize', 'safe_name')
 
 _SAFE_PUNCTUATION = '._-+()'
-"""Punctuation :py:func:`safe_name` keeps verbatim.
+"""Punctuation :py:func:`safe_name` retains verbatim.
 
 :meta hide-value:
 """
@@ -19,7 +19,7 @@ def align_up(value: int, alignment: int) -> int:
     value : int
         The value to round.
     alignment : int
-        The alignment, which must be a power of two.
+        The alignment, required to be a power of two.
 
     Returns
     -------
@@ -58,10 +58,10 @@ def safe_name(name: str, *, allow_spaces: bool = False) -> str:
     Parameters
     ----------
     name : str
-        The raw object or sample name (may contain path separators).
+        The raw object or sample name (path separators allowed).
     allow_spaces : bool
-        Keep spaces verbatim instead of replacing them. Callers writing names into a
-        whitespace-delimited format, such as Wavefront OBJ, must leave this off.
+        Retain spaces verbatim instead of replacing them. Callers writing names into a
+        whitespace-delimited format, such as Wavefront OBJ, must omit this.
 
     Returns
     -------

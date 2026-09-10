@@ -59,7 +59,7 @@ def ps2_clut_swizzle_index(index: int) -> int:
     """
     Map a linear index to its PS2 8bpp CLUT storage slot.
 
-    A PS2 8bpp CLUT stores palettes with index bits ``0x08`` and ``0x10`` swapped, so the linear
+    A PS2 8bpp CLUT stores palettes with index bits ``0x08`` and ``0x10`` swapped, and the linear
     index and the storage slot differ within each block of 32 entries.
 
     Parameters

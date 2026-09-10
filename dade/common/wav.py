@@ -3,7 +3,7 @@ Canonical RIFF/WAVE (PCM) writer shared by the game submodules.
 
 Several games decode proprietary audio into raw PCM and then wrap it in a WAVE header. The header is
 always the canonical 44-byte layout with an integer-PCM ``fmt `` chunk (format tag ``1``); the games
-differ only in their sample rate, channel count, and bit depth, which are parameters here.
+differ only in their sample rate, channel count, and bit depth, all parameters here.
 """
 from __future__ import annotations
 

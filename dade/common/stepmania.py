@@ -2,14 +2,14 @@
 Writer for the StepMania ``.sm`` simfile.
 
 A simfile is a run of ``#TAG:value;`` headers followed by one ``#NOTES`` block per chart. Each
-block carries five colon-separated fields - the steps type, a description, the difficulty, the
-meter, and the groove radar - and then the note data, in which every measure is a run of rows and
-measures are separated by commas. A row holds one character per panel: ``0`` for nothing, ``1``
-for a tap, ``2`` and ``3`` for the start and end of a hold, and ``M`` for a mine.
+block states five colon-separated fields (the steps type, a description, the difficulty, the meter,
+and the groove radar) and then the note data, in which every measure is a run of rows and measures
+are separated by commas. A row has one character per panel: ``0`` for nothing, ``1`` for a tap,
+``2`` and ``3`` for the start and end of a sustain, and ``M`` for a mine.
 
 ``#OFFSET`` is the one tag whose sign is easy to get backwards. StepMania stores the time of beat
 0 negated: ``TimingData`` seeds its walk with ``start.last_time = -m_fBeat0OffsetInSeconds`` and
-``NotesLoaderSM`` assigns the tag straight to that member, so a song whose beat 0 falls 5.339
+``NotesLoaderSM`` assigns the tag straight to that member, and a song whose beat 0 falls 5.339
 seconds into the audio is written ``#OFFSET:-5.339``. :py:func:`write_sm` therefore takes the gap
 as a positive number of seconds and negates it.
 """
@@ -31,8 +31,8 @@ ROW_CANDIDATES = (4, 8, 12, 16, 24, 32, 48, 64, 96, 192)
 _ROW_TOLERANCE_FRACTION = 1 / 2048
 """How far from a row a note may sit before that row count is rejected, as a fraction of a measure.
 
-Triplets cannot divide a power-of-two tick resolution evenly, so an exact test would reject charts
-that legitimately contain them.
+Triplets cannot divide a power-of-two tick resolution evenly, and an exact test would therefore
+reject charts that legitimately include them.
 
 :meta hide-value:
 """
@@ -83,17 +83,17 @@ def _rows_for(offsets: Iterable[int], ticks_per_measure: int) -> int:
 def quantize_measures(events: Mapping[int, Mapping[int, str]], panels: int,
                       ticks_per_measure: int) -> str:
     """
-    Lay tick-addressed note events out as StepMania measure blocks.
+    Arrange tick-addressed note events as StepMania measure blocks.
 
-    Each measure is given the smallest row count from :py:data:`ROW_CANDIDATES` that can hold its
-    notes, so a measure of quarter notes stays four rows rather than being padded out.
+    Each measure is given the smallest row count from :py:data:`ROW_CANDIDATES` that fits its
+    notes, and a measure of quarter notes therefore stays four rows rather than being padded out.
 
     Parameters
     ----------
     events : collections.abc.Mapping[int, collections.abc.Mapping[int, str]]
         ``{tick: {column: character}}``.
     panels : int
-        How many columns a row holds.
+        How many columns a row has.
     ticks_per_measure : int
         Ticks one measure spans.
 

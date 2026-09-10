@@ -2,7 +2,7 @@
 Generic converter dispatch registry.
 
 A game describes its conversions as an ordered tuple of :py:class:`Rule` objects, each pairing a
-predicate with the function that handles a matching file. The first matching rule wins, so the
+predicate with the function that handles a matching file. The first matching rule wins, and the
 order of a game's tuple is the priority order and more specific rules must come first.
 """
 from __future__ import annotations

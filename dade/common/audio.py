@@ -1,12 +1,12 @@
 """
 Container conversions that ``ffmpeg`` performs.
 
-Apple's mobile titles ship audio in two containers. Core Audio Format (``.caf``) usually holds
+Apple's mobile titles ship audio in two containers. Core Audio Format (``.caf``) usually stores
 uncompressed PCM but is read by almost nothing outside Apple's frameworks. MPEG-4 audio (``.m4a``)
-is portable but holds AAC, which not every consumer wants to decode itself.
+is portable but stores AAC, and not every consumer wants to decode that itself.
 
 ``ffmpeg`` rewraps both. Where the codec allows it the samples are copied rather than re-encoded,
-so a PCM ``.caf`` comes out of :py:func:`to_wav` bit-identical.
+and a PCM ``.caf`` therefore comes out of :py:func:`to_wav` bit-identical.
 """
 from __future__ import annotations
 

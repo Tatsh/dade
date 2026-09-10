@@ -2,7 +2,7 @@
 Read-only ISO 9660 filesystem reader.
 
 Parse a standard ISO 9660 image and extract files by path. The image may be an in-memory buffer or
-any :py:class:`~dade.common.io.Reader`, so it can read from a cue/bin data track as well.
+any :py:class:`~dade.common.io.Reader`, and it therefore reads from a cue/bin data track as well.
 
 Only the primary volume descriptor is used. Joliet (the UCS-2 supplementary volume descriptor for
 long names) is not yet handled; paths are the short upper-case names of the primary descriptor.

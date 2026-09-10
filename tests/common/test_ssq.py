@@ -117,17 +117,17 @@ def test_unknown_chunk_types_are_skipped() -> None:
 
 
 def test_a_chunk_running_past_the_end_is_rejected() -> None:
-    with pytest.raises(InvalidFormatError, match='does not fit'):
+    with pytest.raises(InvalidFormatError, match='beyond the'):
         parse_ssq(struct.pack('<IHH', 4096, 3, 0x0114) + struct.pack('<I', 0))
 
 
 def test_a_chunk_too_short_for_a_count_is_rejected() -> None:
-    with pytest.raises(InvalidFormatError, match='does not fit'):
+    with pytest.raises(InvalidFormatError, match='beyond the'):
         parse_ssq(struct.pack('<IHH', 8, 3, 0x0114))
 
 
 def test_a_chunk_claiming_more_entries_than_it_holds_is_rejected() -> None:
-    with pytest.raises(InvalidFormatError, match='does not hold'):
+    with pytest.raises(InvalidFormatError, match='does not store'):
         parse_ssq(struct.pack('<IHH', 16, 3, 0x0114) + struct.pack('<II', 999, 0))
 
 

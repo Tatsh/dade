@@ -1,7 +1,7 @@
 """
 Binary NetPBM (PPM) writer.
 
-The ``P6`` form is a three-line ASCII header followed by raw row-major RGB triples, which makes it
+The ``P6`` form is a three-line ASCII header followed by raw row-major RGB triples, making it
 the cheapest way to hand a decoded framebuffer to an external tool such as ImageMagick without
 pulling in an imaging library.
 """

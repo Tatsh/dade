@@ -30,7 +30,7 @@ class IconSysMeta(TypedDict):
     """Character offset at which the title wraps to a second line."""
 
 
-# yapf cannot parse the PEP 695 `type` statement that UP040 prefers, so TypeAlias is used instead.
+# yapf cannot parse the PEP 695 `type` statement that UP040 prefers, and TypeAlias is used instead.
 MatchFunction: TypeAlias = Callable[[Path], bool]
 """Predicate deciding whether a converter applies to a path."""
 ConvertFunction: TypeAlias = Callable[[Path, Path], 'Path | tuple[Path, ...]']

@@ -1,7 +1,7 @@
 """
 Materialise a disc source into an output directory.
 
-A game unpacker processes its assets in place inside the output directory, so the source is first
+A game unpacker processes its assets in place inside the output directory, and the source is first
 copied there: :py:func:`materialize` extracts an ISO 9660 image (or a cue/bin pair) into the output
 directory, or copies an already-extracted source directory into it. The source itself (the image
 file or the input directory) is only ever opened read-only and is never modified.
@@ -38,8 +38,8 @@ def open_image(source: Path) -> Iso9660Image:
     Open a disc-image file as an ISO 9660 image.
 
     A ``.cue`` file is read together with its ``.bin`` track and decoded to a plain image. A
-    ``.bin`` given on its own is read through its sheet when one is sitting beside it, and read
-    from its own sectors when there is not. Any other file is treated as a raw ISO 9660 image and
+    A bare ``.bin`` is read through its sheet when one is sitting beside it, and read from its
+    sectors when there is not. Any other file is treated as a raw ISO 9660 image and
     memory-mapped. A file that is none of these raises
     :py:class:`~dade.common.exceptions.InvalidFormatError` from the underlying reader.
 
@@ -94,9 +94,9 @@ def find_by_suffix(directory: Path, suffix: str, *, recursive: bool = True) -> l
     """
     Find files in ``directory`` with ``suffix``, ignoring case.
 
-    ISO 9660 stores names upper-cased, so a directory produced by :py:func:`as_directory` holds
-    ``TRACK.PCB`` where the installed game holds ``track.pcb``. Matching case-sensitively finds one
-    and silently misses the other, which reads as an empty disc rather than as an error.
+    ISO 9660 stores names upper-cased, and a directory produced by :py:func:`as_directory` therefore
+    has ``TRACK.PCB`` where the installed game has ``track.pcb``. Matching case-sensitively finds
+    one and silently misses the other, reading as an empty disc rather than as an error.
 
     Parameters
     ----------
@@ -120,9 +120,9 @@ def find_by_suffix(directory: Path, suffix: str, *, recursive: bool = True) -> l
 @contextmanager
 def as_directory(source: Path) -> Generator[Path]:
     """
-    Yield a directory holding the source's files, whatever form the source arrived in.
+    Yield a directory with the source's files, whatever form the source arrived in.
 
-    An already-extracted directory is yielded as it stands, so a game installation is read where it
+    An already-extracted directory is yielded as it stands, and a game installation is read where it
     sits rather than copied. A disc image is extracted into a temporary directory that is removed
     on the way out. Use this to give a directory-oriented unpacker disc-image support without
     teaching it about images; use :py:func:`materialize` instead when the files must end up in a
@@ -150,7 +150,7 @@ def as_directory(source: Path) -> Generator[Path]:
 
 async def materialize(source: Path, out: Path) -> None:
     """
-    Populate ``out`` with the source's files, then leave it to be processed in place.
+    Populate ``out`` with the source's files, then hand it over to be processed in place.
 
     A disc image is extracted into ``out``; an already-extracted source directory is copied into it.
     The source is only read, never modified. The parse, extraction, and copy run in a worker thread

@@ -1,27 +1,27 @@
 """
 The ``BFCodec`` cipher Konami's BEMANI mobile titles encrypt their data files with.
 
-Both *pop'n rhythmin* and *jubeat plus* ship the same class, so the cipher lives here and each
-game's module supplies only its own keys.
+Both *pop'n rhythmin* and *jubeat plus* ship the same class. The cipher therefore lives here, and
+each game's module supplies only its keys.
 
 This is Blowfish in CBC mode with exactly one deviation from the textbook cipher: the F function
 combines the S-box outputs as ``(S0[a] + S1[b]) ^ (S2[c] + S3[d])`` where standard Blowfish uses
-``((S0[a] + S1[b]) ^ S2[c]) + S3[d]``. Everything else - the round structure, the key schedule, and
-the initial P-array and S-boxes - is standard. The boxes really are the canonical constants (the
-fractional hexadecimal digits of pi), which is why they are embedded here rather than read from the
-game: they are :py:data:`BLOWFISH_INIT_WORDS`, and with the standard F they reproduce every
+``((S0[a] + S1[b]) ^ S2[c]) + S3[d]``. Everything else (the round structure, the key schedule, and
+the initial P-array and S-boxes) is standard. The boxes really are the canonical constants (the
+fractional hexadecimal digits of pi), and they are therefore embedded here rather than read from the
+game. They are :py:data:`BLOWFISH_INIT_WORDS`, and with the standard F they reproduce every
 published Blowfish known-answer vector.
 
 The wire format ``BFCodec`` writes is CBC with a fixed initialisation vector (:py:data:`DEFAULT_IV`)
-and no padding scheme: the plaintext is zero-filled to a multiple of the eight-byte block and an
+and no padding scheme. The plaintext is zero-filled to a multiple of the eight-byte block and an
 eight-byte trailer of two big-endian lengths, the original and the padded, is appended. Deciphering
 validates that trailer and truncates back to the original length. The trailer is stored in the
-clear rather than enciphered, so it catches a truncated or corrupted file but says nothing about
-whether the key was right; a wrong key yields plaintext-shaped rubbish that only the caller's own
-parse will reject.
+clear rather than enciphered. It catches a truncated or corrupted file but establishes nothing about
+whether the key was right; a wrong key yields plaintext-shaped rubbish that only the caller's parse
+will reject.
 
 Every key either game uses is the MD5 of a passphrase assembled on the stack so that it never
-appears whole in the binary, which makes it obfuscated rather than hidden.
+appears whole in the binary, making it obfuscated rather than hidden.
 """
 from __future__ import annotations
 
@@ -208,7 +208,7 @@ class Blowfish:
             raise ValueError(msg)
         expected = _P_WORDS + _S_BOX_COUNT * _S_BOX_SIZE
         if len(init_words) != expected:
-            msg = f'The initial table must hold {expected} words, not {len(init_words)}.'
+            msg = f'The initial table must have {expected} words, not {len(init_words)}.'
             raise ValueError(msg)
         self._p = list(init_words[:_P_WORDS])
         self._s = [
@@ -247,7 +247,7 @@ class Blowfish:
         Returns
         -------
         tuple[int, int]
-            The enciphered halves. They are swapped relative to the round state, which is what the
+            The enciphered halves. They are swapped relative to the round state, matching what the
             game's routine returns.
         """
         for index in range(0, _ROUNDS, 2):
@@ -286,7 +286,7 @@ class Blowfish:
 
     def _f(self, x: int) -> int:
         """
-        Combine the four S-box lookups, the one place this cipher leaves Blowfish behind.
+        Combine the four S-box lookups, the one place this cipher departs from Blowfish.
 
         Parameters
         ----------
@@ -368,8 +368,8 @@ class BFCodec:
         Raises
         ------
         ValueError
-            If the payload is too short to hold a trailer, or the trailer's two lengths do not
-            agree with the body. The trailer is not enciphered, so this checks the framing only and
+            If the payload is too short for a trailer, or the trailer's two lengths do not
+            agree with the body. The trailer is not enciphered, and this checks the framing only and
             never tells a wrong key from a right one.
         """
         if len(data) < _TRAILER_SIZE:

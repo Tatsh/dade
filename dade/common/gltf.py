@@ -6,8 +6,8 @@ that pairing is mechanical and identical from game to game: buffer views must st
 boundary, accessors describe a slice of a view, images are embedded as views rather than files, and
 the two chunks are padded with different filler bytes -- spaces for the JSON, NULs for the binary.
 
-:py:class:`GLBDocument` owns that mechanism and nothing else. What a mesh means, which material a
-face draws with, and how a level is laid out stay in the per-game modules, because those differ
+:py:class:`GLBDocument` owns that mechanism and nothing else. What a mesh means, the material a
+face draws with, and how a level is arranged stay in the per-game modules. Those differ
 every time. Only the container is common.
 """
 from __future__ import annotations
@@ -81,7 +81,7 @@ _HEADER_SIZE = 12
 _CHUNK_HEADER_SIZE = 8
 _SHORT_INDEX_LIMIT = 0xFFFF
 # The first four bytes of the eight-byte PNG signature. The remaining four guard against a
-# transfer that mangled line endings, which is not a risk for a payload read out of a game archive,
+# transfer that mangled line endings, no risk for a payload read out of a game archive,
 # and matching on them would reject the truncated headers some of these games actually store.
 _PNG_MAGIC = b'\x89PNG'
 _JPEG_MAGIC = b'\xff\xd8'
@@ -91,7 +91,7 @@ def image_mime(data: bytes) -> str | None:
     """
     Identify an encoded image by its magic bytes.
 
-    glTF only allows PNG and JPEG in an embedded image, so anything else has to be re-encoded by
+    glTF only allows PNG and JPEG in an embedded image, and anything else has to be re-encoded by
     the caller before it can be handed over.
 
     Parameters
@@ -151,7 +151,7 @@ class GLBDocument:
     Parameters
     ----------
     generator : str
-        Recorded in the asset block, so a file can be traced back to the tool that wrote it.
+        Recorded in the asset block, letting a file be traced back to the tool that wrote it.
     """
     def __init__(self, generator: str = 'dade') -> None:
         self.generator = generator
@@ -234,10 +234,10 @@ class GLBDocument:
         kind : str
             glTF accessor type, such as ``VEC3`` or ``SCALAR``.
         target : int | None
-            glTF buffer target. Pass :py:data:`ARRAY_BUFFER` for a vertex attribute and leave it
-            out for animation keyframes, which no vertex puller reads.
+            glTF buffer target. Pass :py:data:`ARRAY_BUFFER` for a vertex attribute and omit it
+            for animation keyframes, never read by a vertex puller.
         bounds : bool
-            Also record the component-wise minimum and maximum, which glTF requires on the
+            Also record the component-wise minimum and maximum, required by glTF on the
             ``POSITION`` attribute and on an animation sampler's input.
 
         Returns
@@ -281,7 +281,7 @@ class GLBDocument:
         """
         Embed one image and give it a texture that materials can reference.
 
-        The first call also creates the tiling sampler every texture shares, since a game texture
+        The first call also creates the tiling sampler every texture shares. A game texture
         that does not tile simply never has coordinates outside the unit square.
 
         Parameters
@@ -306,7 +306,7 @@ class GLBDocument:
 
     def use(self, extension: str) -> None:
         """
-        Record that the document relies on an extension, once however often it is asked.
+        Record that the document relies on an extension, once however often it is called.
 
         Parameters
         ----------
@@ -325,7 +325,7 @@ class GLBDocument:
         name : str
             Name for the scene.
         roots : collections.abc.Iterable[int] | None
-            Nodes to put in the scene. Defaults to every node, which is right only when the
+            Nodes to put in the scene. Defaults to every node, correct only when the
             converter built a flat list rather than a hierarchy: a child listed a second time at
             the root would be drawn twice, under two different transforms.
 
@@ -359,7 +359,7 @@ class GLBDocument:
                 'nodes': list(range(len(self.nodes)) if roots is None else roots)
             }]
         }
-        # These are all optional, and glTF requires an array it declares to be non-empty, so each
+        # These are all optional, and glTF requires an array it declares to be non-empty. Each
         # is written only when the converter actually filled it.
         optional = (('animations', self.animations), ('extensionsUsed', self.extensions_used),
                     ('images', self.images), ('samplers', self.samplers), ('skins', self.skins),

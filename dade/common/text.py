@@ -65,7 +65,7 @@ def recode_to_utf8(source: Path,
     """
     Re-encode a text file as UTF-8 in *dest_dir*.
 
-    The source file's stem is kept and *suffix* is applied. Text that is already UTF-8 is written
+    The source file's stem is retained and *suffix* is applied. Text already in UTF-8 is written
     through unchanged.
 
     Parameters

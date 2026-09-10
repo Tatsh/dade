@@ -85,7 +85,7 @@ class MmapReader:
     """
     A :py:class:`Reader` backed by a memory-mapped file.
 
-    Only the pages actually touched are faulted in, so reading a single member does not read the
+    Only the pages actually touched are faulted in, and reading a single member does not read the
     whole file. Call :py:meth:`close`, or use the reader (or its owning archive) as a context
     manager, to release the mapping.
 
@@ -115,7 +115,7 @@ class MmapReader:
 
     def __exit__(self, exc_type: type[BaseException] | None, exc: BaseException | None,
                  traceback: TracebackType | None) -> None:
-        """Close the reader on leaving a ``with`` block."""
+        """Close the reader on exiting a ``with`` block."""
         self.close()
 
     @property

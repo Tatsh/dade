@@ -31,13 +31,13 @@ _SYNC = b'\x00' + b'\xff' * 10 + b'\x00'
 """The twelve bytes every raw 2352-byte sector opens with.
 
 A track written with its sync, header and error correction starts each sector this way. A track
-written as user data alone does not, which is how the two are told apart without a cue sheet.
+written as user data alone does not. That difference tells the two apart without a cue sheet.
 
 :meta hide-value:
 """
 
 _RAW_SECTOR_SIZE = 2352
-"""Bytes per sector in a track that kept its sync and error correction."""
+"""Bytes per sector in a track that retained its sync and error correction."""
 
 _MODE_OFFSETS = {1: 16, 2: 24}
 """Where the user data starts inside a raw sector, by the mode byte at offset 15."""
@@ -67,9 +67,10 @@ def bin_to_iso(bin_path: Path) -> bytes:
     """
     Read a ``.bin`` that came without its cue sheet.
 
-    The sector layout is taken from the file rather than from a sheet: a track that kept its sync
+    The sector layout is taken from the file rather than from a sheet. A track that retained its
+    sync
     and error correction opens each 2352-byte sector with a fixed twelve-byte pattern and names its
-    mode in the byte after the address, while a track holding user data alone is already what an
+    mode in the byte after the address, while a track of user data alone is already what an
     ISO 9660 reader wants and is returned unchanged.
 
     Parameters
@@ -85,7 +86,7 @@ def bin_to_iso(bin_path: Path) -> bytes:
     Raises
     ------
     dade.common.exceptions.InvalidFormatError
-        If the sectors carry a sync pattern but a mode this cannot read.
+        If the sectors have a sync pattern but a mode this cannot read.
     """
     data = bin_path.read_bytes()
     if data[:len(_SYNC)] != _SYNC:
@@ -102,7 +103,7 @@ def cuebin_to_iso(cue_path: Path) -> bytes:
     Assemble the ISO 9660 image described by a cue sheet.
 
     The ``.bin`` is located relative to the cue sheet's directory using the name from its ``FILE``
-    line. Only the first track is read, which is the data track on the disc images this handles.
+    line. Only the first track is read, the data track on the disc images this handles.
 
     Parameters
     ----------

@@ -1,15 +1,15 @@
 """
 Standard MIDI file reading and rewriting.
 
-These helpers operate on raw SMF bytes rather than a parsed representation, so timing and running
-status survive a rewrite untouched. That matters when the sequences are converted from a game's own
-format and any re-quantising would change what is heard.
+These helpers operate on raw SMF bytes rather than a parsed representation, and timing and running
+status therefore survive a rewrite untouched. That matters when the sequences are converted from a
+game's format and any re-quantising would change what is heard.
 
 Two rewrites are offered. :py:func:`to_xg` prepends a setup track that sends XG System On and arms
 channel 10 as a drum channel, optionally remapping the drum notes onto General MIDI percussion so
 the result plays recognisably on any device. :py:func:`remap_channel` moves one channel's voice
-messages to another, which is needed when a game uses channel 10 as an ordinary part that a General
-MIDI player would otherwise force to percussion.
+messages to another. That is needed when a game uses channel 10 as an ordinary part a General MIDI
+player would otherwise force to percussion.
 """
 from __future__ import annotations
 
@@ -135,7 +135,7 @@ def _xg_setup_track(drum_program: int = 0) -> bytes:
 
 def used_channels(data: bytes) -> set[int]:
     """
-    Collect the channels carrying any voice message.
+    Collect the channels with any voice message.
 
     Parameters
     ----------
@@ -199,7 +199,7 @@ def _rewrite_track(body: bytes,
     Raises
     ------
     ValueError
-        If the track holds an unhandled status byte.
+        If the track includes an unhandled status byte.
     """
     out = bytearray()
     position, length, running = 0, len(body), 0
@@ -254,7 +254,7 @@ def remap_channel(data: bytes, source: int, destination: int) -> bytes:
     """
     Move every voice message on one channel to another.
 
-    Only the channel nibble changes, so running-status runs stay self-consistent.
+    Only the channel nibble changes, and running-status runs stay self-consistent.
 
     Parameters
     ----------
@@ -269,7 +269,7 @@ def remap_channel(data: bytes, source: int, destination: int) -> bytes:
     -------
     bytes
         The rewritten file. A :py:class:`ValueError` propagates if *data* is not a standard MIDI
-        file or holds an unhandled status byte.
+        file or includes an unhandled status byte.
     """
     division, tracks = split_tracks(data)
     return _rebuild(division, [_rewrite_track(t, channels=(source, destination)) for t in tracks])
@@ -285,7 +285,7 @@ def to_xg(data: bytes, drum_map: dict[int, int] | None = None, drum_program: int
         A standard MIDI file.
     drum_map : dict[int, int] | None
         Game drum key to General MIDI percussion note. When ``None`` the notes are left as they
-        are, which is faithful to the game but needs its SoundFont to sound right.
+        are, faithful to the game but needing its SoundFont to sound right.
     drum_program : int
         Drum kit selected on the percussion channel.
 
@@ -293,7 +293,7 @@ def to_xg(data: bytes, drum_map: dict[int, int] | None = None, drum_program: int
     -------
     bytes
         The rewritten file. A :py:class:`ValueError` propagates if *data* is not a standard MIDI
-        file or holds an unhandled status byte.
+        file or includes an unhandled status byte.
     """
     division, tracks = split_tracks(data)
     rewritten = [_rewrite_track(t, drum_map=drum_map) for t in tracks] if drum_map else tracks

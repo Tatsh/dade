@@ -1,10 +1,10 @@
 """
 PNG writers for truecolour and truecolour-with-alpha images.
 
-Both writers delegate to :py:mod:`PIL`, which the package already depends on. A PNG is defined by
-its decoded pixels rather than its exact byte stream, so re-encoding through Pillow preserves every
-image while keeping this module a thin wrapper. ``format='PNG'`` is passed explicitly so the output
-is a PNG regardless of the destination's file extension.
+Both writers delegate to :py:mod:`PIL`, already a dependency of the package. A PNG is defined by
+its decoded pixels rather than its exact byte stream, and re-encoding through Pillow therefore
+preserves every image while this module stays a thin wrapper. ``format='PNG'`` is passed explicitly
+so the output is a PNG regardless of the destination's file extension.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def encode_rgba(width: int, height: int, pixels: bytes) -> bytes:
     """
     Encode 8-bit RGBA pixel data as a PNG in memory.
 
-    This is what a glTF needs, since an embedded image is a run of bytes in the binary chunk rather
+    This is what a glTF needs. An embedded image is a run of bytes in the binary chunk rather
     than a file on disk.
 
     Parameters

@@ -3,7 +3,7 @@ Twofish block cipher and CBC helpers.
 
 The :py:class:`Twofish` block cipher is a pure-Python implementation of the standard cipher (the
 standard ``q`` permutations, MDS and Reed-Solomon matrices, and key schedule), verified against the
-official Twofish known-answer test vectors (see the test suite). The :py:func:`cbc_encrypt` /
+official Twofish known-answer test vectors (see the test suite). :py:func:`cbc_encrypt` and
 :py:func:`cbc_decrypt` helpers add plain CBC mode (no padding).
 
 References

@@ -3,10 +3,10 @@ Konami's ``SSQ`` step chart container, shared by the *Dance Dance Revolution* ti
 
 A file is a flat run of chunks, each ``int32 length | int16 type | int16 parameter |
 int32 count | data``, where ``length`` counts the header. Four zero bytes end the file. Two chunk
-types carry anything this module needs: type 1 is the tempo map and type 3 is a chart. Type 2 is a
+types include anything this module needs. Type 1 is the tempo map and type 3 is a chart. Type 2 is a
 trigger list whose meaning is unknown, and it is skipped along with anything else.
 
-A chart chunk's parameter packs three fields. The low nibble is the panel count, so 0x14 is a
+A chart chunk's parameter packs three fields. The low nibble is the panel count, making 0x14 a
 four-panel single chart and 0x18 an eight-panel double; the high byte is the difficulty; the
 remaining nibble is a division that every observed chart sets to 1.
 
@@ -15,10 +15,9 @@ next **even** offset, two bytes per freeze marker. Only the freeze block is two-
 chunk as a whole is padded to a four-byte boundary. A step byte is a panel bitmask whose bits 0-3
 are player one's left, down, up, and right, and whose bits 4-7 are player two's. ``0x00`` marks the
 **end** of a freeze and consumes one ``(panel mask, kind)`` pair; the note that begins it is the
-most recent earlier one using the same panel. ``0xFF`` is a shock arrow, which becomes a row of
-mines.
+most recent earlier one using the same panel. ``0xFF`` is a shock arrow, becoming a row of mines.
 
-A measure is 4096 ticks, so a beat is 1024. The tempo chunk holds ``int32 beats[count]`` followed
+A measure is 4096 ticks, making a beat 1024. The tempo chunk stores ``int32 beats[count]`` followed
 by ``int32 times[count]``, the times counted in units of one ``parameter``-th of a second. Between
 two entries the tempo is ``(delta_beats / 4096) * 240 * parameter / delta_times``, and two entries
 sharing a beat are a stop lasting ``delta_times / parameter`` seconds instead.
@@ -60,7 +59,7 @@ TICKS_PER_BEAT = 1024
 :meta hide-value:
 """
 BEATS_PER_MEASURE = TICKS_PER_MEASURE // TICKS_PER_BEAT
-"""Beats one measure holds.
+"""Beats in one measure.
 
 :meta hide-value:
 """
@@ -70,7 +69,7 @@ FREEZE_MARKER = 0x00
 :meta hide-value:
 """
 SHOCK_MARKER = 0xFF
-"""Step byte marking a shock arrow, which becomes a row of mines.
+"""Step byte marking a shock arrow, drawn as a row of mines.
 
 :meta hide-value:
 """
@@ -132,8 +131,8 @@ class TempoMap(NamedTuple):
         Read the tempo changes off the map.
 
         Entries sharing a tick are stops rather than tempo changes and are left to
-        :py:meth:`stops`. A tempo equal to the one before it is dropped, so a chart of constant
-        tempo yields a single entry.
+        :py:meth:`stops`. A tempo equal to the one before it is dropped, and a chart of constant
+        tempo therefore yields a single entry.
 
         Returns
         -------
@@ -196,7 +195,7 @@ class Chart(NamedTuple):
     @property
     def division(self) -> int:
         """
-        The division nibble, which every observed chart sets to 1.
+        The division nibble, set to 1 by every observed chart.
 
         Returns
         -------
@@ -210,7 +209,7 @@ class Chart(NamedTuple):
         """
         How many entries are real notes rather than freeze markers.
 
-        This is the max combo the game credits for the chart, which counts a jump once.
+        This is the max combo the game credits for the chart, counting a jump once.
 
         Returns
         -------
@@ -319,8 +318,8 @@ def parse_ssq(data: bytes) -> SSQ:
     Raises
     ------
     dade.common.exceptions.InvalidFormatError
-        If a chunk is too short to hold a count, claims to run past the end of the file, or claims
-        more entries than it holds.
+        If a chunk is too short for a count, claims to run past the end of the file, or claims
+        more entries than it stores.
     """
     tempo: TempoMap | None = None
     charts: list[Chart] = []
@@ -330,7 +329,7 @@ def parse_ssq(data: bytes) -> SSQ:
         if length == 0:
             break
         if length < _CHUNK_HEADER + _WORD or offset + length > len(data):
-            msg = (f'Chunk at {offset} claims {length} bytes, which does not fit in the '
+            msg = (f'Chunk at {offset} claims {length} bytes, beyond the '
                    f'{len(data)}-byte file.')
             raise InvalidFormatError(msg)
         body = data[offset + _CHUNK_HEADER:offset + length]
@@ -342,7 +341,7 @@ def parse_ssq(data: bytes) -> SSQ:
             elif kind == _TYPE_STEP:
                 charts.append(_parse_step_chunk(parameter, body, count))
         except struct.error as e:
-            msg = f'Chunk at {offset} of type {kind} claims {count} entries it does not hold.'
+            msg = f'Chunk at {offset} of type {kind} claims {count} entries it does not store.'
             raise InvalidFormatError(msg) from e
         offset += length
     return SSQ(tempo, tuple(charts))

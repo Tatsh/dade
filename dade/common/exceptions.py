@@ -13,4 +13,4 @@ class SelfCheckFailed(RuntimeError):
 
 
 class UnreachableState(RuntimeError):
-    """Raised when execution reaches a state an earlier check in the same function ruled out."""
+    """Raised when execution arrives at a state an earlier check in the same function ruled out."""

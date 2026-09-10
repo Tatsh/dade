@@ -1,9 +1,11 @@
 """
 Font selection for the image renderers.
 
-Several of the games handled here carry Japanese titles, so a renderer that draws one asks
+Several of the games handled here have Japanese titles, and a renderer that draws one therefore
+queries
 fontconfig for the best installed font with Japanese coverage. Pillow's built-in font is the last
-resort; it has no such coverage, so titles degrade to boxes rather than failing the render.
+resort. It has no such coverage, and titles therefore degrade to boxes rather than failing the
+render.
 """
 from __future__ import annotations
 
@@ -24,7 +26,7 @@ _FC_MATCH = 'fc-match'
 @functools.cache
 def japanese_font_path() -> str | None:
     """
-    Ask fontconfig for the best installed font with Japanese coverage.
+    Query fontconfig for the best installed font with Japanese coverage.
 
     Returns
     -------
@@ -59,7 +61,7 @@ def load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     Returns
     -------
     PIL.ImageFont.FreeTypeFont | PIL.ImageFont.ImageFont
-        The loaded font, which is Pillow's built-in one when no suitable font is installed.
+        The loaded font, Pillow's built-in one when no suitable font is installed.
     """
     if (path := japanese_font_path()) is not None:
         try:

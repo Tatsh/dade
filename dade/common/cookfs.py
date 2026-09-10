@@ -61,7 +61,8 @@ DEFAULT_SEARCH_WINDOW = 16 << 20
 """
 Bytes read from the end of the source when auto-locating the cookfs signature.
 
-Some producers append a trailer after the cookfs archive, so the signature is not at the very end
+Some producers append a trailer after the cookfs archive, and the signature is therefore not at the
+very end
 of the file; the window must be larger than that trailer. Pass an explicit ``end_offset`` to
 :py:func:`locate_end_offset` to skip the scan entirely.
 
@@ -76,7 +77,7 @@ class Block(NamedTuple):
     A file's contents are the concatenation of its blocks, in order.
     """
     page_index: int
-    """Index of the page holding the data."""
+    """Index of the page storing the data."""
     offset: int
     """Byte offset of the span within the decompressed page."""
     size: int
@@ -202,7 +203,7 @@ def parse_fs_index(index_data: bytes) -> dict[str, tuple[Block, ...]]:
     """
     Parse a decompressed cookfs index into a flat mapping of file paths to blocks.
 
-    Directories are not included in the result; only files carry block lists.
+    Directories are not included in the result; only files have block lists.
 
     Parameters
     ----------

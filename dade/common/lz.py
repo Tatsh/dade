@@ -4,12 +4,12 @@ Okumura LZSS decompressor, binary ``_0`` variant, as used by both Extreme-G game
 The ring buffer is 4096 bytes, the write cursor starts at ``0xFEE``, and control bytes are consumed
 least-significant bit first. A set control bit introduces one literal byte; a clear bit introduces a
 two-byte match where the offset is ``b0 | ((b1 & 0xF0) << 4)`` and the length is
-``(b1 & 0x0F) + 3``. The stream carries no end marker: decoding stops once the caller's expected
-output size is reached.
+``(b1 & 0x0F) + 3``. The stream has no end marker. Decoding stops once the caller's expected output
+size is produced.
 
-The Extreme-G PC port stores the identical byte stream, so this decoder serves both platforms
+The Extreme-G PC port stores the identical byte stream, and this decoder serves both platforms
 unchanged. Max Payne's ``RA->`` records use the same encoding but prime the ring buffer with spaces
-rather than NULs, which only matters for matches that reach back before the first literal.
+rather than NULs. That only matters for matches extending back before the first literal.
 """
 from __future__ import annotations
 
@@ -39,11 +39,11 @@ def decompress_lzss0(data: bytes,
     Parameters
     ----------
     data : bytes
-        Buffer holding the compressed stream.
+        Buffer with the compressed stream.
     start : int
         Offset of the first control byte within *data*.
     decompressed_size : int
-        Number of bytes to produce. Decoding stops as soon as this many bytes exist, so the
+        Number of bytes to produce. Decoding stops as soon as this many bytes exist, and the
         output may overshoot by up to fifteen bytes inside the final match and is truncated.
     fill : int
         Byte value used to prime the ring buffer. Extreme-G uses ``0``; Max Payne uses ``0x20``.
