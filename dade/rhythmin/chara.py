@@ -4,7 +4,8 @@ Reading of the downloaded ``chara_%03d.chr`` character-data files.
 The game downloads these into its Application Support directory. Each is a :mod:`BFCodec
 <dade.rhythmin.bfcodec>` payload wrapping lenient JSON that describes preferred music and
 character sets, unlock bits, and so on, read by ``CharaManager::charaDecodeChr``. The JSON is
-lenient in one respect only: it may carry a trailing comma before a closing bracket or brace, which
+lenient in one respect only. It may include a trailing comma before a closing bracket or brace,
+which
 :func:`parse_chara` strips before handing the text to :mod:`json`.
 """
 from __future__ import annotations
@@ -27,7 +28,7 @@ def decrypt_chara(data: bytes, key: bytes | None = None) -> bytes:
     """
     Decrypt one ``.chr`` file to its JSON text.
 
-    A payload whose length trailer does not check out, which means the file is truncated or is not
+    A payload whose length trailer does not check out. The file is truncated or is not
     a ``BFCodec`` payload at all, raises the :py:class:`ValueError`
     :py:func:`dade.rhythmin.bfcodec.decipher` raises.
 
@@ -41,7 +42,7 @@ def decrypt_chara(data: bytes, key: bytes | None = None) -> bytes:
     Returns
     -------
     bytes
-        The decrypted payload, which should be UTF-8 JSON.
+        The decrypted payload, expected to be UTF-8 JSON.
     """
     return decipher(data, key)
 
@@ -50,7 +51,7 @@ def parse_chara(payload: bytes) -> Any:
     """
     Parse a decrypted ``.chr`` payload.
 
-    A payload that is not JSON even once its trailing commas are removed, which usually means it
+    A payload that is not JSON even once its trailing commas are removed. That usually means it
     was decrypted with the wrong key, raises the :py:class:`json.JSONDecodeError`
     :py:func:`json.loads` raises.
 

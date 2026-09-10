@@ -101,7 +101,7 @@ def test_blowfish_rejects_an_empty_key() -> None:
 
 
 def test_blowfish_rejects_a_short_init_table() -> None:
-    with pytest.raises(ValueError, match='must hold 1042 words'):
+    with pytest.raises(ValueError, match='must have 1042 words'):
         Blowfish(b'key', (1, 2, 3))
 
 

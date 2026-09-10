@@ -37,7 +37,7 @@ _ARCADE = 'arcade'
 
 
 class _SongDetails(NamedTuple):
-    """The song metadata a package's ``info`` plist carries."""
+    """The song metadata a package's ``info`` plist stores."""
 
     title: str | None
     artist: str | None
@@ -48,14 +48,14 @@ def _song_details(sheet: Sheet, suffix: str) -> _SongDetails:
     """
     Pull the song's title, artist or genre, and difficulty level out of the package's info plist.
 
-    An arcade package's info has no artist, so its genre is the marquee line instead.
+    An arcade package's info has no artist, and its genre is the marquee line instead.
 
     Parameters
     ----------
     sheet : dade.rhythmin.sheet.Sheet
         The chart and its package metadata.
     suffix : str
-        The difficulty suffix, which selects the level key.
+        The difficulty suffix, selecting the level key.
 
     Returns
     -------
@@ -71,7 +71,7 @@ def _song_details(sheet: Sheet, suffix: str) -> _SongDetails:
 def _render(package: Path, suffix: str, buttons: Path | None, direction: str, image: Path | None,
             lanes: int, *, raw: bool, summary: bool) -> dict[str, Any] | None:
     """
-    Read a chart and produce whichever output was asked for.
+    Read a chart and produce whichever output was requested.
 
     Parameters
     ----------
@@ -90,7 +90,7 @@ def _render(package: Path, suffix: str, buttons: Path | None, direction: str, im
     raw : bool
         Write the decrypted chart bytes to standard output.
     summary : bool
-        Leave the per-record list out of the JSON.
+        Omit the per-record list from the JSON.
 
     Returns
     -------
@@ -135,7 +135,7 @@ def _render(package: Path, suffix: str, buttons: Path | None, direction: str, im
 @click.argument('suffix', metavar='SUFFIX', type=click.Choice(SUFFIXES))
 @click.option('--buttons',
               type=READABLE_DIR,
-              help='Directory holding the login_popn01..05@2x.png sprites to draw taps with.')
+              help='Directory with the login_popn01..05@2x.png sprites to draw taps with.')
 @click.option('--direction',
               type=click.Choice(('auto', 'bottom-up', 'top-down')),
               default='auto',
@@ -149,15 +149,15 @@ def _render(package: Path, suffix: str, buttons: Path | None, direction: str, im
               show_default=True,
               help='Columns to bucket a standard chart into, osu!mania style.')
 @click.option('--raw', is_flag=True, help='Write the decrypted chart bytes verbatim.')
-@click.option('--summary', is_flag=True, help='Leave the per-record list out of the JSON.')
+@click.option('--summary', is_flag=True, help='Omit the per-record list from the JSON.')
 @debug_option
 def dump_sheet(package: Path, suffix: str, buttons: Path | None, direction: str, image: Path | None,
                lanes: int, *, raw: bool, summary: bool) -> None:
     """
     Decode the SUFFIX chart of song package PACKAGE and write it to standard output as JSON.
 
-    PACKAGE is a ``.orb`` or ``.acv``; the two carry completely different chart formats, and which
-    one this is is detected from the decrypted payload. SUFFIX names the difficulty, so the entry
+    PACKAGE is a ``.orb`` or ``.acv``; the two use completely different chart formats, and which
+    one this is is detected from the decrypted payload. SUFFIX gives the difficulty, and the entry
     read is ``sheet_<SUFFIX>``.
     """  # ruff: ignore[docstring-missing-exception]
     log.debug('Reading `%s` (%s).', package, suffix)

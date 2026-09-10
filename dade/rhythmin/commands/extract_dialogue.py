@@ -37,7 +37,7 @@ def extract_dialogue(output: Path, binary: Path | None, output_format: str) -> N
     Write the sugoroku board dialogue pools from an app binary to OUTPUT.
 
     The dialogue is copyrighted game content and is not shipped with this package; point --binary
-    at a copy of the app you own. Without it the tables are written out empty, which is what a
+    at a copy of the app you own. Without it the tables are written out empty, matching what a
     build does when no binary is available.
     """  # ruff: ignore[docstring-missing-exception]
     if binary is None:

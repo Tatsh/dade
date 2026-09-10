@@ -26,5 +26,5 @@ rhythmin.add_command(extract_dialogue)
 
 
 def main() -> None:
-    """Entry point for the ``rhythmin`` group when it is run on its own."""
+    """Entry point for the ``rhythmin`` group when it is run directly."""
     rhythmin()

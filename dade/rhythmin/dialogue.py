@@ -3,15 +3,15 @@ Extraction of the sugoroku board character-message dialogue pools from an app bi
 
 ``getCharacterAssetName`` picks a board message from one of six pools, each a pointer array in the
 binary's ``__const`` whose entries point at NUL-terminated UTF-8 strings in ``__cstring``. The
-addresses in :data:`POOLS` are virtual addresses at an image base of ``0x4000``, so they are
-resolved through the ``LC_SEGMENT`` load commands rather than assumed to be file offsets.
+addresses in :data:`POOLS` are virtual addresses at an image base of ``0x4000``, and they are
+therefore resolved through the ``LC_SEGMENT`` load commands rather than assumed to be file offsets.
 
 The dialogue is copyrighted game content and is not shipped with this package or with the
 reconstruction it feeds; :func:`extract_pools` reads it out of a binary the caller already owns.
 Two renderings are provided: :func:`render_c_header` writes the six ``static const char *const``
 tables the reconstruction includes at build time, and :func:`render_binary` writes the runtime
-asset, which is, for each pool in order, an ``int32`` entry count followed by that many records of
-an ``int32`` byte length and that many UTF-8 bytes.
+asset. That asset is, for each pool in order, an ``int32`` entry count followed by that many
+records of an ``int32`` byte length and that many UTF-8 bytes.
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ class PoolSpec(NamedTuple):
     address: int
     """Virtual address of the pointer array, at an image base of ``0x4000``."""
     entry_count: int
-    """How many pointers the array holds."""
+    """How many pointers the array stores."""
 
 
 class DialoguePool(NamedTuple):
@@ -42,7 +42,7 @@ class DialoguePool(NamedTuple):
     name: str
     """Name of the C table the pool is rendered as."""
     entry_count: int
-    """How many entries the pool declares, which stands even when no strings were read."""
+    """How many entries the pool declares, still set even when no strings were read."""
     strings: tuple[bytes, ...]
     """The pool's messages, as the UTF-8 bytes they are stored in."""
 
@@ -99,12 +99,12 @@ def _select_thin(data: bytes) -> bytes:
     Returns
     -------
     bytes
-        The thin image, which is the input unchanged when it was not fat.
+        The thin image, the input unchanged when it was not fat.
 
     Raises
     ------
     ValueError
-        If the file is fat but holds no 32-bit ARM slice.
+        If the file is fat but includes no 32-bit ARM slice.
     """
     if struct.unpack_from('>I', data, 0)[0] not in {_FAT_MAGIC, _FAT_CIGAM}:
         return data
@@ -172,7 +172,7 @@ def _to_file_offset(segments: Sequence[_Segment], address: int) -> int | None:
     -------
     int | None
         The file offset, or ``None`` when the address is in no segment or lands in a segment's
-        zero-filled tail, which has no bytes in the file.
+        zero-filled tail, absent from the file itself.
     """
     for segment in segments:
         if segment.vm_address <= address < segment.vm_address + segment.vm_size:
@@ -201,7 +201,7 @@ def extract_pools(data: bytes, pools: Sequence[PoolSpec] = POOLS) -> tuple[Dialo
     ------
     ValueError
         If the binary is not a 32-bit Mach-O, or a pool's pointer array or one of its strings falls
-        outside the image, which means the addresses do not match this binary.
+        outside the image, meaning the addresses do not match this binary.
     """
     image = _select_thin(data)
     segments = _parse_segments(image)
@@ -216,7 +216,7 @@ def extract_pools(data: bytes, pools: Sequence[PoolSpec] = POOLS) -> tuple[Dialo
             pointer = struct.unpack_from('<I', image, table + index * 4)[0]
             offset = _to_file_offset(segments, pointer)
             if offset is None:
-                msg = (f'Entry {index} of {spec.name} points at {pointer:#x}, which is not in the '
+                msg = (f'Entry {index} of {spec.name} points at {pointer:#x}, outside the '
                        'file.')
                 raise ValueError(msg)
             end = image.find(b'\0', offset)
@@ -230,7 +230,7 @@ def extract_pools(data: bytes, pools: Sequence[PoolSpec] = POOLS) -> tuple[Dialo
 
 def empty_pools(pools: Sequence[PoolSpec] = POOLS) -> tuple[DialoguePool, ...]:
     """
-    Build pools that declare their sizes but hold no strings.
+    Build pools that declare their sizes but include no strings.
 
     This is the build fallback for when no app binary is available.
 

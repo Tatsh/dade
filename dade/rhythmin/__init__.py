@@ -3,8 +3,8 @@ pop'n rhythmin (Konami) toolkit.
 
 ``rhythmin`` reads the data files of the iOS rhythm game *pop'n rhythmin*:
 
-- :mod:`dade.rhythmin.bfcodec` - the ``BFCodec`` cipher every encrypted file uses, which is
-  Blowfish with one deviation in its F function.
+- :mod:`dade.rhythmin.bfcodec` - the ``BFCodec`` cipher every encrypted file uses, Blowfish with
+  one deviation in its F function.
 - :mod:`dade.rhythmin.chara` - the downloaded ``chara_%03d.chr`` character data.
 - :mod:`dade.rhythmin.aep` - the ``.idx`` AEP animation indexes.
 - :mod:`dade.rhythmin.treasure_map` - the sugoroku ``map_%03d.map`` boards.

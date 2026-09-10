@@ -1,11 +1,11 @@
 """
 The ``BFCodec`` cipher pop'n rhythmin encrypts its data files with.
 
-The cipher itself is :py:mod:`dade.common.bfcodec`, which *jubeat plus* shares; only the key
+The cipher itself is :py:mod:`dade.common.bfcodec`, shared with *jubeat plus*; only the key
 belongs to this game. Every file the game ships or downloads uses the same one: the MD5 of
-:py:data:`KEY_PLAINTEXT`, which is what :py:func:`default_key` returns. The key is spelled in the
-binary as ``key[i] + i``, so it is obfuscated rather than hidden. Purchased music uses the MD5 of
-the device UUID instead, which is why :py:class:`BFCodec` takes an arbitrary key.
+:py:data:`KEY_PLAINTEXT`, returned by :py:func:`default_key`. The key is spelled in the binary as
+``key[i] + i``, making it obfuscated rather than hidden. Purchased music uses the MD5 of the device
+UUID instead, and :py:class:`BFCodec` therefore takes an arbitrary key.
 """
 from __future__ import annotations
 

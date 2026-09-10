@@ -33,7 +33,7 @@ def dump_map(board_path: Path, image: Path | None, scale: float, *, as_text: boo
     """
     Parse the sugoroku board MAP and write it to standard output as JSON.
 
-    The board holds one square per record, with its coordinates, kind, message text, and the
+    The board stores one square per record, with its coordinates, kind, message text, and the
     identifiers of the squares it links to, plus the deduplicated edge list the game builds from
     those links.
     """  # ruff: ignore[docstring-missing-exception]

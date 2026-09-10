@@ -57,7 +57,7 @@ def test_extract_pools_rejects_an_address_outside_every_segment(macho_image: byt
 def test_extract_pools_rejects_a_pointer_outside_the_file(macho_image: bytes) -> None:
     # The pointer table's own address, read as if it were a pointer array of the wrong length,
     # eventually walks into the string data and off the end of the mapped range.
-    with pytest.raises(ValueError, match='is not in the file'):
+    with pytest.raises(ValueError, match='outside the file'):
         extract_pools(macho_image, (PoolSpec('kTooLong', MACHO_TABLE_ADDRESS, 64),))
 
 

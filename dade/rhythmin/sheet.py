@@ -3,18 +3,18 @@ Reading of the ``sheet_*`` note charts inside ``.orb`` and ``.acv`` song package
 
 Both package kinds are ZIPs whose entries are :mod:`BFCodec <dade.rhythmin.bfcodec>` payloads.
 The chart entries are ``sheet_es``, ``sheet_n``, ``sheet_h``, and ``sheet_ex``, and the two package
-kinds carry completely different chart formats:
+kinds use completely different chart formats:
 
 * **Standard** (``%09d.orb``, read by ``NoteMng::InitPlayData``): a four-byte header that is a
-  little-endian ``float32`` holding the chart's base hi-speed multiplier, followed by 20-byte
+  little-endian ``float32`` storing the chart's base hi-speed multiplier, followed by 20-byte
   records of ``uint32`` tick, ``uint32`` end tick (greater than the tick for a hold), ``uint8``
   type at +0x8, ``uint16`` value at +0xc whose low byte is the note kind, and six position bytes at
   +0xe that ``MakeNote`` scales into on-screen percentages. The types are 0 note, 1 mark (the BGM
   start), 2 tempo (the value is the BPM), 3 end, and 4 bar line.
 * **Arcade** (``ac%09d.acv``, read by ``AcNoteMng::InitPlayData``): a stream of eight-byte units of
-  ``uint32`` tick, a pad byte holding the ASCII magic ``E`` in the first unit, ``uint8`` type, and
+  ``uint32`` tick, a pad byte storing the ASCII magic ``E`` in the first unit, ``uint8`` type, and
   ``uint16`` value. The engine parses every unit including the first, whose type and value are a
-  real initial-tempo event, and re-stamps the final unit as the type-6 terminator. The types it
+  real initial-tempo event, and rewrites the final unit as the type-6 terminator. The types it
   handles are 1 tap (the lane is the value's low nibble), 3 BGM start, 4 tempo, 6 end of chart, 10
   measure boundary, and 11 beat boundary; other types appear in the shipped charts with no handler.
 
@@ -23,10 +23,10 @@ The format is detected from the decrypted payload, with the file extension as th
 :func:`render_strip_image` draws a chart as a DDR-style strip: fixed-height measures wrapped into
 columns left to right, one button per tap in its lane, with measure numbers, beat lines, BPM
 markers, and BGM-start markers. Arcade charts have nine real lanes. Standard charts are
-position-based rather than lane-based, so, as osu!mania does when it converts osu! beatmaps, each
+position-based rather than lane-based, and, as osu!mania does when it converts osu! beatmaps, each
 note's judge-target x percentage is bucketed into a chosen number of columns, the button colour
 cycles with the note kind, holds become long notes, and the measure grid is synthesised from the
-tempo map when the chart carries no bar records.
+tempo map when the chart states no bar records.
 """
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ __all__ = ('ARCADE_TYPES', 'KIND_SPRITES', 'LANE_SPRITES', 'SPRITE_COLORS', 'STA
            'standard_to_json')
 
 SUFFIXES = ('es', 'ex', 'h', 'n')
-"""The chart difficulty suffixes, which name the ``sheet_<suffix>`` entries.
+"""The chart difficulty suffixes, forming the ``sheet_<suffix>`` entry names.
 
 :meta hide-value:
 """
@@ -67,7 +67,7 @@ SUFFIX_LEVEL_KEYS: Mapping[str, str] = {
 }
 """Chart suffix to the difficulty-level key it maps to in the package's ``info`` plist.
 
-The arcade info carries all four; a standard ``.orb`` info has no Easy.
+The arcade info states all four; a standard ``.orb`` info has no Easy.
 
 :meta hide-value:
 """
@@ -183,11 +183,11 @@ class StandardRecord(NamedTuple):
     value: int
     """Type-specific value: the note kind for a note, the BPM for a tempo event."""
     positions: tuple[int, ...]
-    """The six position bytes, which ``MakeNote`` scales into on-screen percentages."""
+    """The six position bytes, scaled by ``MakeNote`` into on-screen percentages."""
     @property
     def is_hold(self) -> bool:
         """
-        Whether this note is held rather than tapped.
+        Whether this note is sustained rather than tapped.
 
         Returns
         -------
@@ -199,7 +199,7 @@ class StandardRecord(NamedTuple):
     @property
     def kind(self) -> int:
         """
-        The note kind, which is the value's low byte.
+        The note kind, the value's low byte.
 
         Returns
         -------
@@ -236,7 +236,7 @@ class ArcadeUnit(NamedTuple):
     tick: int
     """Milliseconds from the start of the chart."""
     pad: int
-    """The pad byte, which holds the ASCII magic ``E`` in the first unit."""
+    """The pad byte, storing the ASCII magic ``E`` in the first unit."""
     unit_type: int
     """The unit's :data:`ARCADE_TYPES` value."""
     value: int
@@ -244,7 +244,7 @@ class ArcadeUnit(NamedTuple):
     @property
     def lane(self) -> int:
         """
-        The tap's lane, which is the value's low nibble.
+        The tap's lane, the value's low nibble.
 
         Returns
         -------
@@ -261,7 +261,7 @@ class ArcadeUnit(NamedTuple):
         Returns
         -------
         str
-            The :data:`ARCADE_TYPES` name, or a description of the raw value, which the game has no
+            The :data:`ARCADE_TYPES` name, or a description of the raw value the game has no
             handler for.
         """
         return ARCADE_TYPES.get(self.unit_type, f'unhandled({self.unit_type})')
@@ -320,7 +320,7 @@ def read_sheet(package: Path, suffix: str, key: bytes | None = None) -> Sheet:
     Raises
     ------
     KeyError
-        If the package holds no chart of that difficulty. A chart whose length trailer does not
+        If the package includes no chart of that difficulty. A chart whose length trailer does not
         check out raises the :py:class:`ValueError` :py:func:`dade.rhythmin.bfcodec.decipher`
         raises.
     """
@@ -361,7 +361,7 @@ def detect_format(payload: bytes, extension: str = '') -> Literal['arcade', 'sta
     Raises
     ------
     ValueError
-        If the payload is neither, which usually means it was decrypted with the wrong key.
+        If the payload is neither, usually meaning it was decrypted with the wrong key.
     """
     arcade = (len(payload) >= _ARCADE_MIN_SIZE and len(payload) % _ARCADE_UNIT_SIZE == 0
               and payload[4] == _ARCADE_MAGIC)
@@ -457,7 +457,7 @@ def standard_to_json(chart: StandardChart, *, summary_only: bool = False) -> dic
     chart : StandardChart
         The chart to render.
     summary_only : bool
-        Leave out the per-record list.
+        Omit the per-record list.
 
     Returns
     -------
@@ -529,7 +529,7 @@ def arcade_to_json(units: Sequence[ArcadeUnit], *, summary_only: bool = False) -
     units : Sequence[ArcadeUnit]
         The chart's units.
     summary_only : bool
-        Leave out the per-unit list.
+        Omit the per-unit list.
 
     Returns
     -------
@@ -598,11 +598,11 @@ def arcade_strip(units: Sequence[ArcadeUnit]) -> ChartStrip:
     Raises
     ------
     ValueError
-        If the chart carries no measure events, so there is no grid to lay it out against.
+        If the chart states no measure events, with no grid to align against.
     """
     measures = sorted({unit.tick for unit in units if unit.unit_type == _UNIT_MEASURE})
     if not measures:
-        msg = 'The chart has no measure events to lay out against.'
+        msg = 'The chart has no measure events to align against.'
         raise ValueError(msg)
     return ChartStrip(
         tuple(
@@ -619,14 +619,14 @@ def _synthesise_measures(tempos: Sequence[tuple[int, int]], last_tick: int) -> l
     """
     Build a measure grid from a tempo map, for a chart with no bar records.
 
-    Ticks are milliseconds, so a 4/4 measure lasts ``240000 / BPM`` of them.
+    Ticks are milliseconds, making a 4/4 measure ``240000 / BPM`` of them.
 
     Parameters
     ----------
     tempos : Sequence[tuple[int, int]]
         Tick and BPM of each tempo change.
     last_tick : int
-        The chart's final tick, which closes the last segment.
+        The chart's final tick, closing the last segment.
 
     Returns
     -------
@@ -650,8 +650,9 @@ def standard_strip(chart: StandardChart, lanes: int = 7) -> ChartStrip:
     """
     Reduce a standard chart to what the strip renderer needs, osu!mania style.
 
-    The standard game is position-based rather than lane-based, so each note's judge-target x
-    percentage is bucketed into ``lanes`` columns, the button colour cycles with the note kind, and
+    The standard game is position-based rather than lane-based. Each note's judge-target x
+    percentage is therefore bucketed into ``lanes`` columns, the button colour cycles with the kind,
+    and
     a hold becomes a long note. The measure grid comes from the chart's bar records when it has
     any, and is otherwise synthesised from the tempo map.
 
@@ -719,7 +720,7 @@ def _load_button_sprites(directory: Path, size: tuple[int, int]) -> dict[int, Im
     Parameters
     ----------
     directory : pathlib.Path
-        A directory holding ``login_popn01@2x.png`` through ``login_popn05@2x.png``.
+        A directory with ``login_popn01@2x.png`` through ``login_popn05@2x.png``.
     size : tuple[int, int]
         The width and height to scale each sprite to.
 
@@ -749,8 +750,8 @@ class _Layout(NamedTuple):
     """
     Geometry of one rendered strip chart.
 
-    Every measure is one layout unit whatever its tick span, which is the DDR-chart convention, so
-    a tempo change does not distort the grid.
+    Every measure is one layout unit whatever its tick span, the DDR-chart convention, and a tempo
+    change therefore does not distort the grid.
     """
 
     strip: ChartStrip
@@ -758,7 +759,7 @@ class _Layout(NamedTuple):
     total_measures: int
     """How many measures the chart occupies, the final partial one included."""
     measures_per_column: int
-    """How many measures each column holds before wrapping."""
+    """How many measures each column covers before wrapping."""
     measure_px: int
     """Height of one measure in pixels."""
     last_length: int
@@ -779,7 +780,7 @@ class _Layout(NamedTuple):
 
     def column_measures(self, column: int) -> int:
         """
-        How many measures one column holds, which is fewer for the last one.
+        How many measures one column covers, fewer for the last one.
 
         Parameters
         ----------
@@ -826,8 +827,8 @@ class _Layout(NamedTuple):
         """
         Top and bottom of one column's frame.
 
-        A partial final column is bottom-aligned when reading bottom-up, so bar 1 of every column
-        shares a bottom line.
+        A partial final column is bottom-aligned when reading bottom-up, and bar 1 of every column
+        therefore shares a bottom line.
 
         Parameters
         ----------
@@ -1013,7 +1014,7 @@ def _draw_notes(image: Image.Image, draw: ImageDraw.ImageDraw, layout: _Layout,
     Parameters
     ----------
     image : PIL.Image.Image
-        The image, which button sprites are pasted into.
+        The image button sprites are pasted into.
     draw : PIL.ImageDraw.ImageDraw
         The drawing context.
     layout : _Layout
@@ -1042,7 +1043,7 @@ def _draw_notes(image: Image.Image, draw: ImageDraw.ImageDraw, layout: _Layout,
         x, y = layout.place(note.tick)
         centre_x = x + note.lane * _LANE_PX + _LANE_PX // 2
         if note.end_tick > note.tick:
-            # A long note: a dimmed body bar from head to tail with a button on each end, which is
+            # A long note, drawn as a dimmed body bar from head to tail with a button on each end,
             # the osu!mania hold-note look.
             holds += 1
             _, tail_y = layout.place(note.end_tick)
@@ -1087,7 +1088,7 @@ def _draw_titles(draw: ImageDraw.ImageDraw, layout: _Layout, holds: int, *, sour
     layout : _Layout
         The chart's geometry.
     holds : int
-        How many long notes were drawn, which the stats line reports.
+        How many long notes were drawn, as reported on the stats line.
     source : str
         A provenance line drawn in the bottom corner.
     title : str | None
@@ -1135,8 +1136,8 @@ def render_strip_image(strip: ChartStrip,
     Render a chart as a DDR-style strip image.
 
     Measures are fixed-height boxes wrapped into columns left to right, and each note is drawn as a
-    pop'n button in its lane with a long-note body when it is held. Reading bottom to top, the
-    default, mirrors the game's downward note fall, so bar 1 sits at the bottom left and the title
+    pop'n button in its lane with a long-note body when sustained. Reading bottom to top, the
+    default, mirrors the game's downward note fall, putting bar 1 at the bottom left and the title
     block becomes a footer.
 
     Parameters
@@ -1154,12 +1155,12 @@ def render_strip_image(strip: ChartStrip,
     level : int | None
         The chart's difficulty level.
     buttons_dir : pathlib.Path | None
-        A directory holding the game's ``login_popn01..05@2x.png`` sprites, to draw taps as real
+        A directory with the game's ``login_popn01..05@2x.png`` sprites, to draw taps as real
         pop'n buttons instead of flat coloured discs.
     beat_px : int
-        Height of one beat in pixels, so a measure is four times this.
+        Height of one beat in pixels, making a measure four times this.
     measures_per_column : int
-        How many measures each column holds before wrapping.
+        How many measures each column covers before wrapping.
     top_down : bool
         Read each column top to bottom instead of bottom to top.
 
@@ -1175,7 +1176,7 @@ def render_strip_image(strip: ChartStrip,
         :py:class:`ValueError` the sprite loader raises.
     """
     if not strip.measure_ticks:
-        msg = 'The chart has no measure grid to lay out against.'
+        msg = 'The chart has no measure grid to align against.'
         raise ValueError(msg)
     # Ticks past the final measure line extrapolate with the median measure length.
     gaps = sorted(second - first for first, second in itertools.pairwise(strip.measure_ticks)

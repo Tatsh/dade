@@ -6,7 +6,7 @@ sub-maps each, the file number being ``mainMapId * 10 + subMapId``. They are pla
 little-endian binaries read by ``TreasureMap::load``:
 
 * the header is 0x50 bytes: two ``uint8`` of head bytes, then an ``int16`` square count at +0x02.
-  The game ignores +0x04 onwards, but the files carry structure there, and this reads it: a 24-byte
+  The game ignores +0x04 onwards, but the files store structure there, and this reads it. A 24-byte
   Shift-JIS main-map title at +0x04, a 40-byte sub-map title at +0x1c, and an ``int32`` of
   unconfirmed meaning at +0x44 (1 to 6 across the shipped files; it is not the sub-map ordinal);
 * square records start at +0x50 with a stride of 0xaa: ``int16`` identifier, x, y, kind, and slot,
@@ -126,7 +126,7 @@ class Square(NamedTuple):
     """One square of a board."""
 
     identifier: int
-    """The square's own identifier, which the links refer to."""
+    """The square's identifier, referred to by the links."""
     x: int
     """Horizontal board coordinate, in the file's own units."""
     y: int
@@ -134,7 +134,7 @@ class Square(NamedTuple):
     kind: int
     """The square's :data:`SQUARE_KINDS` value."""
     slot: int
-    """Kind-specific slot, which pairs the two ends of a warp."""
+    """Kind-specific slot, pairing the two ends of a warp."""
     back: int | None
     """Identifier of the square this one leads back to, or ``None``."""
     links: tuple[int, ...]
@@ -172,7 +172,7 @@ class TreasureMap(NamedTuple):
     edges: tuple[tuple[int, int], ...]
     """The deduplicated forward-link edge list."""
     trailing_bytes: int
-    """Bytes past the last square record, which is normally zero."""
+    """Bytes past the last square record, normally zero."""
     @property
     def kind_counts(self) -> dict[str, int]:
         """
@@ -223,7 +223,7 @@ def _deduplicate_edges(squares: Sequence[Square]) -> tuple[tuple[int, int], ...]
     """
     Build the forward-link edge list the way ``TreasureMap::load`` builds it.
 
-    A link is skipped when the reverse edge has already been recorded, so a two-way corridor
+    A link is skipped when the reverse edge has already been recorded, and a two-way corridor
     appears once.
 
     Parameters
@@ -257,7 +257,7 @@ def parse_treasure_map(data: bytes, name: str = '') -> TreasureMap:
     data : bytes
         The file's contents.
     name : str
-        The file's name, carried through to the parsed board for display.
+        The file's name, passed through to the parsed board for display.
 
     Returns
     -------
@@ -462,7 +462,7 @@ def _draw_tiles(draw: ImageDraw.ImageDraw, board: TreasureMap, centre: Callable[
                                                                                 tuple[int, int]], *,
                 font: Any, radius: int, outline_width: int, glyph_rise: int) -> None:
     """
-    Draw one coloured tile per square, each carrying its kind glyph.
+    Draw one coloured tile per square, each with its kind glyph.
 
     Parameters
     ----------

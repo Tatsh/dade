@@ -10,7 +10,7 @@ which is the file plus four bytes, matching ``AepManager::readIndexFile`` and ``
 * each name block is a run of NUL-terminated strings closed by an empty string, after which the
   producer aligns the cursor to eight bytes;
 * the frame-name block's aligned end is the sprite-record table, one stride-8 record per frame name
-  in frame-name ordinal order, so ``sprite_records[getFrameNo(name)]`` is the atlas rectangle a
+  in frame-name ordinal order, making ``sprite_records[getFrameNo(name)]`` the atlas rectangle a
   drawn sprite samples. The texture atlas is paged into 2048 by 2048 pages, and ``atlas_v`` runs
   across those pages;
 * the layer-name block is followed by one ``int16`` layer ordinal per layer name, padded to a
@@ -18,11 +18,11 @@ which is the file plus four bytes, matching ``AepManager::readIndexFile`` and ``
 * a frame entry is ten ``int16`` fields followed by four ``int32`` channel offsets, again relative
   to ``idxBase``, where zero means the channel is absent.
 
-The alignment deserves a note, because getting it wrong is silent. ``buildAepNameHashTable``
+The alignment deserves a note. Getting it wrong is silent. ``buildAepNameHashTable``
 aligns by the cursor's raw address, and at run time the ``.idx`` is a 16-byte-aligned buffer whose
-``idxBase`` is therefore four modulo eight, which lands the following block at a file offset that
+``idxBase`` is therefore four modulo eight, landing the following block at a file offset that
 is a multiple of eight. Aligning the file offset to eight reproduces that. Reading the unaligned
-end instead shifts the whole sprite table by one ``int16`` pair, which overflows the atlas for 19
+end instead shifts the whole sprite table by one ``int16`` pair, overflowing the atlas for 19
 of the 218 records in ``game_cmn_ipad.idx``; the aligned base overflows none.
 """
 from __future__ import annotations
@@ -206,7 +206,7 @@ class NameLocation(NamedTuple):
     """Where a name was found in an index."""
 
     block: str
-    """The block holding it: ``'frame'``, ``'layer'``, or ``'user'``."""
+    """The block it belongs to: ``'frame'``, ``'layer'``, or ``'user'``."""
     ordinal: int
     """Its position within that block."""
     sprite: SpriteRecord | None
@@ -238,7 +238,7 @@ class AepIndex:
     Raises
     ------
     ValueError
-        If the file is too short to hold a header.
+        If the file is too short for a header.
     """
     def __init__(self, data: bytes) -> None:
         if len(data) < _IDX_BASE + struct.calcsize(_HEADER_FORMAT):
@@ -283,7 +283,7 @@ class AepIndex:
 
     def find(self, name: str) -> tuple[NameLocation, ...]:
         """
-        Locate a name in every block that holds it.
+        Locate a name in every block that includes it.
 
         Parameters
         ----------
@@ -293,7 +293,7 @@ class AepIndex:
         Returns
         -------
         tuple[NameLocation, ...]
-            One location per block the name appears in, which is usually one and may be none.
+            One location per block the name appears in, usually one and possibly none.
         """
         found: list[NameLocation] = []
         for block, names in (('frame', self.frame_names), ('layer', self.layer_names),
@@ -311,8 +311,8 @@ class AepIndex:
         """
         The flat frame-entry array.
 
-        The array carries no length, and layer chains within it are contiguous and terminated by a
-        negative type, so the walk stops at the first record whose fields cannot be an entry.
+        The array states no length, and layer chains within it are contiguous and terminated by a
+        negative type. The walk therefore stops at the first record whose fields cannot be an entry.
 
         Returns
         -------
@@ -367,7 +367,7 @@ class AepIndex:
         The layer name's ordinal indexes :attr:`layer_numbers` to give the entry the chain starts
         at, and the chain runs until a negative type terminates it, exactly as
         ``AepManager::layerLength`` does. The terminator is included so that its ``frame_end``,
-        which carries the chain's length, is not lost.
+        which states the chain's length, is not lost.
 
         Parameters
         ----------
@@ -433,7 +433,7 @@ class AepIndex:
 
     def position_channel(self, offset: int) -> tuple[PositionKeyframe, ...]:
         """
-        Decode a position channel, whose keys run until one carries a frame of ``-1``.
+        Decode a position channel, whose keys run until one states a frame of ``-1``.
 
         Parameters
         ----------
@@ -459,7 +459,7 @@ class AepIndex:
         """
         The sprite-record table that follows the frame-name block.
 
-        There is one record per frame name, in frame-name ordinal order, so the i-th record is the
+        There is one record per frame name, in frame-name ordinal order, and the i-th record is the
         atlas rectangle the i-th frame name samples. In the file each record is stored as atlas u,
         atlas v, width, height; this returns them reordered to width, height, atlas u, atlas v,
         which is the order ``drawAepOtSprite`` reads them in.
@@ -533,7 +533,7 @@ class AepIndex:
         Raises
         ------
         ValueError
-            If the block runs off the end of the file, so the offset was not a name block.
+            If the block runs off the end of the file, meaning the offset was not a name block.
         """
         if (cached := self._name_blocks.get(offset)) is not None:
             return cached
@@ -560,7 +560,7 @@ def read_aep_index(path: Path) -> AepIndex:
     """
     Read one ``.idx`` animation index.
 
-    A file too short to hold a header raises the :py:class:`ValueError` :class:`AepIndex` raises.
+    A file too short for a header raises the :py:class:`ValueError` :class:`AepIndex` raises.
 
     Parameters
     ----------
@@ -584,7 +584,7 @@ def index_to_json(index: AepIndex, *, names_only: bool = False) -> dict[str, Any
     index : AepIndex
         The index to render.
     names_only : bool
-        Emit only the header and the three name blocks, leaving out the sprite records and frame
+        Emit only the header and the three name blocks, omitting the sprite records and frame
         entries.
 
     Returns

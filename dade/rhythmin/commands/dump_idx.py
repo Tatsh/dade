@@ -42,7 +42,7 @@ def _layer_json(index: AepIndex, layer: str) -> dict[str, object]:
     Raises
     ------
     KeyError
-        If the index holds no such layer.
+        If the index includes no such layer.
     """
     ordinal = index.layer_names.index(layer) if layer in index.layer_names else -1
     if ordinal < 0:
@@ -60,8 +60,8 @@ def _found_json(index: AepIndex, wanted: str) -> dict[str, object]:
     """
     Render where a name appears, and the group entries that refer to it.
 
-    A group entry's child is a user-name ordinal, so when the name is a user name only the entries
-    pointing at it are listed; otherwise every group entry is, which is what the original survey
+    A group entry's child is a user-name ordinal. When the name is a user name only the entries
+    pointing at it are listed; otherwise every group entry is, matching what the original survey
     of an index shows.
 
     Parameters
@@ -95,7 +95,7 @@ def _found_json(index: AepIndex, wanted: str) -> dict[str, object]:
 def _render(index_path: Path, wanted: str | None, layer: str | None, *,
             names: bool) -> dict[str, object]:
     """
-    Read an index and render whichever view was asked for.
+    Read an index and render whichever view was requested.
 
     Parameters
     ----------
@@ -126,10 +126,10 @@ def _render(index_path: Path, wanted: str | None, layer: str | None, *,
 @click.option('--find',
               'wanted',
               metavar='NAME',
-              help='Emit only where NAME appears, and the group entries that refer to it.')
+              help='Emit only where NAME appears, plus the group entries that refer to it.')
 @click.option('--layer',
               metavar='NAME',
-              help="Emit only layer NAME's frame-entry chain, with its channels decoded.")
+              help="Emit only layer NAME's frame-entry chain, its channels decoded.")
 @click.option('--names', is_flag=True, help='Emit only the header and the three name blocks.')
 @debug_option
 def dump_idx(index_path: Path, wanted: str | None, layer: str | None, *, names: bool) -> None:
