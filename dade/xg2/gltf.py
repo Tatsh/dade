@@ -243,9 +243,9 @@ def _material(document: GLBDocument, texture: Texture | None, key: int | None, *
         name = f'{name}_{texture.pixel_format}_{texture.width}x{texture.height}'
     entry: dict[str, object] = {
         # The ROM itself culls nothing: its only geometry mode writes set G_LIGHTING and clear
-        # G_CULL_BOTH, so the hardware draws both faces. Culling here anyway is what makes a track
-        # readable from the outside, since the far wall of a tunnel otherwise draws over the near
-        # one.
+        # G_CULL_BOTH, and the hardware therefore draws both faces. Culling here regardless is what
+        # makes a track readable from the outside. The far wall of a tunnel otherwise draws over the
+        # near wall.
         'doubleSided': False,
         'name': name,
         'pbrMetallicRoughness': pbr

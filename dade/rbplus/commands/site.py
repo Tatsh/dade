@@ -220,8 +220,8 @@ def _at_base(page: str, base: str) -> str:
     return addressed
 
 
-# The built page and its bundle, copied out beside the data. They are shipped inside the package,
-# since anyone who installs this from PyPI has no Node to build them with.
+# The built page and its bundle, copied out beside the data. They are shipped inside the package.
+# An install from PyPI has no Node to build them with.
 def _copy_assets(output_dir: Path, base: str | None) -> None:
     built = importlib.resources.files('dade.rbplus') / 'site'
     copied = 0

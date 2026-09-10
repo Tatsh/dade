@@ -190,16 +190,16 @@ def _parse_spm7(b: bytes) -> list[_Submesh]:
     # is `UNPACK V3-16 (positions) / S-16 / V2-16 (uv) / V3-8 (normal) / MSCAL`.
     # We walk the VIF stream and take the V3-16 batches as triangle strips.
     #
-    # Dequantisation: positions are u16 scaled by the header matrix diagonal
-    # (diag@0x20/0x34/0x48) and offset so the mesh fills its bounding box
-    # (min@0x60/max@0x70). The offset isn't stored, so we recover it from the
-    # mesh's own u16 range: pos = bmin + (u16 - umin) * (bmax-bmin)/(umax-umin).
-    # (Using a fixed 0..0xFFFF range instead flattens the mesh, since the u16
-    # only span a sub-range -- most visibly in the shallow Z axis.)
+    # Positions are u16 values scaled by the header matrix diagonal
+    # (diag@0x20/0x34/0x48) and offset to make the mesh fill its bounding box
+    # (min@0x60/max@0x70). The offset is not stored, and it is recovered from the
+    # mesh's u16 range: pos = bmin + (u16 - umin) * (bmax-bmin)/(umax-umin).
+    # (Using a fixed 0..0xFFFF range instead flattens the mesh. The u16 values
+    # only span a sub-range, most visibly in the shallow Z axis.)
     #
-    # Strip-restart (ADC) flags aren't decoded yet, so a restart inside a batch
-    # leaves one long triangle; those are dropped with a per-strip adaptive edge
-    # gate.
+    # Strip-restart (ADC) flags are not decoded yet. A restart inside a batch
+    # produces one long triangle, and those are dropped with a per-strip
+    # adaptive edge gate.
     bmin = struct.unpack_from('<3f', b, 0x60)
     bmax = struct.unpack_from('<3f', b, 0x70)
     o = struct.unpack_from('<I', b, 0x0C)[0]  # geometry offset
@@ -243,7 +243,7 @@ def _spm7_geometry(raw: Sequence[Sequence[tuple[int, int, int]]], bmin: Sequence
     for s in raw:
         verts = [deq(u) for u in s]
         # Each batch is a triangle strip, but per-vertex strip-restart (ADC) flags
-        # aren't decoded yet, so a restart inside a batch would stitch one long
+        # are not decoded yet. A restart inside a batch would stitch one long
         # triangle across the model. Drop triangles whose longest edge exceeds
         # both an absolute gate (catches the big cross-model "blades") and a
         # per-strip adaptive gate (catches local jumps without nuking the
@@ -353,9 +353,9 @@ def _find_geometry(hdr: _MeshHeader, vo: int, nxt: int) -> tuple[int, int, int, 
     # Resolve (stride, vertexCount, indexStart, indexEnd) for a PH block.
     #
     # The index strips follow the vertex buffer. Find where vertex data ends
-    # (last 'large' u16 that isn't a 0xFFFF restart), then choose the stride
+    # (last 'large' u16 that is not a 0xFFFF restart), then choose the stride
     # whose vertexCount = (indexStart-vo)/stride most tightly exceeds the max
-    # index (the highest vertex is referenced, so max index == vertexCount-1).
+    # index (the highest vertex is referenced, and max index == vertexCount-1).
     iend = nxt
     while iend - 2 >= vo and io.u16(hdr.b, iend - 2, endian=hdr.en) == 0:
         iend -= 2  # trim trailing zero padding

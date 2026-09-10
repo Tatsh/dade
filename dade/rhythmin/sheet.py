@@ -351,7 +351,7 @@ def detect_format(payload: bytes, extension: str = '') -> Literal['arcade', 'sta
     payload : bytes
         The decrypted chart.
     extension : str
-        The package's file extension, used only to break a tie when the payload could be either.
+        The package's file extension, used only to break a tie between the two formats.
 
     Returns
     -------

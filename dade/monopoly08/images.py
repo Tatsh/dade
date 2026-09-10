@@ -482,7 +482,7 @@ def _decode_shpx(b: bytes) -> tuple[Image.Image, str, int, int]:
 # stored straight. Palettes are R, G, B, A; PS2 alpha is 0-128 (0x80 opaque), scaled x2.
 
 # PSMT4 within-block nibble map: pixel (py 0..15, px 0..31) -> (byte_index*2 + nibble)
-# within the 256-byte (= 512-nibble) block. Recovered from ground truth; exact.
+# within the 256-byte (= 512-nibble) block. Recovered from known-good output; exact.
 _PSMT4_M = np.array(
     [
         [

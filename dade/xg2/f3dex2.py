@@ -9,10 +9,10 @@ the triangles ``(0, 1, 2)`` and ``(2, 3, 0)`` -- a quad split the obvious way, w
 microcode guess would not produce.
 
 Only the commands that affect geometry are interpreted. Everything about how a surface is shaded
-beyond which image it samples -- the combiner, the blender, fog, and lighting -- is skipped, because
-none of it survives the trip into glTF anyway. A primitive is grouped by the pixel address its
-``G_SETTIMG`` named, which is the same key :py:func:`dade.xg2.models.collect_textures` reports a
-decoded texture under, so geometry and images meet without either side having to know about the
+beyond which image it samples (the combiner, the blender, fog, and lighting) is skipped. None of it
+survives the trip into glTF. A primitive is grouped by the pixel address its ``G_SETTIMG``
+specified. That is the same key :py:func:`dade.xg2.models.collect_textures` reports a decoded
+texture under, and geometry and images therefore meet without either side having to know about the
 other.
 """
 from __future__ import annotations

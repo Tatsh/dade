@@ -38,7 +38,7 @@ def test_module_entry_point_verifies_ground_truth(capsys: pytest.CaptureFixture[
 
 def test_module_entry_point_reports_a_mismatch(monkeypatch: pytest.MonkeyPatch) -> None:
     # Forcing every character to the same code point makes the computed hashes disagree with the
-    # ground truth without touching the module itself.
+    # expected values without touching the module itself.
     monkeypatch.setattr('builtins.ord', lambda _: 0x61)
     with pytest.raises(SystemExit) as excinfo:
         runpy.run_path(_MODULE_PATH, run_name='__main__')

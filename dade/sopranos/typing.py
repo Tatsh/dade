@@ -25,9 +25,9 @@ class BlendMode(IntEnum):
 
     The engine passes a texture's handle to the texture manager, takes the flags back, and turns
     them into a GS ``TEST_1`` and ``ALPHA_1`` pair per material in ``FUN_001E8810``. Reading the
-    byte gives the same answer without having to recognise a texture by name or by content: across
+    byte gives the same result without having to recognise a texture by name or by content. Across
     all 133 levels, :py:attr:`ADDITIVE` is exactly the 171 ``add_`` textures and
-    :py:attr:`SUBTRACTIVE` exactly the 262 ``sub_`` ones, with nothing else in either.
+    :py:attr:`SUBTRACTIVE` exactly the 262 ``sub_`` ones, with nothing else in either group.
     """
 
     DEFAULT = 0

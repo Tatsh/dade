@@ -764,8 +764,8 @@ def read_level2(data: bytes) -> Level:
     Returns
     -------
     Level
-        The level, shaped as :py:func:`dade.maxpayne.ldb.read_level` shapes the first game's so
-        that :py:func:`dade.maxpayne.gltf.build_glb` draws either.
+        The level, shaped as :py:func:`dade.maxpayne.ldb.read_level` shapes the first game's, and
+        therefore drawn by :py:func:`dade.maxpayne.gltf.build_glb` as well.
 
     Raises
     ------

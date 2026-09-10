@@ -836,10 +836,10 @@ def _ldb2_tail(machines: Sequence[bytes],
         out += _int(0)
     out += b'\x00' + _int(0) + _int(0)  # Enemy groups and enemies.
     out += _int(len(machines)) + b''.join(machines)
-    if populated:  # Two triggers: one carrying a collision shape of its own, one carrying none.
+    if populated:  # Two triggers: one with a collision shape, one without.
         out += _int(2)
         out += _int(0) * 9 + _int(1) + _int(-1) + _int(1) + _collision()
-        # No collision shape, so no parent follows the flag either.
+        # No collision shape, and therefore no parent after the flag.
         out += _int(0) * 9 + _int(0)
     else:
         out += _int(0)
