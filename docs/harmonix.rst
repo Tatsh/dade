@@ -11,15 +11,15 @@ tree of converted assets:
    dade amplitude unpack Amplitude.iso -o out
    dade frequency unpack FreQuency.cue -o out
 
-The ``DISC`` argument may be an already-extracted directory, a PS2 ISO image, or -- for the
-FreQuency CD release -- the ``.cue`` of a cue/bin pair. The disc is always opened read-only; nothing
+The ``DISC`` argument may be an already-extracted directory, a PS2 ISO image, or (for the
+FreQuency CD release) the ``.cue`` of a cue/bin pair. The disc is always opened read-only; nothing
 is written back to it, and the output directory may not be, or be nested inside, an input directory.
 
 Unpacking flow
 --------------
 
-Passing an ISO runs these stages. The source is first **materialised** into the output directory --
-an image is extracted into it, a directory is copied into it -- and every ARK there is then unpacked
+Passing an ISO runs these stages. The source is first **materialised** into the output directory
+(an image is extracted into it, a directory is copied into it), and every ARK there is then unpacked
 and its assets converted in place, in a fixed order:
 
 .. graphviz::
@@ -78,9 +78,9 @@ known container hierarchy:
       milo -> dtb;
    }
 
-By default every materialised file is kept -- the ARK archives, the disc ``.str`` files, and the raw
-assets beside their converted form; ``--delete`` prunes them all once the reference-linking passes
-have made the outputs self-contained. The source disc is never touched.
+By default every materialised file is retained (the ARK archives, the disc ``.str`` files, and the
+raw assets beside their converted form); ``--delete`` prunes them all once the reference-linking
+passes have made the outputs self-contained. The source disc is never touched.
 
 Using the unpackers from Python
 -------------------------------
