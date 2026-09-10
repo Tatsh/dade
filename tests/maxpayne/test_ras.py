@@ -90,8 +90,8 @@ def test_is_intact_detects_truncation(make_ras: Callable[..., bytes]) -> None:
 
 
 def test_read_header_reads_the_table_checksums(make_ras: Callable[..., bytes]) -> None:
-    # The two words after the header's own CRC are checksums of the decrypted tables, which holds
-    # on all five shipped archives.
+    # The two words after the header's CRC are checksums of the decrypted tables. This is true
+    # of all five shipped archives.
     import zlib
 
     from dade.maxpayne.crypto import decrypt
@@ -107,7 +107,7 @@ def test_read_header_reads_the_table_checksums(make_ras: Callable[..., bytes]) -
 
 
 def test_read_header_rejects_a_truncated_archive() -> None:
-    # The magic is right but there is no header behind it, which used to raise `struct.error`.
+    # The magic is right but there is no header behind it. This used to raise `struct.error`.
     with pytest.raises(InvalidArchiveError, match='at least'):
         read_header(b'RAS\x00' + bytes(8))
 
@@ -120,7 +120,7 @@ def test_read_directory_rejects_an_entry_naming_a_directory_that_is_not_there(
 
 def test_read_directory_rejects_an_archive_cut_short_of_its_tables(
         make_ras: Callable[..., bytes]) -> None:
-    # Slicing a short buffer gives back a short table rather than failing, so the walk over it used
+    # Slicing a short buffer gives back a short table rather than failing, and the walk over it used
     # to die inside a name with `ValueError: subsection not found`.
     with pytest.raises(InvalidArchiveError, match='The tables need'):
         read_directory(make_ras()[:HEADER_SIZE + 10])

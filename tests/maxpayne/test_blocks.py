@@ -48,7 +48,7 @@ def test_decompress_rejects_a_foreign_block() -> None:
 
 
 def test_decompress_primes_the_ring_with_spaces() -> None:
-    # A match reaching back before any literal reads the primed ring, which is the only place the
+    # A match extending back before any literal reads the primed ring, the only place the
     # fill byte is observable.
     stream = bytes((0xFE, 0x00, 0x00))
     block = b'RA->' + struct.pack('<II', 3, len(stream)) + stream

@@ -17,7 +17,7 @@ def _database(root: Path,
               textures: bool = True,
               script: str | None = None,
               image: bytes = b'\x89PNGfake') -> Path:
-    """Lay out a game database holding one skin and one pickup."""
+    """Build a game database with one skin and one pickup."""
     skin = root / 'skins' / 'transit_cop'
     skin.mkdir(parents=True)
     (skin / 'transit_cop_l0.kfs').write_bytes(model)
@@ -45,7 +45,7 @@ def test_load_models_finds_a_skin_and_a_pickup(tmp_path: Path, make_ldb: Callabl
 
 def test_load_models_reads_the_images_along_the_search_path(
         tmp_path: Path, make_ldb: Callable[..., bytes], make_model: Callable[..., bytes]) -> None:
-    # The model looks in its own `textures` first and the shared directory beside it second.
+    # The model looks in its `textures` first and the shared directory beside it second.
     root = _database(tmp_path, make_model())
     model = load_models(root, read_level(make_ldb()))['character:transit_cop']
     assert [t.path for t in model.textures] == ['skin.png']

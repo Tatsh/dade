@@ -21,7 +21,7 @@ def test_read_level2_reads_a_level(make_ldb2: Callable[..., bytes]) -> None:
 
 
 def test_read_level2_places_a_batch_by_its_rooms_transform(make_ldb2: Callable[..., bytes]) -> None:
-    # A Max Payne 2 room carries the transform that puts it in the world, where the first game's
+    # A Max Payne 2 room has the transform that puts it in the world, where the first game's
     # left it to the exit graph.
     level = read_level2(make_ldb2())
     assert level.mesh is not None
@@ -35,7 +35,7 @@ def test_read_level2_builds_a_face_per_triangle(make_ldb2: Callable[..., bytes])
     face = level.mesh.meshes[0].faces[0]
     assert face.corner_count == 3
     assert face.first_corner == 0
-    # The normal comes off the corners, because the format stores one per vertex and none per face.
+    # The normal comes off the corners. The format stores one per vertex and none per face.
     assert face.normal == (0.0, -1.0, 0.0)
 
 
@@ -63,7 +63,7 @@ def test_read_level2_rejects_a_tag_it_does_not_know(make_ldb2: Callable[..., byt
 
 
 def test_read_level2_rejects_a_run_past_the_end(make_ldb2: Callable[..., bytes]) -> None:
-    # The string pool claims more than the file holds.
+    # The string pool declares more than the file stores.
     data = make_ldb2()
     with pytest.raises(InvalidLevel2Error, match='runs past the end'):
         read_level2(data[:12])
@@ -110,7 +110,7 @@ def test_read_level2_drops_a_triangle_indexing_a_missing_vertex(
 
 
 def test_read_level2_steps_over_collision_shapes(make_ldb2: Callable[..., bytes]) -> None:
-    # Havok's shapes are not drawn, but the reader has to get past them to reach the next room.
+    # Havok's shapes are not drawn, but the reader has to get past them to arrive at the next room.
     level = read_level2(make_ldb2(collisions=1))
     assert level.mesh is not None
     assert len(level.mesh.meshes) == 1
@@ -158,7 +158,7 @@ def test_read_level2_reads_a_prop(make_ldb2: Callable[..., bytes]) -> None:
 
 
 def test_read_level2_places_a_prop_by_its_state_machine(make_ldb2: Callable[..., bytes]) -> None:
-    # A dynamic mesh carries no transform: it names a state machine, and that is where it stands.
+    # A dynamic mesh has no transform: it references a state machine, and that is where it stands.
     from .conftest import _ldb2_machine, _ldb2_prop
     level = read_level2(
         make_ldb2(machines=(_ldb2_machine(), _ldb2_machine((5.0, 6.0, 7.0))),
@@ -176,7 +176,7 @@ def test_read_level2_falls_back_when_a_prop_names_no_state_machine(
 
 
 def test_read_level2_shares_a_prefabs_geometry(make_ldb2: Callable[..., bytes]) -> None:
-    # A prefab is written once. The second copy carries no mesh at all, and a reader that expects
+    # A prefab is written once. The second copy has no mesh at all, and a reader that expects
     # one loses its place for the rest of the file.
     from .conftest import _ldb2_machine, _ldb2_prop
     level = read_level2(
@@ -188,7 +188,7 @@ def test_read_level2_shares_a_prefabs_geometry(make_ldb2: Callable[..., bytes]) 
 
 def test_read_level2_rereads_a_prefab_that_is_lit_on_its_own(
         make_ldb2: Callable[..., bytes]) -> None:
-    # A second copy with its own lighting writes its mesh again, but not its collision.
+    # A second copy with separate lighting writes its mesh again, but not its collision.
     from .conftest import _ldb2_machine, _ldb2_prop
     level = read_level2(
         make_ldb2(machines=(_ldb2_machine(),),
@@ -222,7 +222,7 @@ def test_read_level2_reads_a_props_clips(make_ldb2: Callable[..., bytes]) -> Non
 
 def test_read_level2_leaves_an_animated_prop_where_its_state_machine_put_it(
         make_ldb2: Callable[..., bytes]) -> None:
-    # A clip is authored around the placed pose and may be written in a parent's space, so neither
+    # A clip is authored around the placed pose and may be written in a parent's space, and neither
     # of its ends belongs on the node: a door's first clip closes it, starting from open.
     from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
     level = read_level2(
@@ -250,7 +250,7 @@ def test_read_level2_walks_a_populated_tail(make_ldb2: Callable[..., bytes]) -> 
 
 
 def test_read_level2_drops_a_clip_with_no_transform(make_ldb2: Callable[..., bytes]) -> None:
-    # A clip whose start is a number rather than a transform moves nothing, so it is not written.
+    # A clip whose start is a number rather than a transform moves nothing and is not written.
     from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
     level = read_level2(
         make_ldb2(machines=(_ldb2_machine(),),
@@ -260,7 +260,7 @@ def test_read_level2_drops_a_clip_with_no_transform(make_ldb2: Callable[..., byt
 
 
 def test_read_level2_moves_a_prop_onto_its_mesh_midpoint(make_ldb2: Callable[..., bytes]) -> None:
-    # A prop's vertices are written about their own centre, so the gap between that centre and the
+    # A prop's vertices are written about their centre, and the gap between that centre and the
     # state machine's origin has to be added or the prop hangs off its placement.
     from .conftest import _ldb2_machine, _ldb2_prop
     level = read_level2(
@@ -272,7 +272,7 @@ def test_read_level2_moves_a_prop_onto_its_mesh_midpoint(make_ldb2: Callable[...
 
 def test_read_level2_turns_a_mesh_midpoint_by_the_placement(
         make_ldb2: Callable[..., bytes], bases: dict[str, Sequence[float]]) -> None:
-    # The midpoint is in the state machine's own space, so it turns with it rather than being
+    # The midpoint is in the state machine's space, and it turns with the machine rather than being
     # added to the world translation as it stands.
     from .conftest import _ldb2_machine, _ldb2_prop
     level = read_level2(
@@ -283,7 +283,7 @@ def test_read_level2_turns_a_mesh_midpoint_by_the_placement(
 
 
 def test_read_level2_carries_the_midpoint_into_a_clip(make_ldb2: Callable[..., bytes]) -> None:
-    # A clip poses the same geometry, so both its ends need the same correction as the rest pose.
+    # A clip poses the same geometry, and both its ends need the same correction as the rest pose.
     from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
     level = read_level2(
         make_ldb2(machines=(_ldb2_machine(),),
@@ -295,7 +295,7 @@ def test_read_level2_carries_the_midpoint_into_a_clip(make_ldb2: Callable[..., b
 
 
 def test_read_level2_keeps_the_times_a_curve_states(make_ldb2: Callable[..., bytes]) -> None:
-    # The second game states when each sample falls and rarely spaces them evenly, so assuming
+    # The second game states when each sample falls and rarely spaces them evenly, and assuming
     # even spacing paces every eased clip wrongly.
     from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
     clip = _ldb2_animation(times=(0.0, 0.75, 1.0), values=(0.0, 0.5, 1.0))

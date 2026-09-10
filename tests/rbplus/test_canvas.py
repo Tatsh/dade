@@ -160,7 +160,7 @@ def test_the_vector_surface_closes_a_group_that_raised() -> None:
     canvas = SVGCanvas(30, 30, _BACKGROUND)
     with pytest.raises(RuntimeError):
         _raise_while_drawing(canvas)
-    # The group is still closed, so the document parses.
+    # The group is still closed; the document parses.
     assert _svg_root(canvas.to_svg(scale=1.0, supersample=1)) is not None
 
 

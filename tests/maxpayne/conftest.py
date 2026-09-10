@@ -81,7 +81,7 @@ def make_ras() -> Callable[..., bytes]:
               terminate: bool = True,
               version: float = 1.2) -> bytes:
         stamp = _SYSTEMTIME if modified else bytes(16)
-        # Every member sits in the last directory unless the caller names one, which is how an
+        # Every member sits in the last directory unless the caller specifies one. That is how an
         # index the archive cannot honour gets written.
         named = len(directories) - 1 if directory is None else directory
         file_table = bytearray()
@@ -131,16 +131,16 @@ def _string(text: str) -> bytes:
 _IDENTITY = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
 
 _HALF_TURN = (-1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0)
-"""Half a turn about the up axis. Its trace is negative, which is the case a quaternion has to
+"""Half a turn about the up axis. Its trace is negative, the case a quaternion has to
 pivot on rather than take straight."""
 _REFLECTED = (-1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
-"""A left-handed basis, which no quaternion can hold on its own."""
+"""A left-handed basis that no quaternion can represent."""
 _TILT = (math.cos(math.radians(2)), 0.0, -math.sin(math.radians(2)), 0.0, 1.0, 0.0,
          math.sin(math.radians(2)), 0.0, math.cos(math.radians(2)))
 """Two degrees about the up axis: far enough to be worth a channel, close enough that walking the
 arc between the two rotations would divide by nearly zero."""
 _STRETCHED = (2.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
-"""Twice as wide, with no rotation. A clip ending here moves nothing a channel can carry."""
+"""Twice as wide, with no rotation. A clip ending here moves nothing a channel can express."""
 
 
 def _matrix(translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
@@ -178,7 +178,7 @@ def _placement_containers(characters: Sequence[tuple[str, str, tuple[float, floa
                           *,
                           corrupt: str = '') -> bytes:
     """
-    Write the containers the level keeps after its static meshes.
+    Write the containers the level stores after its static meshes.
 
     ``X_LevelDBExportLevel::vf00`` takes them in this order: static lights, start points, state
     machines, characters, triggers, animated props, then pickups.
@@ -192,7 +192,8 @@ def _placement_containers(characters: Sequence[tuple[str, str, tuple[float, floa
     props : bytes
         An encoded dynamic mesh container.
     corrupt : str
-        ``'placements'`` writes a count no level could hold, so the walk has to abandon the tail.
+        ``'placements'`` writes a count no level could produce, and the walk has to abandon the
+        tail.
 
     Returns
     -------
@@ -202,7 +203,7 @@ def _placement_containers(characters: Sequence[tuple[str, str, tuple[float, floa
     out = bytearray()
     if corrupt == 'placements':
         return bytes(_tag(0x02, struct.pack('<i', -1)))
-    # One static light, so the walk has to step over a matrix and ten floats to move on.
+    # One static light, and the walk has to step over a matrix and ten floats to move on.
     out += _object_container([
         _string('Light::0') + _placement() + _tag(0x19, struct.pack('<9f', *_IDENTITY)) +
         b''.join(_tag(0x09, struct.pack('<f', 0.5)) for _ in range(10))
@@ -226,7 +227,7 @@ def _placement_containers(characters: Sequence[tuple[str, str, tuple[float, floa
 
 def _exit_container(exits: Sequence[tuple[str, str, tuple[float, float, float]]]) -> bytes:
     """
-    Write the exits, which are what say how the rooms fit together.
+    Write the exits. They record how the rooms fit together.
 
     Parameters
     ----------
@@ -266,14 +267,14 @@ def _room_container(rooms: Sequence[tuple[int, Sequence[int], str]]) -> bytes:
     bytes
         Both encoded containers.
     """
-    # One static point light, so the walk has to step over a placement and six floats.
+    # One static point light, and the walk has to step over a placement and six floats.
     out = bytearray(_int(1) + _int(0) + _placement() + _tag(0x09, struct.pack('<f', 1.0)) * 6)
     out += _int(len(rooms))
     for key, ids, name in rooms:
         out += _int(key)
         out += _tag(0x1C) + _int(len(ids)) + b''.join(_int(i) for i in ids)
         for index in range(9):
-            # One array of names, so the reader's element-type peek is exercised both ways.
+            # One array of names, and the reader's element-type peek is exercised both ways.
             entries = (f'{name}::object',) if index == 3 else ()
             out += _tag(0x1C) + _int(len(entries)) + b''.join(_string(e) for e in entries)
         out += _string(name)
@@ -291,12 +292,12 @@ def _static_mesh_container(triangles: int,
                            layout: str = '',
                            corrupt: str = '') -> bytes:
     """
-    Build a static mesh container holding meshes of independent triangles.
+    Build a static mesh container with meshes of independent triangles.
 
     Parameters
     ----------
     triangles : int
-        Number of triangles per mesh. The container needs enough corners to be recognised, so keep
+        Number of triangles per mesh. The container needs enough corners to be recognised; use
         this comfortably above the reader's minimum.
     materials : collections.abc.Sequence[int]
         Material identifier per triangle, cycled if shorter than *triangles*.
@@ -307,10 +308,10 @@ def _static_mesh_container(triangles: int,
     extra : collections.abc.Sequence[int]
         Keys for the map of extra vectors that closes each face array.
     layout : str
-        ``'wind_back'`` stores a normal that opposes the corner order, so the exporter has to
+        ``'wind_back'`` stores a normal that opposes the corner order, and the exporter has to
         reverse each fan. ``'stacked'`` puts every triangle in one plane on top of the last instead
-        of one above the other, which is how a level lays graffiti and signage over a wall.
-        ``'collinear'`` puts every triangle's corners on one line, so no triangle says which way
+        of one above the other, the way a level places graffiti and signage over a wall.
+        ``'collinear'`` puts every triangle's corners on one line, and no triangle shows which way
         its face points.
     corrupt : str
         ``'faces'`` points the last face past the end of the corner array, ``'corners'`` points the
@@ -350,10 +351,10 @@ def _mesh_body(
     translation: tuple[float, float, float] = (0.0, 0.0, 0.0)) -> bytes:
     """One mesh's positions, normals, transform and faces, without its key."""
     corners = triangles * 3
-    # After the exporter's depth mirror each triangle's corners wind about +Y, so a +Y normal
-    # leaves the fan as written and a -Y one forces it to be reversed.
+    # After the exporter's depth mirror each triangle's corners wind about +Y. A +Y normal
+    # retains the fan as written and a -Y one forces it to be reversed.
     normal = (0.0, -1.0, 0.0) if layout == 'wind_back' else (0.0, 1.0, 0.0)
-    # A collinear face has no side to face, which is what the exporter's winding has to survive.
+    # A collinear face has no side to face. The exporter's winding has to survive that.
     corner = (((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (2.0, 0.0, 0.0)) if layout == 'collinear' else
               ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, 1.0)))
     out = bytearray(_int(corners))
@@ -407,7 +408,7 @@ def _dynamic_mesh_container(props: Sequence[tuple[str, tuple[float, float, float
                             spin: Sequence[float] = _IDENTITY,
                             samples: int = 2) -> bytes:
     """
-    Build the container holding the animated props.
+    Build the container with the animated props.
 
     Parameters
     ----------
@@ -420,8 +421,8 @@ def _dynamic_mesh_container(props: Sequence[tuple[str, tuple[float, float, float
     animations : int
         Animations attached to each prop.
     swing : tuple[float, float, float]
-        Where each clip ends, relative to where the prop starts. Leave it at the origin for a clip
-        that moves nothing, which the exporter drops.
+        Where each clip ends, relative to where the prop starts. Set it at the origin for a clip
+        that moves nothing. The exporter drops such a clip.
     spin : collections.abc.Sequence[float]
         The basis each clip ends on.
     samples : int
@@ -439,7 +440,7 @@ def _dynamic_mesh_container(props: Sequence[tuple[str, tuple[float, float, float
         out += _mesh_body(triangles, materials, translation=translation)
         out += _placement(name, translation)
         out += _int(animations)
-        # A clip's poses are absolute, not relative: the shipped door's start matrix carries the
+        # A clip's poses are absolute, not relative: the shipped door's start matrix has the
         # same translation as the prop's own placement.
         moved = (translation[0] + swing[0], translation[1] + swing[1], translation[2] + swing[2])
         for index in range(animations):
@@ -472,7 +473,7 @@ def bases() -> dict[str, Sequence[float]]:
 @pytest.fixture
 def make_mesh_container() -> Callable[..., bytes]:
     """
-    Build a static mesh container on its own.
+    Build a static mesh container by itself.
 
     Returns
     -------
@@ -554,7 +555,7 @@ def make_ldb() -> Callable[..., bytes]:
         for key, category, texture in materials:
             out += _tag(0x25) + _string(category) + _string(texture) + _int(key)
         if categories is None:
-            # A level's category table is what ties a material's name to an embedded image, so by
+            # A level's category table ties a material's name to an embedded image, and by
             # default give every material an entry naming the texture whose basename matches.
             by_base = {p.replace('\\', '/').rsplit('/', 1)[-1].lower(): p for p, _, _ in textures}
             categories = [(category, ((texture, by_base.get(texture.lower(), ''), ''),))
@@ -760,13 +761,13 @@ def _collision() -> bytes:
 
 
 def _volume_light() -> bytes:
-    """One light: a one-cell grid holding a single colour."""
+    """One light: a one-cell grid with a single colour."""
     return (_int(1) * 3 + _vec3(0.0, 0.0, 0.0) + _vec3(1.0, 1.0, 1.0) + _packed([1.0, 1.0, 1.0]))
 
 
 def _ldb2_machine(translation: tuple[float, float, float] = (0.0, 0.0, 0.0),
                   basis: Sequence[float] = _IDENTITY) -> bytes:
-    """One state machine, which is what places a prop."""
+    """One state machine. It places a prop."""
     return (_int(0) + _matrix(translation, basis) + _int(-1) + _matrix() + _int(0) + _int(0) +
             b'\x00' + _int(0) + _int(0) * 4 + _int(0))
 
@@ -781,10 +782,10 @@ def _ldb2_prop(
     midpoint: tuple[float, float, float] = (0.0, 0.0, 0.0),
     animations: Sequence[bytes] = ()
 ) -> bytes:
-    """One dynamic mesh, whose geometry is only written when the prefab rule says so.
+    """One dynamic mesh, whose geometry is only written when the prefab rule requires it.
 
-    `midpoint` is the mesh's own centre, which the mesh container writes ahead of its batches and
-    which says how far the geometry sits from the state machine placing it.
+    `midpoint` is the mesh's centre. The mesh container writes it ahead of its batches, and it
+    records how far the geometry sits from the state machine placing it.
     """
     out = _int(machine) + _bool(value=lightmapped) + _int(0) * 8 + _int(prefab)
     out += _bool(value=share) + _vec3(0.0, 0.0, 0.0) * 2 + _vec3(*midpoint)
@@ -801,9 +802,9 @@ def _ldb2_animation(points: int = 2,
                     values: Sequence[float] | None = None) -> bytes:
     """One clip: a length, two transforms, then a travelled curve and a turned one.
 
-    `placed` false writes a number where the start transform belongs, which is a clip that cannot
-    move anything and has to be dropped. `times` and `values` write a curve of a shape of their
-    own, which is how an eased clip is written.
+    `placed` false writes a number where the start transform belongs, a clip that cannot
+    move anything and has to be dropped. `times` and `values` write a curve of a chosen
+    shape, the way an eased clip is written.
     """
     out = _int(0) + _float(1.5) + (_matrix() if placed else _int(0)) + _matrix((1.0, 0.0, 0.0))
     when = list(times) if times is not None else [0.0, 1.0][:points]
@@ -819,10 +820,11 @@ def _ldb2_tail(machines: Sequence[bytes],
                *,
                populated: bool = False) -> bytes:
     """
-    Everything after the rooms, which a reader has to walk exactly to reach the props.
+    Everything after the rooms. A reader has to walk it exactly to arrive at the props.
 
-    Empty by default. `populated` puts one of each optional record in, so the walk has to step
-    over a fixed-width record, an exit naming a room, and a trigger carrying a collision shape.
+    Empty by default. `populated` puts one of each optional record in, and the walk has to step
+    over a fixed-width record, an exit that references a room, and a trigger with a collision
+    shape.
     """
     out = bytearray()
     out += _int(1) + _int(0) * 7 if populated else _int(0)  # Point lights.

@@ -103,8 +103,8 @@ def serial_pool(mocker: MockerFixture) -> Any:
     """
     Run the pipeline's process-pool work in the test process.
 
-    A worker process is invisible to the coverage run and to any patch installed here, so the pool
-    is replaced by one that maps in place. The functions it calls are unchanged.
+    A worker process is invisible to the coverage run and to any patch installed here. The pool
+    is therefore replaced by one that maps in place. The functions it calls are unchanged.
 
     Returns
     -------
@@ -212,7 +212,7 @@ def make_png() -> Callable[..., bytes]:
 @pytest.fixture
 def chart_bytes() -> bytes:
     """
-    Build a small chart holding one plain note, one free note, and a long note with its tail.
+    Build a small chart with one plain note, one free note, and a long note with its tail.
 
     Returns
     -------
@@ -256,7 +256,7 @@ def _package(path: Path,
 @pytest.fixture
 def tune_info() -> dict[str, object]:
     """
-    Build the metadata a tune package carries, as a copy that a test may change.
+    Build the metadata a tune package includes, as a copy that a test may change.
 
     Returns
     -------
@@ -286,13 +286,13 @@ def make_package(tmp_path: Path) -> Callable[..., Path]:
 @pytest.fixture
 def make_chart_file(tmp_path: Path, chart_bytes: bytes) -> Callable[..., Path]:
     """
-    Write one note chart into a file of its own, enciphered or not.
+    Write one note chart into a separate file, enciphered or not.
 
     Returns
     -------
     collections.abc.Callable[..., pathlib.Path]
         A callable taking a file name and the keyword arguments ``data``, ``decode_type``, ``iv``,
-        and ``key``. Passing ``decode_type=None`` leaves the chart deciphered.
+        and ``key``. Passing ``decode_type=None`` writes the chart deciphered.
     """
     def build(name: str = 'note_har',
               *,
@@ -345,7 +345,7 @@ def _asset_archive(path: Path,
     """
     Write an asset archive.
 
-    The entries are stored unencrypted, which every code path here treats identically: a password
+    The entries are stored unencrypted. Every code path here treats that identically: a password
     set on a :py:class:`zipfile.ZipFile` is ignored for an entry that does not need one, and the
     standard library cannot write ZipCrypto in any case.
     """
@@ -388,7 +388,7 @@ for arg in sys.argv[1:]:
     else:
         source = Path(arg)
 data = source.read_bytes()
-# The real tool leaves an ordinary PNG alone, writing nothing at all, which is the signal the
+# The real tool makes no edit to an ordinary PNG, writing nothing at all. That is the signal the
 # caller reads to tell a converted image from a copied one.
 if b'CgBI' in data[:32]:
     out.mkdir(parents=True, exist_ok=True)
@@ -407,7 +407,7 @@ destination.write_bytes(b'RIFF' + (len(source.read_bytes())).to_bytes(4, 'little
 
 
 def _stub_tool(directory: Path, name: str, body: str) -> Path:
-    """Write an executable stand-in for a native tool, so the subprocess path is really run."""
+    """Write an executable stand-in for a native tool, exercising the real subprocess path."""
     path = directory / name
     path.write_text(f'#!{sys.executable}\n{body}')
     path.chmod(0o755)
@@ -422,7 +422,7 @@ def pngdefry(tmp_path: Path) -> Path:
     Returns
     -------
     pathlib.Path
-        The stub, which rewrites an Apple-optimised PNG and ignores an ordinary one.
+        The stub. It rewrites an Apple-optimised PNG and ignores an ordinary one.
     """
     tools = tmp_path / 'tools'
     tools.mkdir(exist_ok=True)
@@ -437,7 +437,7 @@ def ffmpeg(tmp_path: Path) -> Path:
     Returns
     -------
     pathlib.Path
-        The stub, which writes a WAV header at the destination it is given.
+        The stub. It writes a WAV header at the destination it is given.
     """
     tools = tmp_path / 'tools'
     tools.mkdir(exist_ok=True)
@@ -447,12 +447,12 @@ def ffmpeg(tmp_path: Path) -> Path:
 @pytest.fixture
 def app_bundle(tmp_path: Path, tune_package: Path, make_png: Callable[..., bytes]) -> Path:
     """
-    Build a miniature ``.app`` bundle holding one of everything the pipeline converts.
+    Build a miniature ``.app`` bundle with one of everything the pipeline converts.
 
     Returns
     -------
     pathlib.Path
-        The directory holding ``Payload``.
+        The directory with ``Payload``.
     """
     root = tmp_path / 'download'
     bundle = root / 'Payload' / 'Rb.app'

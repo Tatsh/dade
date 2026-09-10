@@ -49,8 +49,8 @@ def test_unpack_converts_a_bundle(runner: CliRunner, app_bundle: Path, tmp_path:
 
 def test_unpack_reports_a_missing_tool(runner: CliRunner, app_bundle: Path, tmp_path: Path,
                                        monkeypatch: pytest.MonkeyPatch) -> None:
-    # An empty PATH is how the tool really goes missing, which avoids patching a name the command
-    # module and the Click command inside it both answer to.
+    # An empty PATH is how the tool really goes missing. It avoids patching a name the command
+    # module and the Click command inside it both respond to.
     monkeypatch.setenv('PATH', '')
     result = runner.invoke(rbplus, ('unpack', str(app_bundle), '-o', str(tmp_path / 'out')))
     assert result.exit_code == 1

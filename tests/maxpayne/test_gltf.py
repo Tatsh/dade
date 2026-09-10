@@ -52,7 +52,7 @@ def test_build_glb_writes_one_node_per_placed_mesh(make_ldb: Callable[..., bytes
 
 
 def test_build_glb_places_architecture_by_its_room(make_ldb: Callable[..., bytes]) -> None:
-    # A room reached through an exit is moved by that exit's transform, and so is its mesh.
+    # A room entered through an exit is moved by that exit's transform, and so is its mesh.
     document, _ = _parse(
         build_glb(
             read_level(
@@ -153,13 +153,13 @@ def test_build_glb_skips_faces_the_engine_does_not_draw(make_ldb: Callable[..., 
         make_ldb(materials=((7, 'dummy', 'A.TGA'), (9, 'charactercollision_nodraw', 'B.TGA')),
                  placements=False))
     document, _ = _parse(build_glb(hidden))
-    # Every face is hidden, so the mesh path adds nothing and the BSP fallback takes over.
+    # Every face is hidden, and the mesh path adds nothing and the BSP fallback takes over.
     assert len(document['nodes']) == 1
     assert 'matrix' not in document['nodes'][0]
 
 
 def test_build_glb_writes_the_sky_flat(make_ldb: Callable[..., bytes]) -> None:
-    # Skybox faces close a level off where it opens to the sky, so dropping them puts a hole
+    # Skybox faces close a level off where it opens to the sky, and dropping them puts a hole
     # through it. They are drawn with one flat emissive colour instead of their placeholder image.
     document, _ = _parse(
         build_glb(
@@ -181,7 +181,7 @@ def test_build_glb_falls_back_to_the_bsp_faces(make_ldb: Callable[..., bytes]) -
 
 
 def test_build_glb_draws_a_face_whose_material_is_missing(make_ldb: Callable[..., bytes]) -> None:
-    # Nothing says the face is hidden, so an unknown identifier has to draw rather than vanish.
+    # Nothing marks the face as hidden, and an unknown identifier has to draw rather than vanish.
     document, _ = _parse(build_glb(read_level(make_ldb(face_materials=(7, 99)))))
     assert len(document['meshes'][0]['primitives']) == 2
 
@@ -205,7 +205,7 @@ def test_build_glb_reverses_a_fan_that_faces_the_wrong_way(make_ldb: Callable[..
 def test_build_glb_drops_a_mesh_whose_face_runs_past_the_corners(
         make_ldb: Callable[..., bytes]) -> None:
     document, _ = _parse(build_glb(read_level(make_ldb(corrupt='faces', placements=False))))
-    # The mesh is abandoned, so only the BSP fallback node survives.
+    # The mesh is abandoned, and only the BSP fallback node survives.
     assert len(document['nodes']) == 1
     assert 'matrix' not in document['nodes'][0]
 
@@ -260,7 +260,7 @@ def _masked(**kwargs: object) -> dict[str, object]:
 
 
 def test_build_glb_cuts_out_a_masked_material(make_ldb: Callable[..., bytes]) -> None:
-    # A mask that is only ever black or white is a cut-out, so it alpha-tests rather than blends.
+    # A mask that is only ever black or white is a cut-out, and it alpha-tests rather than blends.
     level = read_level(
         make_ldb(**_masked(textures=(('X:\\plant.png', 0, _png((4, 4), (20, 200, 20))),
                                      ('X:\\plant_alpha.png', 0, _gray((4, 4), 255))))))
@@ -425,7 +425,7 @@ def test_build_glb_animates_a_prop(make_ldb: Callable[..., bytes]) -> None:
     assert [c['target']['path'] for c in clip['channels']] == ['translation']
     node = document['nodes'][clip['channels'][0]['target']['node']]
     assert node['name'] == '::room::door.DO'
-    # A node carrying a matrix cannot be animated, so an animated prop is written as separate
+    # A node with a matrix cannot be animated, and an animated prop is written as separate
     # translation, rotation and scale.
     assert 'matrix' not in node
     assert node['translation'] == [7, 8, -9]
@@ -472,7 +472,7 @@ def test_build_glb_times_a_clip_over_its_duration(make_ldb: Callable[..., bytes]
 
 
 def test_build_glb_leaves_a_still_prop_on_a_matrix(make_ldb: Callable[..., bytes]) -> None:
-    # A clip whose two poses are the same moves nothing, so it is not worth a glTF animation.
+    # A clip whose two poses are the same moves nothing and is not worth a glTF animation.
     document, _ = _parse(build_glb(read_level(make_ldb())))
     assert 'animations' not in document
     node = next(n for n in document['nodes'] if n['name'] == '::room::door.DO')
@@ -494,7 +494,7 @@ def test_build_glb_turns_a_prop_about_its_axis(make_ldb: Callable[..., bytes],
 
 def test_build_glb_walks_a_wide_turn_along_its_arc(make_ldb: Callable[..., bytes],
                                                    bases: dict[str, Any]) -> None:
-    # Halfway through half a turn is a quarter turn, which straight interpolation would not give.
+    # Halfway through half a turn is a quarter turn. Straight interpolation would not give that.
     document, binary = _parse(
         build_glb(read_level(make_ldb(motion=((0.0, 1.0, 0.0), bases['half_turn'], 3)))))
     clip = _clip(document, 'clip0')
@@ -505,7 +505,7 @@ def test_build_glb_walks_a_wide_turn_along_its_arc(make_ldb: Callable[..., bytes
 
 def test_build_glb_keeps_a_reflected_prop_placed(make_ldb: Callable[..., bytes],
                                                  bases: dict[str, Any]) -> None:
-    # A left-handed basis is no rotation at all, so it has to survive as a negative scale.
+    # A left-handed basis is no rotation at all, and it has to survive as a negative scale.
     document, _ = _parse(
         build_glb(read_level(make_ldb(motion=((0.0, 1.0, 0.0), bases['reflected'], 2)))))
     clip = _clip(document, 'clip0')
@@ -514,7 +514,7 @@ def test_build_glb_keeps_a_reflected_prop_placed(make_ldb: Callable[..., bytes],
 
 
 def test_build_glb_thins_a_long_curve(make_ldb: Callable[..., bytes]) -> None:
-    # A shipped door carries 256 samples of a smooth ease; the motion does not need them.
+    # A shipped door has 256 samples of a smooth ease; the motion does not need them.
     document, binary = _parse(build_glb(read_level(make_ldb(motion=(_SWING[0], _SWING[1], 50)))))
     clip = _clip(document, 'clip0')
     times = _sampler_values(document, binary, clip['samplers'][0]['input'], 1)
@@ -535,7 +535,7 @@ def test_build_glb_walks_a_small_turn_straight(make_ldb: Callable[..., bytes],
 
 def test_build_glb_settles_a_prop_whose_clips_drive_nothing(make_ldb: Callable[..., bytes],
                                                             bases: dict[str, Any]) -> None:
-    # The prop ends somewhere else, but only in size, which no channel carries.
+    # The prop ends somewhere else, but only in size, and no channel expresses that.
     document, _ = _parse(
         build_glb(read_level(make_ldb(motion=((0.0, 0.0, 0.0), bases['stretched'], 2)))))
     assert 'animations' not in document
@@ -575,7 +575,7 @@ def test_build_glb_shares_one_atlas_between_materials(make_ldb: Callable[..., by
 
 
 def test_build_glb_without_an_atlas_for_a_face(make_ldb: Callable[..., bytes]) -> None:
-    # The face names atlas nought but the level ships none, so nothing is attached.
+    # The face references atlas nought but the level ships none, and nothing is attached.
     document, _ = _parse(build_glb(read_level(make_ldb())))
     assert not any('occlusionTexture' in m for m in document['materials'])
 
@@ -586,8 +586,8 @@ def test_build_glb_skips_an_undecodable_atlas(make_ldb: Callable[..., bytes]) ->
 
 
 def test_build_glb_lifts_a_face_off_the_one_it_covers(make_ldb: Callable[..., bytes]) -> None:
-    # The triangles lie in one plane over the same ground, the way a level lays graffiti on a
-    # wall, and draw with different materials, so one has to come off the other or a depth buffer
+    # The triangles lie in one plane over the same ground, the way a level places graffiti on a
+    # wall, and draw with different materials. One has to come off the other or a depth buffer
     # cannot tell which is in front.
     document, binary = _parse(
         build_glb(read_level(make_ldb(face_materials=(7, 9), layout='stacked'))))
@@ -596,7 +596,7 @@ def test_build_glb_lifts_a_face_off_the_one_it_covers(make_ldb: Callable[..., by
         raw = _accessor_bytes(document, binary, primitive['attributes']['POSITION'])
         heights.update(
             struct.unpack_from('<3f', raw, corner * 12)[1] for corner in range(len(raw) // 12))
-    # One face keeps the plane and each face laid over it rises another step.
+    # One face stays on the plane and each face placed over it rises another step.
     assert sorted(heights)[:3] == pytest.approx([0.0, DECAL_STEP, 2 * DECAL_STEP])
 
 
@@ -619,8 +619,8 @@ def test_build_glb_shares_one_sky_between_materials(make_ldb: Callable[..., byte
 
 
 def test_build_glb_keeps_a_face_with_no_side_as_written(make_ldb: Callable[..., bytes]) -> None:
-    # Every corner is on one line, so nothing in the fan says which way the face points and the
-    # exporter has to leave the order alone rather than read a direction out of noise.
+    # Every corner is on one line, and nothing in the fan shows which way the face points. The
+    # exporter has to preserve the order rather than read a direction out of noise.
     document, binary = _parse(build_glb(read_level(make_ldb(layout='collinear'))))
     indices = document['meshes'][0]['primitives'][0]['indices']
     raw = _accessor_bytes(document, binary, indices)
@@ -629,8 +629,8 @@ def test_build_glb_keeps_a_face_with_no_side_as_written(make_ldb: Callable[..., 
 
 def test_build_glb_believes_a_level_that_states_its_own_decals(
         make_ldb: Callable[..., bytes]) -> None:
-    # A level that says which of its surfaces sit over others is taken at its word rather than
-    # measured, because working it out from the geometry separates ordinary neighbouring tiles.
+    # A level that states which of its surfaces sit over others is taken at its word rather than
+    # measured. Working it out from the geometry separates ordinary neighbouring tiles.
     level = read_level(make_ldb(face_materials=(7,), layout='stacked'))
     stated = level._replace(
         materials={
@@ -648,7 +648,7 @@ def test_build_glb_believes_a_level_that_states_its_own_decals(
 def test_build_glb_paces_a_clip_by_the_times_the_curve_states(
         make_ldb2: Callable[..., bytes]) -> None:
     # The second game states when each of a curve's samples falls. This one is half way along at
-    # three quarters of the clip, so pacing it evenly would have it half way at half the clip.
+    # three quarters of the clip, and pacing it evenly would have it half way at half the clip.
     from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
     clip = _ldb2_animation(times=(0.0, 0.75, 1.0), values=(0.0, 0.5, 1.0))
     level = read_level2(
@@ -659,7 +659,7 @@ def test_build_glb_paces_a_clip_by_the_times_the_curve_states(
     times = [t[0] for t in _sampler_values(document, binary, sampler['input'], 1)]
     travel = [v[0] for v in _sampler_values(document, binary, sampler['output'], 3)]
     assert times[-1] == pytest.approx(1.5)
-    # The clip runs 1.5 seconds, so three quarters of the way along is 1.125.
+    # The clip runs 1.5 seconds, and three quarters of the way along is 1.125.
     assert _at(times, travel, 1.125) == pytest.approx(0.5, abs=0.02)
     assert _at(times, travel, 0.75) < 0.4
 

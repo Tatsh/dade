@@ -318,7 +318,7 @@ def test_a_file_that_cannot_be_read_is_not_taken_for_an_executable(app_bundle: P
         stats = unpack(app_bundle, tmp_path / 'out', workers=1)
     finally:
         unreadable.chmod(0o644)
-    # It is not recognised as a Mach-O, so it is copied like any other file, and the copy fails
+    # It is not recognised as a Mach-O and is copied like any other file, and the copy fails
     # because it still cannot be read.
     assert stats[Action.COPY].fail == 1
 

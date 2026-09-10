@@ -38,7 +38,7 @@ def test_layer_faces_leaves_two_halves_of_one_surface_alone() -> None:
 
 
 def test_layer_faces_ignores_faces_that_only_meet_along_an_edge() -> None:
-    # Architecture is tiled, so neighbouring wall panels share a seam and nothing more.
+    # Architecture is tiled, and neighbouring wall panels share a seam and nothing more.
     right = ((8.0, 0.0, 0.0), (16.0, 0.0, 0.0), (16.0, 0.0, 8.0), (8.0, 0.0, 8.0))
     assert layer_faces([(_UP, _FLOOR, _BOARDS), (_UP, right, _WOOL)]) == [0, 0]
 
@@ -49,7 +49,7 @@ def test_layer_faces_ignores_a_face_on_a_different_plane() -> None:
 
 
 def test_layer_faces_ignores_a_face_turned_the_other_way() -> None:
-    # A viewer never sees both sides of one surface at once, so back to back is not a clash.
+    # A viewer never sees both sides of one surface at once, and back to back is not a clash.
     assert layer_faces([(_UP, _FLOOR, _BOARDS), ((0.0, -1.0, 0.0), _RUG, _WOOL)]) == [0, 0]
 
 

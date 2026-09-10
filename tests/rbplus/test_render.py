@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 def _histogram(path: Path) -> list[tuple[int, tuple[int, int, int]]]:
-    # Pillow types getcolors() loosely, since it answers differently by mode; converting to RGB
+    # Pillow types getcolors() loosely; it responds differently by mode. Converting to RGB
     # first makes every entry a count against an RGB triple.
     with Image.open(path) as image:
         return cast('list[tuple[int, tuple[int, int, int]]]',
@@ -38,11 +38,11 @@ def _histogram(path: Path) -> list[tuple[int, tuple[int, int, int]]]:
 
 def _count(path: Path, wanted: tuple[int, int, int]) -> int:
     """
-    Count the pixels of one colour an image holds.
+    Count the pixels of one colour an image has.
 
-    Every image carries the legend, which draws one of each mark, so a colour is never absent
-    outright. Counting instead of looking tells a mark in the chart from the same mark in the
-    legend.
+    Every image includes the legend. The legend draws one of each mark, and a colour is never
+    absent outright. Counting instead of looking tells a mark in the chart from the same mark in
+    the legend.
     """
     return sum(count for count, color in _histogram(path) if color == wanted)
 
@@ -52,7 +52,7 @@ def _near(path: Path, wanted: tuple[int, int, int], within: int = 24) -> int:
     Count the pixels close to one colour.
 
     A mark drawn over only part of a note is small enough that the reduction to the final size
-    leaves no pixel holding the colour exactly, so nearness is counted instead.
+    produces no pixel of the colour exactly, and nearness is counted instead.
     """
     return sum(count for count, color in _histogram(path) if all(
         abs(a - b) <= within for a, b in zip(color, wanted, strict=True)))
@@ -68,7 +68,7 @@ def test_a_chart_renders(tmp_path: Path, chart_bytes: bytes) -> None:
 
 def _baseline(tmp_path: Path, make_chart: Callable[..., bytes], wanted: tuple[int, int,
                                                                               int]) -> int:
-    """Count the pixels of one colour an empty chart carries, which is the legend's own."""
+    """Count the pixels of one colour an empty chart has, the legend's mark."""
     out = tmp_path / 'baseline.png'
     render_chart_image(parse_chart(make_chart()), out)
     return _count(out, wanted)
@@ -86,7 +86,7 @@ def test_an_ordinary_note_takes_its_side_colour(tmp_path: Path, make_chart: Call
 @pytest.mark.parametrize('tone', [0, 1, 2])
 def test_an_alternative_target_is_green(tmp_path: Path, make_chart: Callable[..., bytes],
                                         make_note: Callable[..., bytes], tone: int) -> None:
-    # A note aiming at a named target reaches it as its colour tone plus the seven lanes, so tones
+    # A note aiming at a named target arrives at it as its colour tone plus the seven lanes. Tones
     # zero to two are the three alternative targets.
     out = tmp_path / 'chart.png'
     note = make_note(hold_kind=1, target=(0, tone, 0, 0))
@@ -96,7 +96,7 @@ def test_an_alternative_target_is_green(tmp_path: Path, make_chart: Callable[...
 
 
 def _green_columns(path: Path) -> set[int]:
-    """Which columns of an image carry a green pixel."""
+    """Which columns of an image include a green pixel."""
     with Image.open(path) as image:
         pixels = image.convert('RGB').load()
         assert pixels is not None
@@ -111,8 +111,8 @@ def _green_columns(path: Path) -> set[int]:
 def test_the_alternative_targets_run_right_to_left(tmp_path: Path, make_chart: Callable[..., bytes],
                                                    make_note: Callable[..., bytes]) -> None:
     # The game puts the pink side's three objects left, middle, and right, and the route selectors
-    # name them in the opposite order, so a higher tone is drawn further left. The legend draws a
-    # green mark of its own at a fixed place, so it is measured once and taken back out.
+    # number them in the opposite order, and a higher tone is drawn further left. The legend draws
+    # a green mark at a fixed place, and it is measured once and taken back out.
     empty = tmp_path / 'empty.png'
     render_chart_image(parse_chart(make_chart()), empty, seed=0)
     legend = _green_columns(empty)
@@ -145,7 +145,7 @@ def test_a_hold_note_extends_to_its_end(tmp_path: Path, make_chart: Callable[...
 
 def test_a_note_that_is_not_a_hold_draws_no_bar(tmp_path: Path, make_chart: Callable[..., bytes],
                                                 make_note: Callable[..., bytes]) -> None:
-    # A non-hold note carries a zero first target coordinate, so nothing extends from it.
+    # A non-hold note has a zero first target coordinate, and nothing extends from it.
     plain = make_note(target=(0, 0, 0, 0))
     held = make_note(note_type=HOLD_NOTE_TYPE, target=(4000, 0, 0, 0))
 
@@ -178,7 +178,7 @@ def _pair(make_note: Callable[..., bytes],
 
 
 def _loose(make_note: Callable[..., bytes]) -> tuple[bytes, bytes]:
-    """Build the same two notes carrying no chain block, so neither follows the other."""
+    """Build the same two notes with no chain block, and neither follows the other."""
     return (make_note(note_id=1, spawn_time=0,
                       travel_time=0), make_note(note_id=2, spawn_time=1000, travel_time=0))
 
@@ -198,13 +198,13 @@ def test_a_chain_of_one_is_not_a_chain(tmp_path: Path, make_chart: Callable[...,
     pair = tmp_path / 'pair.png'
     render_chart_image(parse_chart(make_chart(notes=(make_note(travel_time=0),))), alone, seed=0)
     render_chart_image(parse_chart(make_chart(notes=_pair(make_note))), pair, seed=0)
-    # A chain joins its notes, so it puts a line on the page that a lone note does not.
+    # A chain joins its notes and puts a line on the page that a lone note does not.
     assert _count(pair, NOTE_COLORS[0]) > _count(alone, NOTE_COLORS[0])
 
 
 def test_an_unlinked_pair_is_two_chains_of_one(tmp_path: Path, make_chart: Callable[..., bytes],
                                                make_note: Callable[..., bytes]) -> None:
-    # A chain is the note's own linked list, so two notes that name each other are one chain and
+    # A chain is the note's linked list, and two notes that reference each other are one chain and
     # two that name nothing are not.
     split = tmp_path / 'split.png'
     together = tmp_path / 'together.png'
@@ -234,7 +234,7 @@ def test_a_chain_crossing_a_column_is_not_joined(tmp_path: Path, make_chart: Cal
 def test_a_chain_whose_note_is_off_the_image_is_left_out(tmp_path: Path,
                                                          make_chart: Callable[..., bytes],
                                                          make_note: Callable[..., bytes]) -> None:
-    # The second note sits on the far column boundary, which falls outside every column.
+    # The second note sits on the far column boundary. It falls outside every column.
     notes = _pair(make_note, first=0, second=30_000)
     chart = parse_chart(make_chart(notes=notes, end_time=0))
     assert render_chart_image(chart, tmp_path / 'chart.png', seconds_per_column=30)[0] > 0
@@ -242,7 +242,7 @@ def test_a_chain_whose_note_is_off_the_image_is_left_out(tmp_path: Path,
 
 def test_a_free_note_is_drawn(tmp_path: Path, make_chart: Callable[..., bytes],
                               make_note: Callable[..., bytes]) -> None:
-    # A free note belongs to no chain but is still struck, so it is drawn like any other.
+    # A free note belongs to no chain but is still struck and is drawn like any other.
     free = tmp_path / 'free.png'
     empty = tmp_path / 'empty.png'
     render_chart_image(parse_chart(make_chart(notes=(make_note(start_time=-1),))), free)
@@ -253,7 +253,7 @@ def test_a_free_note_is_drawn(tmp_path: Path, make_chart: Callable[..., bytes],
 def test_notes_struck_together_take_neighbouring_lanes(tmp_path: Path, make_chart: Callable[...,
                                                                                             bytes],
                                                        make_note: Callable[..., bytes]) -> None:
-    # Two notes on one side at one moment cannot share a lane, so the picture is wider than one.
+    # Two notes on one side at one moment cannot share a lane, and the picture is wider than one.
     both = tmp_path / 'both.png'
     apart = tmp_path / 'apart.png'
     together = (make_note(start_time=-1, kind=0,
@@ -267,7 +267,7 @@ def test_notes_struck_together_take_neighbouring_lanes(tmp_path: Path, make_char
 
 def test_a_hold_is_pinned_to_its_colour_tone_lane(tmp_path: Path, make_chart: Callable[..., bytes],
                                                   make_note: Callable[..., bytes]) -> None:
-    # A hold takes the lane its colour tone names, whatever the seed, so two seeds agree on it.
+    # A hold takes the lane its colour tone identifies, whatever the seed, and two seeds agree.
     notes = (make_note(start_time=3, hold_kind=HOLD_HEAD_KIND, target=(0, 2, 0, 0), travel_time=0),)
     first = tmp_path / 'first.png'
     second = tmp_path / 'second.png'
@@ -278,7 +278,7 @@ def test_a_hold_is_pinned_to_its_colour_tone_lane(tmp_path: Path, make_chart: Ca
 
 def test_an_aimed_note_ignores_the_seed(tmp_path: Path, make_chart: Callable[..., bytes],
                                         make_note: Callable[..., bytes]) -> None:
-    # A note naming its own target is not one the tracker places, so no seed moves it.
+    # A note aimed at its target is not one the tracker places, and no seed moves it.
     notes = (make_note(hold_kind=1, target=(0, 1, 0, 0), travel_time=0),)
     first = tmp_path / 'first.png'
     second = tmp_path / 'second.png'
@@ -292,7 +292,7 @@ def test_a_tone_naming_no_lane_leaves_the_note_free(tmp_path: Path, make_chart: 
                                                                                          bytes],
                                                     make_note: Callable[...,
                                                                         bytes], tone: int) -> None:
-    # A colour tone outside the field pins nothing, so the seed picks the lane as usual.
+    # A colour tone outside the field pins nothing, and the seed picks the lane as usual.
     notes = (make_note(start_time=3,
                        hold_kind=HOLD_HEAD_KIND,
                        target=(0, tone, 0, 0),
@@ -323,8 +323,8 @@ def test_the_seed_changes_the_layout(tmp_path: Path, make_chart: Callable[..., b
 def test_a_chart_wider_than_the_field_still_lays_out(tmp_path: Path, make_chart: Callable[...,
                                                                                           bytes],
                                                      make_note: Callable[..., bytes]) -> None:
-    # More notes struck at one moment than the field has lanes, which no chart should hold but the
-    # layout must survive.
+    # More notes struck at one moment than the field has lanes. No chart should do this, but the
+    # layout must survive it.
     notes = tuple(
         make_note(start_time=3, kind=index, travel_time=0) for index in range(LANE_COUNT + 3))
     out = tmp_path / 'chart.png'
@@ -340,7 +340,7 @@ def test_the_header_text_is_drawn(tmp_path: Path, chart_bytes: bytes) -> None:
                                 difficulty='basic',
                                 level=7,
                                 title='Title')
-    # The header block is a fixed height, so adding text does not change the canvas.
+    # The header block is a fixed height, and adding text does not change the canvas.
     assert plain == titled
 
 
@@ -361,7 +361,7 @@ def test_an_end_time_past_the_last_note_adds_no_column(tmp_path: Path, make_char
                                                                                             bytes],
                                                        make_note: Callable[..., bytes]) -> None:
     # The image covers the notes, not the clock. A chart whose end time falls a long way past its
-    # last note used to be drawn out to that time, which left a column of nothing at the end.
+    # last note used to be drawn out to that time. A column of nothing then sat at the end.
     notes = (make_note(spawn_time=0, travel_time=1000),)
     near = parse_chart(make_chart(notes=notes, end_time=2000))
     far = parse_chart(make_chart(notes=notes, end_time=300_000))
@@ -371,7 +371,7 @@ def test_an_end_time_past_the_last_note_adds_no_column(tmp_path: Path, make_char
 
 def test_a_hold_reaching_past_its_note_is_covered(tmp_path: Path, make_chart: Callable[..., bytes],
                                                   make_note: Callable[..., bytes]) -> None:
-    # A hold runs on from the note that starts it, so the image has to reach the release rather
+    # A hold runs on from the note that starts it, and the image must extend to the release rather
     # than the strike.
     brief = parse_chart(make_chart(notes=(make_note(spawn_time=0, travel_time=1000),)))
     held = parse_chart(
@@ -417,7 +417,7 @@ def test_a_note_beyond_the_last_column_is_dropped(tmp_path: Path, make_chart: Ca
 def test_a_note_on_the_far_column_boundary_is_dropped(tmp_path: Path, make_chart: Callable[...,
                                                                                            bytes],
                                                       make_note: Callable[..., bytes]) -> None:
-    # The span is exactly one column wide, so a note at its far edge falls into a column that does
+    # The span is exactly one column wide. A note at its far edge falls into a column that does
     # not exist and is skipped rather than drawn off the canvas.
     chart = parse_chart(
         make_chart(notes=(make_note(spawn_time=0,
@@ -441,7 +441,7 @@ def test_a_slot_beyond_the_bar_is_drawn_in_the_first(tmp_path: Path, make_chart:
 
 
 def _gold_baseline(tmp_path: Path, make_chart: Callable[..., bytes]) -> int:
-    """Count the gold an empty chart carries, which is the legend's own mark."""
+    """Count the gold an empty chart has, the legend's mark."""
     out = tmp_path / 'gold-base.png'
     render_chart_image(parse_chart(make_chart()), out, seed=0)
     return _near(out, SIDE_OBJECT_COLOR)
@@ -457,8 +457,8 @@ def test_a_note_that_travels_across_is_gold(tmp_path: Path, make_chart: Callable
 
 def test_a_note_that_travels_keeps_its_side_colour(tmp_path: Path, make_chart: Callable[..., bytes],
                                                    make_note: Callable[..., bytes]) -> None:
-    # Only half the note is gold, so it still says whose it is. Half a disc is small enough that the
-    # reduction leaves no pixel holding either colour exactly, so both are counted by nearness.
+    # Only half the note is gold, and it still shows whose it is. Half a disc is small enough that
+    # the reduction produces no pixel of either colour exactly, and both are counted by nearness.
     out = tmp_path / 'chart.png'
     empty = tmp_path / 'empty.png'
     note = make_note(flags=SIDE_OBJECT_FLAG, path_points=(0,), travel_time=0)
@@ -482,7 +482,7 @@ def test_the_speed_modifier_spreads_the_notes(tmp_path: Path, make_chart: Callab
     chart = parse_chart(make_chart(notes=(make_note(travel_time=0),)))
     plain = render_chart_image(chart, tmp_path / 'plain.png', seed=0)
     faster = render_chart_image(chart, tmp_path / 'fast.png', seed=0, speed=speed)
-    # A column holds the same span of time either way, so only the height grows.
+    # A column spans the same time either way, and only the height grows.
     assert faster[0] == plain[0]
     assert faster[1] >= plain[1]
     assert (faster[1] > plain[1]) == (speed > DEFAULT_SPEED)
@@ -513,14 +513,14 @@ def _pixels_of(path: Path, wanted: tuple[int, int, int]) -> set[tuple[int, int]]
 def test_a_hold_keeps_its_lane_until_released(tmp_path: Path, make_chart: Callable[..., bytes],
                                               make_note: Callable[..., bytes], seed: int) -> None:
     # A note struck while a hold is still running may not be put in the hold's lane. The hold's body
-    # is drawn in a colour nothing else uses, so it says where the hold's lane is; between the
-    # hold's own two ends the only note-coloured mark is the other note.
+    # is drawn in a colour nothing else uses and marks where the hold's lane is; between the
+    # hold's two ends the only note-coloured mark is the other note.
     out = tmp_path / f'chart{seed}.png'
     notes = (make_note(note_id=1, note_type=HOLD_NOTE_TYPE, target=(4000, 0, 0, 0),
                        travel_time=0), make_note(note_id=2, spawn_time=1000, travel_time=0))
     render_chart_image(parse_chart(make_chart(notes=notes)), out, seed=seed)
     drawn = _pixels_of(out, NOTE_COLORS[0])
-    # The hold's bar is a tall run in one column, so the columns holding the most of it are its
+    # The hold's bar is a tall run in one column, and the columns with the most of it are its
     # lane; every other mark is the note struck while it runs.
     per_column = Counter(x for x, _ in drawn)
     tallest = max(per_column.values())
@@ -543,7 +543,7 @@ def test_a_modern_chart_reads_its_route_through_the_remap(tmp_path: Path,
                                                           make_note: Callable[..., bytes],
                                                           tone: int, *, pinned: bool) -> None:
     # Only a chart past version twelve takes the remap. A tone the remap sends into the seven lanes
-    # pins the note there; the two swapped markers and a tone naming no lane leave it to the seed.
+    # pins the note there; the two swapped markers and a tone with no lane hand it to the seed.
     chart = parse_chart(
         make_chart(notes=(make_note(target=(0, tone, 0, 0), travel_time=0),), version=_MODERN))
     places = set(_lane_positions(chart, tmp_path, seeds=tuple(range(12))))
@@ -563,7 +563,8 @@ def _lane_positions(chart: object, tmp_path: Path, seeds: tuple[int, ...]) -> li
 
 def test_a_note_naming_a_lane_ignores_the_seed(tmp_path: Path, make_chart: Callable[..., bytes],
                                                make_note: Callable[..., bytes]) -> None:
-    # A selector naming one of the seven lanes comes straight down into it, so no seed moves it.
+    # A selector identifying one of the seven lanes comes straight down into it, and no seed moves
+    # it.
     chart = parse_chart(
         make_chart(notes=(make_note(target=(0, 2, 0, 0), travel_time=0),), version=_MODERN))
     first, second = _lane_positions(chart, tmp_path, seeds=(1, 999))
@@ -608,9 +609,9 @@ def test_a_slide_leg_across_two_columns_is_not_drawn(tmp_path: Path, make_chart:
                                                                                           bytes],
                                                      make_note: Callable[..., bytes],
                                                      make_slide: Callable[..., bytes]) -> None:
-    # One column holds thirty seconds, and the late note is what makes there be a second one for
-    # the far waypoint to land in. Its leg would have to run between the two columns, so it is left
-    # out.
+    # One column spans thirty seconds, and the late note is what makes there be a second one for
+    # the far waypoint to land in. Its leg would have to run between the two columns, and it is
+    # omitted.
     out = tmp_path / 'chart.png'
     base = tmp_path / 'base.png'
     notes = (make_note(note_type=SLIDE_NOTE_TYPE, target=(0, 6, 0, 0),
@@ -623,5 +624,5 @@ def test_a_slide_leg_across_two_columns_is_not_drawn(tmp_path: Path, make_chart:
                            path,
                            seconds_per_column=30,
                            seed=0)
-    # The far waypoint leaves neither a leg nor a dot behind, while the near one draws both.
+    # The far waypoint draws neither a leg nor a dot, while the near one draws both.
     assert _count(out, SLIDE_COLOR) < _count(base, SLIDE_COLOR)

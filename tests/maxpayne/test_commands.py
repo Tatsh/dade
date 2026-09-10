@@ -213,7 +213,7 @@ def test_iter_archives_unshields_a_cabinet_on_an_image(tmp_path: Path, mocker: M
     image.write_bytes(b'not a ras')
     labels = [label for label, _ in iter_archives(image)]
     assert labels == ['DISK1/LEVELS/X_LEVEL1.RAS', 'x_data.ras']
-    # The parts are staged under one casing, because a cabinet split across two discs can
+    # The parts are staged under one casing. A cabinet split across two discs can
     # arrive with the names spelled either way and unshield has to find them all.
     assert staged['siblings'] == ['data1.cab', 'data1.hdr', 'data2.cab']
 
@@ -359,7 +359,7 @@ def test_ldb_textures_aborts_on_a_bad_level(runner: CliRunner, tmp_path: Path) -
 
 def test_ras_extract_refuses_to_write_outside_the_output_directory(
         runner: CliRunner, tmp_path: Path, make_ras: Callable[..., bytes]) -> None:
-    # An archive names its own member paths, and nothing stops one naming its way back out.
+    # An archive specifies its member paths, and nothing stops one pointing its way back out.
     archive = tmp_path / 'x_data.ras'
     archive.write_bytes(make_ras(directories=('\\', '\\..\\..\\')))
     out = tmp_path / 'out'
@@ -376,7 +376,7 @@ def test_ldb_textures_refuses_a_path_that_climbs_out(runner: CliRunner, tmp_path
     out = tmp_path / 'tex'
     result = runner.invoke(ldb_textures, (str(level), '-o', str(out)))
     assert result.exit_code == 0
-    # The upward steps are dropped, so the image lands directly under the output directory.
+    # The upward steps are dropped, and the image lands directly under the output directory.
     assert (out / 'WALL.TGA').read_bytes() == b'\x00\x01'
     assert not (tmp_path.parent / 'WALL.TGA').exists()
 
@@ -408,7 +408,7 @@ def test_iter_archives_stages_a_cabinet_split_across_two_discs(
         disc.write_bytes(b'not a ras')
     labels = [label for label, _ in iter_archives(first, second)]
     assert labels == ['LEVELS/X_LEVEL1.RAS', 'mp2_data.ras']
-    # One cabinet, unpacked once, holding every part both discs carried.
+    # One cabinet, unpacked once, with every part from both discs.
     assert staged['parts'] == ['data1.cab', 'data1.hdr', 'data2.cab', 'data3.cab']
 
 

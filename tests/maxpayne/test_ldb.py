@@ -108,7 +108,7 @@ def test_read_level_without_a_mesh_container(make_ldb: Callable[..., bytes]) -> 
 
 
 def test_read_level_ignores_a_container_that_is_too_small(make_ldb: Callable[..., bytes]) -> None:
-    # Fewer corners than the reader's floor, so the candidate is rejected outright.
+    # Fewer corners than the reader's floor, and the candidate is rejected outright.
     assert read_level(make_ldb(triangles=4)).mesh is None
 
 
@@ -145,7 +145,7 @@ def test_read_level_leaves_an_opaque_material_without_a_mask(
 
 
 def test_read_level_ignores_a_mask_that_is_the_colour_again(make_ldb: Callable[..., bytes]) -> None:
-    # Most entries repeat the colour path in both slots, which means opaque, not self-masked.
+    # Most entries repeat the colour path in both slots. That means opaque, not self-masked.
     level = read_level(
         make_ldb(materials=((7, 'wood', 'A.TGA'), (9, 'metal', 'B.JPG')),
                  textures=(('C:\\A.TGA', 0, b'\x00\x01\x02'),),
@@ -155,7 +155,7 @@ def test_read_level_ignores_a_mask_that_is_the_colour_again(make_ldb: Callable[.
 
 def test_read_level_leaves_an_unnamed_material_without_an_image(
         make_ldb: Callable[..., bytes]) -> None:
-    # Nothing in the category table points at an embedded image, so the material draws untextured.
+    # Nothing in the category table points at an embedded image, and the material draws untextured.
     level = read_level(make_ldb(categories=(('wood', (('A.TGA', 'X:\\gone.jpg', ''),)),)))
     assert not level.materials[7].image
     assert not level.materials[9].image
@@ -172,7 +172,7 @@ def test_read_level_reads_the_placements(make_ldb: Callable[..., bytes]) -> None
 
 
 def test_read_level_gives_up_on_an_unwalkable_tail(make_ldb: Callable[..., bytes]) -> None:
-    # A count no level could hold means the walk has lost its place, so the tail is abandoned and
+    # A count no level could produce means the walk has lost its place. The tail is abandoned and
     # the level still comes back with everything read before it.
     level = read_level(make_ldb(corrupt='placements'))
     assert level.mesh is not None
@@ -225,7 +225,7 @@ def test_read_level_rejects_a_texture_past_the_end(make_ldb: Callable[..., bytes
 
 def test_read_level_skips_a_candidate_with_an_implausible_count(
         make_ldb: Callable[..., bytes]) -> None:
-    # An array marker claiming more corners than any level holds is rejected on the count alone,
+    # An array marker declaring more corners than any level has is rejected on the count alone,
     # before any corner is read.
     junk = b'\x1c\x02' + struct.pack('<i', 9_000_000)
     level = read_level(make_ldb(junk=junk))
@@ -244,14 +244,14 @@ def test_read_level_skips_a_candidate_that_fails_the_probe(make_ldb: Callable[..
 
 def test_read_level_skips_a_candidate_with_an_implausible_mesh_count(
         make_ldb: Callable[..., bytes], make_mesh_container: Callable[..., bytes]) -> None:
-    # The corners read cleanly, so this one is only rejected once the mesh count comes out absurd.
+    # The corners read cleanly, and this one is only rejected once the mesh count comes out absurd.
     level = read_level(make_ldb(junk=make_mesh_container(40, (7,), mesh_count=-1)))
     assert level.mesh is not None
     assert len(level.mesh.meshes) == 1
 
 
 def test_read_level_ignores_an_exit_with_no_partner(make_ldb: Callable[..., bytes]) -> None:
-    # A one-sided exit says nothing about how two rooms meet, so it cannot place anything.
+    # A one-sided exit does not record how two rooms meet, and it cannot place anything.
     level = read_level(
         make_ldb(meshes=2,
                  world=((('::room::out', '::gone::in', (5.0, 0.0, 0.0)),), ((0, (0,), '::room'),

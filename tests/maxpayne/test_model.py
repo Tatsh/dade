@@ -33,7 +33,7 @@ def test_read_model_packed(make_model: Callable[..., bytes]) -> None:
 
 
 def test_read_model_stands_the_model_up(make_model: Callable[..., bytes]) -> None:
-    # Models are Z-up and the game is Y-up, so the exporter's Z becomes the game's Y.
+    # Models are Z-up and the game is Y-up, and the exporter's Z becomes the game's Y.
     model = read_model(make_model(positions=((1.0, 2.0, 3.0), (0.0, 0.0, 0.0), (0.0, 1.0, 0.0))))
     assert model.meshes[0].positions[0] == (1.0, -3.0, 2.0)
 
@@ -115,7 +115,7 @@ def test_read_model_rejects_an_implausible_count() -> None:
 
 
 def test_read_model_without_a_texture_chunk(make_model: Callable[..., bytes]) -> None:
-    # A material naming no image still has to appear, so the face it draws falls back to a colour.
+    # A material with no image still has to appear, and the face it draws falls back to a colour.
     data = make_model()
     assert read_model(data.replace(b'Map #0', b'Map #1')).materials == {'Skin': 'skin.png'}
 
@@ -125,7 +125,7 @@ def _chunk(identifier: int, version: int, body: bytes) -> bytes:
 
 
 def test_read_model_rejects_a_vector_that_is_not_one() -> None:
-    # One vector's worth of room, holding something that is not a vector.
+    # One vector's worth of room, with content that is not a vector.
     positions = b'\x14\x01' + b'\x14' + bytes(12)
     mesh = _chunk(0x00010005, 1, _chunk(0x00010006, 0, positions))
     with pytest.raises(InvalidModelError, match='Expected a vector'):
@@ -182,7 +182,7 @@ def test_read_model_ignores_a_mesh_chunk_it_does_not_know() -> None:
 
 
 def test_read_model_rejects_a_chunk_header_cut_short(make_model: Callable[..., bytes]) -> None:
-    # Enough of a header to say `chunk` and not enough to say how long, which used to raise
+    # Enough of a header to mark `chunk` and not enough to give its length. This used to raise
     # `struct.error` past the reader's own error type.
     with pytest.raises(InvalidModelError, match='runs past the end'):
         read_model(make_model()[:5])
@@ -201,7 +201,7 @@ def test_read_model_ignores_a_negative_texture_coordinate_index(
 
 
 def test_read_model_rejects_a_run_of_vectors_past_its_chunk() -> None:
-    # The count says a thousand vectors; the chunk holds one. Reading on regardless takes whatever
+    # The count states a thousand vectors; the chunk stores one. Reading on regardless takes what
     # follows the chunk and calls it geometry.
     positions = _chunk(0x00010006, 1, b'\x02' + struct.pack('<i', 1000) + bytes(12))
     with pytest.raises(InvalidModelError, match='does not fit inside its chunk'):
