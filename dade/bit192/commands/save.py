@@ -46,8 +46,9 @@ def unlock_dlc(save_path: Path, out: Path | None, packs: tuple[str, ...]) -> Non
     """
     Write DLC ownership tokens into SAVE_PATH.
 
-    Tokens are ``MD5(device_id + pack)``, so the save must come from the target device (its device
-    id is read straight out of the file). The integrity hash is never verified on load, so no
+    Tokens are ``MD5(device_id + pack)``, and the save must therefore come from the target device
+    (its device id is read straight out of the file). The integrity hash is never verified on load,
+    and no
     checksum fix-up is needed for local use.
     """
     sf = SaveFile.load(save_path)
@@ -71,9 +72,9 @@ def unlock_songs(save_path: Path, out: Path | None) -> None:
     """
     Unlock every regular (non-DLC) song in SAVE_PATH.
 
-    Sets the whole song unlock-flag array, so every ``UnlockNum``-gated song becomes visible without
-    meeting its ``CondChart``/``CondStar`` condition. DLC episodes need device-bound tokens instead;
-    use ``unlock-dlc`` (or ``unlock-all``) for those.
+    Sets the whole song unlock-flag array, and every song behind an ``UnlockNum`` becomes visible
+    without meeting its ``CondChart``/``CondStar`` condition. DLC episodes need device-bound tokens
+    instead; use ``unlock-dlc`` (or ``unlock-all``) for those.
     """
     sf = SaveFile.load(save_path)
     count = sf.unlock_all_songs()
@@ -93,8 +94,8 @@ def unlock_all(save_path: Path, out: Path | None) -> None:
     """
     Unlock everything in SAVE_PATH: every regular song and every DLC pack.
 
-    Combines ``unlock-songs`` and ``unlock-dlc``. DLC tokens are device-bound, so the save must come
-    from the target device (its device id is read straight out of the file).
+    Combines ``unlock-songs`` and ``unlock-dlc``. DLC tokens are device-bound, and the save must
+    come from the target device (its device id is read straight out of the file).
     """
     sf = SaveFile.load(save_path)
     log.debug('Editing save with device id %r.', sf.device_id)
@@ -123,9 +124,9 @@ def generate(out: Path, device_id: str, from_save: Path | None, *, no_dlc: bool)
     Generate a fresh, fully-unlocked ``save.bin`` at OUT (from a zero-initialised save).
 
     Every regular song is unlocked unconditionally. DLC tokens are device-bound
-    (``MD5(device_id + pack)``), so supply the target device's id via ``--device-id`` or copy it
+    (``MD5(device_id + pack)``). Supply the target device's id via ``--device-id`` or copy it
     from an existing save with ``--from-save``; on iOS the id is always ``"iOS"``. Songs do not
-    depend on the device id. The integrity hash is never verified on load, so the result loads
+    depend on the device id. The integrity hash is never verified on load, and the result loads
     as-is.
     """
     resolved_id = SaveFile.load(from_save).device_id if from_save is not None else device_id
@@ -141,5 +142,5 @@ def generate(out: Path, device_id: str, from_save: Path | None, *, no_dlc: bool)
     sf.save(out)
     console.print(f'[green]Generated {out}: {count} song flags + {len(packs)} DLC packs.[/green]')
     if not resolved_id:
-        console.print('[yellow]Note:[/yellow] no device id was set, so the DLC tokens will not '
+        console.print('[yellow]Warning[/yellow] no device id was set, and the DLC tokens will not '
                       'match a real device. Pass --device-id or --from-save to bind them.')

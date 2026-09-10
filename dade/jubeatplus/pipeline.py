@@ -2,15 +2,15 @@
 End-to-end unpacking pipeline.
 
 The source is an ``.ipa`` or an already-extracted directory. Either way the application bundle is
-found, mirrored into the output directory, and every file converted to something that opens outside
-iOS: Apple-optimised PNGs are de-optimised, ``.tex`` textures are deciphered and de-optimised,
+found, mirrored into the output directory, and every file converted to a form that opens outside
+iOS. Apple-optimised PNGs are de-optimised, ``.tex`` textures are deciphered and de-optimised,
 ``.caf`` sound effects are rewrapped as WAV, ``.jbt`` tune packages and the marker ZIPs are unpacked
 into directories named after themselves and their entries decoded in turn, property lists and
 localisation tables and Core Data models become JSON, and the executable's properties are written
-out as JSON beside it. Anything with no converter is copied unchanged, so the output is a complete
+out as JSON beside it. Anything with no converter is copied unchanged, and the output is a complete
 bundle rather than a selection.
 
-The source is never written to. Conversion is fanned out across processes, because the bundle holds
+The source is never written to. Conversion is fanned out across processes. The bundle includes
 a couple of thousand PNGs and each one is a separate ``pngdefry`` invocation.
 """
 from __future__ import annotations
@@ -65,7 +65,7 @@ class StepStats(NamedTuple):
 
 
 class _Job(NamedTuple):
-    """One file's conversion, in a form a worker process can be handed."""
+    """One file's conversion, in a form a worker process accepts."""
 
     action: str
     destination: Path
@@ -92,7 +92,7 @@ def find_bundle(root: Path) -> Path:
     Parameters
     ----------
     root : pathlib.Path
-        The ``.app`` bundle itself, the ``Payload`` directory holding it, or a directory holding
+        The ``.app`` bundle itself, the ``Payload`` directory above it, or a directory with
         ``Payload``.
 
     Returns
@@ -114,7 +114,7 @@ def find_bundle(root: Path) -> Path:
     raise ValueError(msg)
 
 
-# Every bundle's own executable, as its Info.plist names it.
+# Every bundle's executable, as its Info.plist identifies it.
 def _executables(bundle: Path) -> set[Path]:
     found = set()
     for info_plist in (bundle, *(p for p in bundle.rglob('*') if p.is_dir())):
@@ -192,7 +192,7 @@ def _run_job(job: _Job) -> tuple[Path, bool, str]:
     job.destination.parent.mkdir(parents=True, exist_ok=True)
     try:
         _apply(job)
-    # A converter may raise anything; one bad asset must not stop the other two thousand, so the
+    # A converter may raise anything; one bad asset must not stop the other two thousand, and the
     # error is captured and returned to the caller rather than propagated.
     except Exception as e:  # ruff: ignore[blind-except]
         return job.source, False, f'{type(e).__name__}: {e}'
@@ -251,18 +251,18 @@ def _run_jobs(jobs: Sequence[_Job], workers: int) -> dict[str, StepStats]:
     return dict(sorted(stats.items()))
 
 
-# Describe the download's FairPlay bookkeeping, when it still carries any.
+# Describe the download's FairPlay bookkeeping, when it still includes any.
 def _write_sc_info(bundle: Path, out_root: Path) -> StepStats:
     try:
         infos = [info for info in read_bundles(bundle) if info.records]
     except (OSError, ValueError) as e:
-        # A repacked bundle has no SC_Info at all, which is not an error; there is simply nothing
+        # A repacked bundle has no SC_Info at all. That is not an error; there is simply nothing
         # to describe.
         log.info('No SC_Info to describe: %s', e)
         return StepStats(0, 0)
     if not infos:
-        # A decrypted dump keeps the directory but empties it, which leaves nothing worth writing.
-        log.info('SC_Info holds no records; no report written.')
+        # A decrypted dump retains the directory but empties it, with nothing worth writing.
+        log.info('SC_Info includes no records; no report written.')
         return StepStats(0, 0)
     write_json(out_root / 'SC_Info.json', [sc_info_to_json(info) for info in infos],
                ensure_ascii=False,
@@ -282,7 +282,7 @@ def unpack(source: Path,
     Parameters
     ----------
     source : pathlib.Path
-        An ``.ipa``, the ``.app`` bundle, the ``Payload`` directory, or a directory holding
+        An ``.ipa``, the ``.app`` bundle, the ``Payload`` directory, or a directory with
         ``Payload``. It is only ever read.
     output_dir : pathlib.Path
         Where to write. The bundle is mirrored into a directory named after it.
@@ -296,7 +296,7 @@ def unpack(source: Path,
     Returns
     -------
     dict[str, StepStats]
-        Per-action success and failure counts, keyed by action name. A source holding no
+        Per-action success and failure counts, keyed by action name. A source with no
         application bundle raises :py:class:`ValueError`.
     """
     output_dir.mkdir(parents=True, exist_ok=True)

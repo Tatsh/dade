@@ -3,7 +3,7 @@ The note charts inside a tune package.
 
 A chart is a 96-byte header followed by one eight-byte record per event. The header opens with a
 four-byte magic - ``IJBQ``, ``IJSQ``, or ``JBSQ``, all three accepted by the engine and all three
-present in shipped tunes - and carries the event count, the note count, the final sector, the
+present in shipped tunes) and states the event count, the note count, the final sector, the
 opening marker and where it falls, and a 60-byte music-bar bitmap at ``0x24``. One 16-bit field at
 ``0x10`` is never read by the engine and is reported here unnamed.
 
@@ -149,7 +149,7 @@ def parse_chart(data: bytes, difficulty: Difficulty | None = None) -> ChartDict:
     counts: dict[str, int] = {}
     for event in events:
         counts[event['kind']] = counts.get(event['kind'], 0) + 1
-    # A hold scores twice, at its head and at its release, which is how the engine recounts the
+    # A hold scores twice, at its head and at its release, matching how the engine recounts the
     # header's note total whenever the two disagree.
     note_count = counts.get('tap', 0) + 2 * counts.get('hold', 0)
     return {

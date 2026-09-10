@@ -2,7 +2,7 @@
 ``CIwMaterial`` decoder.
 
 A material stores a flags word, four RGBA colour channels (ambient, emissive, specular, and a fourth
-colour), and a list of referenced texture hashes. A material flagged ``same_as_default`` carries
+colour), and a list of referenced texture hashes. A material flagged ``same_as_default`` includes
 only its flags.
 """
 from __future__ import annotations

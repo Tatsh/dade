@@ -21,7 +21,7 @@ def iw_hash_string(value: str) -> int:
     """
     Compute the Marmalade ``IwHashString`` of *value*.
 
-    The hash lower-cases ASCII ``A``-``Z`` first, so it is case-insensitive.
+    The hash lower-cases ASCII ``A``-``Z`` first and is therefore case-insensitive.
 
     Parameters
     ----------

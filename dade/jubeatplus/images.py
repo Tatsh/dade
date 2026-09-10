@@ -2,13 +2,13 @@
 The game's two image forms.
 
 A loose ``.png`` is an ordinary Apple-optimised PNG: Xcode rewrote it with a ``CgBI`` chunk, byte-
-swapped channels, and premultiplied alpha, which no PNG reader outside Apple's frameworks handles.
+swapped channels, and premultiplied alpha, handled by no PNG reader outside Apple's frameworks.
 ``pngdefry`` undoes all three.
 
 A ``.tex`` is the same thing enciphered. Its plaintext is a four-byte header the loaders discard
-followed by the image itself, which is again an Apple-optimised PNG, so a converted texture goes
-through ``pngdefry`` as well. The header is not a magic - it differs per file - and the engine
-never looks at it, so it is dropped here as the engine drops it.
+followed by the image itself, again an Apple-optimised PNG, and a converted texture therefore goes
+through ``pngdefry`` as well. The header is not a magic (it differs per file) and the engine never
+looks at it, and it is dropped here as the engine drops it.
 
 The ``pngdefry`` conversion itself is :py:mod:`dade.common.apple_png`, shared with the other iOS
 titles.
@@ -50,7 +50,7 @@ def decipher_image(data: bytes, key: bytes | None = None) -> bytes:
     Raises
     ------
     ValueError
-        If the length trailer does not describe the buffer, or the plaintext is too short to hold
+        If the length trailer does not describe the buffer, or the plaintext is too short for
         the four-byte header.
     """
     plain = BFCodec(texture_key() if key is None else key).decipher(data)

@@ -2,16 +2,16 @@
 The game's Blowfish keys.
 
 Every encrypted file uses :py:class:`dade.common.bfcodec.BFCodec`; only the key varies. Each key
-is the MD5 of a passphrase the binary assembles on the stack in pieces, so no passphrase appears
+is the MD5 of a passphrase the binary assembles on the stack in pieces, and no passphrase appears
 whole in the executable, and every one of them is hashed over ``strlen`` bytes so the terminating
 NUL is excluded.
 
-Two of the seven keys carry the shipped assets. :py:data:`TEXTURE_PASSPHRASE` covers ``.tex``
+Two of the seven keys cover the shipped assets. :py:data:`TEXTURE_PASSPHRASE` covers ``.tex``
 textures and the entries of the marker, hold-marker, and share-image ZIPs, whose plaintext is a
 four-byte header followed by a PNG. :py:data:`BGM_PASSPHRASE` covers every entry of a ``.jbt`` tune
-package, whose plaintext carries no header at all. The remaining five guard runtime state - the
+package, whose plaintext includes no header at all. The remaining five guard runtime state (the
 save file, the mission records, the challenge panel resources, the Lab URL, and the newer ``infov3``
-tune metadata - and are provided because a download may still hold files that use them.
+tune metadata) and are provided because a download may still include files that use them.
 """
 from __future__ import annotations
 
@@ -61,7 +61,7 @@ TUNE_INFO_PASSPHRASE: Final = b'Konami Bemani Mobile iOS'
 """Passphrase keying the newer ``infov3`` tune metadata.
 
 Its stack prefix is shared with :py:data:`BGM_PASSPHRASE`; the two differ only in the ``iOS``
-against ``iPad`` tail, which is enough to make the digests unrelated.
+against ``iPad`` tail, enough to make the digests unrelated.
 
 :meta hide-value:
 """

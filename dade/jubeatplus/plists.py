@@ -1,14 +1,14 @@
 """
 Property lists, made JSON-safe.
 
-A property list can hold three things JSON cannot: raw data, dates, and keyed-archiver UIDs. Dates
+A property list can store three types JSON cannot: raw data, dates, and keyed-archiver UIDs. Dates
 become ISO 8601 strings and UIDs become integers, both losslessly.
 
-Data is the interesting one. Two settings in ``DefaultSettings.plist`` - the news feed's URL and the
-jubeat Lab URL - are not opaque blobs at all but enciphered strings, keyed with
+Data is the interesting one. Two settings in ``DefaultSettings.plist`` (the news feed's URL and the
+jubeat Lab URL) are not opaque blobs at all but enciphered strings, keyed with
 :py:func:`dade.jubeatplus.cipher.lab_url_key`. Any data value that deciphers with that key into
-printable text is reported with the text beside its bytes, which is what turns the two settings back
-into the URLs they are; anything else keeps its bytes alone.
+printable text is reported with the text beside its bytes. That turns the two settings back into
+the URLs they are; anything else retains its bytes alone.
 """
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ def _decipher_text(data: bytes) -> str | None:
 
 def json_safe(value: Any) -> Any:
     """
-    Convert a decoded property-list value to something JSON can hold.
+    Convert a decoded property-list value to a form JSON can store.
 
     Parameters
     ----------
@@ -51,7 +51,7 @@ def json_safe(value: Any) -> Any:
     Returns
     -------
     Any
-        The same value with data, dates, and UIDs replaced by JSON-holdable equivalents.
+        The same value with data, dates, and UIDs replaced by JSON-storable equivalents.
     """
     if isinstance(value, dict):
         return {str(k): json_safe(v) for k, v in value.items()}
@@ -72,7 +72,7 @@ def json_safe(value: Any) -> Any:
 
 def read_plist(path: Path) -> Any:
     """
-    Read a property list, binary or XML, as JSON-holdable values.
+    Read a property list, binary or XML, as JSON-storable values.
 
     Parameters
     ----------

@@ -1,18 +1,18 @@
 """
 The two kinds of ZIP the game ships.
 
-A ``.jbt`` is one tune: a ZIP holding the tune's metadata, its two artwork sizes, its two title
+A ``.jbt`` is one tune, a ZIP storing the tune's metadata, its two artwork sizes, its two title
 plates, its charts, and both of its audio streams, with a sixteen-byte MD5 of the ZIP appended
 after the end of the archive. Every entry is enciphered with
 :py:func:`dade.jubeatplus.cipher.bgm_key`, and, apart from the newer ``infov3`` metadata, none of
-them carries a header.
+them includes a header.
 
 A plain ``.zip`` is a marker animation (``mk*.zip``), a hold-marker animation (``hm*.zip``), or the
 share images (``twitterResources.zip``). Their entries are enciphered with
-:py:func:`dade.jubeatplus.cipher.texture_key` and do carry the four-byte header, exactly as a
-``.tex`` does. Not every entry is enciphered - the share images ship a plain-text ``filename.txt``
-and the archiver's own ``__MACOSX`` residue - so each entry is deciphered only if that succeeds and
-yields something recognisable.
+:py:func:`dade.jubeatplus.cipher.texture_key` and do include the four-byte header, exactly as a
+``.tex`` does. Not every entry is enciphered (the share images ship a plain-text ``filename.txt``
+and the archiver's ``__MACOSX`` residue), and each entry is therefore deciphered only when that
+succeeds and yields recognisable content.
 
 Both kinds unpack into a directory named after the archive, and every entry is written under the
 name it had inside, with the extension its decoded content turned out to need.
@@ -162,7 +162,7 @@ def unpack_jbt(source: Path, destination: Path, pngdefry: Path | None = None) ->
     Unpack a tune package.
 
     The sixteen bytes after the ZIP are the MD5 of everything before them. They are checked, and a
-    mismatch is logged rather than raised, because every entry still decodes on its own.
+    mismatch is logged rather than raised. Every entry still decodes independently.
 
     Parameters
     ----------
@@ -179,7 +179,7 @@ def unpack_jbt(source: Path, destination: Path, pngdefry: Path | None = None) ->
         Every file written, in archive order.
     """
     destination.mkdir(parents=True, exist_ok=True)
-    # The ZIP is opened first, so anything too short to hold both an archive and a trailer is
+    # The ZIP is opened first, and anything too short for both an archive and a trailer is
     # rejected before the trailer is read at all.
     with zipfile.ZipFile(source) as archive:
         written = _unpack(archive, destination, bgm_key(), header=False, pngdefry=pngdefry)

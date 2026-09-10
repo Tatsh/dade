@@ -1,7 +1,7 @@
 """
 Tone Sphere (bit192labs) toolkit.
 
-``bit192`` holds the game-specific pieces that sit on top of the generic Marmalade support in
+``bit192`` includes the game-specific pieces that sit on top of the generic Marmalade support in
 :mod:`marmalade`:
 
 - :func:`~dade.bit192.cz.decrypt` - undo Tone Sphere's ``.cz`` XOR layer to recover a Derbh

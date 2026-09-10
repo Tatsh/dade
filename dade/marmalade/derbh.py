@@ -16,10 +16,10 @@ every archive starts with the ASCII magic ``DTRZ``::
     ...    data
 
 Each file's bytes are decompressed per its ``method`` tag (``0x100`` stored, ``0x200`` LZMA-alone,
-``0x8`` gzip with a corrupt trailer CRC). The location records are *not* in file order, so file data
-must be windowed by ``offset + size`` rather than by the next record. The attribute table's
-``folderIdx`` gives each file's real folder (files share folders), so it is read rather than
-guessed.
+``0x8`` gzip with a corrupt trailer CRC). The location records are *not* in file order. File data
+must therefore be windowed by ``offset + size`` rather than by the next record. The attribute
+table's ``folderIdx`` gives each file's real folder (files share folders), and it is read rather
+than guessed.
 
 This module is sans-I/O: :func:`unpack` takes ``bytes`` and returns
 :class:`~dade.marmalade.typing.DerbhEntry` objects. :func:`unpack_to_dir` is a thin convenience
@@ -160,7 +160,7 @@ def _find_loc_table(data: bytes, attr_end: int, fc: int) -> list[tuple[int, int,
 
     The table is a run of ``(offset, sizeA, sizeB, method)`` records whose offsets all land in
     ``[table_end, n]`` with sane methods; the data region begins at (or just after) the table. Some
-    archives append a terminator record (``fc + 1`` records) and/or leave a small gap before the
+    archives append a terminator record (``fc + 1`` records) and/or insert a small gap before the
     data.
 
     Parameters

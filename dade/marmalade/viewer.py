@@ -2,10 +2,10 @@
 Standalone WebGL viewer for decoded models.
 
 :func:`obj_to_html` embeds an OBJ's geometry into a single self-contained HTML file (no external
-assets) that renders the mesh with orbit/zoom controls, so a decoded
-:class:`dade.marmalade.model.Model` can be inspected in any browser. The page and its WebGL
-render loop are held in this module as :data:`_HTML_TEMPLATE` and :data:`_VIEWER_JS` and rendered
-with Jinja2, so the viewer needs no package-data files at run time.
+assets) that renders the mesh with orbit/zoom controls. A decoded
+:class:`dade.marmalade.model.Model` can therefore be inspected in any browser. The page and its
+WebGL render loop live in this module as :data:`_HTML_TEMPLATE` and :data:`_VIEWER_JS` and are
+rendered with Jinja2, and the viewer needs no package-data files at run time.
 """
 from __future__ import annotations
 
@@ -332,7 +332,7 @@ def obj_to_html(obj_text: str, title: str = 'model') -> str | None:
     """
     Build a standalone WebGL viewer for an OBJ document.
 
-    The geometry is normalised (centred and scaled to fit) and embedded directly, so the returned
+    The geometry is normalised (centred and scaled to fit) and embedded directly. The returned
     HTML needs no external files.
 
     Parameters

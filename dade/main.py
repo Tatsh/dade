@@ -1,7 +1,7 @@
 """
 Unified command-line interface for the ``dade`` game asset extractors.
 
-Every supported game is mounted as a sub-group of the top-level ``dade`` command, so each tool is
+Every supported game is mounted as a sub-group of the top-level ``dade`` command, and each tool is
 invoked as ``dade <game> <subcommand>`` (for example ``dade incoming extract`` or
 ``dade bitrock crack``). Converters for formats that belong to no single game are grouped under
 ``dade misc``.

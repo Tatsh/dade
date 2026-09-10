@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
                 type=click.Path(exists=True, dir_okay=False, path_type=Path))
 @click.option('--keep-group-bin',
               is_flag=True,
-              help='Keep raw .group.bin files alongside their decoded folders.')
+              help='Retain raw .group.bin files alongside their decoded folders.')
 @click.option('-o',
               '--out',
               required=True,

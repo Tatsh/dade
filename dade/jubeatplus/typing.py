@@ -6,7 +6,7 @@ from typing import Literal, TypeAlias, TypedDict
 __all__ = ('ChartDict', 'ChartEventDict', 'ChartHeaderDict', 'Difficulty')
 
 Difficulty: TypeAlias = Literal['basic', 'advanced', 'extreme']
-"""The three difficulties a tune package carries a chart for."""
+"""The three difficulties a tune package includes a chart for."""
 
 
 class ChartEventDict(TypedDict):
@@ -17,7 +17,7 @@ class ChartEventDict(TypedDict):
     hold_length_sectors: int | None
     """The hold's length in sectors, for a hold event only."""
     kind: str
-    """Event kind name: ``tap``, ``end``, ``measure``, ``beat``, ``tempo``, or ``hold``."""
+    """One of ``tap``, ``end``, ``measure``, ``beat``, ``tempo``, or ``hold``."""
     kind_id: int
     """The raw event-kind byte."""
     microseconds_per_beat: int | None
@@ -44,7 +44,7 @@ class ChartHeaderDict(TypedDict):
     event_count: int
     """The number of event records that follow the header."""
     first_marker: int
-    """A panel bitmask naming the panels the first marker occupies."""
+    """A panel bitmask identifying the panels the first marker occupies."""
     first_marker_sector: int
     """The sector at which the first marker appears."""
     first_marker_time: float
@@ -54,11 +54,11 @@ class ChartHeaderDict(TypedDict):
     music_bar: str
     """The 60-byte music-bar bitmap, hex-encoded."""
     note_count: int
-    """The number of scoring notes the header claims."""
+    """The number of scoring notes the header states."""
     reserved: str
     """The twelve header bytes at ``0x18`` that are zero in every known chart, hex-encoded."""
     unknown_0x10: int
-    """The unnamed 16-bit field at ``0x10``, which the engine never reads."""
+    """The unnamed 16-bit field at ``0x10``, never read by the engine."""
 
 
 class ChartDict(TypedDict):
@@ -73,6 +73,6 @@ class ChartDict(TypedDict):
     header: ChartHeaderDict
     """The decoded header."""
     note_count: int
-    """The number of scoring notes actually present, which the engine trusts over the header."""
+    """The number of scoring notes actually present, trusted by the engine over the header."""
     sectors_per_second: int
     """The sector rate every time in this document is derived with."""

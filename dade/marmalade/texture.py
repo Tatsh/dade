@@ -1,9 +1,9 @@
 """
 ``CIwTexture`` decoder.
 
-A serialised texture carries a small header followed by ``pitch * height`` bytes of raw texel data.
+A serialised texture has a small header followed by ``pitch * height`` bytes of raw texel data.
 The bytes-per-pixel is ``pitch // width`` (3 = RGB888, 4 = RGBA8888, 2 = RGB565, 1 = greyscale). The
-header layout varies slightly between assets, so the width/height/pitch triple is located by
+header layout varies slightly between assets. The width/height/pitch triple is therefore located by
 scanning a small window and validating that ``pitch`` is a whole multiple of ``width`` and that the
 texel block fits exactly at the tail of the body.
 """

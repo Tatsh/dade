@@ -7,7 +7,8 @@ a per-pack **token** = ``MD5(device_id + dlc_name)`` (32 lowercase-hex chars) wr
 offset; the game derives the runtime unlock from the token on load.
 
 The whole-file integrity hash at 0x3c488 (``SHA1("An83"+checksum+"A")``) is *written only, never
-verified on load*, so local edits need no checksum fix-up. ``device_id`` is ``s3eDeviceGetString``
+verified on load*, and local edits therefore need no checksum fix-up. ``device_id`` is
+``s3eDeviceGetString``
 cached at 0x3ca38 (the literal ``"iOS"`` on iOS, making iOS tokens universal); because tokens are
 device-bound, edit a save taken from the target device so its id matches.
 """
@@ -54,7 +55,7 @@ DLC_OFFSETS = {
     'gnl': 0x3CC48,
     'vvv': 0x3CCA8
 }
-"""DLC pack name to the offset of its ownership-token field in ``save.bin``.
+"""DLC pack to the offset of its ownership-token field in ``save.bin``.
 
 :meta hide-value:
 """
@@ -142,7 +143,7 @@ class SaveFile:
         Write the cached device id (the salt for DLC tokens).
 
         Use ``"iOS"`` for an iOS-universal save, or the device's ``Settings.Secure.ANDROID_ID`` on
-        Android. Call this *before* :meth:`unlock_dlc` / :meth:`unlock_all_dlc`, since those derive
+        Android. Call this *before* :meth:`unlock_dlc` or :meth:`unlock_all_dlc`. Those derive
         tokens from it.
 
         Parameters
@@ -214,7 +215,7 @@ class SaveFile:
         Unlock every song by setting the whole unlock-flag array.
 
         Sets ``UnlockNum`` flags ``1`` through ``UNLOCK_FLAGS_COUNT - 1``; the array ends exactly at
-        the integrity hash, so no other field is touched. Does not affect DLC episodes, which need
+        the integrity hash, and no other field is touched. DLC episodes are not affected. They need
         device-bound tokens (see :meth:`unlock_all_dlc`).
 
         Returns
@@ -233,7 +234,7 @@ class SaveFile:
         Unlock every regular song and every DLC pack.
 
         Combines :meth:`unlock_all_songs` and :meth:`unlock_all_dlc`. The DLC tokens are derived
-        from the current :attr:`device_id`, so set that first (see :meth:`set_device_id`) for the
+        from the current :attr:`device_id`. Set that first (see :meth:`set_device_id`) for the
         tokens to be valid on the target device.
         """
         self.unlock_all_songs()

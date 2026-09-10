@@ -8,7 +8,7 @@ module resolves any of an ``.xapk`` bundle, a bare ``.apk``, or an ``.apk`` plus
 - decodes every IwResGroup ``.group.bin`` in place into a sibling folder of open formats, and
 - wraps every headerless ``.raw`` PCM file as a sibling ``.wav``.
 
-The OBB holds the full-size archives; the APK ships same-named stubs, so OBB entries override APK
+The OBB stores the full-size archives; the APK ships same-named stubs, and OBB entries override APK
 ones. Derbh/IwResGroup handling comes from :mod:`marmalade`; the ``.cz`` layer and the ``.raw`` rate
 are Tone-Sphere specifics provided by :mod:`bit192`.
 """
@@ -179,7 +179,7 @@ def _decode_group_file(fp: Path, *, keep_group_bin: bool) -> None:
     data = fp.read_bytes()
     if not is_resgroup(data):
         ext = _IMAGE_MAGICS.get(data[:4])
-        if ext is not None:  # a plain image that merely carries a .group.bin name
+        if ext is not None:  # a plain image that merely has a .group.bin name
             fp.replace(Path(str(fp)[:-len(_GROUP_SUFFIX)] + ext))
         return
     decode_group_to_dir(data, Path(str(fp)[:-len(_GROUP_SUFFIX)]))
@@ -201,7 +201,7 @@ def extract(inputs: Sequence[str | Path],
     outdir : str or pathlib.Path
         Output directory (created if absent).
     keep_group_bin : bool
-        Keep the raw ``.group.bin`` files alongside their decoded folders.
+        Retain the raw ``.group.bin`` files alongside their decoded folders.
 
     Returns
     -------

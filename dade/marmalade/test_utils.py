@@ -3,7 +3,7 @@ Builders for synthetic Marmalade assets.
 
 These construct valid (if minimal) Derbh archives, IwResGroups, textures, and models in memory so
 the decoders can be exercised without shipping any copyrighted game data. They are shipped as part
-of the package so downstream packages can reuse them in their own tests.
+of the package so downstream packages can reuse them in their tests.
 """
 from __future__ import annotations
 
@@ -122,7 +122,7 @@ def build_material(*,
     texture_hashes : Sequence[int]
         Referenced texture name-hashes (a zero hash is an unused slot).
     same_as_default : bool
-        Whether the material carries only its flags (the same-as-default case).
+        Whether the material includes only its flags (the same-as-default case).
 
     Returns
     -------

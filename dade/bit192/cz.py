@@ -36,7 +36,7 @@ def decrypt(data: bytes, key1: bytes = KEY1, key2: bytes = KEY2) -> bytes:
     """
     Decrypt ``.cz`` bytes to the underlying ``DTRZ`` archive.
 
-    The cipher is its own inverse (XOR), so this also re-encrypts.
+    The cipher is self-inverse (XOR), and this function therefore also re-encrypts.
 
     Parameters
     ----------

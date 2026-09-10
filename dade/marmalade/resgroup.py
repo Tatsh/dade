@@ -106,7 +106,7 @@ def _parse_resources(payload: bytes) -> dict[str, list[Resource]]:
         for _i in range(count):
             start = q
             if not has_size:
-                msg = f'Resources of class {cname} lack a size prefix, which is unsupported.'
+                msg = f'Resources of class {cname} lack a size prefix and are unsupported.'
                 raise ValueError(msg)
             size = struct.unpack_from('<I', payload, q)[0]
             q += 4

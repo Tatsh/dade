@@ -33,7 +33,7 @@ debug_option = bascom.debug_option({'dade.common': {}, 'dade.jubeatplus': {}})
               default=None,
               help='Process-pool size (defaults to the CPU count).')
 @click.option('--no-audio', is_flag=True, help='Copy the .caf sound effects instead of converting.')
-@click.option('--no-png', is_flag=True, help='Leave the PNGs Apple-optimised.')
+@click.option('--no-png', is_flag=True, help='Retain the PNGs in Apple-optimised form.')
 @click.option('-o',
               '--output-dir',
               default=Path(),
@@ -54,7 +54,7 @@ def unpack(source: Path,
     Unpack and convert the jubeat plus download at SOURCE.
 
     SOURCE may be an ``.ipa``, the ``.app`` bundle, the ``Payload`` directory, or a directory
-    holding ``Payload``. It is only read; everything is written under --output-dir, into a
+    with ``Payload`` inside. It is only read; everything is written under --output-dir, into a
     directory named after the bundle.
 
     Apple-optimised PNGs are rewritten as ordinary ones, ``.tex`` textures are deciphered and

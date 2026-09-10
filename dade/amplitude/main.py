@@ -49,7 +49,7 @@ debug_option = bascom.debug_option({'dade.amplitude': {}, 'dade.common': {}, 'da
               help='Extract .gz entries verbatim instead of decompressing.')
 @click.option('--keep-gz',
               is_flag=True,
-              help='Keep the original .gz entry alongside the decompressed output.')
+              help='Retain the original .gz entry alongside the decompressed output.')
 @click.option('--ignore-failures',
               is_flag=True,
               help='Log and skip a conversion failure instead of stopping.')
@@ -78,7 +78,7 @@ def main(input_: Path,
                                      keep_gz=keep_gz,
                                      on_status=on_status)
 
-    # With ``--debug`` the streaming debug log owns the terminal, so no live spinner is started.
+    # With ``--debug`` the streaming debug log owns the terminal, and no live spinner starts.
     try:
         if click.get_current_context().params.get('debug', False):
             stats = asyncio.run(run(None))

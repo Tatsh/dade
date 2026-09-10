@@ -18,5 +18,5 @@ jubeatplus.add_command(unpack)
 
 
 def main() -> None:
-    """Entry point for the ``jubeatplus`` group when it is run on its own."""
+    """Entry point for the ``jubeatplus`` group when it is run directly."""
     jubeatplus()
