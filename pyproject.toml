@@ -8,7 +8,7 @@ dev = [
   "cz-path>=0.0.7",
   "mypy>=2.3.1",
   "ruff==0.16.5",
-  "ty>=0.0.77",
+  "ty>=0.0.78",
   "yapf>=0.43.0",
 ]
 docs = [
@@ -45,7 +45,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "anyio>=4.14.2",
+  "anyio>=4.15.0",
   "bascom>=0.2.0",
   "click>=8.5.0",
   "cryptography<49; sys_platform == 'darwin' and platform_machine == 'x86_64'",
@@ -213,13 +213,13 @@ quote-style = "single"
 [tool.ruff.lint]
 extend-select = ["ALL"]
 ignore = [
-  "missing-trailing-comma",
   "any-type",
   "error-suffix-on-exception-name",
   "incorrect-blank-line-after-class",
   "incorrect-blank-line-before-class",
   "missing-copyright-notice",
   "missing-todo-author",
+  "missing-trailing-comma",
   "multi-line-summary-first-line",
   "subprocess-without-shell-equals-true",
   "suspicious-subprocess-import",
