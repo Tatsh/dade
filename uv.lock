@@ -3,18 +3,18 @@ revision = 3
 requires-python = ">=3.10, <4.0"
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.13' and python_full_version < '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version < '3.11' and platform_machine != 'x86_64') or (python_full_version < '3.11' and sys_platform != 'darwin')",
 ]
 
@@ -808,12 +808,12 @@ version = "50.0.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "(python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.13' and python_full_version < '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
     "(python_full_version < '3.11' and platform_machine != 'x86_64') or (python_full_version < '3.11' and sys_platform != 'darwin')",
 ]
@@ -925,7 +925,7 @@ wheels = [
 
 [[package]]
 name = "dade"
-version = "0.0.2"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -1700,14 +1700,14 @@ version = "2.2.6"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.13' and python_full_version < '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version < '3.11' and platform_machine != 'x86_64') or (python_full_version < '3.11' and sys_platform != 'darwin')",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/76/21/7d2a95e4bba9dc13d043ee156a356c0a8f0c6309dff6b21b4d71a073b8a8/numpy-2.2.6.tar.gz", hash = "sha256:e29554e2bef54a90aa5cc07da6ce955accb83f21ab5de01a62c8478897b264fd", size = 20276440, upload-time = "2025-05-17T22:38:04.611Z" }
@@ -2628,13 +2628,13 @@ version = "9.1.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.13' and python_full_version < '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
 ]
 dependencies = [
@@ -2683,16 +2683,16 @@ version = "3.5.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.13' and python_full_version < '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
 ]
 dependencies = [
@@ -2796,16 +2796,16 @@ version = "1.10.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.13' and python_full_version < '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
 ]
 dependencies = [
@@ -2969,16 +2969,16 @@ version = "5.9.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.13' and python_full_version < '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/db/a1/3b8ed9c1fc3aa6eebb57732d924ddaa0500ecc3b638d0454816320994383/stevedore-5.9.1.tar.gz", hash = "sha256:e97a2667923efda926e8713fde6a73616df68210a3cbc6f02b48967b676fd8bf", size = 518111, upload-time = "2026-08-20T15:25:14.754Z" }
@@ -3293,16 +3293,16 @@ version = "17.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
-    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.13' and python_full_version < '3.15' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.13' and python_full_version < '3.15' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
+    "python_full_version == '3.11.*' and platform_machine == 'ARM64' and sys_platform == 'win32'",
+    "python_full_version == '3.11.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.11.*' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.11.*' and platform_machine != 'ARM64' and sys_platform == 'win32') or (python_full_version == '3.11.*' and sys_platform != 'darwin' and sys_platform != 'win32')",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/18/72/fba934cb3dff7a85d811820efffcd141ddd52b5a2a01637f64551373ff4d/websockets-17.1.tar.gz", hash = "sha256:acfea4c20bf54384883ea33b1240fc1db4f52e190823a4e2b334bc3e8bfca96a", size = 187520, upload-time = "2026-08-26T17:25:33.063Z" }
