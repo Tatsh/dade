@@ -9,8 +9,73 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.1.0] - 2026-09-10
+
 ### Added
 
+- `dade sopranos` group for _The Sopranos: Road to Respect_ (PlayStation 2). One `unpack` command
+  takes the disc apart and converts everything it recognises. The argument may be a disc image, a
+  directory searched recursively for `.FS` archives however they are cased, or any number of
+  archives given directly. Each archive is unpacked into a directory titled after it with the region
+  suffix dropped, and `DATA_P.FS` therefore becomes `data`. With `--convert`, the `.LVL` containers
+  are split first and the assets inside them are converted by the same pass. `.TEX2` texture banks
+  become PNG with PlayStation 2 alpha rescaled to `0..255`, `.SGP2` prop libraries yield the PNGs
+  they embed, `.MSH` and `.MSB` sound banks yield one WAV per sound, `.MIH` and `.MIB` music streams
+  become WAV de-interleaved back to stereo, and `.VO2` dialogue becomes WAV stitched from its `AUDO`
+  blocks. The retail disc converts clean. `--ignore-failures` logs and skips an asset that will not
+  convert rather than stopping.
+- A Sopranos level is written as a `.glb` with its props placed in it, alongside OBJ and MTL. Props
+  are read from the `.SGP2` libraries belonging to the level, and each is positioned and turned
+  according to the `.OLV` file that records where the prop stands. A character with interchangeable
+  wardrobe pieces is given one piece of each kind rather than all of them at once.
+- `dade maxpayne` group for _Max Payne_ and _Max Payne 2_ (PC). `ras-list` and `ras-extract` read
+  the RAS (Remedy Archive System) containers both games load everything from. A source may be a
+  `.ras` archive, a `.mpm` mod package, a directory searched recursively, an InstallShield
+  `DATA1.CAB`, an ISO, the `.cue` of a cue/bin pair, or a bare `.bin`. A raw BIN with no cue sheet
+  is unwrapped by its sector sync patterns, and a rip that lost its cue still reads. Every member is
+  LZSS-compressed and the archive tables are encrypted, both handled transparently, and `--raw`
+  retains the `RA->` and `RC->` wrappers. Members are stored back to back with no offset field, and
+  the directory therefore doubles as an integrity check. `ras-list` reports an archive as `intact`
+  when the header, both tables, and every stored size account for the file exactly.
+- Both `dade maxpayne` archive commands take as many sources as a game shipped discs. A retail disc
+  needs two routes at once. The level archives sit loose on the disc while the shared game database
+  is inside `DATA1.CAB` and is unpacked with `unshield`, and a cabinet is skipped with a warning
+  when `unshield` is missing. A cabinet does not have to fit on one disc. Max Payne 2 splits its
+  cabinet across `data1.cab`, `data1.hdr`, and `data2.cab` on the install disc and `data3.cab` on
+  the play disc, and the parts are gathered from every source given before the cabinet is unpacked
+  once. The discs may therefore be given in any order and in whatever mixture of formats they were
+  ripped to.
+- `dade maxpayne inspect-tags` decodes the tagged `R_MemoryFile` stream that every custom asset is
+  built from, identifying each value's type. The walk stops where a level exits tagged territory, at
+  the point its first untagged string begins.
+- `dade maxpayne ldb2glb` converts levels to binary glTF, one `.glb` per `.ldb`, in parallel across
+  every core, and `dade maxpayne ldb-textures` writes a level's embedded images out on their own.
+  Each `.glb` includes the level's architecture, its props, the game's texture coordinates, and
+  every embedded image. Both games are read, and the game a level came from does not have to be
+  given. A Max Payne 2 level opens with `LDB2` and is recognised by it. Pass `--database` and the
+  NPCs and pickups are drawn with their models, read from the first game's `skins` and
+  `level_items` directories; without `--database` they are written as empty nodes with names.
+- Every clip a prop can play (a door swinging either way, a lift rising, a fan turning) comes out as
+  a glTF animation with a name, and a viewer can list and play the animations. A level stores a
+  clip as two poses and two curves, one giving the distance travelled in world units and the other
+  how far the prop has turned. Both are baked into keyframes on the way out, and a clip that moves
+  nothing is dropped.
+- The baked lighting, the sky, and the decal layering are all written out. Each level's atlases are
+  embedded, each face identifies the atlas that lights it, the second coordinate set addresses the
+  atlas, and the lightmap goes in glTF's occlusion slot, the closest the format has to a lightmap. A
+  level's `skybox` faces get a flat unlit colour and close the level off wherever it opens to the
+  air, and omitting them would put a hole through every street. Graffiti, signage, and switchable
+  surfaces are lifted about eight millimetres along the face normal. A level places each of these
+  surfaces in exactly the plane of what it covers, and nothing in the file marks which is which.
+- `dade.maxpayne.ldb2` reads Max Payne 2 levels as a separate reader feeding the same exporter. The
+  sequel retains the tagged stream and the archives and rearranges everything above them. Its
+  strings live in one pool addressed by byte offset, its textures are DDS in five groups rather than
+  one, its vertices are packed float arrays behind a sixteen-bit index buffer, and its collision is
+  Havok. A room includes the transform that puts it in the world. The first game deferred placement
+  to the exit graph, and a room had to be assembled by walking the graph. Geometry an artist placed
+  more than once is written once and referred to afterwards. The sequel also states each surface's
+  draw order, and its decals are therefore lifted from what the level records rather than from the
+  geometry.
 - `dade rbplus site` builds a browsable, static site from a collection of `.rb` tune packages. It
   writes every tune's charts as JSON and ships a React page that draws them in the browser. The
   result can be served from anywhere, GitHub Pages included. Tunes are grouped by artist and title
@@ -39,15 +104,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   builds. Models are ordinary display lists and are read straight off. A track's power-up pads and
   flame columns are placed from the entity stream the track region's `+0x40` pointer identifies,
   their models read from a second code segment the ROM stores compressed. The port's bikes are not
-  converted. They take their vertices from segment 8. The engine fills that segment at run time, and
-  those vertices are not in the game's files at all.
-- `dade xg2 xg2-to-glb` also writes each `BMC` motion clip as an animation. The skeleton they drive
-  has no separate file. It is a region inside every rider model, identified by the seventh of the
-  eight segment pointers in the model's header, and its 27 bones have 61 degrees of freedom. With
-  the root's six, those are exactly the 67 curves every clip has. A curve is a binary angle, a full
-  turn to 65536. Anatomy confirms the scale rather than assumption. Across the seventeen clips that
-  scale bends the knees 130 and 122 degrees and the elbows 136 and 145, against roughly 135 and 150
-  for a real rider.
+  converted. They take their vertices from segment 8. The engine fills segment 8 at run time, and
+  the vertices are not in the game's files at all.
+- `dade xg2 xg2-to-glb` also writes each `BMC` motion clip as an animation. The skeleton the clips
+  drive has no separate file. It is a region inside every rider model, identified by the seventh of
+  the eight segment pointers in the model's header, and its 27 bones have 61 degrees of freedom.
+  With the root's six, the degrees of freedom are exactly the 67 curves every clip has. A curve is a
+  binary angle, a full turn to 65536. Anatomy confirms the scale rather than assumption. Across the
+  seventeen clips, the scale bends the knees 130 and 122 degrees and the elbows 136 and 145, against
+  roughly 135 and 150 for a real rider.
 - The LZHUF (`LHUF`/`HUFF`) codec is implemented, and the archive entries that used to be dropped
   now decode. It was a placeholder that raised, and every `LHUF` entry was logged and skipped.
   `dade xg2 extract-xg1` wrote its level containers as raw compressed slices and skipped the
@@ -77,15 +142,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dade sopranos unpack --convert` takes a texture's blend mode from byte `0x1B` of its record
   rather than guessing it from the texture's file name. Cutout, blended, additive, and subtractive
   surfaces are therefore recognised outright. The byte is what the engine turns into a surface's GS
-  `TEST_1` and `ALPHA_1` pair, and across all 133 levels it marks additive exactly the 171 `add_`
-  textures and subtractive exactly the 262 `sub_` ones, with nothing else in either group. A `MASK`
-  material now uses the console's alpha cutoff, `ATST` `GEQUAL` with `AREF` 8 on the PS2's 0..128
-  alpha scale.
+  `TEST_1` and `ALPHA_1` pair, and across all 133 levels the byte marks additive exactly the 171
+  `add_` textures and subtractive exactly the 262 `sub_` ones, with nothing else in either group. A
+  `MASK` material now uses the console's alpha cutoff, `ATST` `GEQUAL` with `AREF` 8 on the PS2's
+  0..128 alpha scale.
 - A Sopranos surface whose cooked mode is ambiguous is drawn the way its render pass is drawn. The
   level partitions its material records between passes with prefix sums, the engine blends passes 2
-  and 6 and draws every other one opaque, and a level fills only passes 1 and 2. Pass 2 is therefore
-  the decal pass: shadows, stains, ivy, and road detail. The baked shadow decals are no longer picked
-  out by their all-black vertex colour and given a black material at a fixed partial alpha.
+  and 6 and draws every other pass opaque, and a level fills only passes 1 and 2. Pass 2 is
+  therefore the decal pass: shadows, stains, ivy, and road detail. The baked shadow decals are no
+  longer picked out by their all-black vertex colour and given a black material at a fixed partial
+  alpha.
 - A Sopranos wardrobe piece is grouped the way a character wears it. An `_s0` shading suffix and a
   `_Face_0` suffix each mark a variant of one piece rather than a separate piece, and
   `*HEAD8_s0_Face_0` and `*HEAD9_Face_0` are therefore one head rather than two worn at once.
@@ -98,9 +164,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   vertices about their midpoint rather than about the state machine that places it, and the midpoint
   the mesh container states ahead of its batches is the gap between the two. Reading the midpoint as
   part of the prop's bounding box offset every prop by it. `10_Police_Station`'s vending machine had
-  its front panel a tenth of a unit out of the recess it closes, and a cell door hung 1.5 units above
-  the floor. Of the police station's 48 standing props, 4 met their floor exactly before and 36 do
-  now. The correction applies to a prop's clips as well. They pose the same geometry.
+  its front panel a tenth of a unit out of the recess it closes, and a cell door hung 1.5 units
+  above the floor. Of the police station's 48 standing props, 4 met their floor exactly before and
+  36 do now. The correction applies to a prop's clips as well. They pose the same geometry.
 - A Max Payne 2 prop animation is paced by the times its curves state. The second game writes a
   time with every sample and rarely spaces them evenly (of the 2454 curves in the first six levels,
   898 are uneven), and the times were being discarded for an even spread. The curve is also a
@@ -240,6 +306,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Ported the asset-format reference into the Sphinx documentation under `docs/formats/` and
   expanded the documentation into separate, well-organised pages.
 
-[unreleased]: https://github.com/Tatsh/dade/compare/v0.0.2...HEAD
+[unreleased]: https://github.com/Tatsh/dade/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Tatsh/dade/compare/v0.0.2...v0.1.0
 [0.0.2]: https://github.com/Tatsh/dade/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/Tatsh/dade/releases/tag/v0.0.1
