@@ -1,8 +1,8 @@
 {
   "_wiswa": {
     "commandLine": "wiswa -d",
-    "lastRun": "2026-09-08T07:26:06Z",
-    "version": "4fe6a24-dirty"
+    "lastRun": "2026-09-10T16:38:46Z",
+    "version": "26daa23"
   },
   "contributors": ["Andrew Udvare <audvare@gmail.com>"],
   "cspell": {
@@ -47,7 +47,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "bootstrap": "^5.3.3",
-    "cspell": "^10.2.0",
+    "cspell": "^10.2.1",
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.0",
     "html-webpack-plugin": "^5.6.3",

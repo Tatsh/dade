@@ -145,7 +145,6 @@ defried
 defries
 defry
 delenv
-dequantisation
 dequantise
 dequantized
 derbh
