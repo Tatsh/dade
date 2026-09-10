@@ -4,21 +4,21 @@ Structured EA RenderWare/EAGL-era resource converters for Monopoly 2008.
 This module consolidates the per-format converters for the structured (record-based) EA resources
 shipped in the Monopoly 2008 (Xbox 360) build. These are RenderWare / EAGL-era assets:
 
-* ``.bin`` — generic record container. The ``.bin`` extension covers MANY unrelated formats; each
-  file is sniffed by its magic (and, for headerless variants, its shape) and routed to a per-family
-  decoder. Each emitted JSON carries a ``"format"`` tag and a ``"_confidence"`` field so
-  honestly-decoded parts are distinguishable from best-effort structural dumps.
-* ``.anim`` — big-endian RenderWare ``ANIM`` keyframe animation curves.
-* ``.mixr`` — big-endian FourCC-chunked RenderWare Audio Core mixer graph.
-* ``.pamc`` — big-endian theme palette/colour-remap table.
-* ``.vanb`` — big-endian hash-named node graph (frontend UI value/animation bank).
-* ``.fntx`` — little-endian bitmap font texture; converted to a grayscale PNG atlas.
+* ``.bin`` is a generic record container. The ``.bin`` extension covers MANY unrelated formats;
+  each file is sniffed by its magic (and, for headerless variants, its shape) and routed to a
+  per-family decoder. Each emitted JSON includes a ``"format"`` tag and a ``"_confidence"`` field.
+  Honestly-decoded parts are therefore distinguishable from best-effort structural dumps.
+* ``.anim`` is a big-endian RenderWare ``ANIM`` keyframe animation curve set.
+* ``.mixr`` is a big-endian FourCC-chunked RenderWare Audio Core mixer graph.
+* ``.pamc`` is a big-endian theme palette/colour-remap table.
+* ``.vanb`` is a big-endian hash-named node graph (frontend UI value/animation bank).
+* ``.fntx`` is a little-endian bitmap font texture, converted to a grayscale PNG atlas.
 
-Public API:
+These are the public entry points:
 
-* :data:`EXTENSIONS` — the set of handled file extensions.
-* :func:`convert` — dispatch by extension, write the output (``.json`` for most, ``.png`` for
-  ``.fntx``) next to the source, and return the output path.
+* :data:`EXTENSIONS` is the set of handled file extensions.
+* :func:`convert` dispatches by extension, writes the output (``.json`` for most, ``.png`` for
+  ``.fntx``) next to the source, and returns the output path.
 """
 from __future__ import annotations
 
@@ -109,7 +109,7 @@ _MAX_CODEPOINT = 0x10000
 """
 
 # =========================================================================== #
-#  .bin  — generic record container (magic-sniffing dispatch)                 #
+#  .bin, generic record container (magic-sniffing dispatch)                   #
 # =========================================================================== #
 #
 # Families (see FORMATS.md "`.bin` files"):
@@ -156,7 +156,7 @@ def _cstrings(b: bytes, minlen: int = 3) -> list[str]:
 
 def _dec_place(b: bytes) -> dict[str, Any]:
     """
-    66600001 — object placement/instance: hashes + a 3x4 transform matrix.
+    Decode the 66600001 object placement/instance record (hashes and a 3x4 transform matrix).
 
     Parameters
     ----------
@@ -186,7 +186,7 @@ def _dec_place(b: bytes) -> dict[str, Any]:
 
 def _dec_text(b: bytes) -> dict[str, Any]:
     """
-    '  XT' — localized UTF-16BE string table.
+    Decode the '  XT' localized UTF-16BE string table.
 
     Records are [a:u32][b:u32][hash:u32][byteLen:u32] then byteLen bytes of UTF-16BE payload
     (terminated by NUL + the 0x2A2A '**' marker). The very first record's ``a`` slot holds the file
@@ -250,7 +250,7 @@ def _dec_fontlist(b: bytes) -> dict[str, Any]:
 
 def _dec_namesle(b: bytes) -> dict[str, Any]:
     """
-    cc030000 — little-endian scene/state name table.
+    Decode the cc030000 little-endian scene/state name table.
 
     Parameters
     ----------
@@ -272,7 +272,7 @@ def _dec_namesle(b: bytes) -> dict[str, Any]:
 
 def _dec_feng(b: bytes) -> dict[str, Any]:
     """
-    46456ee7 — FrontEnd GUI (FEng) compiled screen.
+    Decode the 46456ee7 FrontEnd GUI (FEng) compiled screen.
 
     Parameters
     ----------
@@ -298,7 +298,7 @@ def _dec_feng(b: bytes) -> dict[str, Any]:
 
 def _dec_stv(b: bytes) -> dict[str, Any]:
     """
-    ' STV' — float sample stream.
+    Decode the ' STV' float sample stream.
 
     Parameters
     ----------
@@ -322,7 +322,7 @@ def _dec_stv(b: bytes) -> dict[str, Any]:
 
 def _dec_rec0001(b: bytes) -> dict[str, Any]:
     """
-    0001000x — versioned hash-record table (structure partial).
+    Decode the 0001000x versioned hash-record table (structure partial).
 
     Parameters
     ----------
@@ -346,7 +346,7 @@ def _dec_rec0001(b: bytes) -> dict[str, Any]:
 
 def _dec_cfg0666(b: bytes) -> dict[str, Any]:
     """
-    06660d0x — property/config block (shared type hash 0x2ea8fb98).
+    Decode the 06660d0x property/config block (shared type hash 0x2ea8fb98).
 
     Parameters
     ----------
@@ -371,7 +371,7 @@ def _dec_cfg0666(b: bytes) -> dict[str, Any]:
 
 def _dec_fx(b: bytes) -> dict[str, Any]:
     """
-    46580b00 — environment FX parameter block (fixed 160 B).
+    Decode the 46580b00 environment FX parameter block (fixed 160 B).
 
     Parameters
     ----------
@@ -395,7 +395,7 @@ def _dec_fx(b: bytes) -> dict[str, Any]:
 
 def _dec_bbb(b: bytes) -> dict[str, Any]:
     """
-    ' BBB' — offset-table container (structure partial).
+    Decode the ' BBB' offset-table container (structure partial).
 
     Parameters
     ----------
@@ -448,7 +448,7 @@ def _looks_like_toc(b: bytes) -> bool:
 
 def _dec_toc(b: bytes) -> dict[str, Any]:
     """
-    00000xxx — hash->offset resource bundle table (payloads not decoded).
+    Decode the 00000xxx hash->offset resource bundle table (payloads not decoded).
 
     Parameters
     ----------
@@ -511,7 +511,7 @@ def _dec_script(b: bytes) -> dict[str, Any]:
 
 def _dec_blob(b: bytes) -> dict[str, Any]:
     """
-    00000000 — generic container ([0][0][...]); content not decoded.
+    Decode the 00000000 generic container ([0][0][...]); content not decoded.
 
     Parameters
     ----------
@@ -535,7 +535,7 @@ def _dec_blob(b: bytes) -> dict[str, Any]:
 
 def _dec_unknown(b: bytes) -> dict[str, Any]:
     """
-    (other) — unrecognised file: header words plus a hex preview.
+    Dump an unrecognised file as header words plus a hex preview.
 
     Parameters
     ----------
@@ -619,7 +619,7 @@ def convert_bin(path: str | Path, out: str | Path | None = None) -> tuple[Path, 
 
 
 # =========================================================================== #
-#  .anim  — big-endian RenderWare ANIM keyframe animation                     #
+#  .anim, big-endian RenderWare ANIM keyframe animation                       #
 # =========================================================================== #
 
 
@@ -709,7 +709,7 @@ def convert_anim(path: str | Path, out: str | Path | None = None) -> tuple[Path,
 
 
 # =========================================================================== #
-#  .mixr  — big-endian FourCC-chunked RenderWare Audio Core mixer graph       #
+#  .mixr, big-endian FourCC-chunked RenderWare Audio Core mixer graph         #
 # =========================================================================== #
 
 
@@ -813,7 +813,7 @@ def convert_mixr(path: str | Path, out: str | Path | None = None) -> tuple[Path,
 
 
 # =========================================================================== #
-#  .pamc  — big-endian theme palette/colour-remap table                       #
+#  .pamc, big-endian theme palette/colour-remap table                         #
 # =========================================================================== #
 
 
@@ -861,7 +861,7 @@ def convert_pamc(path: str | Path, out: str | Path | None = None) -> tuple[Path,
 
 
 # =========================================================================== #
-#  .vanb  — big-endian hash-named node graph (frontend UI value/anim bank)    #
+#  .vanb, big-endian hash-named node graph (frontend UI value/anim bank)      #
 # =========================================================================== #
 
 #: Sentinel u32 used by ``.vanb`` to mark an absent child/sibling offset.
@@ -956,7 +956,7 @@ def convert_vanb(path: str | Path, out: str | Path | None = None) -> tuple[Path,
 
 
 # =========================================================================== #
-#  .fntx  — little-endian bitmap font texture -> grayscale PNG atlas          #
+#  .fntx, little-endian bitmap font texture -> grayscale PNG atlas            #
 # =========================================================================== #
 
 #: Atlas width in pixels; verified: the atlas renders clean at 256px wide, 8-bit.
