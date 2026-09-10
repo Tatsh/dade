@@ -12,110 +12,108 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - `dade rbplus site` builds a browsable, static site from a collection of `.rb` tune packages. It
-  writes every tune's charts as JSON and ships a React page that draws them in the browser, so the
+  writes every tune's charts as JSON and ships a React page that draws them in the browser. The
   result can be served from anywhere, GitHub Pages included. Tunes are grouped by artist and title
-  and can be filed A–Z or by gojūon row, and the search matches the Hepburn romanisation of a kana
-  reading so a Japanese title answers to a Latin keyboard. Pass `--base` for a project site served
-  from a sub-path, which also writes a `404.html` so a link to one tune opens it directly.
-- A package holding only a basic chart, with its medium and hard entries empty, is recognised as an
-  extend note: a SPECIAL chart sold for a tune that already exists. `dade rbplus site` files it
-  under the tune it extends, worked out from the numbering, rather than listing it on its own.
-- The `dade rbplus site` output is an installable app: it ships a web app manifest, a service
-  worker, and icons, so a browser offers to install it and opens an already-seen tune offline. The
-  manifest's addresses are relative, so it installs the same from a domain of its own or from a
-  `--base` sub-path.
+  and can be filed A-Z or by gojūon row, and the search matches the Hepburn romanisation of a kana
+  reading. A Japanese title therefore resolves from a Latin keyboard. Pass `--base` for a project
+  site served from a sub-path. `--base` also writes a `404.html`, and a link to one tune opens it
+  directly.
+- A package with only a basic chart, its medium and hard entries empty, is recognised as an extend
+  note, a SPECIAL chart sold for a tune that already exists. `dade rbplus site` files it under the
+  tune it extends, worked out from the numbering, rather than listing it separately.
+- The `dade rbplus site` output is an installable app. It ships a web app manifest, a service
+  worker, and icons. A browser therefore offers to install it and opens an already-seen tune
+  offline. The manifest's addresses are relative, and it installs the same from a dedicated domain
+  or from a `--base` sub-path.
 - `dade rbplus dump-chart --flip` draws the chart with time running downward, the way the notes
   fall down the screen.
 - `dade xg2 xg1-to-glb`, `dade xg2 xg2-to-glb`, and `dade xg2 xg2-pc-to-glb` convert Extreme-G and
-  Extreme-G 2 levels, models, and track objects to binary glTF. A level is not a display list: it
+  Extreme-G 2 levels, models, and track objects to binary glTF. A level is not a display list. It
   is an LZHUF-compressed bytecode that the loader at `0x8004FDB8` walks once to build the display
-  lists the hardware then draws, so the geometry comes out by running the same interpreter,
-  dispatched through the jump table at `0x8004BA98`. Every opcode is decoded whether or not it
-  carries geometry, since each consumes a fixed number of bytes and skipping one by the wrong
+  lists the hardware then draws, and the geometry therefore comes out by running the same
+  interpreter, dispatched through the jump table at `0x8004BA98`. Every opcode is decoded whether or
+  not it includes geometry. Each consumes a fixed number of bytes, and skipping one by the wrong
   amount desynchronises everything after it. Extreme-G 2's dialect has twenty opcodes rather than
   fifteen and a visibility byte in front of every triangle, and the Windows port's tracks are the
-  console's levels with their multi-byte fields swapped, so one interpreter serves all three
+  console's levels with their multi-byte fields swapped. One interpreter therefore serves all three
   builds. Models are ordinary display lists and are read straight off. A track's power-up pads and
-  flame columns are placed from the entity stream the track region's `+0x40` pointer names, their
-  models read from a second code segment the ROM keeps compressed. The port's bikes are not
-  converted: they take their vertices from segment 8, which the engine fills at run time, so those
-  vertices are not in the game's files at all.
+  flame columns are placed from the entity stream the track region's `+0x40` pointer identifies,
+  their models read from a second code segment the ROM stores compressed. The port's bikes are not
+  converted. They take their vertices from segment 8. The engine fills that segment at run time, and
+  those vertices are not in the game's files at all.
 - `dade xg2 xg2-to-glb` also writes each `BMC` motion clip as an animation. The skeleton they drive
-  has no file of its own -- it is a region inside every rider model, named by the seventh of the
-  eight segment pointers in the model's header -- and its 27 bones carry 61 degrees of freedom
-  which, with the root's six, are exactly the 67 curves every clip has. A curve is a binary angle,
-  a full turn to 65536, which anatomy confirms rather than assumption: across the seventeen clips
-  that scale bends the knees 130 and 122 degrees and the elbows 136 and 145, against roughly 135
-  and 150 for a real one.
-- The LZHUF (`LHUF`/`HUFF`) codec is implemented, so the archive entries that used to be dropped
-  now decode. It was a placeholder that raised, and every `LHUF` entry was logged and skipped:
+  has no separate file. It is a region inside every rider model, identified by the seventh of the
+  eight segment pointers in the model's header, and its 27 bones have 61 degrees of freedom. With
+  the root's six, those are exactly the 67 curves every clip has. A curve is a binary angle, a full
+  turn to 65536. Anatomy confirms the scale rather than assumption. Across the seventeen clips that
+  scale bends the knees 130 and 122 degrees and the elbows 136 and 145, against roughly 135 and 150
+  for a real rider.
+- The LZHUF (`LHUF`/`HUFF`) codec is implemented, and the archive entries that used to be dropped
+  now decode. It was a placeholder that raised, and every `LHUF` entry was logged and skipped.
   `dade xg2 extract-xg1` wrote its level containers as raw compressed slices and skipped the
   texture banks altogether, and both now come out decoded, the banks as PNG. It is the Okumura and
   Yoshizaki lineage, with the ring buffer zero-filled rather than space-filled and the decompressed
   size taken from the archive header rather than from a prefix on the stream, both as the game's
-  own decompressor at `FUN_80057698` does it.
-- The `dade xg2` commands that take the Windows port's `DATA1` directory -- `extract-xg2-pc`,
-  `xg2-pc-to-glb`, and `montage-pc` -- now also accept the disc it came on, as an ISO image or as
-  the `.cue` or `.bin` of a cue/bin pair, which is extracted to a temporary directory and read from
-  there. File names are matched without regard to case, since ISO 9660 stores them upper-cased
-  where an installation holds them lower-cased.
+  decompressor at `FUN_80057698` does it.
+- The `dade xg2` commands that take the Windows port's `DATA1` directory (`extract-xg2-pc`,
+  `xg2-pc-to-glb`, and `montage-pc`) now also accept the disc it came on, as an ISO image or as the
+  `.cue` or `.bin` of a cue/bin pair. The disc is extracted to a temporary directory and read from
+  there. File names are matched without regard to case. ISO 9660 stores them upper-cased where an
+  installation stores them lower-cased.
 - An N64 ROM is accepted in any of the three byte orders, and is put into big-endian order before
-  anything reads it. A `.v64` has each halfword swapped and an `.n64` each word reversed, and since
-  every offset in the package is a big-endian `.z64` offset, a wrongly ordered image would not have
-  failed loudly -- it would have decompressed into noise.
+  anything reads it. A `.v64` has each halfword swapped and an `.n64` each word reversed. Every
+  offset in the package is a big-endian `.z64` offset, and a wrongly ordered image would not have
+  failed loudly. It would have decompressed into noise.
 
 ### Changed
 
 - The `BMC` entries in the Extreme-G 2 `mfs` archive are skeletal motion clips rather than sound
-  effects, and are no longer decoded to WAV as eight-bit differential PCM. Each is named after a
-  skeleton file -- `man2sk.asf` thirteen times, `ivask.bsf` three times, and `albeanosk.bs` once --
-  and all seventeen parse to exactly 67 channels and consume every byte. They are written out as
-  they stand, described in the manifest by their channel and frame counts, and converted to
-  animations by `dade xg2 xg2-to-glb`. Files in the `mfs` output are named `anim%03d_*` rather than
+  effects, and are no longer decoded to WAV as eight-bit differential PCM. Each takes the name of a
+  skeleton file (`man2sk.asf` thirteen times, `ivask.bsf` three times, and `albeanosk.bs` once), and
+  all seventeen parse to exactly 67 channels and consume every byte. They are written out as they
+  stand, described in the manifest by their channel and frame counts, and converted to animations by
+  `dade xg2 xg2-to-glb`. Files in the `mfs` output take the form `anim%03d_*` rather than
   `aud%03d_*`.
-- `dade sopranos unpack --convert` takes a texture's blend mode from byte `0x1B` of its own record
-  rather than guessing it from the texture's file name, so cutout, blended, additive, and
-  subtractive surfaces are recognised outright. The byte is what the engine turns into a surface's
-  GS `TEST_1` and `ALPHA_1` pair, and across all 133 levels it marks additive exactly the 171
-  `add_` textures and subtractive exactly the 262 `sub_` ones, with nothing else in either. A
-  `MASK` material now carries the console's own alpha cutoff, `ATST` `GEQUAL` with `AREF` 8 on the
-  PS2's 0..128 alpha scale.
-- A Sopranos surface whose cooked mode leaves the question open is drawn the way its own render
-  pass is drawn. The level partitions its material records between passes with its own prefix sums,
-  the engine blends passes 2 and 6 and draws every other one opaque, and a level fills only passes
-  1 and 2, which makes pass 2 the decal pass: shadows, stains, ivy, and road detail. The baked
-  shadow decals are therefore no longer picked out by their all-black vertex colour and given a
-  black material at a fixed partial alpha.
+- `dade sopranos unpack --convert` takes a texture's blend mode from byte `0x1B` of its record
+  rather than guessing it from the texture's file name. Cutout, blended, additive, and subtractive
+  surfaces are therefore recognised outright. The byte is what the engine turns into a surface's GS
+  `TEST_1` and `ALPHA_1` pair, and across all 133 levels it marks additive exactly the 171 `add_`
+  textures and subtractive exactly the 262 `sub_` ones, with nothing else in either group. A `MASK`
+  material now uses the console's alpha cutoff, `ATST` `GEQUAL` with `AREF` 8 on the PS2's 0..128
+  alpha scale.
+- A Sopranos surface whose cooked mode is ambiguous is drawn the way its render pass is drawn. The
+  level partitions its material records between passes with prefix sums, the engine blends passes 2
+  and 6 and draws every other one opaque, and a level fills only passes 1 and 2. Pass 2 is therefore
+  the decal pass: shadows, stains, ivy, and road detail. The baked shadow decals are no longer picked
+  out by their all-black vertex colour and given a black material at a fixed partial alpha.
 - A Sopranos wardrobe piece is grouped the way a character wears it. An `_s0` shading suffix and a
-  `_Face_0` suffix each mark a variant of one piece rather than a piece of its own, so
-  `*HEAD8_s0_Face_0` and `*HEAD9_Face_0` are one head rather than two worn at once. Headwear and
-  eyewear each answer to one key however the pieces are named, so a dock hand's bandana, skull cap,
-  and cap are one hat rather than three stacked on one head.
+  `_Face_0` suffix each mark a variant of one piece rather than a separate piece, and
+  `*HEAD8_s0_Face_0` and `*HEAD9_Face_0` are therefore one head rather than two worn at once.
+  Headwear and eyewear each resolve to one key however the pieces are titled, and a dock hand's
+  bandana, skull cap, and cap are one hat rather than three stacked on one head.
 
 ### Fixed
 
-- `dade maxpayne ldb2glb` places a Max Payne 2 prop on its own centre. A dynamic mesh writes its
-  vertices about their midpoint rather than about the state machine that places it, and the
-  midpoint the mesh container states ahead of its batches is the gap between the two. Reading that
-  as part of the prop's bounding box left every prop offset by it: `10_Police_Station`'s vending
-  machine had its front panel a tenth of a unit out of the recess it closes, and a cell door hung
-  1.5 units above the floor. Of the police station's 48 standing props, 4 met their floor exactly
-  before and 36 do now. The correction applies to a prop's clips as well, since they pose the same
-  geometry.
+- `dade maxpayne ldb2glb` places a Max Payne 2 prop on its centre. A dynamic mesh writes its
+  vertices about their midpoint rather than about the state machine that places it, and the midpoint
+  the mesh container states ahead of its batches is the gap between the two. Reading the midpoint as
+  part of the prop's bounding box offset every prop by it. `10_Police_Station`'s vending machine had
+  its front panel a tenth of a unit out of the recess it closes, and a cell door hung 1.5 units above
+  the floor. Of the police station's 48 standing props, 4 met their floor exactly before and 36 do
+  now. The correction applies to a prop's clips as well. They pose the same geometry.
 - A Max Payne 2 prop animation is paced by the times its curves state. The second game writes a
-  time with every sample and rarely spaces them evenly -- of the 2454 curves in the first six
-  levels, 898 are uneven -- and the times were being discarded for an even spread. The curve is
-  also a Catmull-Rom spline rather than a straight line between samples, so it is read as one.
-  Against the game's own evaluation, the worst clip of the first five levels was 0.85 of its motion
-  out of step and is now 0.06, and the average is 0.002 rather than 0.114.
+  time with every sample and rarely spaces them evenly (of the 2454 curves in the first six levels,
+  898 are uneven), and the times were being discarded for an even spread. The curve is also a
+  Catmull-Rom spline rather than a straight line between samples, and it is now read as a spline.
+  Against the game's evaluation, the worst clip of the first five levels was 0.85 of its motion out
+  of step and is now 0.06, and the average is 0.002 rather than 0.114.
 
 ### Removed
 
-- `dade rbplus dump-chart --image` no longer writes an HTML page; the suffix now names
-  `dade rbplus site`, which builds a browsable site for a whole collection instead. `.png` and
-  `.svg` are unchanged.
-- `dade xg2 extract-xg2 -r/--rate` is gone, since the `BMC` entries whose playback rate it set are
-  not audio.
+- `dade rbplus dump-chart --image` no longer writes an HTML page. `dade rbplus site` builds a
+  browsable site for a whole collection instead. `.png` and `.svg` are unchanged.
+- `dade xg2 extract-xg2 -r/--rate` is gone. The `BMC` entries whose playback rate it set are not
+  audio.
 
 ## [0.0.2] - 2026-08-26
 

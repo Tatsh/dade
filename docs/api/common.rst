@@ -2,7 +2,7 @@ Common
 ======
 
 Shared format readers, writers, and helpers used by more than one game submodule. Each was lifted
-from a game package once a second consumer appeared, so a single implementation is maintained.
+from a game package once a second consumer appeared, and a single implementation is maintained.
 
 ``dade.common.apple_png``
 ---------------------------

@@ -61,9 +61,9 @@ Save and snapshot state
 
 The save, config, level, and debug-snapshot files (``.sav``, ``.cfg``, ``.lev``, and ``.xxx``) are
 ``memcpy``-style images of game RAM. Their schemas were reverse-engineered from the PC executable
-(``incoming.exe``), so the decoders map the real in-memory layout rather than treating the body as
-opaque. Every byte is decoded into a typed value, so the output is both human-inspectable and
-lossless; nothing is left as a base64 blob.
+(``incoming.exe``), and the decoders map the real in-memory layout rather than treating the body as
+opaque. Every byte is decoded into a typed value. The output is therefore both human-inspectable and
+lossless, and no field remains a base64 blob.
 
 The configuration file (``.cfg``, written by ``SaveGameConfigFile``) is a concatenation of
 fixed-size blocks described by the game's internal save-descriptor table, totalling 10980 bytes.
@@ -88,7 +88,7 @@ It is split into its 21 named blocks, each decoded into a readable value:
 The snapshot files share one field table derived from the contiguous run of game globals that the
 engine serialises. ``.sav`` and ``.xxx`` (``SaveMissionStateSnapshot``) cover the whole region;
 ``.lev`` (``SaveLevelStateSnapshot``) is the same region without its 12-byte leading mission-id
-prefix, so it reuses the same table shifted by that prefix. Each decoded field carries its game
+prefix, and it reuses the same table shifted by that prefix. Each decoded field includes its game
 variable name (mission and game-mode flags, camera and replay-camera state, the script runtime,
 score statistics, frame and timer counters, lighting and fog state, the saved CD-audio track, and
 more). Run-time pointer fields are decoded as unsigned 32-bit words; their saved values are not

@@ -4,7 +4,7 @@ The Sopranos: Road to Respect
 Readers and converters for the PlayStation 2 game *The Sopranos: Road to Respect*, built on the
 7 Studios engine: the ``.FS`` archives that fill the disc, the ``.LVL`` containers inside them, the
 ``.TEX2`` texture banks, the ``.EGP2`` level geometry and ``.SGP2`` prop libraries, the ``.OLV``
-files that say where each prop stands, and the PS-ADPCM sound banks, music streams, and dialogue.
+files that record where each prop stands, and the PS-ADPCM sound banks, music streams, and dialogue.
 
 ``dade.sopranos.archive``
 ---------------------------

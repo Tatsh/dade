@@ -9,9 +9,9 @@ ian2obj
 
 Convert one model to Wavefront OBJ and MTL. Both the PC ``.ian`` mesh format and the Dreamcast
 ``*_M.BIN`` model pack are accepted; the format is detected from the file name. A Dreamcast pack
-needs its matching ``*_ML.BIN`` index beside it and writes one OBJ and MTL per contained object.
+needs its matching ``*_ML.BIN`` index beside it and writes one OBJ and MTL per object inside.
 
-Textures are resolved from the game root, which is auto-detected by walking up from the model (or
+Textures are resolved from the game root. The root is auto-detected by walking up from the model (or
 given explicitly with ``--game-root``): the ``.odl`` plus ``.ppm`` files for a PC model, or the
 level ``*_T.PVR`` pack for a Dreamcast model. Pass ``--no-texture`` to skip texture resolution. See
 :doc:`formats/models` for the underlying formats.
@@ -23,8 +23,8 @@ level ``*_T.PVR`` pack for a Dreamcast model. Pass ``--no-texture`` to skip text
 extract-pvr-pack
 ----------------
 
-Unpack a Dreamcast ``*_T.PVR`` texture pack. Each contained texture is written under
-``OUTDIR/<pack name>/`` as a separate ``.pvr`` file, or as a PNG with ``--png`` (which requires
+Unpack a Dreamcast ``*_T.PVR`` texture pack. Each texture in the pack is written under
+``OUTDIR/<pack name>/`` as a separate ``.pvr`` file, or as a PNG with ``--png`` (requires
 ``spvr2png``). See :doc:`formats/textures` for the pack layout.
 
 .. click:: dade.incoming.commands.extract_pvr_pack:extract_pvr_pack

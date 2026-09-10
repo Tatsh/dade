@@ -1,9 +1,9 @@
 Disc containers
 ===============
 
-The outermost layer of each release is a disc container that holds every other asset. The extractor
-unpacks these first, then walks the resulting tree. See :ref:`the legend <formats-legend>` for the
-status symbols.
+The outermost layer of each release is a disc container that includes every other asset. The
+extractor unpacks these first, then walks the resulting tree. See
+:ref:`the legend <formats-legend>` for the status symbols.
 
 .. list-table::
    :header-rows: 1
@@ -29,7 +29,7 @@ PC: ``DATA1.CAB``
 -----------------
 
 The PC disc ships its files inside a single InstallShield cabinet, ``DATA1.CAB``. The extractor
-accepts the disc directory, the ``DATA1.CAB`` file directly, or a PC ISO that contains it. When
+accepts the disc directory, the ``DATA1.CAB`` file directly, or a PC ISO that includes it. When
 given an ISO, the cabinet is first extracted with ``isodump`` or ``7z`` (whichever is found on
 ``PATH``) and then unpacked with ``unshield``.
 

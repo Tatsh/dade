@@ -1,7 +1,7 @@
 Amplitude and FreQuency
 =======================
 
-*Amplitude* and *FreQuency* (Harmonix, PS2) share one engine, so ``dade amplitude`` and
+*Amplitude* and *FreQuency* (Harmonix, PS2) share one engine, and ``dade amplitude`` and
 ``dade frequency`` are two commands over the same unpacking pipeline; only the ARK layout differs
 (Amplitude is magic-less, FreQuency starts with ``ARK\0``). Point either at a disc and it writes a
 tree of converted assets:
@@ -50,10 +50,11 @@ and its assets converted in place, in a fixed order:
 A directory input is copied into the output directory rather than extracted; a cue/bin input is
 decoded to an ISO image first. The source is only ever read, never written to.
 
-This is a fixed, ordered pipeline rather than a general "keep unpacking until no archives remain"
-loop. Each stage opens one known container type and surfaces the inputs the next stage consumes, so
-the order matters: Milo scenes are decomposed **before** the asset-conversion pass, which is what
-lets the meshes and bitmaps inside a scene be converted. The pipeline follows Amplitude's bounded,
+This is a fixed, ordered pipeline rather than a general "continue unpacking until no archives
+remain" loop. Each stage opens one known container type and surfaces the inputs the next stage
+consumes, and the order matters. Milo scenes are decomposed **before** the asset-conversion pass.
+Decomposing them first is what lets the meshes and bitmaps inside a scene be converted. The
+pipeline follows Amplitude's bounded,
 known container hierarchy:
 
 .. graphviz::
@@ -109,14 +110,14 @@ ISO, or a cue/bin ``.cue``:
 
    asyncio.run(main())
 
-``unpack`` rejects an unusable source itself, so there is no need to guard it: it raises
-:py:class:`~dade.common.exceptions.InvalidFormatError` when the disc is not readable or holds no
+``unpack`` rejects an unusable source itself, and no guard is needed. It raises
+:py:class:`~dade.common.exceptions.InvalidFormatError` when the disc is not readable or has no
 ARK of the game's layout, and :py:exc:`ValueError` when the output directory is inside a source
 directory.
 
 An unpacker is also iterable over its raw carve-outs, without converting or writing anything.
-Asynchronous iteration (``async for``) is the primary form; keep the loop free of exception
-handling and let a thin wrapper own the recovery policy:
+Asynchronous iteration (``async for``) is the primary form; the loop should stay free of exception
+handling and a thin wrapper should own the recovery policy:
 
 .. code-block:: python
 

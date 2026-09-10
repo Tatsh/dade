@@ -17,10 +17,10 @@ Source types
 
 ``SOURCE`` may be any of the following:
 
-- A **PC disc directory** containing ``DATA1.CAB`` (an InstallShield cabinet).
-- A **PC disc ISO** containing ``DATA1.CAB``. The cabinet is first extracted from the ISO with
+- A **PC disc directory** with ``DATA1.CAB`` inside (an InstallShield cabinet).
+- A **PC disc ISO** with ``DATA1.CAB`` inside. The cabinet is first extracted from the ISO with
   ``isodump`` or ``7z``, then unpacked.
-- A **``DATA1.CAB`` file** on its own.
+- A **``DATA1.CAB`` file** by itself.
 - A **Dreamcast GDI** (a ``.gdi`` file with its track files beside it), unpacked with
   ``gdiextract``.
 - A **directory of already extracted** PC or GD-ROM content.

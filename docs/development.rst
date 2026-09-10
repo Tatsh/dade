@@ -28,5 +28,5 @@ The documentation is built with `Sphinx <https://www.sphinx-doc.org/>`_:
 
    yarn gen-docs
 
-The build runs with warnings treated as errors, so a new public module must be added to the
+The build runs with warnings treated as errors, and a new public module must be added to the
 :doc:`api/index` reference (or, for a command, to :doc:`utilities`) for the build to pass.

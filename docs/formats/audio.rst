@@ -49,7 +49,7 @@ DC: ``.OSB`` and ``.MLT`` (Manatee sound)
 -----------------------------------------
 
 ``.OSB`` is a ``SOSB`` speech/SFX bank: a 16-byte header, an offset table of ``SOSP`` voice records,
-and each record holding packed AICA voice registers (sample start, length, 4-bit ADPCM codec, and
+and each record with packed AICA voice registers (sample start, length, 4-bit ADPCM codec, and
 pitch). Every record is decoded with the Yamaha/AICA ADPCM algorithm to signed 16-bit mono PCM and
 written as one WAV per record (22050 Hz in the shipped banks).
 
@@ -60,9 +60,9 @@ DC: ``Manatee.drv``
 -------------------
 
 Sega's Manatee AICA sound-driver program, uploaded to the audio chip at runtime. This is executable
-driver code rather than a convertible asset, so it is copied verbatim and documented only.
+driver code rather than a convertible asset, and it is copied verbatim and documented only.
 
 PC: ``.wav``
 ------------
 
-Already standard RIFF/WAVE PCM, so it is copied verbatim.
+Already standard RIFF/WAVE PCM, and it is copied verbatim.

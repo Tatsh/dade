@@ -3,8 +3,8 @@ Asset formats
 
 Status and notes for every asset format handled by ``dade incoming``. Two builds are covered:
 
-- **PC** — Windows, driven by ``incoming.exe``.
-- **DC** — Sega Dreamcast, driven by ``1ST_READ.BIN``.
+- **PC** is Windows, driven by ``incoming.exe``.
+- **DC** is Sega Dreamcast, driven by ``1ST_READ.BIN``.
 
 Many formats are shared between the two builds. Each conversion is reverse-engineered to a fully
 decoded, open output; where a format has no portable schema (or is already open) it is copied
@@ -15,9 +15,10 @@ verbatim instead.
 Legend
 ------
 
-- ✅ **converted** — decoded and re-written in an open format.
-- 📄 **copied verbatim** — already open, or no portable schema, so the original is mirrored as-is.
-- 🚧 **being decoded** — partially understood; not yet converted.
+- ✅ **converted** means decoded and re-written in an open format.
+- 📄 **copied verbatim** means already open, or without a portable schema. The original is
+  mirrored as-is.
+- 🚧 **being decoded** means partially understood and not yet converted.
 
 Format groups
 -------------

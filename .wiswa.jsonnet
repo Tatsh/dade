@@ -156,8 +156,8 @@ local utils = import 'utils.libjsonnet';
   pre_commit_config+: { exclude: '^dade/rbplus/site/' },
   package_json+: {
     cspell+: {
-      // The whole built bundle is generated — a minified script and stylesheet, their source maps,
-      // and the icons and manifest beside them — so none of it is worth spell-checking.
+      // The whole built bundle is generated (a minified script and stylesheet, their source maps,
+      // and the icons and manifest beside them). None of it is worth spell-checking.
       ignorePaths+: ['dade/rbplus/site/**'],
     },
     devDependencies+: {
