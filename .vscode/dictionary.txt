@@ -422,6 +422,7 @@ nomultidefs
 nonexistent
 nonrendered
 nonrendering
+noone
 noqa
 norecursedirs
 noseparator
@@ -442,6 +443,7 @@ numblocks
 numpad
 numpages
 numpy
+numpydoc
 nums
 nverts
 nvrtc
