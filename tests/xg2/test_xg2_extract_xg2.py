@@ -151,7 +151,7 @@ def test_run_dumps_the_shaw_resources(make_xg2_rom: Callable[..., bytes], tmp_pa
 
 
 def test_run_decodes_lhuf_mfs_entries(make_xg2_rom: Callable[..., bytes], tmp_path: Path) -> None:
-    # An LHUF entry used to be skipped for want of a codec; it is now decoded like any other, so it
+    # An LHUF entry used to be skipped for want of a codec; it is now decoded like any other, and it
     # is counted alongside the entry that was already being written.
     assert run(make_xg2_rom(lhuf=True), tmp_path)['other'] == 2
 

@@ -33,9 +33,9 @@ def _texture_bank(*, palette: bool = True, truncated: bool = False) -> bytes:
 
 def test_run_log_records_and_writes(tmp_path: Path) -> None:
     run_log = RunLog()
-    run_log.add('something happened')
+    run_log.add('a log line')
     run_log.write(tmp_path / 'extract.log')
-    assert (tmp_path / 'extract.log').read_text() == 'something happened\n'
+    assert (tmp_path / 'extract.log').read_text() == 'a log line\n'
 
 
 def test_run_log_writes_an_empty_file(tmp_path: Path) -> None:
@@ -75,7 +75,7 @@ def test_run_decompresses_the_level_sub_blobs(make_xg1_rom: Callable[..., bytes]
     level = tmp_path / 'levels' / f'00_{XG1_LEVEL_BASES[0]:07X}'
     assert (level / 't1_desc.bin').is_file()
     assert (level / 'r2.bin').is_file()
-    # A raw slice is kept only for a stream that runs out before its declared size, which none of
+    # A raw slice is retained only for a stream that runs out before its declared size. None of
     # these do.
     assert not list(level.glob('*.lzhuf.raw'))
 
@@ -269,6 +269,6 @@ def test_unpack_writes_a_manifest(make_xg1_rom: Callable[..., bytes], tmp_path: 
 def test_unpack_propagates_a_calibration_failure(make_xg1_rom: Callable[..., bytes],
                                                  tmp_path: Path) -> None:
     rom = bytearray(make_xg1_rom())
-    struct.pack_into('>I', rom, 0x7A2DFC + 4, 0xFFFFFF)  # Demand more than the ROM holds.
+    struct.pack_into('>I', rom, 0x7A2DFC + 4, 0xFFFFFF)  # Demand more than the ROM has.
     with pytest.raises(MfsCalibrationError):
         unpack(bytes(rom), tmp_path)

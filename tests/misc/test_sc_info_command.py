@@ -36,7 +36,7 @@ def test_dump_writes_a_report(runner: CliRunner, sc_info_dir: Path) -> None:
 def test_dump_json(runner: CliRunner, sc_info_dir: Path) -> None:
     result = runner.invoke(sc_info, ('dump', str(sc_info_dir), '--json'))
     assert result.exit_code == 0
-    # One entry per bundle read, so the shape does not change when there are several.
+    # One entry per bundle read; the shape does not change when there are several.
     rendered = json.loads(result.output)
     assert len(rendered) == 1
     assert rendered[0]['bundle'] == 'Payload/Example.app'

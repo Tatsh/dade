@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 _EOF_MARKER = b'\x11\x00\x00'
-"""Token 17 with a zero 16-bit operand, giving offset 0, which ends a stream."""
+"""Token 17 with a zero 16-bit operand, giving offset 0 and ending a stream."""
 
 _DECODERS = [lzo1x_decompress, lzo1y_decompress]
 
@@ -63,7 +63,7 @@ def test_literal_run_continuation(decompress: Callable[[bytes, int], bytes]) -> 
 
 def test_variants_differ_on_the_same_stream() -> None:
     # Token 0x60 yields an M2 match of (t >> 5) + 1 == 4 bytes under LZO1X but (t >> 4) - 1 == 5
-    # under LZO1Y, which is the whole reason both decoders exist.
+    # under LZO1Y. That is the whole reason both decoders exist.
     stream = _PREFIX + b'\x60\x00' + _EOF_MARKER
     assert lzo1x_decompress(stream, 4096) == b'ABCDEFGHI' + b'I' * 4
     assert lzo1y_decompress(stream, 4096) == b'ABCDEFGHI' + b'I' * 5
@@ -71,7 +71,7 @@ def test_variants_differ_on_the_same_stream() -> None:
 
 @pytest.mark.parametrize('decompress', _DECODERS)
 def test_m3_match(decompress: Callable[[bytes, int], bytes]) -> None:
-    # Token 0x21 is M3 with length (0x21 & 31) + 2 == 3 and a zero operand, so the match runs
+    # Token 0x21 is M3 with length (0x21 & 31) + 2 == 3 and a zero operand; the match runs
     # back one byte and repeats the final 'I'.
     assert decompress(_PREFIX + b'\x21\x00\x00' + _EOF_MARKER, 4096) == b'ABCDEFGHI' + b'I' * 3
 
@@ -85,7 +85,7 @@ def test_m3_long_length(decompress: Callable[[bytes, int], bytes]) -> None:
 
 @pytest.mark.parametrize('decompress', _DECODERS)
 def test_inline_m1_after_trailing_literals(decompress: Callable[[bytes, int], bytes]) -> None:
-    # The M3 operand's low two bits are 1, so one trailing literal ('Z') is copied and the next
+    # The M3 operand's low two bits are 1; one trailing literal ('Z') is copied and the next
     # token is taken as an inline M1 match of two bytes.
     stream = _PREFIX + b'\x21\x01\x00Z\x04\x00' + _EOF_MARKER
     assert decompress(stream, 4096) == b'ABCDEFGHI' + b'I' * 3 + b'Z' + b'I' + b'Z'
@@ -93,14 +93,14 @@ def test_inline_m1_after_trailing_literals(decompress: Callable[[bytes, int], by
 
 @pytest.mark.parametrize('decompress', _DECODERS)
 def test_literal_run_from_match_state(decompress: Callable[[bytes, int], bytes]) -> None:
-    # After the M3 match the operand's low bits are 0, so the next token re-enters the
+    # After the M3 match the operand's low bits are 0; the next token re-enters the
     # literal-or-match state, where a value below 16 starts another literal run.
     stream = _PREFIX + b'\x21\x00\x00' + b'\x02' + b'12345' + _EOF_MARKER
     assert decompress(stream, 4096) == b'ABCDEFGHI' + b'I' * 3 + b'12345'
 
 
 def test_post_literal_run_m1_uses_large_base() -> None:
-    # The post-literal-run M1 match reaches back past the variant's base, so it needs an output
+    # The post-literal-run M1 match extends back past the variant's base and needs an output
     # longer than LZO1Y's 0x400.
     payload = bytes(index % 256 for index in range(1100))
     stream = _literal_run(payload) + b'\x04\x00' + _EOF_MARKER
@@ -108,7 +108,7 @@ def test_post_literal_run_m1_uses_large_base() -> None:
 
 
 def test_m4_match_copies() -> None:
-    # An M4 match reaches back 0x4000 plus its operand, so it needs an output past 16 KiB.
+    # An M4 match extends back 0x4000 plus its operand and needs an output past 16 KiB.
     payload = bytes(index % 256 for index in range(16398))
     stream = _literal_run(payload) + b'\x17\x08\x00' + _EOF_MARKER
     assert lzo1x_decompress(stream, 65536) == payload + payload[12:21]

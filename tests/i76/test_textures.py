@@ -47,13 +47,13 @@ def test_decode_vqm_dimensions(vqm_texture: bytes, codebook: bytes) -> None:
 def test_decode_vqm_expands_codebook_blocks(vqm_texture: bytes, codebook: bytes) -> None:
     entries = load_codebook(codebook)
     image = decode_vqm(vqm_texture, entries)
-    # The top-left block references codebook entry 0, laid out row by row.
+    # The top-left block references codebook entry 0, arranged row by row.
     assert b''.join(image.pixels[row * 8:row * 8 + 4] for row in range(4)) == entries[0]
 
 
 def test_decode_vqm_solid_block(vqm_texture: bytes, codebook: bytes) -> None:
     image = decode_vqm(vqm_texture, load_codebook(codebook))
-    # The fourth block has the solid flag set, so every one of its pixels is the low byte.
+    # The fourth block has the solid flag set; every one of its pixels is the low byte.
     assert {image.pixels[(4 + row) * 8 + 4:(4 + row) * 8 + 8] for row in range(4)} == {b'\x42' * 4}
 
 

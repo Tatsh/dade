@@ -78,7 +78,7 @@ def test_parse_arcade(arcade_chart_bytes: bytes) -> None:
     assert units[0].type_name == 'tempo'
     assert units[0].value == 120
     assert [unit.lane for unit in units if unit.type_name == 'tap'] == [0, 4, 8, 8]
-    # Only the value's low nibble is the lane; the bits above it are carried but unused here.
+    # Only the value's low nibble is the lane; the bits above it are present but unused here.
     assert units[6].value == 0x0018
     assert units[6].lane == 8
 
@@ -139,7 +139,7 @@ def test_standard_strip_synthesises_measures_without_bars(standard_chart_bytes: 
     chart = parse_standard(standard_chart_bytes)
     without_bars = chart._replace(records=tuple(r for r in chart.records if r.type_name != 'bar'))
     strip = standard_strip(without_bars)
-    # 240 BPM means a 4/4 measure lasts 1000 ticks, so the 3000-tick chart gets three lines.
+    # 240 BPM means a 4/4 measure lasts 1000 ticks; the 3000-tick chart gets three lines.
     assert strip.measure_ticks == (0, 1000, 2000)
 
 

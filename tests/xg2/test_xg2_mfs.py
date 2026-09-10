@@ -63,7 +63,7 @@ def test_calibrate_base_finds_the_archive(make_lzss: Callable[[bytes], bytes]) -
 
 def test_calibrate_base_gives_up_on_rubbish(make_lzss: Callable[[bytes], bytes]) -> None:
     rom = bytearray(_build_rom([b'alpha', b'beta'], make_lzss))
-    # Demand far more output than the ROM can supply, so every candidate base runs off the end.
+    # Demand far more output than the ROM can supply; every candidate base runs off the end.
     struct.pack_into('>I', rom, XG1_MFS_TABLE + 4, 0xFFFFFF)
     first, entries = read_table(bytes(rom))
     with pytest.raises(MfsCalibrationError):

@@ -51,7 +51,7 @@ def build_voice(blocks: list[bytes], *, tag: bytes = b'AUDO') -> bytes:
     blocks : list[bytes]
         The PS-ADPCM payload of each block.
     tag : bytes
-        Chunk tag, so a test may write a block the reader should ignore.
+        Chunk tag, allowing a test to write a block the reader should ignore.
 
     Returns
     -------

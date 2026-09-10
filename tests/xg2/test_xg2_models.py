@@ -158,7 +158,7 @@ def test_build_montage_leaves_transparent_pixels_as_background() -> None:
 def test_build_montage_does_not_enlarge() -> None:
     texture = Texture('ci8', 0, 2, 2, b'\xff\xff\xff\xff' * 4)
     _, _, rgba = build_montage([texture], cell=16, columns=1)
-    # The 2x2 texture is centred, so the top-left corner keeps the checkerboard.
+    # The 2x2 texture is centred, and the top-left corner retains the checkerboard.
     assert rgba[:4] != b'\xff\xff\xff\xff'
 
 

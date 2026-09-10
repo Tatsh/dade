@@ -102,7 +102,7 @@ def test_sinf_rights(sinf_bytes: bytes) -> None:
 
 
 def test_sinf_rights_are_all_described(sinf_bytes: bytes) -> None:
-    # Every tag a righ block carries has a description; the corpus turned up no others.
+    # Every tag in a righ block has a description; the corpus turned up no others.
     rights = {right.tag: right for right in parse_sinf(sinf_bytes).rights}
     assert all(right.description for right in rights.values())
     assert rights['veID'].description == 'Vendor ID'
@@ -114,7 +114,7 @@ def test_an_unknown_rights_tag_has_no_description() -> None:
 
 
 def test_sinf_rights_trailer_is_reported_not_parsed(sinf_bytes: bytes) -> None:
-    # The eight bytes are identical across real bundles, so they are surfaced rather than named.
+    # The eight bytes are identical across real bundles; they are surfaced rather than labelled.
     assert parse_sinf(sinf_bytes).rights_trailer.hex() == '8a34795bffffffee'
 
 
@@ -165,7 +165,7 @@ def test_supp(supp_bytes: bytes, rsa_certificate_der: bytes) -> None:
     assert supp.records[1] == bytes([1]) * 32
     assert supp.certificate_der == rsa_certificate_der
     assert supp.certificate is not None
-    # The .supp carries a different certificate from the .supf, as the real bundles do.
+    # The .supp has a different certificate from the .supf, as the real bundles do.
     assert 'CN=Example RSA Leaf' in supp.certificate.subject
     assert supp.signature == bytes(128)
 
@@ -201,7 +201,7 @@ def test_supx_rejects_a_short_file() -> None:
 
 
 def test_read_sc_info_searches_for_the_directory(sc_info_dir: Path) -> None:
-    # sc_info_dir is the Payload directory, so the bundle below it has to be found.
+    # sc_info_dir is the Payload directory; the bundle below it has to be found.
     info = read_sc_info(sc_info_dir)
     assert info.path.name == 'SC_Info'
     assert info.sinf is not None
@@ -287,8 +287,8 @@ def test_sc_info_to_json_keeps_blobs_in_full(sc_info_dir: Path) -> None:
 
 
 def test_purchase_time_covers_the_whole_uint32_range(sinf_bytes: bytes) -> None:
-    # The largest value the field can hold is still a date datetime represents, so no timestamp
-    # these records carry can overflow.
+    # The largest value the field can store is still a date datetime represents, and no timestamp
+    # in these records can overflow.
     latest = sinf_bytes.replace(struct.pack('>I', SC_INFO_PURCHASED), b'\xff\xff\xff\xff', 1)
     purchased = parse_sinf(latest).purchased
     assert purchased is not None
@@ -319,7 +319,7 @@ def test_cross_references_hold_for_a_matched_pair(tmp_path: Path, sinf_bytes: by
 
 
 def test_cross_references_report_a_mismatch(sc_info_dir: Path) -> None:
-    # The stock fixtures deliberately do not pair up, so both checks must come back false.
+    # The stock fixtures deliberately do not pair up; both checks must come back false.
     rendered = sc_info_to_json(read_sc_info(sc_info_dir))
     assert rendered['crossReferences']['keyBlobIsLastRecord'] is False
 
@@ -343,7 +343,7 @@ def test_store_item_id_comes_from_the_song_tag(sc_info_dir: Path) -> None:
 
 
 def test_the_url_falls_back_to_the_region_less_form(sc_info_dir: Path) -> None:
-    # Without a storefront the region-less link is given, which Apple resolves for the reader.
+    # Without a storefront the region-less link is given. Apple resolves it for the reader.
     info = read_sc_info(sc_info_dir)
     assert info.app_store_url == 'https://apps.apple.com/app/id472140433'
     assert sc_info_to_json(info)['appStoreURL'] == 'https://apps.apple.com/app/id472140433'
@@ -367,7 +367,7 @@ def test_app_store_url_is_absent_without_a_record(tmp_path: Path) -> None:
 
 
 def _write_bundle(root: Path, sinf_bytes: bytes, *, metadata: dict[str, object] | None) -> None:
-    """Lay out an unpacked .ipa: metadata beside Payload, and one bundle inside it."""
+    """Build an unpacked .ipa: metadata beside Payload, and one bundle inside it."""
     directory = root / 'Payload' / 'Example.app' / 'SC_Info'
     directory.mkdir(parents=True)
     (directory / 'Example.sinf').write_bytes(sinf_bytes)
@@ -429,7 +429,7 @@ def test_an_unlisted_storefront_gives_the_region_less_url(tmp_path: Path,
     _write_bundle(tmp_path, sinf_bytes, metadata={'s': 999999})
     info = read_sc_info(tmp_path)
     assert info.storefront == 999999
-    # The storefront is known but maps to no country code, so the link cannot be regional.
+    # The storefront is known but maps to no country code; the link cannot be regional.
     assert info.region is None
     assert info.app_store_url == 'https://apps.apple.com/app/id472140433'
     assert 'Storefront: 999999 (unknown region)' in render_text(info)
@@ -438,7 +438,7 @@ def test_an_unlisted_storefront_gives_the_region_less_url(tmp_path: Path,
 def test_the_record_wins_over_mismatched_metadata(tmp_path: Path, sinf_bytes: bytes) -> None:
     _write_bundle(tmp_path, sinf_bytes, metadata={'s': 143462, 'itemId': 626574779})
     info = read_sc_info(tmp_path)
-    # The record sits inside the bundle, so it is the one bound to it.
+    # The record sits inside the bundle; it is the one bound to it.
     assert info.record_item_id == 472140433
     assert info.metadata_item_id == 626574779
     assert info.store_item_id == 472140433
@@ -631,7 +631,7 @@ def test_rights_json_puts_every_value_under_one_key(sc_info_dir: Path) -> None:
         r['tag']: r
         for r in sc_info_to_json(read_sc_info(sc_info_dir))['records'][0]['sinf']['rights']
     }
-    # Each tag's value comes back in its own natural type, always under `value`.
+    # Each tag's value comes back in its natural type, always under `value`.
     assert rights['plat']['value'] == 5
     assert rights['aver']['value'] == '1.1.1.0'
     assert rights['tran']['value'] == '2024-02-04T21:11:49+00:00'
@@ -646,7 +646,7 @@ def test_every_record_in_the_directory_is_read(sc_info_dir_with_two_records: Pat
 
 
 def test_the_manifest_names_the_main_record(sc_info_dir_with_two_records: Path) -> None:
-    # 'AExample_armv7' sorts first, so only SinfPaths can pick 'Example' out.
+    # 'AExample_armv7' sorts first; only SinfPaths can pick 'Example' out.
     main = read_sc_info(sc_info_dir_with_two_records).main_record
     assert main is not None
     assert main.name == 'Example'
@@ -691,7 +691,7 @@ def test_the_first_record_wins_when_nothing_names_one(tmp_path: Path, sinf_bytes
 
 def test_a_supplement_without_a_sinf_still_makes_a_record(tmp_path: Path,
                                                           supp_bytes: bytes) -> None:
-    # 16 of the measured directories carry supplements with no .sinf beside them.
+    # 16 of the measured directories have supplements with no .sinf beside them.
     directory = tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
     directory.mkdir(parents=True)
     (directory / 'Example.supp').write_bytes(supp_bytes)

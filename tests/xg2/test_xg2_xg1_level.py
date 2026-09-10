@@ -170,7 +170,7 @@ def test_decode_level_geometry_with_an_object_past_the_end(mocker: MockerFixture
     'code',
     [
         bytes([0, 0
-               ]),  # An object that ends before the bytecode does, so the loop runs on to the next.
+               ]),  # An object that ends before the bytecode does; the loop runs on to the next.
         bytes([1, 4]) + _vertex(0, 0, 0, 0, (1, 1, 1)) * 2,
         bytes([1, 40]) + _vertex(0, 0, 0, 0, (1, 1, 1)) * 40,
         bytes([3, 0x11]),
@@ -292,7 +292,7 @@ def test_read_bank_descriptors_of_an_empty_table() -> None:
 
 
 def test_read_texture_bank_without_a_palette(mocker: MockerFixture) -> None:
-    # The palette offset does not close the bank, so no palette is read, and the sole record's
+    # The palette offset does not close the bank; no palette is read, and the sole record's
     # pixels run past the end and are skipped.
     bank = bytearray(0x30)
     struct.pack_into('>I', bank, 0, 0x99)

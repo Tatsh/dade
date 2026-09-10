@@ -53,7 +53,7 @@ def runner() -> CliRunner:
 
 def geometry() -> bytes:
     """
-    Give an ``.EGP2`` blob holding one textured triangle.
+    Give an ``.EGP2`` blob with one textured triangle.
 
     Returns
     -------
@@ -66,7 +66,7 @@ def geometry() -> bytes:
 
 def library() -> bytes:
     """
-    Give an ``.SGP2`` library holding one object.
+    Give an ``.SGP2`` library with one object.
 
     Returns
     -------
@@ -79,7 +79,7 @@ def library() -> bytes:
 
 def bank() -> bytes:
     """
-    Give a ``.TEX2`` bank holding one image.
+    Give a ``.TEX2`` bank with one image.
 
     Returns
     -------
@@ -109,7 +109,7 @@ def bank_header(entries: list[tuple[int, int, int, int]]) -> bytes:
 
 def voice() -> bytes:
     """
-    Give a ``.VO2`` file holding one block of dialogue.
+    Give a ``.VO2`` file with one block of dialogue.
 
     Returns
     -------
@@ -129,7 +129,7 @@ def test_iter_sources_searches_a_directory_however_it_is_cased(tmp_path: Path) -
     (tmp_path / 'sub' / 'DATA_P.FS').write_bytes(b'a')
     (tmp_path / 'other.fs').write_bytes(b'b')
     (tmp_path / 'notes.txt').write_bytes(b'c')
-    # Sorted by whole path, so a file at the top comes before one in a subdirectory.
+    # Sorted by whole path; a file at the top comes before one in a subdirectory.
     assert [name for _, name, _, _ in iter_sources([tmp_path])] == ['other.fs', 'DATA_P.FS']
 
 
@@ -313,7 +313,7 @@ def test_prop_libraries_are_offered_to_the_level_that_owns_them(tmp_path: Path,
     placements = (Placement('iGuy', 'guy', 1.0, 2.0, 3.0, 0.0),)
     mocker.patch('dade.sopranos.main.read_placements', return_value=placements)
     path = _place_level(tmp_path, olv=b'olv')
-    # A second variant of the same level, which also carries part of the cast.
+    # A second variant of the same level. It also includes part of the cast.
     other = tmp_path / 'cooked' / 'p_bar_hub'
     other.mkdir()
     (other / 'more.SGP2').write_bytes(library())

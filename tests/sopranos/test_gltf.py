@@ -52,7 +52,7 @@ def paint(packet: bytes, colour: tuple[int, int, int]) -> bytes:
     """
     Give a packet's vertices a colour.
 
-    Vertex colour lives in the low byte of the U, V, and X floats, so it is written there.
+    Vertex colour lives in the low byte of the U, V, and X floats and is written there.
 
     Parameters
     ----------
@@ -144,7 +144,7 @@ def test_build_glb_names_the_generator() -> None:
 
 
 def test_build_glb_draws_every_material_from_both_sides() -> None:
-    # The console never culls a back face, so winding is not load-bearing and there is no opt-in.
+    # The console never culls a back face; winding is not load-bearing and there is no opt-in.
     glb = build_glb(level())
     assert glb is not None
     materials = document(glb)['materials']

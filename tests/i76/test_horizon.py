@@ -14,7 +14,7 @@ def test_parse_hzd(hzd: bytes) -> None:
 
 
 def test_parse_hzd_keeps_trailing_name() -> None:
-    # The final name is not NUL-terminated, so it is only found by the trailing flush.
+    # The final name is not NUL-terminated; it is only found by the trailing flush.
     assert parse_hzd(b'A_1_01.MAP') == ('A_1_01.MAP',)
 
 

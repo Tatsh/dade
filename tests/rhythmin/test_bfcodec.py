@@ -16,7 +16,7 @@ from dade.rhythmin.bfcodec import (
     encipher,
 )
 
-# Schneier's published Blowfish known-answer vectors, as key, plaintext, and ciphertext.
+# Schneier's published Blowfish known-answer vectors, as key, plaintext, and ciphertext. The
 _VECTORS = (
     ('0000000000000000', '0000000000000000', '4EF997456198DD78'),
     ('FFFFFFFFFFFFFFFF', 'FFFFFFFFFFFFFFFF', '51866FD5B85ECB8A'),
@@ -45,7 +45,7 @@ def test_default_key_is_the_digest_of_the_plaintext() -> None:
 @pytest.mark.parametrize(('key', 'plaintext', 'ciphertext'), _VECTORS)
 def test_standard_f_reproduces_the_published_vectors(monkeypatch: pytest.MonkeyPatch, key: str,
                                                      plaintext: str, ciphertext: str) -> None:
-    # The init boxes are the canonical ones, so swapping only F back to the textbook version must
+    # The init boxes are the canonical ones, and swapping only F back to the textbook version must
     # turn this into standard Blowfish. That pins the single deviation precisely.
     monkeypatch.setattr(Blowfish, '_f', _standard_f)
     cipher = Blowfish(bytes.fromhex(key))
@@ -79,7 +79,7 @@ def test_block_encrypt_and_decrypt_are_inverse() -> None:
 
 
 def test_a_wrong_key_yields_rubbish_rather_than_an_error() -> None:
-    # The length trailer is stored in the clear, so it cannot detect a wrong key.
+    # The length trailer is stored in the clear and cannot detect a wrong key.
     recovered = decipher(encipher(b'hello world', b'right key'), b'wrong key')
     assert len(recovered) == len(b'hello world')
     assert recovered != b'hello world'

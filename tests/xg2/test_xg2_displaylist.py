@@ -72,7 +72,7 @@ def test_parse_dl_textures_bounds_an_atlas_by_its_tallest_tile(
 
 
 def test_parse_dl_textures_measures_an_atlas_only_once(make_dl_model: Callable[..., bytes]) -> None:
-    # The second run of loads for the same image is a redraw, so its bottom edge is ignored.
+    # The second run of loads for the same image is a redraw; its bottom edge is ignored.
     commands = (*_palette_load(), _settile(_SIZ_CI8), _settimg(
         _PIXELS, 16), _loadtile(3), _settimg(_OTHER_PIXELS, 16), _loadtile(1), _settimg(
             _PIXELS, 16), _loadtile(31), _settilesize(8, 8))
@@ -84,7 +84,7 @@ def test_parse_dl_textures_bounds_a_region_by_the_next_image(
     commands = (*_palette_load(), _settile(_SIZ_CI8), _settimg(
         _PIXELS, 64), _loadtile(255), _settilesize(8, 8), _settimg(_OTHER_PIXELS), _settilesize(
             8, 8))
-    # The first image runs to 0x500, so 0x100 bytes of 64-byte rows bound it to four.
+    # The first image runs to 0x500; 0x100 bytes of 64-byte rows bound it to four.
     textures = parse_dl_textures(make_dl_model(commands))
     assert [(t.offset, t.height) for t in textures] == [(_PIXELS, 4), (_OTHER_PIXELS, 8)]
 

@@ -43,7 +43,7 @@ def _model(bones: list[tuple[str, int, int]],
            root_dof: int = 6,
            magic: bytes = SKELETON_MAGIC) -> bytes:
     """
-    Build a rider model carrying one skeleton.
+    Build a rider model with one skeleton.
 
     Returns
     -------
@@ -91,7 +91,7 @@ def test_parse_skeleton_rejects_a_truncated_model() -> None:
 
 
 def test_parse_skeleton_rejects_missing_names() -> None:
-    """The names are what the records are matched against, so a short block is not usable."""
+    """The records are matched against the names, and a short block is not usable."""
     model = _model(_SIMPLE)
     assert parse_skeleton(model[:model.rindex(b'ltibia')]) is None
 

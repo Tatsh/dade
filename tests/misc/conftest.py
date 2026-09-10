@@ -25,7 +25,7 @@ class ArchiveBuilder:
     Assemble an ``NSKeyedArchiver`` plist object graph for the tests.
 
     Objects are appended to the archive's ``$objects`` table and referred to by the
-    :py:class:`plistlib.UID` each ``add`` returns, which is how a real archive is laid out.
+    :py:class:`plistlib.UID` each ``add`` returns, the way a real archive is arranged.
     """
     def __init__(self) -> None:
         self.objects: list[Any] = ['$null']
@@ -263,10 +263,10 @@ def runner() -> CliRunner:
 @pytest.fixture
 def mapping_model(tmp_path: Path) -> Path:
     """
-    Write a compiled mapping model holding one copy mapping and one remove mapping.
+    Write a compiled mapping model with one copy mapping and one remove mapping.
 
-    The copy mapping carries the fetch source expression, two attribute mappings, and version
-    hashes; the remove mapping has no destination entity. Both share one user-info dictionary, so
+    The copy mapping includes the fetch source expression, two attribute mappings, and version
+    hashes; the remove mapping has no destination entity. Both share one user-info dictionary, and
     the archive dump has a shared object to emit as ``$id`` and ``$ref``.
 
     Returns
@@ -334,7 +334,7 @@ def mapping_model(tmp_path: Path) -> Path:
 @pytest.fixture
 def managed_object_model(tmp_path: Path) -> Path:
     """
-    Write a compiled managed object model holding one entity with an attribute and a relationship.
+    Write a compiled managed object model with one entity, an attribute, and a relationship.
 
     Returns
     -------
@@ -411,7 +411,7 @@ def managed_object_model(tmp_path: Path) -> Path:
 @pytest.fixture
 def compiled_strings(tmp_path: Path) -> Path:
     """
-    Write a compiled ``.strings`` table, which is a flat binary plist.
+    Write a compiled ``.strings`` table, a flat binary plist.
 
     Returns
     -------
@@ -495,24 +495,24 @@ def _self_signed(key: Any, common_name: str) -> bytes:
 
 
 CERTIFICATE_SERIAL = 0x1234567890ABCDEF
-"""Serial number the test certificates carry."""
+"""Serial number the test certificates have."""
 SC_INFO_ACCOUNT_ID = 0x765AF8F2
-"""Apple account identifier the sample purchase record carries."""
+"""Apple account identifier in the sample purchase record."""
 SC_INFO_ACCOUNT_NAME = 'Example Buyer'
-"""Account name the sample purchase record carries."""
+"""Account name in the sample purchase record."""
 SC_INFO_PURCHASED = 3789925910
-"""Purchase time the sample record carries, in seconds since 1904-01-01 UTC."""
+"""Purchase time in the sample record, in seconds since 1904-01-01 UTC."""
 SC_INFO_IV = bytes(range(16))
-"""Initialisation vector the sample purchase record carries."""
+"""Initialisation vector in the sample purchase record."""
 SC_INFO_IDENTIFIER = bytes(range(20))
 """The 20-byte identifier the sample supplements share."""
 SUPP_RECORD_COUNT = 3
-"""How many 32-byte records the sample ``.supp`` carries."""
+"""How many 32-byte records the sample ``.supp`` has."""
 SC_INFO_MANIFEST = {
     'SinfPaths': ['SC_Info/Example.sinf'],
     'SinfReplicationPaths': ['SC_Info/Example.sinf'],
 }
-"""The manifest both the unpacked and the archived sample bundles carry."""
+"""The manifest in both the unpacked and the archived sample bundles."""
 
 
 @pytest.fixture(scope='session')
@@ -545,7 +545,7 @@ def rsa_certificate_der() -> bytes:
 @pytest.fixture
 def sinf_bytes() -> bytes:
     """
-    Build a purchase record carrying every atom the reader surfaces.
+    Build a purchase record with every atom the reader surfaces.
 
     Returns
     -------
@@ -604,7 +604,7 @@ def supf_bytes(ec_certificate_der: bytes) -> bytes:
 @pytest.fixture
 def supp_bytes(rsa_certificate_der: bytes) -> bytes:
     """
-    Build a ``.supp`` supplement holding a counted record table and its own certificate.
+    Build a ``.supp`` supplement with a counted record table and its certificate.
 
     Returns
     -------
@@ -619,7 +619,7 @@ def supp_bytes(rsa_certificate_der: bytes) -> bytes:
 @pytest.fixture
 def supx_bytes() -> bytes:
     """
-    Build a ``.supx`` supplement holding two tagged entries.
+    Build a ``.supx`` supplement with two tagged entries.
 
     Returns
     -------
@@ -640,7 +640,7 @@ def sc_info_dir(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes
     Returns
     -------
     pathlib.Path
-        The ``Payload`` directory holding the bundle, so the search is exercised too.
+        The ``Payload`` directory with the bundle, exercising the search too.
     """
     directory = tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
     directory.mkdir(parents=True)
@@ -656,15 +656,15 @@ def sc_info_dir(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes
 def sc_info_dir_with_two_records(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes,
                                  supp_bytes: bytes) -> Path:
     """
-    Write an ``SC_Info`` directory holding two sets of protection files.
+    Write an ``SC_Info`` directory with two sets of protection files.
 
-    The second set is named for another architecture and carries no ``.supf``, which is the shape
-    a real download takes when one is left beside the main record.
+    The second set is named for another architecture and has no ``.supf``. A real download takes
+    this shape when one set is left beside the main record.
 
     Returns
     -------
     pathlib.Path
-        The ``Payload`` directory holding the bundle.
+        The ``Payload`` directory with the bundle.
     """
     directory = tmp_path / 'Payload' / 'Example.app' / 'SC_Info'
     directory.mkdir(parents=True)
@@ -672,7 +672,7 @@ def sc_info_dir_with_two_records(tmp_path: Path, sinf_bytes: bytes, supf_bytes: 
     (directory / 'Example.sinf').write_bytes(sinf_bytes)
     (directory / 'Example.supf').write_bytes(supf_bytes)
     (directory / 'Example.supp').write_bytes(supp_bytes)
-    # Sorts before 'Example', so name order alone would pick the wrong record.
+    # Sorts before 'Example'; name order alone would pick the wrong record.
     (directory / 'AExample_armv7.sinf').write_bytes(sinf_bytes)
     (directory / 'AExample_armv7.supp').write_bytes(supp_bytes)
     return tmp_path / 'Payload'
@@ -682,7 +682,7 @@ def sc_info_dir_with_two_records(tmp_path: Path, sinf_bytes: bytes, supf_bytes: 
 def sc_info_ipa(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes: bytes,
                 supx_bytes: bytes) -> Path:
     """
-    Write an ``.ipa`` holding one bundle and its metadata, without unpacking anything.
+    Write an ``.ipa`` with one bundle and its metadata, without unpacking anything.
 
     Returns
     -------
@@ -704,9 +704,9 @@ def sc_info_ipa(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes
 @pytest.fixture
 def nested_ipa(tmp_path: Path, sinf_bytes: bytes, supf_bytes: bytes, supp_bytes: bytes) -> Path:
     """
-    Write an ``.ipa`` holding an application and an app extension beside it.
+    Write an ``.ipa`` with an application and an app extension beside it.
 
-    The extension is written first, so that anything relying on the application coming first has
+    The extension is written first. Anything relying on the application coming first therefore has
     to sort for it rather than take the archive's own order.
 
     Returns
@@ -729,7 +729,7 @@ class MachOBuilder:
     Assemble a little-endian Mach-O image for the tests.
 
     Load commands are appended in order and the header is written last, once their total size is
-    known, which is the order the linker itself has to work in.
+    known. The linker itself has to work in that order.
     """
     def __init__(self,
                  *,
@@ -830,9 +830,9 @@ class MachOBuilder:
 
 
 def _entitlements_signature(plist: bytes) -> bytes:
-    """Wrap an entitlements plist in the code-signature super-blob that carries it."""
+    """Wrap an entitlements plist in the code-signature super-blob that includes it."""
     blob = struct.pack('>II', 0xFADE_7171, len(plist) + 8) + plist
-    # One requirements blob ahead of the entitlements, so the reader has to skip a foreign one.
+    # One requirements blob ahead of the entitlements; the reader has to skip a foreign one.
     other = struct.pack('>II', 0xFADE_0C00, 8)
     start = 12 + 8 * 2
     header = struct.pack('>III', 0xFADE_0CC0, start + len(other) + len(blob), 2)
@@ -863,7 +863,7 @@ def macho_arm64(tmp_path: Path) -> Path:
     builder.add(0x2C, struct.pack('<IIII', 0x4000, 0x1000, 1, 0))
     signature = _entitlements_signature(
         plistlib.dumps({'application-identifier': 'ABCDE12345.com.example.app'}))
-    # The signature is appended after every load command, so its offset is only known once the
+    # The signature is appended after every load command; its offset is only known once the
     # command that points at it is itself in place. A placeholder sizes the image, then the real
     # offset replaces it.
     builder.add(0x1D, struct.pack('<II', 0, len(signature)))
@@ -895,7 +895,7 @@ def macho_armv7(tmp_path: Path) -> Path:
 @pytest.fixture
 def macho_universal(tmp_path: Path, macho_arm64: Path, macho_armv7: Path) -> Path:
     """
-    Write a universal image holding the 32-bit and 64-bit slices side by side.
+    Write a universal image with the 32-bit and 64-bit slices side by side.
 
     Returns
     -------
@@ -932,7 +932,7 @@ def macho_builder() -> type[MachOBuilder]:
 @pytest.fixture
 def make_signature() -> Callable[[bytes], bytes]:
     """
-    Build a code-signature super-blob carrying an entitlements plist.
+    Build a code-signature super-blob with an entitlements plist.
 
     Returns
     -------

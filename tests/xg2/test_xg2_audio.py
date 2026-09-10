@@ -29,7 +29,7 @@ def test_decode_vadpcm_zero_codebook_gives_silence() -> None:
 
 def test_decode_vadpcm_scales_the_residual() -> None:
     coefficients = [0] * (2 * 4 * 8)
-    # A scaling shift of zero leaves a residual of one at unity after the Q11 shift back.
+    # A scaling shift of zero yields a residual of one at unity after the Q11 shift back.
     frame = bytes([0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
     assert decode_vadpcm(frame, coefficients, 2, 4)[0] == 1
 
@@ -86,14 +86,14 @@ def test_parse_bmc_reads_the_name_and_frame_count() -> None:
 
 
 def test_parse_bmc_rescales_a_quantised_channel() -> None:
-    # An eight-bit channel spans its two bounds, so 0 and 255 land on them exactly.
+    # An eight-bit channel spans its two bounds; 0 and 255 land on them exactly.
     clip = parse_bmc(_clip(2, struct.pack('>H2h', 0, -100, 100) + b'\x00\xff'))
     assert clip is not None
     assert [round(v) for v in clip.channels[0]] == [-100, 100]
 
 
 def test_parse_bmc_reads_a_raw_channel() -> None:
-    # A record whose length is frames * 2 + 2 carries signed halfwords instead.
+    # A record whose length is frames * 2 + 2 has signed halfwords instead.
     raw = struct.pack('>H3h', 2 + 3 * 2, 1000, -1000, 7)
     quantised = struct.pack('>H2h', 0, 0, 0) + b'\x00\x00\x00'
     clip = parse_bmc(_clip(3, raw, quantised))

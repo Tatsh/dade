@@ -47,7 +47,7 @@ def test_decode_rescales_alpha_and_flips_rows() -> None:
     texture, = iter_textures(bank)
     image = decode(bank, texture)
     assert image.size == (2, 2)
-    # Stored rows are bottom-up, so the first stored pixel ends up on the lower row.
+    # Stored rows are bottom-up; the first stored pixel ends up on the lower row.
     assert image.getpixel((0, 1)) == (255, 0, 0, 128)
     assert image.getpixel((1, 1)) == (0, 255, 0, 255)
 
@@ -88,7 +88,7 @@ def test_iter_textures_rejects_an_offset_out_of_range() -> None:
 
 
 def test_iter_textures_passes_over_an_empty_slot() -> None:
-    # A bank reserves a slot for every image its reader may ask for by number; the build leaves a
+    # A bank reserves a slot for every image its reader may request by number; the build puts a
     # zero where it had nothing to put. The game's own HUD banks are mostly these.
     raw = bytearray(build_bank([_rgba_image(), _rgba_image('b/two.tga')]))
     struct.pack_into('<I', raw, 12, 0)
@@ -96,7 +96,7 @@ def test_iter_textures_passes_over_an_empty_slot() -> None:
 
 
 def test_iter_textures_accepts_a_bank_that_is_nothing_but_empty_slots() -> None:
-    # Exactly a header and a table, no image data at all, which is how slots/p_hud.tex2 ships.
+    # Exactly a header and a table, no image data at all, the way slots/p_hud.tex2 ships.
     raw = struct.pack('<3I', BANK_MAGIC, 0, 5) + bytes(5 * 4)
     assert list(iter_textures(raw)) == []
 

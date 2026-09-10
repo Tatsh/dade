@@ -56,7 +56,7 @@ def _vertex(x: int, y: int, z: int, s: int, t: int, normal: tuple[int, int,
 
 def _segment_with_model() -> bytearray:
     """
-    Build a segment holding one sub-type whose cycle is a single triangle.
+    Build a segment with one sub-type whose cycle is a single triangle.
 
     Returns
     -------
@@ -71,7 +71,7 @@ def _segment_with_model() -> bytearray:
         segment,
         _DISPLAY_LIST_VRAM,
         struct.pack('>2I', 0x04000000 | (3 << 10) | (3 * 16 - 1), _VERTEX_VRAM) +
-        # Slots are doubled on their way into the command, so 0, 1 and 2 are written 0x00, 0x02 and
+        # Slots are doubled on their way into the command; 0, 1 and 2 are written 0x00, 0x02 and
         # 0x04.
         struct.pack('>2I', 0xBF000000, 0x00000204) + struct.pack('>2I', 0xB8000000, 0))
     _place(segment, _MODEL_TABLE, struct.pack('>I', _DISPLAY_LIST_VRAM) + bytes(_MODEL_RECORD - 4))
@@ -100,7 +100,7 @@ def _triangle(normal_along: str) -> ObjectModel:
         'z': ((0, 0, 0), (1, 0, 0), (0, 1, 0)),
         # And here along -Z.
         '-z': ((0, 0, 0), (0, 1, 0), (1, 0, 0)),
-        # And here along +X, which neither light points at.
+        # And here along +X. Neither light points at it.
         'x': ((0, 0, 0), (0, 0, 1), (0, 1, 0)),
     }[normal_along]
     return ObjectModel(0, corners, ((0, 0),) * 3, ((0.0, 1.0, 0.0),) * 3, (0, 1, 2), 0xFF, 0xFF,
@@ -119,7 +119,7 @@ def test_face_colour_lights_from_two_opposed_lights(normal_along: str,
 
 def test_face_colour_scales_the_primitive_colour() -> None:
     model = _triangle('x')._replace(red=0x40, green=0x80, blue=0x00)
-    # A face neither light reaches keeps the bare ambient, which is half.
+    # A face neither light strikes retains the bare ambient at half.
     assert face_colour(model, 0) == (0x20, 0x40, 0x00)
 
 
@@ -129,7 +129,7 @@ def test_pickup_swing_starts_at_its_spawn_angle() -> None:
 
 @pytest.mark.parametrize(('axis', 'push'), [(0, 0.02), (1, 0.05)])
 def test_swing_reaches_the_far_side_at_half_a_period(axis: int, push: float) -> None:
-    # The motion is four parabolic arcs, so half a period is the opposite angle.
+    # The motion is four parabolic arcs; half a period is the opposite angle.
     half = 2 * math.sqrt((2 * _SPIN_START) / push)
     assert pickup_swing(half / _TICK_HZ)[axis] == pytest.approx(math.radians(-_SPIN_START))
 
@@ -180,7 +180,7 @@ def test_object_placements_ignores_a_subtype_past_the_table() -> None:
 def _segment_with_glow() -> bytes:
     segment = bytearray(_SEGMENT_SIZE)
     texels = _GLOW_SIDE * _GLOW_SIDE
-    # Every nibble full, so the widened intensity is 0xFF throughout both images.
+    # Every nibble full; the widened intensity is 0xFF throughout both images.
     _place(segment, _MASK_VRAM, b'\xff' * (texels // 2))
     _place(segment, _CLOUD_VRAM, b'\xff' * (texels // 2))
     return bytes(segment)
@@ -235,7 +235,7 @@ def test_glow_model_merges_a_nested_display_list() -> None:
 
 def test_glow_model_of_a_list_that_loads_nothing() -> None:
     segment = bytearray(_SEGMENT_SIZE)
-    # A G_VTX whose source is outside the segment loads nothing, so the triangle over its slots is
+    # A G_VTX whose source is outside the segment loads nothing; the triangle over its slots is
     # dropped and the list draws nothing at all.
     _place(
         segment, _GLOW_LIST,

@@ -56,7 +56,7 @@ def test_demo_reports_a_broken_clip(mocker: MockerFixture, clip: BmcClip | None,
 def test_parse_bmc_reads_quantised_channels() -> None:
     frames = 4
     first = struct.pack('>H2h', CHANNEL_HEADER_SIZE + frames, 0, 255) + bytes((0, 85, 170, 255))
-    # The last record carries a zero length and runs to the end.
+    # The last record has a zero length and runs to the end.
     last = struct.pack('>H2h', 0, -100, 100) + bytes((0, 128, 255, 0))
     clip = parse_bmc(_header(frames, 2) + first + last)
     assert clip is not None

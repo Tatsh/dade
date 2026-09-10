@@ -85,7 +85,7 @@ def test_extensions(ec_certificate_der: bytes) -> None:
 
 
 def test_key_usage_extension_is_broken_into_flags(rsa_certificate_der: bytes) -> None:
-    # The sample certificates carry no keyUsage, so build one that does.
+    # The sample certificates have no keyUsage; build one that does.
     from datetime import datetime, timezone
 
     from cryptography import x509
@@ -113,7 +113,7 @@ def test_key_usage_extension_is_broken_into_flags(rsa_certificate_der: bytes) ->
     assert fields['digitalSignature'] is True
     assert fields['keyEncipherment'] is True
     assert fields['keyAgreement'] is False
-    # Without key agreement the last two flags are not readable, so they are left out.
+    # Without key agreement the last two flags are not readable; they are omitted.
     assert 'encipherOnly' not in fields
 
 
@@ -145,7 +145,7 @@ def test_certificate_lines(ec_certificate_der: bytes) -> None:
     assert any('secp256r1' in line for line in lines)
     assert '  Extensions' in lines
     assert any('basicConstraints (critical)' in line for line in lines)
-    # Each field of a broken-out extension gets its own indented line.
+    # Each field of a broken-out extension gets its indented line.
     assert any(line.strip().startswith('pathLength') for line in lines)
 
 
@@ -172,7 +172,7 @@ def test_find_certificates_in_an_empty_buffer() -> None:
 
 
 def test_find_certificates_ignores_a_truncated_length() -> None:
-    # A long-form marker with too few length bytes has no readable size, so it is skipped.
+    # A long-form marker with too few length bytes has no readable size; it is skipped.
     assert find_certificates(b'\x30\x82\x00') == ()
 
 

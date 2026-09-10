@@ -1,6 +1,6 @@
 """Shared pytest configuration for the ``dade.rhythmin`` suite.
 
-Every fixture builds its sample file from scratch, so the suite needs no copy of the game.
+Every fixture builds its sample file from scratch, and the suite needs no copy of the game.
 """
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def _name_block(names: Sequence[str], start: int) -> bytes:
     names : Sequence[str]
         The names to write.
     start : int
-        The file offset the block begins at, which decides how much padding it needs.
+        The file offset the block begins at. It decides how much padding the block needs.
 
     Returns
     -------
@@ -111,7 +111,7 @@ def aep_index_bytes() -> bytes:
     """
     Build a small but complete AEP animation index.
 
-    It holds three frame names with sprite records, two layers whose chains are terminated, a group
+    It has three frame names with sprite records, two layers whose chains are terminated, a group
     entry pointing at a user name, and both a position and a colour channel.
 
     Returns
@@ -216,7 +216,7 @@ def treasure_map_file(tmp_path: Path, treasure_map_bytes: bytes) -> Path:
 @pytest.fixture
 def chara_file(tmp_path: Path) -> Path:
     """
-    Write an encrypted character-data file whose JSON carries a trailing comma.
+    Write an encrypted character-data file whose JSON has a trailing comma.
 
     Returns
     -------
@@ -275,14 +275,14 @@ def arcade_chart_bytes() -> bytes:
 
 def _write_package(path: Path, chart: bytes, info: dict[str, object]) -> Path:
     """
-    Write a song package holding one chart and an encrypted info plist.
+    Write a song package with one chart and an encrypted info plist.
 
     Parameters
     ----------
     path : pathlib.Path
         Where to write the package.
     chart : bytes
-        The chart payload, which is enciphered here.
+        The chart payload, enciphered here.
     info : dict[str, object]
         The song metadata.
 
@@ -341,7 +341,7 @@ def macho_image_all_pools() -> bytes:
     """
     Build a 32-bit Mach-O whose segment maps the real dialogue pool addresses.
 
-    The six shipped pointer tables are exactly contiguous, so one segment based at the first
+    The six shipped pointer tables are exactly contiguous, and one segment based at the first
     table's address covers all 330 pointers and the strings that follow them.
 
     Returns
@@ -368,9 +368,9 @@ def macho_image_all_pools() -> bytes:
 @pytest.fixture
 def macho_image() -> bytes:
     """
-    Build a 32-bit Mach-O image carrying one pointer table and its strings.
+    Build a 32-bit Mach-O image with one pointer table and its strings.
 
-    The table sits at virtual address ``0x4100``, which is what
+    The table sits at virtual address ``0x4100``, the value
     :py:data:`tests.rhythmin.conftest.MACHO_TABLE_ADDRESS` records.
 
     Returns

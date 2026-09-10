@@ -60,7 +60,7 @@ def test_decode_entry_lzss(make_archive: Callable[..., bytes], make_lzss: Callab
 
 
 def test_decode_entry_lzhuf(make_archive: Callable[..., bytes]) -> None:
-    # LZHUF carries no checksum and no end marker, so any input decodes to the declared size. What
+    # LZHUF has no checksum and no end marker, and any input decodes to the declared size. What
     # this pins down is that an LHUF entry is decoded rather than refused.
     blob = make_archive([(b'LHUF', b'payload')])
     assert len(decode_entry(blob, parse_archive(blob)[0])) == len(b'payload')

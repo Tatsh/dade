@@ -34,7 +34,7 @@ def gif_tag(count: int, primitive: int, nreg: int = _NREG) -> bytes:
     Parameters
     ----------
     count : int
-        Vertex count, which the tag carries in NLOOP.
+        Vertex count, given by the tag in NLOOP.
     primitive : int
         GS primitive type.
     nreg : int
@@ -78,7 +78,7 @@ def build_archive(files: Mapping[str, bytes], *, named: bool = True) -> bytes:
     files : Mapping[str, bytes]
         File contents by name.
     named : bool
-        Include the string table, so that entries can be matched to names.
+        Include the string table, allowing entries to be matched to names.
 
     Returns
     -------
@@ -252,7 +252,7 @@ def build_section(name: str, materials: Sequence[Sequence[str]],
             strings.extend(text.encode() + b'\0')
         return offsets[text]
 
-    # Every name is interned before the layout is measured, so no offset moves afterwards.
+    # Every name is interned before the layout is measured; no offset moves afterwards.
     intern(name)
     material_names = [[intern(texture) for texture in slots] for slots in materials]
     for item_name, _groups in items:
@@ -316,7 +316,7 @@ def build_library(sections: Sequence[bytes], images: Sequence[bytes] = ()) -> by
     body = b''.join(images)
     start = IMAGES_AT + len(body)
     header = bytearray(IMAGES_AT)
-    # The same word ends the image run and starts the section chain, since sections follow images.
+    # The same word ends the image run and starts the section chain. Sections follow images.
     struct.pack_into('<I', header, SECTION_START_AT, start)
     return bytes(header) + body + b''.join(sections)
 
@@ -327,7 +327,7 @@ def mesh_packet(vertices: Sequence[tuple[float, float, float, float, float]],
     Build one ``.EGP2`` draw packet.
 
     A packet opens with the two bounding-box rows the reader looks for, then its GIFtag, then
-    eighty-byte groups holding four vertices each.
+    eighty-byte groups of four vertices each.
 
     Parameters
     ----------
@@ -373,12 +373,12 @@ def build_geometry(materials: Sequence[tuple[str, int]],
     meshes : Sequence[tuple[int, Sequence[bytes]]]
         Per mesh, the index it records and its packets.
     owners : Mapping[int, int] | None
-        Material index by mesh position; meshes left out are claimed by no material.
+        Material index by mesh position; meshes omitted are claimed by no material.
     images : Sequence[bytes]
         Records from :py:func:`build_image`, embedded after the header.
     pass_sums : Sequence[int] | None
         Prefix sums partitioning the material records between render passes, written as the pass
-        table the header points at; :py:obj:`None` leaves every material in pass one.
+        table the header points at; :py:obj:`None` puts every material in pass one.
 
     Returns
     -------
@@ -396,7 +396,7 @@ def build_geometry(materials: Sequence[tuple[str, int]],
     blocks = []
     base = IMAGES_AT + len(embedded) + len(strings)
     for number, packets in meshes:
-        # Each mesh's block must sit exactly a whole number of quadwords past its own data.
+        # Each mesh's block must sit exactly a whole number of quadwords past its data.
         body += bytes(-len(body) % 16)
         start = base + len(body)
         for packet in packets:
@@ -429,7 +429,7 @@ def build_geometry(materials: Sequence[tuple[str, int]],
         for offset, (_name, texture) in zip(name_offsets, materials, strict=True))
     mesh_table_at = base + len(body)
     body += struct.pack(f'<{len(blocks)}I', *blocks) if blocks else b''
-    # Room past the mesh table, so a test may raise the declared count without over-reading.
+    # Room past the mesh table, allowing a test to raise the declared count without over-reading.
     body += bytes(16)
     pass_table_at = 0
     if pass_sums is not None:

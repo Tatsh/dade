@@ -28,7 +28,7 @@ def test_name_hash_is_case_insensitive() -> None:
 
 
 def test_name_hash_matches_the_game() -> None:
-    # Taken from the shipped DATA_P.FS, where this name's directory entry carries this hash.
+    # Taken from the shipped DATA_P.FS, where this name's directory entry has this hash.
     assert name_hash('satriales_doors') == 0x81B3FB1B
 
 

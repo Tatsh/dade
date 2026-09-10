@@ -76,7 +76,7 @@ def test_decompress_block_reports_next_position() -> None:
 
 
 def test_decompress_block_huffman_single_leaf() -> None:
-    # One internal node whose children are both the leaf byte 0x41, so every bit decodes to 'A'.
+    # One internal node whose children are both the leaf byte 0x41; every bit decodes to 'A'.
     bits = [0] * 18
     for offset in (0, 9):
         for bit in range(9):
@@ -174,7 +174,7 @@ def _pack_bits(node_count: int, bits: list[int]) -> bytes:
         The header dword followed by any refill dwords.
     """
     header = node_count & 0xFF
-    for index, bit in enumerate(bits[:24]):  # The header dword carries the first 24 bits.
+    for index, bit in enumerate(bits[:24]):  # The header dword has the first 24 bits.
         if bit:
             header |= 1 << (8 + index)
     words = [header]
@@ -194,7 +194,7 @@ def _value_bits(value: int) -> list[int]:
 
 
 def test_decompress_block_traverses_internal_nodes() -> None:
-    # Node 0 holds leaves 'A' and 'B'; node 1 (the root) points at node 0 on a zero bit and at
+    # Node 0 has leaves 'A' and 'B'; node 1 (the root) points at node 0 on a zero bit and at
     # leaf 'B' on a one bit. Decoding [1] then [0, 0] therefore yields b'BA'.
     table = _value_bits(0x41) + _value_bits(0x42) + _value_bits(0x100) + _value_bits(0x42)
     data = struct.pack('<I', 2) + _pack_bits(2, [*table, 1, 0, 0])

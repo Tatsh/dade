@@ -33,7 +33,7 @@ def test_texture_refs_lowercases_the_stem(mrm_terrain: bytes) -> None:
 
 
 def test_texture_refs_extension_match_is_case_sensitive(mrm_terrain: bytes) -> None:
-    # The world scan only matches lowercase extensions, so an upper-case reference is missed.
+    # The world scan only matches lowercase extensions; an upper-case reference is missed.
     # The object scan is case-insensitive; the difference is inherited from the original tools.
     assert 'wall.bmp' not in texture_refs(b'Texture: WALL.BMP', mrm_terrain)
 

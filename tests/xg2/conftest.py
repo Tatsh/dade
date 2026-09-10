@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from dade.xg2.typing import SampleMeta, Sf2Preset, Sf2Zone
 
 BOOT_SIGNATURE = b'\x3c\x1d\x80\x3f'
-"""First instruction of a decompressed boot segment, which both games are checked against.
+"""First instruction of a decompressed boot segment, checked against both games.
 
 :meta hide-value:
 """
@@ -41,7 +41,7 @@ XG1_LEVEL_BASES = (0x30000, 0x40000)
 :meta hide-value:
 """
 XG1_ROM_SIZE = 0x7A3000
-"""Size of the synthetic Extreme-G 1 ROM, which must hold the ``mfs`` directory.
+"""Size of the synthetic Extreme-G 1 ROM, large enough for the ``mfs`` directory.
 
 :meta hide-value:
 """
@@ -66,7 +66,7 @@ XG2_MODEL_ARCHIVE = 0x700000
 :meta hide-value:
 """
 XG2_ROM_SIZE = 0xA60000
-"""Size of the synthetic Extreme-G XG2 ROM, which must hold the ``mfs`` container.
+"""Size of the synthetic Extreme-G XG2 ROM, large enough for the ``mfs`` container.
 
 :meta hide-value:
 """
@@ -244,7 +244,7 @@ def make_albank() -> Callable[[int], bytes]:
     Returns
     -------
     collections.abc.Callable[[int], bytes]
-        A callable taking the sample rate and returning the bank, which is position independent.
+        A callable taking the sample rate and returning the bank. It is position independent.
     """
     def build(sample_rate: int = 22050, *, percussion: bool = False) -> bytes:
         blob = bytearray(0x320)
@@ -332,7 +332,7 @@ def make_dl_model() -> Callable[[Sequence[tuple[int, int]]], bytes]:
 @pytest.fixture
 def n64_model(make_dl_model: Callable[..., bytes]) -> bytes:
     """
-    Build a flat N64 model holding one eight by eight ``CI8`` texture.
+    Build a flat N64 model with one eight by eight ``CI8`` texture.
 
     Returns
     -------

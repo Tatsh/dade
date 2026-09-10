@@ -44,10 +44,10 @@ def _flat_model() -> bytes:
     """Build a flat N64 model exercising every geometry opcode the walker handles."""
     header = struct.pack('>2I', 0x05000008, 0)
     commands = (
-        (0xD9FDFFFF, 0),  # G_GEOMETRYMODE clearing G_LIGHTING, so the triangles come out unlit.
+        (0xD9FDFFFF, 0),  # G_GEOMETRYMODE clearing G_LIGHTING; the triangles come out unlit.
         (0x01004008, 0),  # G_VTX for four vertices; the source is patched in below.
         (0xFD100000, 0x05000200),  # G_SETTIMG naming the palette.
-        (0xF0000000, 0),  # G_LOADTLUT, which drops that as the surface.
+        (0xF0000000, 0),  # G_LOADTLUT. It drops that as the surface.
         (0xFD100000, 0x05000400),  # G_SETTIMG naming the pixels.
         (0xF5000000, 0),  # G_SETTILE, binding them.
         (0x05000204, 0),  # G_TRI1 over corners 0, 1, 2.
@@ -114,7 +114,7 @@ def test_demo_reports_a_wrong_decode(mocker: MockerFixture, meshes: list[list[Me
 
 
 def test_display_list_calling_itself_stops_at_max_depth() -> None:
-    # A call that targets its own address pushes a return frame every pass; the walker must cap the
+    # A call that targets its address pushes a return frame every pass; the walker must cap the
     # stack rather than recurse without bound.
     model = struct.pack('>2I', 0x05000008, 0) + struct.pack('>2I', 0xDE000000, 0x05000008)
     assert parse_display_lists(model) == []
@@ -181,13 +181,13 @@ def test_parse_pc_display_lists_reads_a_triangle_pair() -> None:
 
 
 def test_parse_pc_display_lists_skips_a_short_entry() -> None:
-    # The pointer leads too close to the end for even two commands, so it is not walked.
+    # The pointer leads too close to the end for even two commands; it is not walked.
     model = struct.pack('<I', 0x05000004) + struct.pack('<I', 0)
     assert parse_pc_display_lists(model, b'') == []
 
 
 def test_parse_pc_display_lists_skips_a_data_entry() -> None:
-    # The region begins with a word whose top byte is not a known opcode, so it is data, not code.
+    # The region begins with a word whose top byte is not a known opcode; it is data, not code.
     model = struct.pack('<I', 0x05000004) + struct.pack('<4I', 0, 0, 0, 0)
     assert parse_pc_display_lists(model, b'') == []
 
@@ -201,7 +201,7 @@ def test_parse_pc_display_lists_probe_reaches_the_end() -> None:
 
 
 def test_parse_pc_display_lists_probe_scans_the_whole_window() -> None:
-    # More valid opcodes than the probe examines, so it settles without ever seeing an end marker.
+    # More valid opcodes than the probe examines; it settles without ever seeing an end marker.
     table = struct.pack('<I', 0x05000004)
     body = struct.pack('<2I', 0x04000000, 0) * 30
     assert parse_pc_display_lists(table + body, b'\x00' * 64) == []

@@ -21,7 +21,7 @@ def test_read_index_lists_sub_assets() -> None:
 
 def test_read_index_ignores_leftover_bytes_after_the_name() -> None:
     raw = bytearray(build_level({'a.TEX2': b'aaa'}))
-    # The cooker leaves whatever was in memory past the terminating NUL.
+    # The cooker preserves whatever was in memory past the terminating NUL.
     raw[INDEX_OFFSET + 8 + 7:INDEX_OFFSET + 8 + 12] = b'\0junk'
     assert read_index(bytes(raw))[0].name == 'a.TEX2'
 

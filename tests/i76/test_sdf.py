@@ -80,7 +80,7 @@ def test_assemble_triangulates_as_fans(sdf_model: bytes, geo_mesh: bytes) -> Non
 
 def test_assemble_offsets_indices_per_part(sdf_model: bytes, geo_mesh: bytes) -> None:
     mesh = assemble(sdf_model, lambda _: geo_mesh)
-    # The second part's faces index into its own block of vertices.
+    # The second part's faces index into its block of vertices.
     assert mesh.triangles[4] == (5, 6, 7)
 
 

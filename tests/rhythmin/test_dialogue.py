@@ -28,9 +28,9 @@ def test_extract_pools(macho_image: bytes) -> None:
 
 
 def _fat(image: bytes, cpu_type: int) -> bytes:
-    """Wrap an image in a fat header holding one slice of the given CPU type."""
+    """Wrap an image in a fat header with one slice of the given CPU type."""
     # The magic, one architecture, then that architecture's CPU type, subtype, offset, size, and
-    # alignment, which is 28 bytes, so the slice starts there.
+    # alignment of 28 bytes, and the slice starts there.
     return struct.pack('>IIiIIII', 0xCAFEBABE, 1, cpu_type, 0, _FAT_HEADER_SIZE, len(image),
                        0) + image
 
@@ -63,7 +63,7 @@ def test_extract_pools_rejects_a_pointer_outside_the_file(macho_image: bytes) ->
 
 def test_extract_pools_stops_reading_commands_at_a_zero_length_one(macho_image: bytes) -> None:
     data = bytearray(macho_image)
-    # Claim a second load command; the zero padding after the segment reads as a zero-length one.
+    # Declare a second load command; the zero padding after the segment reads as a zero-length one.
     struct.pack_into('<I', data, 16, 2)
     assert extract_pools(bytes(data), (_SPEC,))[0].strings == MACHO_STRINGS
 
@@ -71,7 +71,7 @@ def test_extract_pools_stops_reading_commands_at_a_zero_length_one(macho_image: 
 def _image_with_unterminated_string() -> bytes:
     vm_base = 0x4000
     table_offset = 128
-    tail = b'abcdef'  # No NUL, so the string runs off the end of the file.
+    tail = b'abcdef'  # No NUL; the string runs off the end of the file.
     file_size = table_offset + 4 + len(tail)
     segment = struct.pack('<II16sIIIIIIII', 0x1, 56, b'__TEXT', vm_base, file_size, 0, file_size, 7,
                           5, 0, 0)

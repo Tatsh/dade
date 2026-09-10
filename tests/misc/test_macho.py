@@ -135,7 +135,7 @@ def test_a_foreign_file_is_rejected(tmp_path: Path) -> None:
 def test_a_truncated_load_command_stops_the_walk(tmp_path: Path, macho_builder: type[Any]) -> None:
     builder = macho_builder()
     builder.add_segment('__TEXT')
-    # A command claiming more bytes than the image holds, which must end the walk rather than
+    # A command declaring more bytes than the image has. It must end the walk rather than
     # read past the buffer.
     builder.add_raw(struct.pack('<II', 0x19, 0x1000))
     path = tmp_path / 'Truncated'
@@ -202,7 +202,7 @@ def test_a_dylib_name_beyond_its_command(tmp_path: Path, macho_builder: type[Any
 
 def test_a_signature_index_pointing_past_its_blob(
         make_signed_macho: Callable[[bytes], Path]) -> None:
-    # One index entry whose blob offset lies outside the super-blob, which must be skipped rather
+    # One index entry whose blob offset lies outside the super-blob. It must be skipped rather
     # than read.
     signature = (struct.pack('>III', 0xFADE_0CC0, 28, 1) + struct.pack('>II', 5, 0x1000))
     assert read_macho(make_signed_macho(signature))['architectures'][0]['entitlements'] is None
@@ -210,7 +210,7 @@ def test_a_signature_index_pointing_past_its_blob(
 
 def test_a_signature_holding_no_entitlements_blob(
         make_signed_macho: Callable[[bytes], Path]) -> None:
-    # A well-formed super-blob whose only member is a requirements blob, so the loop runs to its
+    # A well-formed super-blob whose only member is a requirements blob; the loop runs to its
     # end without finding anything.
     other = struct.pack('>II', 0xFADE_0C00, 8)
     signature = (struct.pack('>III', 0xFADE_0CC0, 20 + len(other), 1) + struct.pack('>II', 2, 20) +
@@ -221,7 +221,7 @@ def test_a_signature_holding_no_entitlements_blob(
 def test_a_load_command_the_reader_does_not_name(tmp_path: Path, macho_builder: type[Any]) -> None:
     builder = macho_builder()
     builder.add_segment('__TEXT')
-    # LC_SYMTAB, which the reader walks past without recording.
+    # LC_SYMTAB. The reader walks past it without recording.
     builder.add(0x2, struct.pack('<IIII', 0, 0, 0, 0))
     path = tmp_path / 'Plain'
     path.write_bytes(builder.build())
@@ -255,12 +255,12 @@ def test_a_segment_records_every_address_field(tmp_path: Path, macho_builder: ty
 @pytest.mark.parametrize(('trim', 'expected'), [(0, ['__TEXT,__text']), (1, [])])
 def test_a_section_is_kept_only_when_both_its_names_fit(tmp_path: Path, macho_builder: type[Any],
                                                         trim: int, expected: list[str]) -> None:
-    # A section entry is only read for its two names, so 32 bytes is enough and 31 is not.
+    # A section entry is only read for its two names; 32 bytes is enough and 31 is not.
     whole = (b'__TEXT'.ljust(16, b'\0') + struct.pack('<QQQQiiII', 0, 0, 0, 0, 7, 5, 1, 0) +
              b'__text'.ljust(16, b'\0') + b'__TEXT'.ljust(16, b'\0'))
     body = whole[:len(whole) - trim]
     builder = macho_builder()
-    # add() pads to a four-byte boundary, which would put the trimmed byte back.
+    # add() pads to a four-byte boundary. That would put the trimmed byte back.
     builder.add_raw(struct.pack('<II', 0x19, len(body) + 8) + body)
     path = tmp_path / 'Sections'
     path.write_bytes(builder.build())
@@ -347,7 +347,7 @@ def test_the_header_flags_are_named_in_order(tmp_path: Path, macho_builder: type
 
 
 def test_a_universal_slice_resolves_its_signature_at_its_own_offset(macho_universal: Path) -> None:
-    # The signed slice does not start the file, so its code-signature offset only reaches the
+    # The signed slice does not start the file; its code-signature offset only extends to the
     # super-blob once the slice's own offset is added to it.
     architectures = read_macho(macho_universal)['architectures']
     assert architectures[1]['entitlements'] == {

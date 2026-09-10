@@ -148,9 +148,9 @@ def test_read_items_drops_a_group_that_draws_nothing() -> None:
         ('*HEAD08_Face_0', True, 'head'),
         ('*HEAD10', True, 'head'),
         ('*HEAD8_s0_Face_0', True, 'head'),
-        # An accessory worn with a head keeps its own family.
+        # An accessory worn with a head retains its family.
         ('*HEADPHONES12', True, 'HEADPHONES'),
-        # A head wears one hat and one pair of glasses however the pieces are named, so a dock
+        # A head wears one hat and one pair of glasses however the pieces are named, and a dock
         # hand's three hats and two pairs of glasses come down to one of each.
         ('*HATBANDANA2', True, 'headwear'),
         ('*HATSKULLCAP15', True, 'headwear'),
@@ -178,7 +178,7 @@ def test_read_items_drops_a_group_that_draws_nothing() -> None:
         ('*SHOEHIGHHILL30', True, 'footwear'),
         ('*Shoe_Sniker30', True, 'footwear'),
         ('*FEETBOOTS31', True, 'footwear'),
-        # Known limitation: a waiter's torso is named for his outfit rather than his slot, so these
+        # Known limitation: a waiter's torso is named for his outfit rather than his slot, and these
         # two are one torso under two names and nothing here pairs them.
         ('*Water_Body17', True, 'Water_Body'),
         ('*Cook_jacket16', True, 'Cook_jacket'),
@@ -241,7 +241,7 @@ def test_read_items_leaves_a_name_empty_when_the_offset_points_at_a_terminator()
     data = bytearray(_one_section())
     section, = read_sections(bytes(data))
     table = section.offset + struct.unpack_from('<I', data, section.offset + 0x54)[0]
-    # 0x60 is the first byte of the string blob, which is the terminator itself.
+    # 0x60 is the first byte of the string blob, the terminator itself.
     struct.pack_into('<i', data, table, 0x60 - (table - section.offset))
     assert not read_items(_body(bytes(data)))[0].name
 

@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 _MAX_LEVELS = 48
-# Pinned here rather than imported, so the test is an independent oracle for the header magic.
+# Pinned here rather than imported, making the test an independent oracle for the header magic.
 _Z64_MAGIC = b'\x80\x37\x12\x40'
 _XG1_LEVELS = (XG1_LEVEL_TEXTURE_BANK_TABLE - XG1_LEVEL_TABLE) // 4
 
@@ -111,7 +111,7 @@ def test_boot_image_extended_rom_places_the_segment(make_lzss: Callable[[bytes],
 
 
 def test_boot_image_extended_rom_grows_the_image() -> None:
-    # Eight literals followed by eight maximum-length matches against the zero-filled ring, so the
+    # Eight literals followed by eight maximum-length matches against the zero-filled ring, and the
     # segment expands well past the end of the image it is written back into.
     stream = bytes([0xFF]) + BOOT_SIGNATURE + b'\x00' * 4 + bytes([0x00]) + bytes([0x00, 0x0F]) * 8
     rom = bytearray(0x1500)
@@ -162,7 +162,7 @@ def test_xg1_level_bases_stops_outside_the_range() -> None:
 
 
 def test_xg1_level_bases_stops_where_the_bank_table_begins() -> None:
-    """The two tables are adjacent, so reading past the level table yields bank offsets."""
+    """The two tables are adjacent, and reading past the level table yields bank offsets."""
     rom = bytearray(0x10000)
     for i in range(_MAX_LEVELS):
         struct.pack_into('>I', rom, XG1_LEVEL_TABLE + i * 4, 0x30000 + i * 0x100)

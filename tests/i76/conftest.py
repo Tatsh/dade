@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from pytest_mock import MockerFixture
 
 _EOF_MARKER = b'\x11\x00\x00'
-"""Token 17 with a zero operand, which ends an LZO stream."""
+"""Token 17 with a zero operand, ending an LZO stream."""
 
 
 def _build_archive(magic: bytes, members: tuple[tuple[str, bytes, int], ...]) -> bytes:
@@ -132,7 +132,7 @@ def geo_mesh() -> bytes:
 
 @pytest.fixture
 def sdf_model() -> bytes:
-    """Provide an ``.sdf`` whose SGEO chunk holds a root part and a child."""
+    """Provide an ``.sdf`` whose SGEO chunk has a root part and a child."""
     data = bytearray(b'SGEO' + b'\0' * 4 + struct.pack('<I', 2))
     for name, parent, offset in (('root', '', 1.0), ('child', 'root', 2.0)):
         record = bytearray(120)
@@ -146,7 +146,7 @@ def sdf_model() -> bytes:
 
 @pytest.fixture
 def bwd2_container() -> bytes:
-    """Provide a BWD2 container holding one nested leaf."""
+    """Provide a BWD2 container with one nested leaf."""
     leaf = b'LEAF' + struct.pack('<I', 14) + b'abcdef'
     inner = b'WDEF' + struct.pack('<I', 8 + len(leaf)) + leaf
     return b'BWD2' + struct.pack('<I', 8 + len(inner)) + inner
@@ -173,7 +173,7 @@ def hzd() -> bytes:
 
 @pytest.fixture
 def packed_dll() -> bytes:
-    """Provide a minimal PE image carrying a valid packed overlay."""
+    """Provide a minimal PE image with a valid packed overlay."""
     overlay_offset, optional_size = 0x1BE00, 0xE0
     pe_offset = 0x80
     data = bytearray(overlay_offset + 0x400)
@@ -221,7 +221,7 @@ def msa_world() -> bytes:
 @pytest.fixture
 def i82_source(tmp_path: Path, msa_world: bytes, mrm_terrain: bytes) -> Path:
     """
-    Provide a ZFS3 extraction tree holding one complete level, its objects, and its textures.
+    Provide a ZFS3 extraction tree with one complete level, its objects, and its textures.
 
     Returns
     -------
@@ -234,7 +234,7 @@ def i82_source(tmp_path: Path, msa_world: bytes, mrm_terrain: bytes) -> Path:
     data, mrm = root / 'data', root / 'mrm'
     (data / 'lvl1.msa').write_bytes(msa_world)
     (mrm / 'lvl1.mrm').write_bytes(mrm_terrain)
-    (data / 'orphan.msa').write_bytes(msa_world)  # No terrain, so not a level.
+    (data / 'orphan.msa').write_bytes(msa_world)  # No terrain; not a level.
     (root / 'bmp' / 'wall.bmp').write_bytes(b'wall')
     (root / 'bmp' / 'road.bmp').write_bytes(b'road')
     (root / 'tga' / 'body.tga').write_bytes(b'body')

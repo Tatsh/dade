@@ -27,7 +27,7 @@ def test_sprite_records(aep_index_bytes: bytes) -> None:
     assert records[0].page == 0
     assert records[1].page == 1
     assert records[0].fits is True
-    # The third record runs past the 2048-wide page, which is how a mis-based table shows up.
+    # The third record runs past the 2048-wide page, the way a mis-based table shows up.
     assert records[2].fits is False
 
 
@@ -143,7 +143,7 @@ def test_rejects_a_name_block_with_no_terminating_empty_string() -> None:
 
 
 def test_a_name_block_ending_on_the_alignment_needs_no_padding() -> None:
-    # The block starts at file offset 28, so 'ab' plus its two terminators ends at 32, a multiple
+    # The block starts at file offset 28; 'ab' plus its two terminators ends at 32, a multiple
     # of eight, and the alignment step adds nothing.
     assert _index_with_frame_names(b'ab\0\0').frame_names == ('ab',)
 
@@ -182,7 +182,7 @@ def _index(layer_names: tuple[str, ...],
 
 
 def test_frame_entries_offset_needs_no_padding_for_a_full_group() -> None:
-    # Four layer names fill an ordinal group exactly, so no padding is added and the entry array
+    # Four layer names fill an ordinal group exactly; no padding is added and the entry array
     # begins at the end of the file.
     index = _index(('A', 'B', 'C', 'D'), (0, 0, 0, 0))
     assert index.layer_names == ('A', 'B', 'C', 'D')
@@ -190,7 +190,7 @@ def test_frame_entries_offset_needs_no_padding_for_a_full_group() -> None:
 
 
 def test_layer_chain_stops_at_a_foreign_entry() -> None:
-    # Type 1 is neither a terminator nor a chain member, so the walk stops at once.
+    # Type 1 is neither a terminator nor a chain member; the walk stops at once.
     assert _index(('X',), (0,), _entry(1)).layer_chain('X') == ()
 
 

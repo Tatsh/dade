@@ -44,7 +44,7 @@ def test_squares(treasure_map_bytes: bytes) -> None:
 
 
 def test_edges_are_deduplicated(treasure_map_bytes: bytes) -> None:
-    # Squares 2 and 3 link to each other, so that corridor appears once.
+    # Squares 2 and 3 link to each other, and that corridor appears once.
     assert parse_treasure_map(treasure_map_bytes).edges == ((0, 1), (1, 2), (1, 3), (2, 3))
 
 
@@ -87,7 +87,7 @@ def test_render_image(treasure_map_bytes: bytes, tmp_path: Path) -> None:
 
 def test_render_image_with_an_empty_legend(treasure_map_bytes: bytes, tmp_path: Path,
                                            mocker: MockerFixture) -> None:
-    # With no glyphs the legend wraps to nothing, so the trailing-line append is skipped.
+    # With no glyphs the legend wraps to nothing; the trailing-line append is skipped.
     mocker.patch('dade.rhythmin.treasure_map.GRID_GLYPHS', {})
     path = tmp_path / 'board.png'
     render_image(parse_treasure_map(treasure_map_bytes, 'map_042.map'), path)

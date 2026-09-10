@@ -66,7 +66,7 @@ def test_read_meshes_leaves_an_unclaimed_mesh_without_a_material() -> None:
 
 
 def test_read_meshes_skips_a_block_past_the_end() -> None:
-    # No material claims the mesh, so the table is the only way it could be found.
+    # No material claims the mesh; the table is the only way it could be found.
     data = bytearray(build_geometry([('a.tga', 1)], [(1, [mesh_packet(_TRIANGLE)])]))
     table = struct.unpack_from('<I', data, 0x64)[0]
     struct.pack_into('<I', data, table, 0xFFFFFF)
@@ -96,7 +96,7 @@ def test_read_meshes_warns_when_a_block_does_not_follow_its_data(
 def test_read_meshes_ignores_a_table_slot_holding_zero() -> None:
     data = bytearray(_blob())
     struct.pack_into('<I', data, 0x20, 2)
-    # The extra slot reads as zero, which is not an address.
+    # The extra slot reads as zero, not an address.
     assert len(read_meshes(bytes(data))) == 1
 
 
@@ -119,7 +119,7 @@ def test_packets_are_skipped_when_the_body_would_overrun() -> None:
     table = struct.unpack_from('<I', data, 0x64)[0]
     block = struct.unpack_from('<I', data, table)[0]
     start = struct.unpack_from('<I', data, block + 4)[0]
-    # A tag claiming far more vertices than the mesh's data can hold.
+    # A tag declaring far more vertices than the mesh's data can store.
     struct.pack_into('<I', data, start + 32, 500 | 0x8000)
     assert read_meshes(bytes(data)) == ()
 
@@ -173,7 +173,7 @@ def test_write_model_writes_nothing_without_geometry(tmp_path: Path) -> None:
 
 
 def test_material_mapping_reads_each_materials_own_run_of_passes() -> None:
-    # With two materials the first one's passes end where the second's begin, so the run is read
+    # With two materials the first one's passes end where the second's begin, and the run is read
     # to its true length rather than to a guessed limit.
     blob = build_geometry([('a.tga', 1), ('b.tga', 2)], [(1, [mesh_packet(_TRIANGLE)]),
                                                          (2, [mesh_packet(_TRIANGLE)])], {

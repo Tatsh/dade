@@ -367,8 +367,8 @@ def test_stage_i82_objects(runner: CliRunner, tmp_path: Path, i82_source: Path) 
 def test_stage_i82_objects_prefers_sbx_then_six(runner: CliRunner, tmp_path: Path,
                                                 i82_source: Path) -> None:
     runner.invoke(cli, ['stage-i82-objects', str(i82_source), str(out := tmp_path / 'out')])
-    assert (out / 'meshes' / 'tower.sbx').is_file()  # A .sbx exists, so it wins.
-    assert (out / 'meshes' / 'sedan.six').is_file()  # Only a .six exists, so it is used.
+    assert (out / 'meshes' / 'tower.sbx').is_file()  # A .sbx exists; it wins.
+    assert (out / 'meshes' / 'sedan.six').is_file()  # Only a .six exists; it is used.
 
 
 def test_stage_i82_objects_copies_mesh_textures(runner: CliRunner, tmp_path: Path,
@@ -381,7 +381,7 @@ def test_stage_i82_objects_copies_mesh_textures(runner: CliRunner, tmp_path: Pat
 def test_stage_i82_objects_reports_missing_meshes(runner: CliRunner, tmp_path: Path,
                                                   i82_source: Path) -> None:
     result = runner.invoke(cli, ['stage-i82-objects', str(i82_source), str(tmp_path / 'out')])
-    # The chassis names wheel.six, which is in no pool.
+    # The chassis references wheel.six. It is in no pool.
     assert 'wheel.sbx' in result.output
 
 
@@ -397,7 +397,7 @@ def test_stage_i82_objects_without_levels(runner: CliRunner, tmp_path: Path) -> 
 def _objects_source(tmp_path: Path, world: bytes, mrm_terrain: bytes, files: dict[str,
                                                                                   bytes]) -> Path:
     """
-    Build a minimal I82 extraction tree holding one level plus the given data files.
+    Build a minimal I82 extraction tree with one level plus the given data files.
 
     Parameters
     ----------
