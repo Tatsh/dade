@@ -38,7 +38,7 @@ def _isolate_command_logging(mocker: MockerFixture) -> None:
 @pytest.fixture
 def pkr_bytes() -> bytes:
     """
-    Build a small stored-method pack holding three files across two directories.
+    Build a small stored-method pack with three files across two directories.
 
     Returns
     -------

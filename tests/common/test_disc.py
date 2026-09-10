@@ -87,7 +87,7 @@ def test_open_image_invalid_raises(tmp_path: Path) -> None:
 
 def test_open_image_bin_beside_its_cue(make_cuebin: Callable[..., Path],
                                        make_iso9660: Callable[..., bytes]) -> None:
-    # Handed the binary rather than the sheet, the sheet is still what says how to read it.
+    # Handed the binary rather than the sheet, the sheet still records how to read it.
     cue = make_cuebin(make_iso9660(ark_data=b'ARK DATA'))
     image = open_image(cue.with_suffix('.bin'))
     assert any(path.upper().endswith('.ARK') for path, _ in image.iter_files())
@@ -95,7 +95,7 @@ def test_open_image_bin_beside_its_cue(make_cuebin: Callable[..., Path],
 
 def test_open_image_bin_without_a_cue(make_cuebin: Callable[..., Path],
                                       make_iso9660: Callable[..., bytes], tmp_path: Path) -> None:
-    # No sheet, so the layout comes from the sectors: a raw one opens with the sync pattern.
+    # No sheet; the layout comes from the sectors. A raw one opens with the sync pattern.
     cue = make_cuebin(make_iso9660(ark_data=b'ARK DATA'))
     lonely = tmp_path / 'lonely.bin'
     lonely.write_bytes(cue.with_suffix('.bin').read_bytes())
@@ -149,7 +149,7 @@ def test_find_by_suffix_ignores_case(tmp_path: Path) -> None:
     for name in ('lower.pcb', 'UPPER.PCB', 'Mixed.Pcb', 'other.dat'):
         (tmp_path / name).write_bytes(b'')
     (tmp_path / 'sub' / 'NESTED.PCB').write_bytes(b'')
-    # Sorting is by full path, so the subdirectory's entry follows the top-level ones.
+    # Sorting is by full path; the subdirectory's entry follows the top-level ones.
     assert [p.name for p in find_by_suffix(tmp_path, '.pcb')] == [
         'Mixed.Pcb', 'UPPER.PCB', 'lower.pcb', 'NESTED.PCB'
     ]

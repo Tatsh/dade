@@ -62,7 +62,7 @@ def test_convert_writes_sidecar(tmp_path: Path) -> None:
     source.write_bytes(_animated())
     out = movie.convert(source)
     assert out == tmp_path / 'intro.mmv.json'
-    assert source.exists()  # The raw movie is kept.
+    assert source.exists()  # The raw movie is retained.
     assert json.loads(out.read_text(encoding='utf-8'))['type'] == 'animated_texture'
 
 

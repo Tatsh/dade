@@ -82,13 +82,13 @@ def test_crack_not_encrypted(plain_installer: Path) -> None:
         crack(plain_installer, [b'x'], backend='cpu')
 
 
-@pytest.mark.skipif(_HAS_CUPY, reason='cupy is installed, so the cuda backend loads')
+@pytest.mark.skipif(_HAS_CUPY, reason='cupy is installed and the cuda backend loads')
 def test_crack_cuda_unavailable(encrypted_installer: Path) -> None:
     with pytest.raises(BitrockError, match='cupy'):
         crack(encrypted_installer, [b'ab'], backend='cuda')
 
 
-@pytest.mark.skipif(_HAS_PYOPENCL, reason='pyopencl is installed, so the opencl backend loads')
+@pytest.mark.skipif(_HAS_PYOPENCL, reason='pyopencl is installed and the opencl backend loads')
 def test_crack_opencl_unavailable(encrypted_installer: Path) -> None:
     with pytest.raises(BitrockError, match='pyopencl'):
         crack(encrypted_installer, [b'ab'], backend='opencl')
@@ -178,7 +178,7 @@ def test_crack_main_rule_without_wordlist(runner: CliRunner, encrypted_installer
 
 
 def test_crack_main_limit_stops_early(runner: CliRunner, encrypted_installer: Path) -> None:
-    # The password 'ab' is the last of 6 candidates; a limit of 3 must not reach it.
+    # The password 'ab' is the last of 6 candidates; a limit of 3 must not arrive at it.
     result = runner.invoke(crack_main, [
         str(encrypted_installer), '--charset', 'ab', '--max-length', '2', '--limit', '3',
         '--backend', 'cpu'
@@ -256,7 +256,7 @@ def test_crack_cpu_parallel_finds_password(encrypted_installer: Path) -> None:
 
 def test_crack_cpu_serial_periodic_progress(encrypted_installer: Path,
                                             mocker: MockerFixture) -> None:
-    # The package re-exports the ``crack`` function, shadowing the submodule name, so resolve the
+    # The package re-exports the ``crack`` function, shadowing the submodule name; resolve the
     # module object explicitly before patching its clock.
     crack_module = importlib.import_module('dade.bitrock.password_cracker.crack')
     # A clock that jumps 0.2s per read forces the periodic-report branch on every candidate.

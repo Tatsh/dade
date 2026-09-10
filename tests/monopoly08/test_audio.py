@@ -21,10 +21,10 @@ _JUNK = (
     b'\xff\xff\xff\xff'  # Flag byte outside {0x00, 0x80}.
     b'\x00\x00\x00\x04'  # Block size below the eight-byte minimum.
     b'\x00\xff\xff\xff'  # Block size running past the end of the bank.
-    b'\x00\x00\x00\x10\x00\x01\x00\x00')  # More samples than one MPEG frame holds.
+    b'\x00\x00\x00\x10\x00\x01\x00\x00')  # More samples than one MPEG frame has.
 """Bytes between streams that must not be mistaken for EA-SNS blocks."""
 _UNTERMINATED = b'\x00\x00\x00\x10\x00\x00\x01\x00' + bytes(8)
-"""A well-formed block whose run reaches the end of the bank without a terminator."""
+"""A well-formed block whose run extends to the end of the bank without a terminator."""
 
 
 def _write(tmp_path: Path, name: str, data: bytes) -> Path:
@@ -115,7 +115,7 @@ def test_run_job_schl_reports_an_os_error(audio_module: ModuleType, fake_vgmstre
 
 
 # --------------------------------------------------------------------------- #
-# EAAC .mus containers holding EA-XMA segments                                 #
+# EAAC .mus containers with EA-XMA segments                                    #
 # --------------------------------------------------------------------------- #
 
 

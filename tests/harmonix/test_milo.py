@@ -117,7 +117,7 @@ def test_convert_v6_without_separators(tmp_path: Path) -> None:
 
 
 def test_convert_keeps_truncated_table_whole(tmp_path: Path) -> None:
-    # The record table runs off the end of the directory, so nothing can be split out.
+    # The record table runs off the end of the directory; nothing can be split out.
     body = struct.pack('<II', 10, 4) + struct.pack('<I', 4) + b'Rnd\x00'
     data = struct.pack('<4I', 0xCABEDEAF, 0x14, 1, len(body)) + bytes(4) + body
     source = tmp_path / 'scene.rnd'

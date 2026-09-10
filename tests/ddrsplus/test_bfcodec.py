@@ -32,7 +32,7 @@ def test_a_different_key_gives_different_ciphertext() -> None:
 
 
 def test_a_wrong_key_does_not_raise_but_gives_rubbish() -> None:
-    # The sizes live outside the ciphertext, so they cannot detect a wrong key.
+    # The sizes live outside the ciphertext; they cannot detect a wrong key.
     assert decipher(encipher(b'payload' * 4), bytes(16)) != b'payload' * 4
 
 

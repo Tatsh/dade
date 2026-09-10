@@ -9,7 +9,7 @@ from dade.marmalade.test_utils import build_font
 
 def _font_with_unmatched_palette() -> bytes:
     # A valid header followed by a palette region that never satisfies the alpha probe (entry 0
-    # transparent, some entry opaque), so the probe loop falls through to the initial offset.
+    # transparent, some entry opaque); the probe loop falls through to the initial offset.
     off = 0x10
     pitch, height = 2, 2
     body = bytearray(off + 13 + pitch * height)

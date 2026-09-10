@@ -24,7 +24,7 @@ _REPORTED_SIZE = 1 << 20
 
 
 class _TruncatedStream(io.BytesIO):
-    """A stream that reports a far larger size than the bytes it actually holds."""
+    """A stream that reports a far larger size than the bytes it actually has."""
     @override
     def seek(self, pos: int, whence: int = io.SEEK_SET) -> int:
         if whence == io.SEEK_END:
@@ -33,7 +33,7 @@ class _TruncatedStream(io.BytesIO):
 
 
 class _TruncatedArk:
-    """An archive stand-in whose stream ends long before its records say it should."""
+    """An archive stand-in whose stream ends long before its records state it should."""
     def __init__(self, data: bytes) -> None:
         self._data = data
 
@@ -211,7 +211,7 @@ def test_extract_skips_truncated_entries(make_amp_ark: Callable[..., bytes],
 
 def test_extract_partial_gzip_stops_at_eof(make_amp_ark: Callable[..., bytes],
                                            tmp_path: Path) -> None:
-    # The stream decompresses cleanly but the archive ends mid-member, so the copy loop stops.
+    # The stream decompresses cleanly but the archive ends mid-member; the copy loop stops.
     payload = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
     body = payload.compress(b'x' * 4096)
     archive = tmp_path / 'MAIN.ARK'
@@ -239,7 +239,7 @@ def test_extract_concatenated_empty_member(make_amp_ark: Callable[..., bytes],
 
 
 def test_extract_stops_on_short_read(make_amp_ark: Callable[..., bytes], tmp_path: Path) -> None:
-    # The records claim more bytes than the stream holds, so each copy stops at the real end.
+    # The records declare more bytes than the stream has, and each copy stops at the real end.
     data = make_amp_ark((('short.bin', b'A' * 4096),))
     archive = cast('Path', _TruncatedArk(data[:-4000]))
     stats = ark.extract(archive, tmp_path / 'out')
@@ -267,9 +267,9 @@ def test_list_entries(make_amp_ark: Callable[..., bytes], tmp_path: Path) -> Non
 
 def test_list_entries_rereads_oversized_directory(make_freq_ark: Callable[..., bytes],
                                                   tmp_path: Path) -> None:
-    # A directory claiming to end past the first read forces a second, larger read.
+    # A directory declaring an end past the first read forces a second, larger read.
     data = bytearray(make_freq_ark(_ENTRIES))
-    struct.pack_into('<I', data, 32, len(data) * 4)  # dataOff, which is the directory end.
+    struct.pack_into('<I', data, 32, len(data) * 4)  # dataOff, the directory end.
     archive = tmp_path / 'MAIN.ARK'
     archive.write_bytes(bytes(data))
     assert [entry.path for entry in ark.list_entries(archive)] == ['gen/a.txt', 'b.bin']

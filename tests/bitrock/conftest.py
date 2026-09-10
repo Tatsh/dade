@@ -41,7 +41,7 @@ def recover_stale_process_cwd(request: pytest.FixtureRequest) -> None:
     Recover when the process cwd was removed mid-session.
 
     Gentoo Portage test phases often run pytest with aggressive temporary-directory retention.
-    The process working directory can then point at a path that no longer exists, so
+    The process working directory can then point at a path that no longer exists, and
     ``Path.cwd()`` raises ``FileNotFoundError`` before ``monkeypatch.chdir`` can save the
     prior cwd.
     """

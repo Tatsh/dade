@@ -73,7 +73,7 @@ def test_counts_and_note_count(make_chart: Callable[..., bytes]) -> None:
     chart = parse_chart(
         make_chart(events=((1, 0, 0), (1, 10, 1), (6, 20, 2), (3, 30, 0), (4, 40, 0))))
     assert chart['counts'] == {'beat': 1, 'hold': 1, 'measure': 1, 'tap': 2}
-    # A hold scores at its head and again at its release, so it counts twice.
+    # A hold scores at its head and again at its release; it counts twice.
     assert chart['note_count'] == 4
 
 
@@ -94,7 +94,7 @@ def test_the_counts_are_sorted_by_name(make_chart: Callable[..., bytes]) -> None
 
 
 def test_the_event_word_splits_at_its_low_byte(make_chart: Callable[..., bytes]) -> None:
-    # The widest sector the packing can hold, beside a kind byte that fills its own eight bits.
+    # The widest sector the packing can store, beside a kind byte that fills its eight bits.
     event = parse_chart(make_chart(events=((0xFF, 0xFF_FFFF, 0),)))['events'][0]
     assert event['kind_id'] == 0xFF
     assert event['kind'] == 'unknown_255'

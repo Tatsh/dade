@@ -34,7 +34,7 @@ def test_mbin_no_context(tmp_path: Path) -> None:
     assert 'v 0.0 -0.0 0.0' in obj  # Y negated
     assert 'vn 0.0 -1.0 0.0' in obj
     assert 'vt 0.25 0.25' in obj  # V flipped
-    assert 'f 1/1/1 2/2/2 3/3/3' in obj  # winding kept
+    assert 'f 1/1/1 2/2/2 3/3/3' in obj  # winding preserved
     assert 'not resolved' in (out / 'LEVEL_M' / 'LEVEL_M_000.mtl').read_text('utf-8')
 
 

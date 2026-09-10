@@ -33,7 +33,7 @@ def test_convert_writes_sidecar(tmp_path: Path) -> None:
     source.write_bytes(_ipu())
     out = video.convert(source)
     assert out == tmp_path / 'intro.ipu.json'
-    assert source.exists()  # The raw video is kept.
+    assert source.exists()  # The raw video is retained.
     assert json.loads(out.read_text(encoding='utf-8'))['frame_count'] == 900
 
 

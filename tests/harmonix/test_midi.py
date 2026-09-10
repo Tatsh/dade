@@ -54,7 +54,7 @@ def test_convert_writes_sidecar(tmp_path: Path) -> None:
     source.write_bytes(_smf())
     out = midi.convert(source)
     assert out == tmp_path / 'song.mid.json'
-    assert source.exists()  # The standard MIDI is kept.
+    assert source.exists()  # The standard MIDI is retained.
     assert json.loads(out.read_text(encoding='utf-8'))['track_count'] == 2
 
 

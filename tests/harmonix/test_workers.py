@@ -168,7 +168,7 @@ async def test_run_pool_parallel_propagates_worker_logs(make_hmx_bitmap: Callabl
 
 @pytest.mark.asyncio
 async def test_run_pool_parallel_raises_without_ignore(tmp_path: Path) -> None:
-    # A directory named like a bitmap cannot be read, so the converter raises in the worker.
+    # A directory named like a bitmap cannot be read; the converter raises in the worker.
     for name in ('a', 'b'):
         (tmp_path / f'{name}.bmp').mkdir()
     with pytest.raises(OSError, match='Is a directory'):

@@ -38,7 +38,7 @@ def test_parse_resolves_known_class_name() -> None:
 
 
 def test_parse_reads_per_resource_name_hash() -> None:
-    # names_omitted = 0 means each resource carries its own name hash before the in-group hash.
+    # names_omitted = 0 means each resource has its name hash before the in-group hash.
     payload = struct.pack('<I', 1)
     payload += struct.pack('<II', iw_hash_string('CIwTexture'), 1)
     payload += bytes((0, 1))  # names_omitted, has_size

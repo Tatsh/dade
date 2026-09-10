@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 def _derbh(files: Sequence[tuple[str, bytes, int, int]]) -> bytes:
-    # Like build_derbh, but with explicit stored bytes, recorded usize and method per file, so
+    # Like build_derbh, but with explicit stored bytes, recorded usize and method per file, and
     # compressed members and deliberate size mismatches can be assembled.
     folders = ['']
     for path, *_ in files:

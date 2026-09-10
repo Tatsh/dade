@@ -21,7 +21,7 @@ def test_every_action_succeeds(unpacked: tuple[dict[str, Any], Path]) -> None:
 
 
 def test_every_file_is_planned_as_its_own_kind(unpacked: tuple[dict[str, Any], Path]) -> None:
-    # One count per file in the bundle, so a file routed to the wrong converter, counted twice, or
+    # One count per file in the bundle; a file routed to the wrong converter, counted twice, or
     # left out of the walk shows up here rather than only in whichever output test happens to look.
     stats, _ = unpacked
     assert {
@@ -213,7 +213,7 @@ def test_an_info_plist_that_cannot_be_read_is_skipped(tmp_path: Path,
     (bundle / 'Broken.bundle' / 'Info.plist').write_bytes(b'not a property list')
     out = tmp_path / 'out'
     stats = unpack(root, out, workers=1)
-    # The unreadable Info.plist still fails its own conversion, but it does not stop the walk.
+    # The unreadable Info.plist still fails its conversion, but it does not stop the walk.
     assert stats['plist'].fail == 1
     assert (out / 'Example.app' / 'Example.macho.json').is_file()
 

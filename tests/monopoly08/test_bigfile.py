@@ -64,7 +64,7 @@ def test_unpack_detects_a_short_read(make_big: Callable[[Sequence[tuple[str, byt
                                                                    Path], tmp_path: Path) -> None:
     archive = tmp_path / 'audio.big'
     raw = make_big((('one.bin', b'0123456789'),))
-    archive.write_bytes(raw[:-6])  # Truncate the payload but keep the declared size.
+    archive.write_bytes(raw[:-6])  # Truncate the payload but retain the declared size.
     with pytest.raises(EOFError, match='short read'):
         unpack(make_oversized_path(archive, len(raw)), tmp_path / 'out')
 

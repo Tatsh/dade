@@ -74,7 +74,7 @@ def test_xapk_with_obb_overrides_apk_stub(tmp_path: Path) -> None:
 
 
 def test_xapk_without_obb_uses_apk_stub(tmp_path: Path) -> None:
-    # Bundle carries an APK but no OBB: exercises the 'no obb_name' branch and the no-OBB warning.
+    # Bundle has an APK but no OBB. Exercises the 'no obb_name' branch and the no-OBB warning.
     apk_bytes = _zip_bytes({'assets/gamedata.dz': _data_archive()})
     xapk = tmp_path / 'app.xapk'
     xapk.write_bytes(_zip_bytes({'app.apk': apk_bytes}))
@@ -83,7 +83,7 @@ def test_xapk_without_obb_uses_apk_stub(tmp_path: Path) -> None:
 
 
 def test_apk_with_obb_only_bundle(tmp_path: Path) -> None:
-    # A bare APK plus a bundle that holds only an OBB: exercises the 'no apk_name in bundle' branch.
+    # A bare APK plus a bundle that stores only an OBB. Exercises the 'no apk_name in bundle' path.
     apk = _write_apk(tmp_path, {'assets/gamedata.dz': build_derbh([])})
     obb_bytes = _zip_bytes({'gamedata.dz': _data_archive()})
     xapk = tmp_path / 'obb.xapk'
@@ -113,7 +113,7 @@ def test_obb_non_archive_entries_ignored(tmp_path: Path) -> None:
 
 
 def test_cz_with_wrong_keys_is_skipped(tmp_path: Path) -> None:
-    # `cz.decrypt` is symmetric, so storing decrypt(non-Derbh) makes it decrypt back to non-Derbh,
+    # `cz.decrypt` is symmetric; storing decrypt(non-Derbh) makes it decrypt back to non-Derbh,
     # taking the 'did not decrypt to a Derbh archive' branch.
     apk = _write_apk(tmp_path, {
         'assets/good.dz': _data_archive(),

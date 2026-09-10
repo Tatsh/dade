@@ -61,7 +61,7 @@ def _obj_lines(path: Path, prefix: str) -> list[str]:
 
 
 def test_convert_float_positions(make_mesh: Callable[..., bytes], tmp_path: Path) -> None:
-    # The trailing zero words stand in for the block padding a real file carries.
+    # The trailing zero words stand in for the block padding a real file has.
     source = _write(
         tmp_path, 'm.npm7',
         make_mesh(blocks=(_float_block(_FLOAT_VERTICES, _CLEAN_STRIP) + b'\x00\x00' * 2,)))
@@ -149,7 +149,7 @@ def test_convert_spm7(make_mesh: Callable[..., bytes], make_vif_unpack: Callable
         + bytes((0, 0, 0, 0x30)) + b'\x00' * 16  # STROW.
         + bytes((0, 0, 0, 0x31)) + b'\x00' * 16  # STCOL.
         + make_vif_unpack(0, 0, 2)  # An UNPACK that is not V3-16.
-        + make_vif_unpack(2, 1, 0)  # A V3-16 UNPACK carrying no elements.
+        + make_vif_unpack(2, 1, 0)  # A V3-16 UNPACK with no elements.
         + _vif_v3_16(make_vif_unpack, _STRIP_A) + _vif_v3_16(make_vif_unpack, _STRIP_B) + bytes(
             (0, 0, 0, 0x00)))  # NOP.
     source = _write(tmp_path, 'm.spm7', make_mesh(b'SPM7', stream=stream))

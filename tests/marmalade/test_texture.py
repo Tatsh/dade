@@ -8,7 +8,7 @@ from dade.marmalade.texture import decode_texture
 
 
 def _tex_header(width: int, height: int, pitch: int) -> bytes:
-    # A 13-byte body holds exactly one scan offset (off == 4), so the width/height/pitch triple
+    # A 13-byte body has exactly one scan offset (off == 4), and the width/height/pitch triple
     # under test is the only candidate the decoder evaluates.
     body = bytearray(13)
     struct.pack_into('<H', body, 7, width)

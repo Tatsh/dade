@@ -33,7 +33,7 @@ def test_decode_group_writes_open_formats(tmp_path: Path) -> None:
     assert list((tmp_path / 'CIwModel').glob('*.obj'))
     assert list((tmp_path / 'CIwModel').glob('*.html'))
     assert list((tmp_path / 'CIwTexture').glob('*.png'))
-    # Resource names are not stored in a group, so an unknown class surfaces as
+    # Resource names are not stored in a group; an unknown class surfaces as
     # 'class_<hash>' and its body is dumped raw as a .bin.
     unknown = [name for name in counts if name.startswith('class_')]
     assert len(unknown) == 1
@@ -84,7 +84,7 @@ def test_undecodable_resources_fall_back_to_raw(tmp_path: Path) -> None:
 
 
 def test_faceless_model_emits_obj_but_no_viewer(tmp_path: Path) -> None:
-    # A model whose only triangle is degenerate has no faces, so the viewer is skipped while the
+    # A model whose only triangle is degenerate has no faces; the viewer is skipped while the
     # OBJ is still written.
     group = build_resgroup(
         'demo', {'CIwModel': [build_model([(0, 0, 0), (1, 0, 0), (0, 1, 0)], [(0, 0, 1)])]})

@@ -66,7 +66,7 @@ class VgmPlan(NamedTuple):
     frames: int = 2048
     """Frame count of the WAV the stub writes."""
     message: str = ''
-    """Text reported on stdout, which the caller scans for ``corrupt``."""
+    """Text reported on stdout. The caller scans it for ``corrupt``."""
     mode: str = 'loud'
     """Signal shape: ``'loud'``, ``'silent'`` or ``'half'`` (half loud, half silent)."""
     output: bool = True
@@ -96,7 +96,7 @@ def _write_wav(path: Path, plan: VgmPlan) -> None:
 
 def _requested_channels(path: Path) -> int:
     raw = path.read_bytes()
-    if len(raw) != 8:  # Not a synthesized EAAC .snr header, so no plan can match.
+    if len(raw) != 8:  # Not a synthesized EAAC .snr header; no plan can match.
         return 0
     return ((int.from_bytes(raw[:4], 'big') >> 18) & 0x3F) + 1
 
@@ -142,7 +142,7 @@ class _OversizedPath:
         Returns
         -------
         _FakeStat
-            A stat-like object carrying the claimed size.
+            A stat-like object with the declared size.
         """
         return _FakeStat(self._claimed_size)
 
@@ -374,7 +374,7 @@ def make_schl() -> Callable[..., bytes]:
 @pytest.fixture
 def make_mus() -> Callable[..., bytes]:
     """
-    Build an EAAC ``.mus`` container holding EA-XMA segments.
+    Build an EAAC ``.mus`` container with EA-XMA segments.
 
     Returns
     -------

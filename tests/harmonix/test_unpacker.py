@@ -128,7 +128,7 @@ async def test_unpack_iso_end_to_end(make_amp_ark: Callable[..., bytes],
     out = tmp_path / 'out'
     await _AmpUnpacker(iso).unpack(out)
     assert (out / 'GEN' / 'MAIN' / 'gen' / 'a.txt').read_bytes() == b'AAA'
-    assert (out / 'GEN' / 'MAIN.ARK').is_file()  # The materialised ARK is kept by default.
+    assert (out / 'GEN' / 'MAIN.ARK').is_file()  # The materialised ARK is retained by default.
     assert iso.is_file()  # The source image is untouched.
 
 

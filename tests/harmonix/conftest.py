@@ -218,7 +218,7 @@ def make_dtb() -> Callable[..., bytes]:
 @pytest.fixture
 def make_milo() -> Callable[..., bytes]:
     """
-    Build a Milo/Rnd archive holding the given ``(type, name, body)`` objects.
+    Build a Milo/Rnd archive with the given ``(type, name, body)`` objects.
 
     Returns
     -------
@@ -382,7 +382,7 @@ def make_v10_mesh() -> Callable[..., bytes]:
               decoys: bool = False) -> bytes:
         out = bytearray(struct.pack('<II', 10, 0))
         if decoys:
-            # A count whose vertex block holds non-finite positions, then one whose face count is
+            # A count whose vertex block has non-finite positions, then one whose face count is
             # zero, then one whose face indices are out of range: each is rejected by the scan.
             out += struct.pack('<I', 3) + b'\xff' * (3 * 56) + struct.pack('<I', 1)
             out += struct.pack('<3H', 0, 1, 2) + bytes(2)

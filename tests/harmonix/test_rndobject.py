@@ -26,7 +26,7 @@ def _name(name: str) -> bytes:
 
 
 def _with_matrix(head: bytes) -> bytes:
-    return head + bytes(-len(head) % 4) + _matrix()  # Keep the transform 4-byte aligned.
+    return head + bytes(-len(head) % 4) + _matrix()  # Align the transform to four bytes.
 
 
 def _view(version: int = 3) -> bytes:

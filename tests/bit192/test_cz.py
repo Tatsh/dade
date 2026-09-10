@@ -14,7 +14,7 @@ def test_decrypt_is_involution() -> None:
 
 def test_roundtrip_dtrz() -> None:
     dtrz = build_derbh([('a.bin', b'hello')])
-    encrypted = cz.decrypt(dtrz)  # XOR is symmetric, so this "encrypts"
+    encrypted = cz.decrypt(dtrz)  # XOR is symmetric; this "encrypts"
     assert cz.looks_like_cz(encrypted)
     assert cz.decrypt(encrypted) == dtrz
 

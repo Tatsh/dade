@@ -151,7 +151,7 @@ async def test_run_game(make_amp_ark: _Builder, make_hmx_bitmap: _Builder, make_
     assert 'milo: 1 archives decomposed' in summary['GEN/MAIN.ARK']
     assert (work / 'GEN' / 'MAIN' / 'gen' / 'ship_tex.png').is_file()
     assert (work / 'AUDIO' / 'SONG.wav').read_bytes()[:4] == b'RIFF'
-    # Without --delete the materialised ARK and STR are kept.
+    # Without --delete the materialised ARK and STR are retained.
     assert (work / 'GEN' / 'MAIN.ARK').is_file()
     assert (work / 'AUDIO' / 'SONG.STR').is_file()
 
@@ -182,7 +182,7 @@ async def test_run_game_keeps_unconverted_str_on_delete(make_amp_ark: _Builder,
     mocker.patch('dade.harmonix.workers.str_to_wav_file', side_effect=ValueError('boom'))
     await pipeline.run_game(work, delete=True, ignore_failures=True, jobs=1)
     assert not (work / 'GEN' / 'MAIN.ARK').exists()  # The ARK still unpacked and is removed.
-    assert (work / 'AUDIO' / 'SONG.STR').is_file()  # A STR that failed to convert is kept.
+    assert (work / 'AUDIO' / 'SONG.STR').is_file()  # A STR that failed to convert is retained.
 
 
 @pytest.mark.asyncio

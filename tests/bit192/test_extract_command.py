@@ -20,7 +20,7 @@ def test_extract_invokes_library_and_reports_root(runner: CliRunner, mocker: Moc
     extract_assets = mocker.patch('dade.bit192.commands.extract.extract_assets', return_value=out)
     result = runner.invoke(extract, [str(bundle), '-o', str(out)])
     assert result.exit_code == 0
-    # Rich may hard-wrap the long tmp_path, so match the unwrapped prefix only.
+    # Rich may hard-wrap the long tmp_path; match the unwrapped prefix only.
     assert 'Extracted all assets' in result.output
     extract_assets.assert_called_once_with((bundle,), out, keep_group_bin=False)
 

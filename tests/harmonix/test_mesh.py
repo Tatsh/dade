@@ -62,7 +62,7 @@ def test_mesh_to_obj_v10_skips_decoy_vectors(make_v10_mesh: Callable[..., bytes]
 @pytest.mark.parametrize('transform_version', [0, 1, 3])
 def test_mesh_to_obj_v14_transform_versions(make_v14_mesh: Callable[..., bytes],
                                             transform_version: int) -> None:
-    # Transform versions above zero carry a constraint block, and 2..4 an extra flag byte.
+    # Transform versions above zero have a constraint block, and 2..4 an extra flag byte.
     data = make_v14_mesh(handles=('parent.tnm', 'child.mesh'), transform_version=transform_version)
     obj = mesh.mesh_to_obj(data)
     assert obj is not None
@@ -101,7 +101,7 @@ def test_convert_writes_obj(make_v14_mesh: Callable[..., bytes], tmp_path: Path)
     source.write_bytes(make_v14_mesh())
     out = mesh.convert(source)
     assert out == tmp_path / 'ship.obj'
-    assert source.exists()  # The lossless object is kept.
+    assert source.exists()  # The lossless object is retained.
     assert out.read_text(encoding='utf-8').startswith('# Harmonix RndMesh -> OBJ')
 
 

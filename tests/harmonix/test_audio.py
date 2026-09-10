@@ -192,7 +192,7 @@ def test_split_sd_bank_invalid_header(tmp_path: Path) -> None:
 
 def test_split_sd_bank(tmp_path: Path, make_sd_bank: Callable[..., bytes],
                        make_vag: Callable[..., bytes]) -> None:
-    # The third VAG starts past the body limit, so it decodes to nothing and is skipped.
+    # The third VAG starts past the body limit; it decodes to nothing and is skipped.
     hd = tmp_path / 'bank.hd'
     hd.write_bytes(make_sd_bank(((0, 22050, 0), (32, 0, 4), (64, 44100, 0)), bd_size=64))
     (tmp_path / 'bank.bd').write_bytes(make_vag(4, flag=0))
@@ -226,7 +226,7 @@ def test_split_all_banks(tmp_path: Path, make_samp_bank: Callable[..., bytes],
 
 def test_split_all_banks_ignores_unsplittable_bank(tmp_path: Path,
                                                    make_samp_bank: Callable[..., bytes]) -> None:
-    # An ``.nse`` is present but the index is not a bank, so the split returns nothing.
+    # An ``.nse`` is present but the index is not a bank; the split returns nothing.
     (tmp_path / 'song.bnk').write_bytes(make_samp_bank((('kick', 22050, 0),)))
     (tmp_path / 'song.nse').write_bytes(b'')
     assert audio.split_all_banks(tmp_path) == (1, 0)

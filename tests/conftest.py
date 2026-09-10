@@ -48,10 +48,10 @@ def _isolate_setup_logging(mocker: MockerFixture) -> None:
     """
     Stop the command callbacks from configuring global logging during the test run.
 
-    Each game's command layer calls :py:func:`bascom.setup_logging`, which replaces the root
+    Each game's command layer calls :py:func:`bascom.setup_logging`. That call replaces the root
     logger's handlers. Now that the suites share one process, the configuration installed by the
     first suite to run would otherwise remove the handler :py:func:`caplog` relies on and hide log
-    records from every suite that runs later. Patching the imported name in each module keeps the
+    records from every suite that runs later. Patching the imported name in each module retains the
     suites independent while still recording the calls.
     """
     for binding in _SETUP_LOGGING_BINDINGS:
@@ -65,7 +65,7 @@ def recover_stale_process_cwd(request: pytest.FixtureRequest) -> None:
     Recover when the process cwd was removed mid-session.
 
     Gentoo Portage test phases often run pytest with aggressive temporary-directory retention.
-    The process working directory can then point at a path that no longer exists, so
+    The process working directory can then point at a path that no longer exists, and
     ``Path.cwd()`` raises ``FileNotFoundError`` before ``monkeypatch.chdir`` can save the
     prior cwd.
     """
@@ -127,9 +127,9 @@ def _iso_extent(records: Iterable[bytes]) -> bytes:
 
 def _iso_wrap_sectors(iso: bytes, mode: str) -> bytes:
     """
-    Wrap user data into raw sectors, the way a disc that kept its error correction holds them.
+    Wrap user data into raw sectors, the way a disc that retained its error correction stores them.
 
-    The twelve-byte sync pattern and the mode byte are real, because that is what a reader given a
+    The twelve-byte sync pattern and the mode byte are real. A reader given a bare
     `.bin` without its cue sheet has to recognise the layout from.
     """
     sync = b'\x00' + b'\xff' * 10 + b'\x00'
@@ -149,7 +149,7 @@ def make_iso9660() -> Callable[..., bytes]:
     """
     Build a minimal valid ISO 9660 image.
 
-    The image has a top-level file ``TOP.DAT`` and a ``GEN`` subdirectory holding ``MAIN.ARK``.
+    The image has a top-level file ``TOP.DAT`` and a ``GEN`` subdirectory with ``MAIN.ARK``.
 
     Returns
     -------

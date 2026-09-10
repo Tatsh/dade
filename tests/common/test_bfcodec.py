@@ -30,7 +30,7 @@ def test_a_different_key_gives_different_ciphertext() -> None:
 
 
 def test_the_body_is_cbc_chained_from_the_default_iv() -> None:
-    # Rebuilt from the block cipher and the documented chaining rather than from the codec, so a
+    # Rebuilt from the block cipher and the documented chaining rather than from the codec, and a
     # chain that stopped feeding itself would still round-trip but would not match this.
     payload = b'two whole blocks'
     cipher = Blowfish(_KEY)
@@ -58,7 +58,7 @@ def test_the_trailer_records_both_lengths(length: int, padded: int) -> None:
 
 
 def test_the_padding_is_zero_filled() -> None:
-    # The trailer truncates, so the fill only shows through a codec that is told the block is whole.
+    # The trailer truncates; the fill only shows through a codec that is told the block is whole.
     assert decipher(encipher(b'abc', _KEY)[:-8] + struct.pack('>II', 8, 8),
                     _KEY) == b'abc\0\0\0\0\0'
 

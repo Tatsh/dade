@@ -70,7 +70,7 @@ def test_the_simfile_points_at_the_extracted_media(make_gen: Callable[..., bytes
 
 def test_the_standard_charts_get_their_recorded_meters(make_gen: Callable[..., bytes],
                                                        tmp_path: Path) -> None:
-    # The sample holds a beginner and a basic chart, rated 2 and 5.
+    # The sample has a beginner and a basic chart, rated 2 and 5.
     extract_gen(make_gen(), 'song', tmp_path)
     text = (tmp_path / 'song.sm').read_text()
     assert '     2:' in text

@@ -101,7 +101,7 @@ def test_iso_isodump_empty_then_7z(tmp_path: Path, mocker: MockerFixture) -> Non
                  }))
 
     def run(args: tuple[str, ...], **kwargs: object) -> object:
-        if args[0] == '/7z':  # isodump wrote nothing, so 7z is the fallback
+        if args[0] == '/7z':  # isodump wrote nothing; 7z is the fallback
             _seven_zip_writes_cab(args)
         return mocker.Mock()
 

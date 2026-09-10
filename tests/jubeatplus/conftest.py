@@ -104,7 +104,7 @@ def make_png() -> Callable[..., bytes]:
 @pytest.fixture
 def make_apple_png() -> Callable[..., bytes]:
     """
-    Build a PNG carrying the ``CgBI`` chunk Xcode adds, which ``pngdefry`` strips.
+    Build a PNG with the ``CgBI`` chunk Xcode adds and ``pngdefry`` strips.
 
     Returns
     -------
@@ -113,7 +113,7 @@ def make_apple_png() -> Callable[..., bytes]:
     """
     def build(width: int = 1, height: int = 1) -> bytes:
         plain = _png(width, height)
-        # The CgBI chunk sits between the signature and IHDR, which is where pngdefry looks.
+        # The CgBI chunk sits between the signature and IHDR, where pngdefry looks.
         return plain[:8] + _chunk(b'CgBI', b'\x50\x00\x20\x02') + plain[8:]
 
     return build
@@ -153,7 +153,7 @@ def make_tex(tmp_path: Path, make_png: Callable[..., bytes]) -> Callable[[str], 
 @pytest.fixture
 def tune_info() -> dict[str, object]:
     """
-    Build the catalogue entry a tune package carries.
+    Build the catalogue entry a tune package includes.
 
     Returns
     -------
@@ -229,7 +229,7 @@ def make_bundle(tmp_path: Path, make_apple_png: Callable[..., bytes], make_jbt: 
                 marker_zip: Path,
                 make_signed_bundle_executable: Callable[[Path], None]) -> Callable[..., Path]:
     """
-    Lay out an application bundle holding one of everything the pipeline converts.
+    Build an application bundle with one of everything the pipeline converts.
 
     Returns
     -------
@@ -331,7 +331,7 @@ def fake_pngdefry(tmp_path: Path) -> Path:
     """
     Stand in for ``pngdefry``, stripping a ``CgBI`` chunk and skipping anything without one.
 
-    The real tool also byte-swaps and un-premultiplies, which nothing here depends on; what matters
+    The real tool also byte-swaps and un-premultiplies, and nothing here depends on that. The point
     for the pipeline is that it writes into the directory it is given, and writes nothing at all
     for a PNG that was never Apple-optimised.
 
@@ -398,7 +398,7 @@ def failing_tool(tmp_path: Path) -> Path:
 @pytest.fixture
 def make_lab_plist(tmp_path: Path) -> Callable[[Mapping[str, object]], Path]:
     """
-    Write a property list holding the values given.
+    Write a property list with the values given.
 
     Returns
     -------

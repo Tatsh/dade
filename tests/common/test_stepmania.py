@@ -27,13 +27,13 @@ def test_measures_are_separated_by_commas() -> None:
 
 
 def test_a_triplet_is_matched_within_tolerance() -> None:
-    # A twelfth of a measure is 341.33 ticks, which no power of two divides.
+    # A twelfth of a measure is 341.33 ticks. No power of two divides it.
     events = {round(_MEASURE * index / 12): {0: '1'} for index in range(12)}
     assert quantize_measures(events, 4, _MEASURE).count('\n') == 11
 
 
 def test_an_offset_no_candidate_fits_falls_back_to_the_finest_grid() -> None:
-    # A note at tick 11 sits within tolerance of no candidate row grid, so the finest, 192, is
+    # A note at tick 11 sits within tolerance of no candidate row grid, and the finest, 192, is
     # used.
     assert quantize_measures({11: {0: '1'}}, 4, _MEASURE).count('\n') == 191
 

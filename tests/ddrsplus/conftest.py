@@ -1,7 +1,7 @@
 """
 Shared pytest configuration for the ``dade.ddrsplus`` suite.
 
-Every fixture builds its sample file from scratch, so the suite needs no copy of the game.
+Every fixture builds its sample file from scratch, and the suite needs no copy of the game.
 """
 from __future__ import annotations
 
@@ -17,15 +17,15 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 MUSIC_ID = 259
-"""Music id the sample container carries."""
+"""Music id the sample container has."""
 NAME_JAPANESE = 'All My Love'
-"""Japanese title the sample container carries."""
+"""Japanese title the sample container has."""
 NAME_ENGLISH = 'All My Love'
-"""English title the sample container carries."""
+"""English title the sample container has."""
 ARTIST = 'kors k feat.ЯIRE'
-"""Artist the sample container carries, chosen so it exercises multi-byte text."""
+"""Artist the sample container has, chosen to exercise multi-byte text."""
 LEVELS = (2, 5, 8, 10, 2, 5)
-"""Foot ratings the sample container carries: four standard, then two Shake."""
+"""Foot ratings the sample container has: four standard, then two Shake."""
 MAX_COMBOS = (74, 155, 207, 284)
 """Max combo per difficulty slot in the sample standard table."""
 BANNER_WIDTH = 256
@@ -107,7 +107,7 @@ def make_chart_table() -> Callable[..., bytes]:
 @pytest.fixture
 def make_ssq() -> Callable[..., bytes]:
     """
-    Build an SSQ file holding a tempo map and one chart per parameter given.
+    Build an SSQ file with a tempo map and one chart per parameter given.
 
     Returns
     -------

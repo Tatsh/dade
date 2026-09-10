@@ -90,7 +90,7 @@ def test_link_references_skips_existing(tmp_path: Path) -> None:
     _write(proxy.with_suffix('.png'), b'already-here')
     assert bitmap.link_references(tmp_path, copy=False) == 0
     assert proxy.with_suffix('.png').read_bytes() == b'already-here'
-    assert proxy.exists()  # A real PNG holds the slot, so the proxy is left untouched.
+    assert proxy.exists()  # A real PNG occupies the slot; the proxy is not modified.
 
 
 @pytest.mark.parametrize('ref', ['ab.tex', 'sub/dir/thing.bmp', 'image/xx.tga'])

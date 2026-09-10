@@ -37,7 +37,7 @@ _KEYS = (
     (tune_info_key, TUNE_INFO_PASSPHRASE),
 )
 # The digests the game's own files were encrypted with. Every other test here derives its key from
-# the passphrase beside it, so only these literals notice a passphrase that has drifted from the
+# the passphrase beside it; only these literals notice a passphrase that has drifted from the
 # one in the binary.
 _DIGESTS = (
     (bgm_key, 'f9a142c70b07d9a8093b56b8c2eeb698'),

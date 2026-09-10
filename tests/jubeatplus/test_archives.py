@@ -76,7 +76,7 @@ def test_unpack_jbt_reads_the_v2_metadata_entry(tmp_path: Path, make_jbt: Callab
 
 def test_unpack_jbt_reads_the_v3_metadata_entry(tmp_path: Path, tune_info: dict[str,
                                                                                 object]) -> None:
-    # infov3 is keyed with the tune-info key and carries the four-byte header the others lack.
+    # infov3 is keyed with the tune-info key and has the four-byte header the others lack.
     path = tmp_path / 'tune.jbt'
     with zipfile.ZipFile(path, 'w') as archive:
         archive.writestr('infov3',
@@ -110,7 +110,8 @@ def test_unpack_jbt_rejects_a_file_that_is_not_a_zip(tmp_path: Path) -> None:
 
 
 def test_an_entry_deciphering_to_less_than_a_header(tmp_path: Path) -> None:
-    # A marker ZIP entry whose plaintext cannot hold the four-byte header is kept as it is rather
+    # A marker ZIP entry whose plaintext is too short for the four-byte header is copied as it is
+    # rather
     # than sliced into nothing.
     path = tmp_path / 'mk9999.zip'
     with zipfile.ZipFile(path, 'w') as archive:

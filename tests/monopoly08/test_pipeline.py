@@ -67,7 +67,7 @@ def test_run_converts_every_asset_group(caplog: pytest.LogCaptureFixture, fake_v
     (root / 'model.npm7').write_bytes(make_mesh(blocks=(_MESH_BLOCK,)))
     (root / 'place.bin').write_bytes(_PLACE_BIN)
     (root / 'bank.sdt').write_bytes(make_schl([b'first-unit', b'second-unit']))
-    (root / 'bank_0000.wav').write_bytes(b'\x00' * 100)  # Already decoded, so it is skipped.
+    (root / 'bank_0000.wav').write_bytes(b'\x00' * 100)  # Already decoded; it is skipped.
     with caplog.at_level(logging.WARNING, logger='dade.monopoly08.pipeline'):
         stats = run(root, workers=2)
     assert stats['archives'] == StepStats(1, 0)

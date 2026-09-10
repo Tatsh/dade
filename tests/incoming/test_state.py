@@ -82,7 +82,7 @@ def test_xxx(tmp_path: Path) -> None:
 
 def test_lev(tmp_path: Path) -> None:
     data = bytearray(_LEVEL_SIZE)
-    # The level region starts at g_dwNetworkMissionFlag (global 0xc), so it sits at file offset 0.
+    # The level region starts at g_dwNetworkMissionFlag (global 0xc); it sits at file offset 0.
     struct.pack_into('<I', data, 0x00000, 0xABCD)
     source = tmp_path / 'store.lev'
     source.write_bytes(data)
