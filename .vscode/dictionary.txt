@@ -70,6 +70,7 @@ bpps
 bsky
 bspan
 bsum
+bwsp
 byteswap
 cabdata
 calcsize
@@ -96,6 +97,7 @@ ciwmodel
 clen
 clut
 cluts
+cmmt
 cmpheader
 cmpr
 cmpxchg
@@ -161,11 +163,13 @@ doctree
 doctrees
 dreamcast
 drec
+dsdb
 dsym
 dtre
 dtrz
 dunder
 durag
+dutc
 dwords
 dyldinfo
 dyldlink
@@ -273,6 +277,9 @@ hoverxref
 htmlcov
 ibag
 ibpwcrk
+icnv
+icsp
+icvp
 idat
 ideaworks
 idxsize
@@ -289,6 +296,7 @@ iibbbbb
 iihhh
 ijbq
 ijsq
+iloc
 importability
 inam
 incl
@@ -356,6 +364,7 @@ loadtile
 loadtlut
 lproj
 lshoulderj
+lsvp
 lsyn
 ltibia
 lzham
@@ -736,6 +745,7 @@ unwalkable
 usemtl
 userprofile
 usrdir
+ustr
 vaddr
 vadpcm
 vags

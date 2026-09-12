@@ -3,7 +3,67 @@ from __future__ import annotations
 
 from typing import Any, TypedDict
 
-__all__ = ('MachOArchDict', 'MachODict', 'MachOSegmentDict')
+__all__ = ('DSStoreBlockDict', 'DSStoreDict', 'DSStoreHeaderDict', 'DSStoreStructureDict',
+           'DSStoreTreeDict', 'MachOArchDict', 'MachODict', 'MachOSegmentDict')
+
+
+class DSStoreBlockDict(TypedDict):
+    """One block of a ``.DS_Store`` file, addressed by its position in the allocator's table."""
+
+    offset: int
+    """The block's offset, relative to the four-byte alignment word at the file's start."""
+    size: int
+    """The block's size, always a power of two."""
+
+
+class DSStoreHeaderDict(TypedDict):
+    """The header of a ``.DS_Store`` file."""
+
+    alignment: int
+    """The alignment word, always one."""
+    allocator_offset: int
+    """The allocator's offset, stored twice and reported once."""
+    allocator_size: int
+    """The allocator's size."""
+    magic: str
+    """The magic, always ``Bud1``."""
+
+
+class DSStoreTreeDict(TypedDict):
+    """The master block of one directory inside a ``.DS_Store`` file."""
+
+    levels: int
+    """The tree's depth."""
+    nodes: int
+    """The number of nodes the tree occupies."""
+    page_size: int
+    """The size of a node, always 4096."""
+    records: int
+    """The number of records the tree stores."""
+    root_node: int
+    """The block number of the tree's root node."""
+
+
+class DSStoreStructureDict(TypedDict):
+    """The bookkeeping a ``.DS_Store`` file wraps its records in."""
+
+    blocks: list[DSStoreBlockDict]
+    """Every block the allocator addresses, in table order."""
+    directories: dict[str, DSStoreTreeDict]
+    """Every named directory and the tree it points at. Finder writes one, ``DSDB``."""
+    free_list: list[list[int]]
+    """The 32 free lists, one per block size exponent, each of the offsets it stores."""
+    header: DSStoreHeaderDict
+    """The file header."""
+
+
+class DSStoreDict(TypedDict):
+    """A whole ``.DS_Store`` file."""
+
+    entries: dict[str, dict[str, Any]]
+    """Every record, grouped by file name and then by structure identifier."""
+    structure: DSStoreStructureDict
+    """The allocator's own bookkeeping."""
 
 
 class MachOSegmentDict(TypedDict):

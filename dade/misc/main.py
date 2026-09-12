@@ -4,6 +4,7 @@ from __future__ import annotations
 import click
 
 from .commands.coredata import coredata
+from .commands.ds_store import ds_store
 from .commands.macho import macho
 from .commands.sc_info import sc_info
 from .commands.strings import strings
@@ -18,6 +19,7 @@ def misc() -> None:
 
 
 misc.add_command(coredata)
+misc.add_command(ds_store)
 misc.add_command(macho)
 misc.add_command(sc_info)
 misc.add_command(strings)

@@ -367,6 +367,7 @@ JSON to standard output:
 
 ```shell
 dade misc coredata MODEL
+dade misc ds-store .DS_Store
 dade misc macho dump BINARY
 dade misc sc-info dump PATH
 dade misc strings STRINGS
@@ -378,6 +379,24 @@ to JSON, optionally dumping the raw keyed archive (`--archive`) or emitting the 
 migration amounts to (`--sql`, with `--mom` supplying the destination model's column types).
 `strings` reads an Xcode `.strings` localisation table in either the compiled binary plist form or
 the old-style text form and writes it as JSON.
+
+`ds-store` reads the desktop database Finder writes beside the files of a folder and writes it as
+JSON. The file is a Buddy allocator file (`Bud1`) storing one B-tree whose key is a file name
+paired with a four-character structure identifier. The tree is flattened back into one entry per
+file name, and the `.` entry belongs to the folder itself rather than to anything inside it.
+
+A node opens with the block number of its last child, and zero marks a leaf. Reading the opening
+block number as a mode flag costs a whole subtree on any file Finder grew past one node.
+
+| Record                       | Output                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `Iloc`                       | The icon's position in the folder's window.                               |
+| `fwi0`                       | The window's frame and the view it opens in.                              |
+| `modD`, `moDD`               | The moment, from either the 1904 `dutc` form or the Core Foundation blob. |
+| `bwsp`, `icvp`, `lsvp`, etc. | The view settings, as the property list they ship as.                     |
+| Any other blob               | The bytes as hex, with their length.                                      |
+
+The allocator's blocks, directories, and free lists are reported alongside the records.
 
 `macho dump` writes the properties of a Mach-O executable as JSON: the header and its flags, the
 segments and their sections, the libraries it links (weakly or otherwise), its UUID and source

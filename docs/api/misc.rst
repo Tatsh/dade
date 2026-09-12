@@ -2,8 +2,9 @@ Miscellaneous
 =============
 
 Converters and readers for platform-level artefacts that are not tied to any one game: compiled
-Core Data models, Xcode ``.strings`` localisation tables, the ``SC_Info`` FairPlay bookkeeping
-inside a purchased application bundle, and the properties of a Mach-O executable.
+Core Data models, Xcode ``.strings`` localisation tables, Finder ``.DS_Store`` desktop databases,
+the ``SC_Info`` FairPlay bookkeeping inside a purchased application bundle, and the properties of a
+Mach-O executable.
 
 ``dade.misc.certificate``
 ---------------------------
@@ -15,6 +16,12 @@ inside a purchased application bundle, and the properties of a Mach-O executable
 ------------------------
 
 .. automodule:: dade.misc.coredata
+   :members:
+
+``dade.misc.ds_store``
+------------------------
+
+.. automodule:: dade.misc.ds_store
    :members:
 
 ``dade.misc.macho``

@@ -962,3 +962,244 @@ def make_signed_macho(tmp_path: Path) -> Callable[[bytes], Path]:
         return path
 
     return build
+
+
+class DSStoreBuilder:
+    """
+    Assemble a Buddy allocator file for the tests.
+
+    Blocks are appended in the order they are given and addressed by their position, the way the
+    allocator's own table addresses them. Each is padded out to the next power of two, and the
+    header, the block table, and the 32 empty free lists are filled in by :py:meth:`build`.
+    """
+    header_size = 36
+    """The bytes the header occupies before the first block."""
+    page_size = 0x1000
+    """The node size a master block reports."""
+    def __init__(self) -> None:
+        self.blocks: list[bytes] = []
+
+    def add(self, payload: bytes) -> int:
+        """
+        Append one block.
+
+        Parameters
+        ----------
+        payload : bytes
+            The block's body.
+
+        Returns
+        -------
+        int
+            The block's number.
+        """
+        self.blocks.append(payload)
+        return len(self.blocks) - 1
+
+    @staticmethod
+    def branch(pairs: Sequence[tuple[int, bytes]], last: int) -> bytes:
+        """
+        Build an internal node, alternating child block numbers with records.
+
+        Parameters
+        ----------
+        pairs : collections.abc.Sequence[tuple[int, bytes]]
+            Each child block number and the record that follows it.
+        last : int
+            The block number of the child after the final record, which the node opens with.
+
+        Returns
+        -------
+        bytes
+            The node's body.
+        """
+        body = b''.join(struct.pack('>I', child) + record for child, record in pairs)
+        return struct.pack('>II', last, len(pairs)) + body
+
+    def build(self, directories: Sequence[tuple[str, int]]) -> bytes:
+        """
+        Write the whole file.
+
+        Parameters
+        ----------
+        directories : collections.abc.Sequence[tuple[str, int]]
+            Each directory name and the master block it points at.
+
+        Returns
+        -------
+        bytes
+            The file, header first and allocator last.
+        """
+        data = bytearray(self.header_size)
+        addresses = []
+        for payload in self.blocks:
+            while (len(data) - 4) % 32:
+                data.append(0)
+            exponent = max(5, (len(payload) - 1).bit_length())
+            addresses.append((len(data) - 4) | exponent)
+            data += payload + bytes((1 << exponent) - len(payload))
+        while (len(data) - 4) % 32:
+            data.append(0)
+        offset = len(data) - 4
+        padded = -(-len(addresses) // 256) * 256
+        allocator = bytearray(struct.pack('>II', len(addresses), 0))
+        allocator += struct.pack(f'>{padded}I', *addresses, *((0,) * (padded - len(addresses))))
+        allocator += struct.pack('>I', len(directories))
+        for name, block in directories:
+            allocator += struct.pack('>B', len(name)) + name.encode() + struct.pack('>I', block)
+        allocator += struct.pack('>I', 0) * 32
+        data += allocator
+        data[:20] = struct.pack('>I4sIII', 1, b'Bud1', offset, len(allocator), offset)
+        return bytes(data)
+
+    @staticmethod
+    def leaf(records: Sequence[bytes]) -> bytes:
+        """
+        Build a leaf node.
+
+        Parameters
+        ----------
+        records : collections.abc.Sequence[bytes]
+            The records the node stores, in order.
+
+        Returns
+        -------
+        bytes
+            The node's body.
+        """
+        return struct.pack('>II', 0, len(records)) + b''.join(records)
+
+    @classmethod
+    def master(cls, root: int, *, levels: int = 1, records: int = 0, nodes: int = 1) -> bytes:
+        """
+        Build a master block.
+
+        Parameters
+        ----------
+        root : int
+            The block number of the tree's root node.
+        levels : int
+            The tree's depth.
+        records : int
+            The number of records the tree stores.
+        nodes : int
+            The number of nodes the tree occupies.
+
+        Returns
+        -------
+        bytes
+            The block's body.
+        """
+        return struct.pack('>IIIII', root, levels, records, nodes, cls.page_size)
+
+    @staticmethod
+    def record(name: str, code: str, kind: str, value: bytes) -> bytes:
+        """
+        Build one record.
+
+        Parameters
+        ----------
+        name : str
+            The file name the record belongs to.
+        code : str
+            The four-character structure identifier.
+        kind : str
+            The four-character data type.
+        value : bytes
+            The value, already encoded as the data type stores it.
+
+        Returns
+        -------
+        bytes
+            The record.
+        """
+        return (struct.pack('>I', len(name)) + name.encode('utf-16-be') + code.encode() +
+                kind.encode() + value)
+
+
+@pytest.fixture
+def ds_store_builder() -> type[DSStoreBuilder]:
+    """
+    Hand the tests the Buddy allocator assembler itself, for files no fixture covers.
+
+    Returns
+    -------
+    type[DSStoreBuilder]
+        The builder class.
+    """
+    return DSStoreBuilder
+
+
+@pytest.fixture
+def ds_store_path(tmp_path: Path) -> Path:
+    """
+    Write a database whose tree is one leaf, with a record of every data type.
+
+    Returns
+    -------
+    pathlib.Path
+        The written database.
+    """
+    builder = DSStoreBuilder()
+    # Finder's own allocator occupies the first block, and a node therefore never sits there.
+    builder.add(bytes(8))
+    window = plistlib.dumps({
+        'ShowSidebar': True,
+        'WindowBounds': '{{0, 0}, {770, 435}}'
+    },
+                            fmt=plistlib.FMT_BINARY)
+    records = (DSStoreBuilder.record('.', 'bwsp', 'blob',
+                                     struct.pack('>I', len(window)) + window),
+               DSStoreBuilder.record(
+                   '.', 'fwi0', 'blob',
+                   struct.pack('>I', 16) + struct.pack('>4h', 36, 0, 471, 770) + b'icnv' +
+                   bytes(4)), DSStoreBuilder.record('.', 'vSrn', 'long', struct.pack('>i', 1)),
+               DSStoreBuilder.record(
+                   'Photos', 'Iloc', 'blob',
+                   struct.pack('>I', 16) + struct.pack('>II', 132, 64) +
+                   bytes.fromhex('ffffffffffff0000')),
+               DSStoreBuilder.record('Photos', 'dscl', 'bool', b'\x01'),
+               DSStoreBuilder.record('Photos', 'icsp', 'shor', struct.pack('>i', 16)),
+               DSStoreBuilder.record('Readme.txt', 'cmmt', 'ustr',
+                                     struct.pack('>I', 2) + 'メモ'.encode('utf-16-be')),
+               DSStoreBuilder.record('Readme.txt', 'logS', 'comp', struct.pack('>q', 8192)),
+               DSStoreBuilder.record('Readme.txt', 'modD', 'dutc', struct.pack(
+                   '>q',
+                   241978834944000)), DSStoreBuilder.record('Readme.txt', 'ptbL', 'type', b'icnv'),
+               DSStoreBuilder.record('Readme.txt', 'pBBk', 'blob',
+                                     struct.pack('>I', 4) + b'book'))
+    node = builder.add(DSStoreBuilder.leaf(records))
+    master = builder.add(DSStoreBuilder.master(node, levels=0, records=len(records)))
+    path = tmp_path / '.DS_Store'
+    path.write_bytes(builder.build((('DSDB', master),)))
+    return path
+
+
+@pytest.fixture
+def ds_store_branching(tmp_path: Path) -> Path:
+    """
+    Write a database whose root node is internal, with a leaf on either side of its record.
+
+    Returns
+    -------
+    pathlib.Path
+        The written database.
+    """
+    builder = DSStoreBuilder()
+    # Finder's own allocator occupies the first block, and a node therefore never sits there.
+    builder.add(bytes(8))
+    left = builder.add(
+        DSStoreBuilder.leaf((DSStoreBuilder.record('Alpha', 'vSrn', 'long', struct.pack(
+            '>i', 1)), DSStoreBuilder.record('Beta', 'vSrn', 'long', struct.pack('>i', 2)))))
+    right = builder.add(
+        DSStoreBuilder.leaf((
+            DSStoreBuilder.record('Delta', 'vSrn', 'long', struct.pack('>i', 4)),
+            DSStoreBuilder.record('Echo', 'vSrn', 'long', struct.pack('>i', 5)),
+        )))
+    root = builder.add(
+        DSStoreBuilder.branch(
+            ((left, DSStoreBuilder.record('Gamma', 'vSrn', 'long', struct.pack('>i', 3))),), right))
+    master = builder.add(DSStoreBuilder.master(root, levels=1, nodes=3, records=5))
+    path = tmp_path / '.DS_Store'
+    path.write_bytes(builder.build((('DSDB', master),)))
+    return path

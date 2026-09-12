@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- `dade misc ds-store` reads a Finder `.DS_Store` desktop database and writes it as JSON. The file
+  is a Buddy allocator file storing one B-tree, and the tree is flattened into one entry per file
+  name, with the `.` entry belonging to the folder itself. Icon positions (`Iloc`), window frames
+  (`fwi0`), modification dates in either the `dutc` form or the Core Foundation blob form, and the
+  property lists that store a view's settings are all decoded; every other blob is reported as hex.
+  The allocator's blocks, directories, and free lists are reported alongside the records.
+
 ## [0.1.0] - 2026-09-10
 
 ### Added
