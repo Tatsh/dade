@@ -287,7 +287,7 @@ def iter_values(data: bytes, offset: int = 0) -> Iterator[TaggedValue]:
 
     Bulk data such as lightmap pixels is written untagged, and a walk therefore stops wherever the
     stream exits tagged territory. The caller can resume by passing a later offset. Strings are
-    followed correctly, each stating its length.
+    followed correctly, each recording its length.
 
     Parameters
     ----------

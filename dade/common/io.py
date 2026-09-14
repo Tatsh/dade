@@ -162,7 +162,7 @@ def resolve_reader(
     -------
     tuple[Reader, MmapReader | None]
         The resolved reader and the resource this call opened and now owns, or ``None`` when the
-        caller supplied the bytes or reader and nothing needs closing.
+        caller supplied the bytes or reader and no resource needs closing.
     """
     match source:
         case str() | Path():

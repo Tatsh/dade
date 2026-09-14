@@ -318,9 +318,9 @@ class _ArchiveDecoder:
             return {'$class': name, 'entries': [list(pair) for pair in pairs]}
         if 'NS.string' in instance:
             return {'$class': name, 'string': self.decode_value(instance['NS.string'])}
-        # Decode fields in sorted key order so that, with the key-sorted JSON output, shared
-        # objects are expanded at the first position a reader encounters and later positions get
-        # the ``$ref``.
+        # Decode fields in sorted key order. With the key-sorted JSON output, shared objects are
+        # then expanded at the first position a reader encounters, and later positions get the
+        # ``$ref``.
         decoded: dict[str, Any] = {'$class': name}
         for key, value in sorted(instance.items()):
             if key == '$class':

@@ -66,7 +66,7 @@ def safe_name(name: str, *, allow_spaces: bool = False) -> str:
     Returns
     -------
     str
-        A filename-safe basename, or ``object`` when nothing survives.
+        A filename-safe basename, or ``object`` when no character survives.
     """
     name = name.replace('\\', '/').split('/')[-1].strip()
     kept = f' {_SAFE_PUNCTUATION}' if allow_spaces else _SAFE_PUNCTUATION

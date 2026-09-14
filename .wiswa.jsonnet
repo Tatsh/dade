@@ -35,10 +35,10 @@ local utils = import 'utils.libjsonnet';
     main+: {
       anyio: utils.latestPypiPackageVersionCaret('anyio'),
       bascom: '>=0.2.0',
-      // cryptography 49 dropped the macOS universal2 wheels, leaving arm64 only, so an Intel Mac
-      // builds from the sdist and links against whichever OpenSSL the runner has. PyInstaller then
-      // bundles a different libssl and the binary cannot resolve its symbols. Cap Intel Macs at the
-      // last release that still ships a wheel, which statically links its own OpenSSL.
+      // cryptography 49 dropped the macOS universal2 wheels, omitting arm64 only. An Intel Mac
+      // therefore builds from the sdist and links against whichever OpenSSL the runner has.
+      // PyInstaller then bundles a different libssl and the binary cannot resolve its symbols. Cap
+      // Intel Macs at the last release that still ships a wheel, which statically links OpenSSL.
       cryptography: [
         {
           markers: "sys_platform != 'darwin' or platform_machine != 'x86_64'",
@@ -51,9 +51,9 @@ local utils = import 'utils.libjsonnet';
       ],
       jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
       mido: utils.latestPypiPackageVersionCaret('mido'),
-      // numpy 2.3 dropped Python 3.10 (it requires >=3.11), which the project still supports, so
-      // cap at the last 2.2.x release. Windows on ARM64 is the exception: numpy ships win_arm64
-      // wheels only from 2.3, so there (Python is always >=3.11) require >=2.3 to install from a
+      // numpy 2.3 dropped Python 3.10 (it requires >=3.11) and the project still supports it, so
+      // cap at the last 2.2.x release. Windows on ARM64 is the exception. numpy ships win_arm64
+      // wheels only from 2.3, and there (Python is always >=3.11) require >=2.3 to install from a
       // wheel rather than build from source.
       numpy: [
         {
@@ -84,8 +84,8 @@ local utils = import 'utils.libjsonnet';
       coverage+: {
         report+: {
           omit+: [
-            // GPU-only backends: require cupy/pyopencl and a real device, so they cannot run in
-            // CI. Excluded from coverage.
+            // GPU-only backends require cupy/pyopencl and a real device, and they therefore
+            // cannot run in CI. Excluded from coverage.
             '%s/bitrock/password_cracker/cuda.py' % top.primary_module,
             '%s/bitrock/password_cracker/opencl.py' % top.primary_module,
             '%s/*/__main__.py' % top.primary_module,
@@ -94,8 +94,8 @@ local utils = import 'utils.libjsonnet';
         },
         run+: {
           omit+: [
-            // GPU-only backends: require cupy/pyopencl and a real device, so they cannot run in
-            // CI. Excluded from coverage.
+            // GPU-only backends require cupy/pyopencl and a real device, and they therefore
+            // cannot run in CI. Excluded from coverage.
             '%s/bitrock/password_cracker/cuda.py' % top.primary_module,
             '%s/bitrock/password_cracker/opencl.py' % top.primary_module,
             '%s/*/__main__.py' % top.primary_module,
@@ -142,17 +142,18 @@ local utils = import 'utils.libjsonnet';
     // Built by `dade rbplus site`, and a chart collection besides. What is worth keeping is the
     // source under `assets/site` and the bundle under `dade/rbplus/site`.
     '/charts-test/',
-    // The deployed copy of the chart collection, which is a checkout of its own.
+    // The deployed copy of the chart collection, a separate checkout.
     '/rbpcharts/',
     '/site/',
   ],
-  // The chart viewer's bundle is built from `assets/site`, not written by hand, and is committed
+  // The chart viewer's bundle is built from `assets/site`, not hand-written, and is committed
   // because an install from PyPI has no Node to build it with. It is committed exactly as webpack
-  // writes it, so Prettier leaves it alone rather than drifting it from a fresh build.
+  // writes it, and Prettier therefore makes no edit rather than drifting it from a fresh build.
   gitattributes+: ['/dade/rbplus/site/** linguist-generated=true'],
   prettierignore+: ['/dade/rbplus/site/'],
-  // Kept out of every pre-commit hook so none of the file-normalising ones (end-of-file, byte-order
-  // mark, line ending) rewrites what webpack emits and drifts it from a fresh build.
+  // Retained outside every pre-commit hook. None of the file-normalising ones (end-of-file,
+  // byte-order mark, line ending) then rewrites what webpack emits and drifts it from a fresh
+  // build.
   pre_commit_config+: { exclude: '^dade/rbplus/site/' },
   package_json+: {
     cspell+: {
@@ -169,8 +170,8 @@ local utils = import 'utils.libjsonnet';
       'css-minimizer-webpack-plugin': '^7.0.0',
       'html-webpack-plugin': '^5.6.3',
       'mini-css-extract-plugin': '^2.9.2',
-      // Drives a real browser over the built site, which is the only way to check that a page
-      // lays out as it should.
+      // Drives a real browser over the built site, the only way to check that a page is positioned
+      // as it should be.
       playwright: '^1.62.1',
       react: '^19.0.0',
       'react-dom': '^19.0.0',

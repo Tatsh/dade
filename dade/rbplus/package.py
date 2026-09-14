@@ -204,7 +204,7 @@ def is_extend_note(charts: Mapping[str, ChartDict | None]) -> bool:
 
 def extended_tune_id(tune_id: int) -> int:
     """
-    Name the tune an extend note belongs to.
+    Identify the tune an extend note belongs to.
 
     Parameters
     ----------
@@ -413,7 +413,7 @@ def infer_difficulty(path: Path) -> str | None:
     Returns
     -------
     str | None
-        The chart entry name, or ``None`` when the name states nothing.
+        The chart entry name, or ``None`` when the name does not identify one.
     """
     stem = path.name.split('.')[0].casefold()
     return next((entry for entry in CHART_ENTRIES if stem == entry or stem == entry[len('note_'):]),

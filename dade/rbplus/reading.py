@@ -87,7 +87,7 @@ _SMALL_VOWEL_PAIRS = {
 }
 """Pairs whose second kana is small and which are written as one sound rather than two.
 
-Anything not named here falls back to the two kana written in turn.
+Anything not listed here falls back to the two kana written in turn.
 
 :meta hide-value:
 """

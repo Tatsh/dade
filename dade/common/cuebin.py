@@ -68,9 +68,9 @@ def bin_to_iso(bin_path: Path) -> bytes:
     Read a ``.bin`` that came without its cue sheet.
 
     The sector layout is taken from the file rather than from a sheet. A track that retained its
-    sync
-    and error correction opens each 2352-byte sector with a fixed twelve-byte pattern and names its
-    mode in the byte after the address, while a track of user data alone is already what an
+    sync and error correction opens each 2352-byte sector with a fixed twelve-byte pattern and
+    records its mode in the byte after the address, while a track of user data alone is already
+    what an
     ISO 9660 reader wants and is returned unchanged.
 
     Parameters

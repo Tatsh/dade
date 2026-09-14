@@ -130,7 +130,7 @@ class TempoMap(NamedTuple):
         """
         Read the tempo changes off the map.
 
-        Entries sharing a tick are stops rather than tempo changes and are left to
+        Entries sharing a tick are stops rather than tempo changes and are deferred to
         :py:meth:`stops`. A tempo equal to the one before it is dropped, and a chart of constant
         tempo therefore yields a single entry.
 
@@ -318,7 +318,7 @@ def parse_ssq(data: bytes) -> SSQ:
     Raises
     ------
     dade.common.exceptions.InvalidFormatError
-        If a chunk is too short for a count, claims to run past the end of the file, or claims
+        If a chunk is too short for a count, reports a run past the end of the file, or reports
         more entries than it stores.
     """
     tempo: TempoMap | None = None

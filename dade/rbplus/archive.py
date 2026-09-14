@@ -102,7 +102,7 @@ def entry_names(archive: zipfile.ZipFile) -> Iterator[zipfile.ZipInfo]:
 
 def archive_root(archive: zipfile.ZipFile) -> str:
     """
-    Name the single top-level directory an archive's entries sit under.
+    Identify the single top-level directory an archive's entries sit under.
 
     Parameters
     ----------

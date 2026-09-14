@@ -163,7 +163,7 @@ def parse_skeleton(model: bytes) -> Skeleton | None:
         return None
     # The header's pointers store the segment number in the top byte, and their byte order follows
     # the build, little-endian on Windows and big-endian on the N64. Both are tried and the magic
-    # settles which is right, rather than the caller having to state it.
+    # settles which is right, rather than the caller having to specify it.
     start = 0
     for endian in ('<', '>'):
         candidate = struct.unpack_from(f'{endian}I', model, SKELETON_POINTER)[0] & _SEGMENT_MASK

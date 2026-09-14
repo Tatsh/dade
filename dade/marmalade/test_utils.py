@@ -177,8 +177,8 @@ def build_texture(width: int, height: int, bpp: int, texels: bytes) -> bytes:
     Build a ``CIwTexture`` body decodable by :func:`~dade.marmalade.texture.decode_texture`.
 
     The width, height, and pitch triple is written into the 16-byte header (width at offset 7,
-    height at offset 9, and pitch at offset 11) so that the decoder's scan finds it at offset
-    ``0x4``, and the texel bytes are appended after the header so that their start lands in the
+    height at offset 9, and pitch at offset 11). The decoder's scan therefore finds it at offset
+    ``0x4``. The texel bytes are appended after the header, and their start therefore lands in the
     decoder's accepted range.
 
     Parameters

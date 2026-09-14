@@ -7,7 +7,7 @@ section's header gives its length at ``0x0C`` and a string-table offset at ``0x0
 is walked by adding the length.
 
 A section is not a single mesh. It is a list of titled items (``VITO_BODY``, ``VITO_HAIR_s4``,
-``*BODY17``), each of which owns a small command list stating the material to draw it with. The
+``*BODY17``), each of which owns a small command list recording the material to draw it with. The
 layout below is taken from the game's accessors rather than guessed. ``t_SGP2`` addresses its tables
 through one-line functions that add a header field to the section pointer, and ``FUN_001c6ab8``
 gives ``section + section[0x54]`` for the items, ``FUN_001854e0`` gives ``section +
@@ -17,7 +17,7 @@ switching material whenever it meets opcode 1.
 Geometry is packetised the same way as in a ``.EGP2`` level, behind the same GIFtag, but the vertex
 layout differs, with two quadwords per vertex rather than the level format's four-vertex groups. The
 first stores the position and the second the texture coordinate. Positions are object-local, and
-each section therefore sits at the origin rather than in world space; the level's ``.OLV`` states
+each section therefore sits at the origin rather than in world space; the level's ``.OLV`` records
 where each one stands.
 
 The GIFtag advertises three or four registers, amounting to forty-eight or sixty-four bytes of
@@ -293,8 +293,8 @@ def read_materials(section: bytes) -> tuple[tuple[str, ...], ...]:
     """
     Read a section's material table.
 
-    Each material names up to three maps: the base colour, and where present the reflection and
-    damage overlays the game blends over it.
+    Each material identifies up to three maps: the base colour, and where present the reflection
+    and damage overlays the game blends over it.
 
     Parameters
     ----------
@@ -329,9 +329,10 @@ def read_items(section: bytes) -> tuple[PropItem, ...]:
     Read a section's items and the material each of their draw groups uses.
 
     An item points at a block of geometry opening with a small header that gives where its command
-    list starts and how long it is. Walking that list yields the groups. Opcode 1 gives the material
-    to use from here on, and opcodes 7, 8, 0x1007 and 0x1008 close a group, stating the byte offset
-    and quadword length of the packets it covers. Summed over an item, the triangle counts those
+    list starts and how long it is. Walking the list yields the groups. Opcode 1 gives the material
+    to use from here on, and opcodes 7, 8, 0x1007 and 0x1008 close a group, recording the byte
+    offset and quadword length of the packets it covers. Summed over an item, the triangle counts
+    those
     commands report match the item's stated total for every one of the game's 8440 items.
 
     Parameters

@@ -54,7 +54,7 @@ class ChartHeaderDict(TypedDict):
     music_bar: str
     """The 60-byte music-bar bitmap, hex-encoded."""
     note_count: int
-    """The number of scoring notes the header states."""
+    """The number of scoring notes the header records."""
     reserved: str
     """The twelve header bytes at ``0x18`` that are zero in every known chart, hex-encoded."""
     unknown_0x10: int

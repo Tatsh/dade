@@ -1,7 +1,7 @@
 """
 The libaudio ``ALCSeq`` compressed sequence format, shared by both Extreme-G games.
 
-A sequence begins with sixteen track offsets, one per MIDI channel, and states its division at
+A sequence begins with sixteen track offsets, one per MIDI channel, and records its division at
 offset ``0x40``. Each track is a stream of delta times and MIDI-like events with two departures
 from a standard MIDI file. Note-on events state an explicit duration rather than a matching
 note-off, and the byte ``0xFE`` introduces a back-reference that replays a run of earlier bytes.
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 __all__ = ('DEFAULT_DIVISION', 'CSeqReader', 'decode_track', 'to_midi')
 
 DEFAULT_DIVISION = 0x180
-"""Division used when the sequence header states no plausible one.
+"""Division used when the sequence header does not record a plausible one.
 
 :meta hide-value:
 """

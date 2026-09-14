@@ -3,17 +3,18 @@ Reader for the ``LDB2`` levels of *Max Payne 2*.
 
 The format is specified in ``docs/MAXPAYNE2_LDB.md`` of the ``max-payne-noclip`` project, and this
 follows it section by section. It shares the tagged ``R_MemoryFile`` values with the first game and
-nothing else: the strings are hoisted into one pool the body addresses by byte offset, geometry
-arrives already triangulated in packed float arrays rather than as convex polygons over a shared
-corner array, and a room states the transform that places it instead of deferring to the exits.
+no more than that. The strings are hoisted into one pool the body addresses by byte offset,
+geometry arrives already triangulated in packed float arrays rather than as convex polygons over a
+shared corner array, and a room records the transform that places it instead of deferring to the
+exits.
 
 The whole file is read. The rooms store the architecture and the dynamic meshes near the end store
 the props (doors, lifts, breakables, vending machines), without which a level looks conspicuously
 empty. The containers in between are walked only far enough to track the reader's place.
 
-The result is shaped like :py:func:`dade.maxpayne.ldb.read_level`'s so that one exporter serves
-both games: each per-material batch becomes a :py:class:`StaticMesh` of three-corner faces placed
-by its room's transform.
+The result is shaped like :py:func:`dade.maxpayne.ldb.read_level`'s, and one exporter therefore
+serves both games. Each per-material batch becomes a :py:class:`StaticMesh` of three-corner faces
+placed by its room's transform.
 """
 from __future__ import annotations
 
@@ -60,7 +61,7 @@ _TRANSFORM = 12
 """Floats in the ``M_Matrix4x3`` placing a prop: three basis rows then a translation."""
 
 _POINT = 3
-"""Floats in the ``M_Vector3`` a mesh states its midpoint as."""
+"""Floats in the ``M_Vector3`` a mesh records its midpoint as."""
 
 _CURVES = 2
 """Curves an animation stores, meaning how far it has travelled and how far it has turned."""
@@ -178,7 +179,7 @@ class _Reader:
         Raises
         ------
         InvalidLevel2Error
-            If the run does not fit in what is left.
+            If the run does not fit in what remains.
         """
         if count < 0 or self.at + count > len(self.data):
             msg = f'A run of {count} bytes at offset {self.at} runs past the end of the level.'
@@ -294,10 +295,9 @@ def _read_materials(reader: _Reader,
     """
     Read the material table.
 
-    A material states a range of diffuse frames and which of them to show, and a still material
-    therefore states the same frame twice. The other three texture groups and the lightmap are
-    indices too,
-    but only the diffuse image is needed to draw the level.
+    A material records a range of diffuse frames and which of them to show, and a still material
+    therefore records the same frame twice. The other three texture groups and the lightmap are
+    indices too, but only the diffuse image is needed to draw the level.
 
     Parameters
     ----------
@@ -507,7 +507,7 @@ def _read_rooms(reader: _Reader, lightmap_of: dict[int, int]) -> tuple[RenderMes
     Raises
     ------
     InvalidLevel2Error
-        If a room states no transform to place it with.
+        If a room does not record a transform to place it with.
     """
     corners: list[Corner] = []
     meshes: list[StaticMesh] = []
@@ -564,9 +564,9 @@ def _skip_to_props(reader: _Reader) -> list[tuple[float, ...]]:
     """
     Walk the containers between the rooms and the props, retaining the transforms on the way.
 
-    Nothing here is drawn, but a prop states no transform to place it with. It references a state
-    machine, and the state machine has it. The state machines are therefore walked for their
-    transforms and everything else only for its length.
+    No geometry here is drawn, but a prop does not record a transform to place it with. It
+    references a state machine, and the state machine has it. The state machines are therefore
+    walked for their transforms and everything else only for its length.
 
     Parameters
     ----------
@@ -612,8 +612,8 @@ def _read_animations(reader: _Reader, pool: bytes) -> list[PropAnimation]:
 
     A clip is two curves sampled over its length (how far the prop has travelled and how far it has
     turned) between a start and an end transform, the same shape the first game uses. Where the
-    first game states only the samples, this states the times they fall at as well, and 898 of the
-    2454 curves in the first six levels are not evenly spaced.
+    first game records only the samples, the sequel records the times they fall at as well, and 898
+    of the 2454 curves in the first six levels are not evenly spaced.
 
     Parameters
     ----------
@@ -669,7 +669,7 @@ def _offset(transform: tuple[float, ...], midpoint: tuple[float, ...]) -> tuple[
     Returns
     -------
     tuple[float, ...]
-        The transform, translated so that the origin lands on the midpoint.
+        The transform, translated to land the origin on the midpoint.
     """
     a, b, c = transform[0:3], transform[3:6], transform[6:9]
     x, y, z = midpoint
@@ -685,7 +685,7 @@ def _read_props(
     Read the dynamic meshes, meaning the doors, lifts and breakables a room's walls exclude.
 
     A prefab is written once and referred to afterwards. The geometry is therefore only present the
-    first time an identifier is seen, or when a later copy states separate lighting. A reader that
+    first time an identifier is seen, or when a later copy records separate lighting. A reader that
     always expects a mesh loses its place; the specification's dynamic mesh section sets out the
     rule.
 

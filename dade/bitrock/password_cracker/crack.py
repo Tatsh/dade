@@ -336,7 +336,7 @@ def _resolve_backend(name: Backend) -> _GpuBackend:
     Raises
     ------
     BitrockError
-        If ``name`` names a GPU backend whose optional package cannot be loaded.
+        If ``name`` identifies a GPU backend whose optional package cannot be loaded.
     """
     match name:
         case 'cpu':

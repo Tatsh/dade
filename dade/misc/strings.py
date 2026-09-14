@@ -24,7 +24,7 @@ def _unescape(text: str) -> str:
     Parameters
     ----------
     text : str
-        One key or value, as it was spelled between its quotes.
+        One key or value, as it was written between its quotes.
 
     Returns
     -------

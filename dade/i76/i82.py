@@ -2,7 +2,7 @@
 Readers for the Interstate '82 level formats.
 
 A level is a pair of files sharing a stem: an ``.msa`` world in text form, and a ``.mrm``
-terrain. The world names its textures inline as ``.bmp`` and ``.tga`` file names. The terrain
+terrain. The world lists its textures inline as ``.bmp`` and ``.tga`` file names. The terrain
 begins with a ``ZONV`` magic followed by a surface table whose entry count sits at offset 12 and
 whose 0x80-byte entries each open with a NUL-terminated texture name.
 

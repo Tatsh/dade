@@ -5,7 +5,7 @@ jubeat plus (Konami) toolkit.
 (``jp.konami.jubeatplus``) to formats that open outside iOS:
 
 - :py:mod:`dade.jubeatplus.cipher` - the seven Blowfish keys, each the MD5 of a passphrase the
-  binary never spells out in one piece.
+  binary never writes out in one piece.
 - :py:mod:`dade.jubeatplus.images` - the Apple-optimised PNGs and the enciphered ``.tex``
   textures.
 - :py:mod:`dade.jubeatplus.audio` - the ``.caf`` sound effects.

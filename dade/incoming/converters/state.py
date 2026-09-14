@@ -9,7 +9,7 @@ and the verified checksum). The snapshot files (``.sav``, ``.xxx``, and ``.lev``
 global's offset, type, and name is applied. Every byte is decoded into a typed value: bytes not
 covered by a known field
 (gaps, large pools, and run-time pointer tables) are emitted as ``unknownAt_<offset>`` arrays of
-32-bit words (or raw byte values when unaligned). Nothing is left as an opaque base64 blob.
+32-bit words (or raw byte values when unaligned). No field remains an opaque base64 blob.
 """
 from __future__ import annotations
 
@@ -913,7 +913,7 @@ def cfg_to_json(source: Path, dest_dir: Path) -> Path:
     options block as the serial/modem connection settings (COM port, baud rate, stop bits, parity,
     and flow control); the high-score block as a list of tables of ``{score, name}`` entries; the
     force-feedback flag as a boolean; and the checksum as an object that recomputes and verifies it.
-    Nothing is left as an opaque blob.
+    No field remains an opaque blob.
 
     Parameters
     ----------

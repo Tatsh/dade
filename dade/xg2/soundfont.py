@@ -307,7 +307,7 @@ def build_combined(rom: bytes,
     Build one SoundFont with a bank's melodic instruments and its drum kit.
 
     Melodic instruments go to bank 0 with the program taken from the instrument array index. The
-    drum kit is read from the bank's percussion pointer, where each sound already states its
+    drum kit is read from the bank's percussion pointer, where each sound already records its
     key range and root; *drums* is used only as a fallback for a bank without one, in which case
     each of its first instrument's sounds is spread across consecutive keys.
 

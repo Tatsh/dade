@@ -12,12 +12,13 @@ float in a vertex row is an RGBA vertex colour, and the fourth low byte is alway
 PlayStation 2 alpha is on a ``0..128`` scale.
 
 The GIFtag is what the hardware itself would have consumed, and it therefore settles how to
-triangulate. Its NLOOP field is the vertex count and its PRIM field states whether the packet is an
-independent triangle list or a strip. Its ``NREG``/``REGS`` fields list the per-vertex registers as
+triangulate. Its NLOOP field is the vertex count and its PRIM field records whether the packet is
+an independent triangle list or a strip. Its ``NREG``/``REGS`` fields list the per-vertex registers
+as
 ST, RGBAQ, and XYZ2, matching the decoded layout.
 
-Materials are 84-byte records naming a texture and pointing at its image record. Each material also
-owns a run of draw lists that name the meshes drawn with it.
+Materials are 84-byte records identifying a texture and pointing at its image record. Each material
+also owns a run of draw lists that identify the meshes drawn with it.
 """
 from __future__ import annotations
 
@@ -126,7 +127,7 @@ class Mesh(NamedTuple):
     packets: tuple[MeshPacket, ...]
     """Packets making up the mesh."""
     material: int
-    """Index of the material this mesh uses, or ``-1`` when no material claims it."""
+    """Index of the material this mesh uses, or ``-1`` when no material owns it."""
     render_pass: int
     """Pass the engine draws this mesh in, counted from 1. See :py:data:`BLEND_PASSES`."""
 
@@ -237,7 +238,7 @@ def read_meshes(data: bytes) -> tuple[Mesh, ...]:
 
     Meshes are enumerated from the materials' draw lists rather than from the mesh table at header
     word ``0x64``. That table lists only about half of them; the draw lists reference every mesh the
-    level actually draws, and each reference also states the material to use. Any table entry the
+    level actually draws, and each reference also records the material to use. Any table entry the
     lists happen to miss is still included.
 
     Meshes whose block arithmetic does not close are skipped and logged rather than raising. A blob
@@ -277,7 +278,7 @@ def read_meshes(data: bytes) -> tuple[Mesh, ...]:
 
 def _material_by_mesh(data: bytes) -> dict[int, tuple[int, int]]:
     """
-    Map each mesh block address to the material that claims it.
+    Map each mesh block address to the material that owns it.
 
     The table at header word ``0x58`` stores one 16-byte record per material. Its first word is the
     material index and its third points at that material's draw lists. The indices are not simply

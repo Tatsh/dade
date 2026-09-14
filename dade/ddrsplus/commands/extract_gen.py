@@ -50,7 +50,7 @@ def extract_gen(files: tuple[Path, ...],
 
     Every section is written out as stored. The banner also becomes a PNG, the metadata and note
     count tables also become JSON, and each set of step charts also becomes a StepMania simfile.
-    Nothing replaces the section it came from.
+    No conversion replaces the section it came from.
 
     The simfile's ``#OFFSET`` is measured from the audio and needs ``ffmpeg``; pass ``--gap``
     to set it yourself.

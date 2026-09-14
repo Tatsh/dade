@@ -181,8 +181,8 @@ def dump_chart(package: Path,
                                speed=speed,
                                title=info.get('MusicName'))
         except (OSError, ValueError) as e:
-            # The suffix chooses the form, and giving one nothing writes is a user error rather
-            # than a fault. It is reported as one.
+            # The suffix chooses the form, and giving one that no writer produces is a user error
+            # rather than a fault. It is reported as one.
             click.echo(str(e), err=True)
             raise click.Abort from e
         log.info('Wrote `%s`.', image)

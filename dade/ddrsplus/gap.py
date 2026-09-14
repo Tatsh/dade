@@ -1,7 +1,8 @@
 """
 Estimate where a chart's beat 0 sits inside its MP3.
 
-An SSQ tempo map states beat 0 happens at time 0, but the MP3 shipped beside it does not start
+An SSQ tempo map records that beat 0 happens at time 0, but the MP3 shipped beside it does not
+start
 there. Every file has the encoder's own delay, about 1105 samples or 25 ms for LAME, and some
 include real silence and a musical introduction on top. StepMania decodes all of it, and a simfile
 written with ``#OFFSET:0`` therefore starts its notes too early.

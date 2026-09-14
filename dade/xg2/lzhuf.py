@@ -9,7 +9,7 @@ very differently, and that asymmetry is the whole format:
   rebuilt as it decodes. The decoder has to run the same tree updates the encoder did and cannot
   skip ahead;
 * a match offset is coded by a **static** table instead. Its top six bits come from a byte looked up
-  in :py:data:`POSITION_CODES`, that byte's entry in :py:data:`POSITION_LENGTHS` states how many
+  in :py:data:`POSITION_CODES`, that byte's entry in :py:data:`POSITION_LENGTHS` records how many
   bits of it were real, and the low six bits follow raw.
 
 Extreme-G's variant differs from stock LZHUF in two ways, both shown by the game's decompressor at

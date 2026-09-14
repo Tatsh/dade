@@ -31,7 +31,7 @@ def japanese_font_path() -> str | None:
     Returns
     -------
     str | None
-        The font file's path, or ``None`` when fontconfig is absent or names nothing.
+        The font file's path, or ``None`` when fontconfig is absent or identifies no file.
     """
     if (fc_match := which(_FC_MATCH)) is None:
         log.debug('`%s` is not on PATH; falling back to the built-in font.', _FC_MATCH)

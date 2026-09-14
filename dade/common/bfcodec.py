@@ -20,8 +20,8 @@ clear rather than enciphered. It catches a truncated or corrupted file but estab
 whether the key was right; a wrong key yields plaintext-shaped rubbish that only the caller's parse
 will reject.
 
-Every key either game uses is the MD5 of a passphrase assembled on the stack so that it never
-appears whole in the binary, making it obfuscated rather than hidden.
+Every key either game uses is the MD5 of a passphrase assembled on the stack. The passphrase
+therefore never appears whole in the binary, making it obfuscated rather than hidden.
 """
 from __future__ import annotations
 

@@ -42,7 +42,7 @@ without one.
 
 Much of what is asserted here was measured against the 1,935 purchased applications of a private
 archive, covering 3,401 bundles, and checked against every bundle's ``iTunesMetadata.plist``. Where
-a claim rests on that corpus the docstring states what was counted. A later sample can therefore
+a claim rests on the corpus the docstring records what was counted. A later sample can therefore
 contradict it.
 
 Times are seconds since the QuickTime epoch of 1904-01-01 UTC. That epoch is the only one of the
@@ -546,7 +546,7 @@ class Supf(NamedTuple):
     """The embedded certificate's summary, when one could be read.
 
     It will almost always be expired, and that is normal rather than a sign of a damaged file.
-    Every one of the 5,962 certificates in the corpus, in both supplements alike, states the same
+    Every one of the 5,962 certificates in the corpus, in both supplements alike, records the same
     validity window of 2008-07-08 to 2013-07-07, and they come from a pool of only twelve serials
     of the form ``3333AF080708AF0001AF0000NN`` whose subject is an ``AP.<serial>`` under Apple
     FairPlay. 5,929 of them were already past ``notAfter`` on the day the application was bought.
@@ -678,7 +678,7 @@ class SCInfo(NamedTuple):
     metadata: dict[str, Any] | None
     """The bundle's ``iTunesMetadata.plist``, when one was found beside it."""
     region_override: str | None
-    """A country code the caller supplied, for when nothing beside the bundle states one."""
+    """A country code the caller supplied, for when no file beside the bundle specifies one."""
     bundle: str
     """Which bundle this is, as its path inside the container, such as ``Payload/Example.app``."""
     is_main: bool
@@ -785,12 +785,12 @@ class SCInfo(NamedTuple):
     @property
     def metadata_item_id(self) -> int | None:
         """
-        The store item identifier the ``iTunesMetadata.plist`` states.
+        The store item identifier the ``iTunesMetadata.plist`` records.
 
         Returns
         -------
         int | None
-            The identifier, or ``None`` without metadata stating one.
+            The identifier, or ``None`` without metadata recording one.
         """
         if self.metadata is not None and isinstance(self.metadata.get('itemId'), int):
             return int(self.metadata['itemId'])
@@ -799,12 +799,12 @@ class SCInfo(NamedTuple):
     @property
     def record_item_id(self) -> int | None:
         """
-        The store item identifier the purchase record's ``song`` tag states.
+        The store item identifier the purchase record's ``song`` tag records.
 
         Returns
         -------
         int | None
-            The identifier, or ``None`` without a record stating one.
+            The identifier, or ``None`` without a purchase record specifying one.
         """
         if self.sinf is None:
             return None
@@ -823,7 +823,7 @@ class SCInfo(NamedTuple):
         Returns
         -------
         int | None
-            The identifier, or ``None`` when neither states one.
+            The identifier, or ``None`` when neither records one.
         """
         return self.record_item_id if self.record_item_id is not None else self.metadata_item_id
 
@@ -833,7 +833,7 @@ class SCInfo(NamedTuple):
         The Apple storefront identifier the bundle was bought from.
 
         This comes from the ``iTunesMetadata.plist`` beside the bundle; the ``SC_Info`` directory
-        itself states no storefront anywhere.
+        itself does not record a storefront anywhere.
 
         Returns
         -------
@@ -1306,7 +1306,7 @@ def _build(path: Path, contents: dict[str, bytes], metadata: bytes | None, regio
     Parameters
     ----------
     path : pathlib.Path
-        Where the directory is, for the report to state.
+        Where the directory is, for the report to record.
     contents : dict[str, bytes]
         File name to contents, for the files in the ``SC_Info`` directory.
     metadata : bytes | None
@@ -1550,7 +1550,7 @@ def _select(bundles: Sequence[str], where: Path, wanted: str | None, *,
     Raises
     ------
     ValueError
-        If nothing matches what was requested.
+        If no bundle matches what was requested.
     """
     if wanted is not None:
         chosen = [
@@ -1675,7 +1675,7 @@ def read_bundles(path: Path,
     Raises
     ------
     ValueError
-        If no ``SC_Info`` directory is found, or nothing matches what was requested.
+        If no ``SC_Info`` directory is found, or no bundle matches what was requested.
     """
     if path.is_file():
         if not zipfile.is_zipfile(path):

@@ -395,7 +395,7 @@ def _read_allocator(stream: io.BytesIO, offset: int) -> _Allocator:
     stream : io.BytesIO
         The file.
     offset : int
-        The allocator's offset, as the header states it.
+        The allocator's offset, as the header records it.
 
     Returns
     -------

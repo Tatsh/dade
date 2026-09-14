@@ -249,7 +249,7 @@ def empty_pools(pools: Sequence[PoolSpec] = POOLS) -> tuple[DialoguePool, ...]:
 
 def _c_literal(text: bytes) -> str:
     """
-    Spell one string as a C literal, escaping anything that is not plainly printable.
+    Write one string as a C literal, escaping anything that is not plainly printable.
 
     Parameters
     ----------
@@ -260,7 +260,7 @@ def _c_literal(text: bytes) -> str:
     -------
     str
         The literal, quotes included. Non-printable and high bytes become three-digit octal, and
-        ``?`` is escaped so that no trigraph can form.
+        ``?`` is escaped to prevent a trigraph forming.
     """
     parts = ['"']
     for byte in text:

@@ -9,7 +9,7 @@ The format is reproduced from the pure-Tcl cookfs reference implementation (``pa
 
 This module parses only the generic container: locating the signature, reading the page directory,
 decompressing pages, and parsing the index tree. Any application-specific layer on top (encryption,
-custom page decompressors, logical-member reassembly) is left to the caller.
+custom page decompressors, logical-member reassembly) is deferred to the caller.
 """
 from __future__ import annotations
 

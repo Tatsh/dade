@@ -250,7 +250,7 @@ def _prop_meshes(section: bytes) -> list[tuple[str, tuple[str, ...], bytes, byte
     """
     Flatten a ``.SGP2`` section into one entry per draw group.
 
-    Each item's command list states which material draws which stretch of its geometry, and no
+    Each item's command list records which material draws which stretch of its geometry, and no
     guessing is needed. The group's material gives the texture outright. Where an item is one of a
     set of interchangeable pieces (a crowd character stores a wardrobe of jackets and shoes in the
     one model, and the game dresses each passer-by by handing the renderer a bitmask), only the

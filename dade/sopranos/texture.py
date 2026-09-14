@@ -2,7 +2,7 @@
 Decode ``.TEX2`` texture banks to PNG.
 
 A bank begins with a ``0x64`` magic, a reserved word, an image count, and then one absolute offset
-per image. Each image begins with a ``0x65`` magic and states its dimensions, pixel format,
+per image. Each image begins with a ``0x65`` magic and records its dimensions, pixel format,
 pixel-data offset, palette offset, and source path.
 
 Pixels are stored linearly, but paletted images use the PlayStation 2 CLUT ordering and every alpha
@@ -266,7 +266,7 @@ def convert(path: Path, output_dir: Path) -> tuple[Path, ...]:
     """
     Decode every image in a ``.TEX2`` file and write PNGs beside each other.
 
-    Each PNG is named after the stem of the image's recorded source path.
+    Each PNG is titled after the stem of the image's recorded source path.
 
     Parameters
     ----------

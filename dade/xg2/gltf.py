@@ -217,7 +217,7 @@ def _material(document: GLBDocument, texture: Texture | None, key: int | None, *
     texture : dade.xg2.typing.Texture | None
         The decoded image, if there is one.
     key : int | None
-        Pixel offset the geometry named, used to name the material.
+        Pixel offset the geometry specified, used to title the material.
     lit : bool
         Whether the geometry writes packed normals rather than vertex colours.
 

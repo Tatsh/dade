@@ -53,7 +53,7 @@ def build_horizon(mission: Path, outdir: Path, game_root: Path, palette: str | N
         click.echo(f'Strip list {hzd} not found in {game_root}.', err=True)
         raise click.Abort
     if not (names := parse_hzd(hzd_path.read_bytes())):
-        click.echo(f'Strip list {hzd} names no strips.', err=True)
+        click.echo(f'Strip list {hzd} does not list any strips.', err=True)
         raise click.Abort
 
     stem = bundle_stem(horizon_set(names[0]))

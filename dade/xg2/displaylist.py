@@ -230,7 +230,7 @@ def parse_pc_textures(model: bytes) -> list[Texture]:
 
     Every PC texture is 8-bit colour-indexed against a shared 256-colour palette with tightly
     packed rows. Palettes are shared and may sit after the pixels they belong to, and their
-    position therefore states nothing about the pixel depth.
+    position therefore does not record the pixel depth.
 
     Parameters
     ----------

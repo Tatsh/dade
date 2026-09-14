@@ -12,7 +12,7 @@ Y-up; positions and normals are rotated on the way out so a character stands up.
 coordinates are not touched at all. V runs negative, and the game hands it to Direct3D as written
 and lets wrapping sort it out.
 
-A model does not embed its images. It states a search path, always ``textures`` then
+A model does not embed its images. It records a search path, always ``textures`` then
 ``..\\sharedtextures``, and its materials reference files to be found along it. A caller that wants
 the model textured therefore has to read those off disk itself.
 """
@@ -176,7 +176,7 @@ def _read_vectors(data: bytes, offset: int, count: int, end: int, *,
     """
     out: list[Vector3] = []
     stride = 3 * _FLOAT_SIZE
-    # The count comes out of the file and states only how much to read, not how much there is.
+    # The count comes out of the file and records only how much to read, not how much there is.
     # Unchecked it reads whatever follows the chunk and treats that as geometry.
     if offset + count * (stride if packed else 1 + stride) > end:
         msg = f'A run of {count} vectors at offset {offset} does not fit inside its chunk.'
@@ -354,7 +354,7 @@ def _read_mesh(data: bytes, offset: int, end: int) -> ModelMesh:
     face_materials: list[int] = []
     # The mesh chunk's version does not decide the encoding. A skin's mesh is version 1 with
     # version 0 arrays inside it, and an object's is version 2 with version 1 arrays. Each array
-    # chunk states for itself whether it is packed.
+    # chunk records for itself whether it is packed.
     for identifier, inner, body, tail in _chunks(data, offset, end):
         packed = inner >= _PACKED
         if identifier == _NODE:

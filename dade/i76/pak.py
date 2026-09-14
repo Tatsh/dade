@@ -2,7 +2,7 @@
 Reader for ``.pak`` bundles and their ``.pix`` text indices.
 
 A ``.pak`` is a plain concatenation of members with no internal structure. The matching ``.pix``
-file is a text index whose first line is the member count and whose remaining lines each name a
+file is a text index whose first line is the member count and whose remaining lines each identify a
 member followed by its byte offset and length within the bundle. Lines with fewer than three
 fields are ignored, matching the game's own tolerance for trailing blank lines.
 """
@@ -89,7 +89,7 @@ def build_bundle_index(root: Path) -> dict[str, tuple[Path, PakEntry]]:
     """
     Index every member of every ``.pak`` bundle under ``root``.
 
-    A bundle is indexed only when its ``.pix`` index sits beside it. Where two bundles name the
+    A bundle is indexed only when its ``.pix`` index sits beside it. Where two bundles list the
     same member, the one encountered later wins.
 
     Parameters

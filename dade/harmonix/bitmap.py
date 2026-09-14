@@ -282,8 +282,8 @@ def parse_freq_tex_reference(data: bytes) -> str | None:
 
 
 def _reference_png_stem(data: bytes) -> str | None:
-    # The PNG stem a texture proxy resolves to: FreQuency Rnd::Tex names an external ABitmap
-    # decoded to "<stem>_bmp.png"; an Amplitude proxy names the texture directly.
+    # The PNG stem a texture proxy resolves to. FreQuency Rnd::Tex identifies an external ABitmap
+    # decoded to "<stem>_bmp.png"; an Amplitude proxy identifies the texture directly.
     freq = parse_freq_tex_reference(data)
     if freq is not None:
         base = Path(freq.replace('\\', '/').replace(' ', '_')).stem.lower()

@@ -5,7 +5,7 @@ Extract metadata from FreQuency ``MOVS`` movies (``.mmv``).
 8bpp run-length frames -- the UI ``*_gif`` animations) and a **soundbank movie** (a ``SNDH`` chunk
 streaming the hardware-synth banks, returned by the levels' ``get_soundbank_movie``).
 This module identifies the form and its parameters; decoding the RLE8 frames to an animation, or the
-``SNDH`` audio, is left for a dedicated pass.
+``SNDH`` audio, is deferred to a dedicated pass.
 """
 from __future__ import annotations
 

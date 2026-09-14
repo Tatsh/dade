@@ -1,7 +1,7 @@
 r"""
 The ``BMC`` skeletal animation container in the Extreme-G XG2 ``mfs`` archive.
 
-Every ``BMC`` blob in the ROM is named after a skeleton file: ``man2sk.asf`` thirteen times,
+Every ``BMC`` blob in the ROM is titled after a skeleton file: ``man2sk.asf`` thirteen times,
 ``ivask.bsf`` three times, and ``albeanosk.bs`` once. ``.asf`` is Acclaim's own Skeleton File
 format, and Iva and Albeano are two of the game's riders, who also appear as ``bulk/data/iva.cmp``
 and ``bulk/data/albeano.cmp`` in the Windows executable. These are motion clips, not sounds.
@@ -15,7 +15,7 @@ length-prefixed curve per channel, each with one value per frame:
 * ``[u16 length][frames x s16]``, stored outright, when eight bits will not do.
 
 Which one a record is follows from its length, and records are padded to an even boundary. The
-final record states a length of zero and runs to the end of the payload, where that padding is
+final record records a length of zero and runs to the end of the payload, where the padding is
 dropped.
 
 Verified against the ROM. All seventeen clips parse to exactly 67 channels and consume every byte.
@@ -140,7 +140,7 @@ def demo() -> None:
     # An eight-bit channel spanning 0 to 255 maps its bytes straight onto that range.
     first = struct.pack('>H2h', CHANNEL_HEADER_SIZE + _DEMO_FRAMES, 0, 255)
     first += bytes((0, 85, 170, 255))
-    # The last channel states a zero length and runs to the end.
+    # The last channel records a zero length and runs to the end.
     second = struct.pack('>H2h', 0, _DEMO_LOW, _DEMO_HIGH) + bytes((0, 128, 255, 0))
     clip = parse_bmc(header + first + second)
     if clip is None:

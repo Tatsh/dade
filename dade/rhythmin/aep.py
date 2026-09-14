@@ -311,8 +311,9 @@ class AepIndex:
         """
         The flat frame-entry array.
 
-        The array states no length, and layer chains within it are contiguous and terminated by a
-        negative type. The walk therefore stops at the first record whose fields cannot be an entry.
+        The array does not record a length, and layer chains within it are contiguous and
+        terminated by a negative type. The walk therefore stops at the first record whose fields
+        cannot be an entry.
 
         Returns
         -------
@@ -366,8 +367,8 @@ class AepIndex:
 
         The layer name's ordinal indexes :attr:`layer_numbers` to give the entry the chain starts
         at, and the chain runs until a negative type terminates it, exactly as
-        ``AepManager::layerLength`` does. The terminator is included so that its ``frame_end``,
-        which states the chain's length, is not lost.
+        ``AepManager::layerLength`` does. The terminator is included, and its ``frame_end``, the
+        chain's length, is therefore not lost.
 
         Parameters
         ----------
@@ -396,7 +397,7 @@ class AepIndex:
                 chain.append(entry)
                 break
             # A chain is a run of sprite, layer, and group entries; anything else means the walk
-            # has left the array and entered an adjacent section.
+            # has departed the array and entered an adjacent section.
             if entry.entry_type not in ENTRY_TYPES:
                 break
             chain.append(entry)
@@ -433,7 +434,7 @@ class AepIndex:
 
     def position_channel(self, offset: int) -> tuple[PositionKeyframe, ...]:
         """
-        Decode a position channel, whose keys run until one states a frame of ``-1``.
+        Decode a position channel, whose keys run until one records a frame of ``-1``.
 
         Parameters
         ----------

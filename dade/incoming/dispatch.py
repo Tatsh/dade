@@ -85,8 +85,8 @@ async def convert_file(source: Path, dest_dir: Path, input_root: Path,
     """
     Convert or copy a single file into *dest_dir*.
 
-    The synchronous converter (or file copy) runs in a worker thread so that gathered jobs make
-    progress concurrently.
+    The synchronous converter (or file copy) runs in a worker thread, and gathered jobs therefore
+    make progress concurrently.
 
     Parameters
     ----------

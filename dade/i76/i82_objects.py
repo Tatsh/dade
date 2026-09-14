@@ -1,11 +1,11 @@
 """
 Reader for the Interstate '82 object reference graph.
 
-Levels place objects through text records. A static object is an ``Object_Header`` block naming a
-``.stf`` wrapper, whose ``Geometry_Files`` block names a ``.six`` mesh; the binary mesh itself is
-the matching ``.sbx``, falling back to the ``.six``. A vehicle is an ``Object_Header`` naming a
-``.vdf``, whose ``Chassis`` names a ``.cdf`` with the same ``Geometry_Files`` block plus a
-``Wheels`` block and a ``Stock_Paint`` texture.
+Levels place objects through text records. A static object is an ``Object_Header`` block
+identifying a ``.stf`` wrapper, whose ``Geometry_Files`` block identifies a ``.six`` mesh; the
+binary mesh itself is the matching ``.sbx``, falling back to the ``.six``. A vehicle is an
+``Object_Header`` identifying a ``.vdf``, whose ``Chassis`` identifies a ``.cdf`` with the same
+``Geometry_Files`` block plus a ``Wheels`` block and a ``Stock_Paint`` texture.
 
 Material textures are not listed in the text records; they are ``.bmp`` and ``.tga`` names embedded
 in the binary mesh, and they are recovered by scanning it.

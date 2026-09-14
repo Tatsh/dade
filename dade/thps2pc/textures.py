@@ -132,7 +132,7 @@ def decode_instance(data: bytes, instance: TextureInstance,
     Returns
     -------
     bytes | None
-        Row-major RGB triples, or ``None`` when the instance names a palette that is absent.
+        Row-major RGB triples, or ``None`` when the instance references a palette that is absent.
     """
     cluts = tables.cluts_16 if instance.is_4bpp else tables.cluts_256
     clut_offset = cluts.get(instance.clut_id)

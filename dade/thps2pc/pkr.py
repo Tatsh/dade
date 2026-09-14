@@ -101,7 +101,7 @@ class CompressionMethod(IntEnum):
 
 
 class UnsafePathError(Exception):
-    """Raised when a pack entry names a path that would escape the destination directory."""
+    """Raised when a pack entry specifies a path that would escape the destination directory."""
 
 
 class PkrHeader(NamedTuple):
@@ -286,7 +286,7 @@ def extract_entry(data: bytes, entry: PkrFileEntry) -> bytes:
     ValueError
         If the resource runs past the end of the pack.
     NotImplementedError
-        If the record names a compression method this reader does not know.
+        If the record specifies a compression method this reader does not know.
     """
     offset, count = entry.data_offset, entry.compressed_size
     if offset + count > len(data):
@@ -326,7 +326,7 @@ def extract_all(data: bytes, dest: Path) -> tuple[int, int]:
     Raises
     ------
     UnsafePathError
-        If an entry names an absolute path or one with a parent reference.
+        If an entry specifies an absolute path or one with a parent reference.
     """
     archive = parse(data)
     count = 0

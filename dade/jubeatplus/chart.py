@@ -3,7 +3,7 @@ The note charts inside a tune package.
 
 A chart is a 96-byte header followed by one eight-byte record per event. The header opens with a
 four-byte magic - ``IJBQ``, ``IJSQ``, or ``JBSQ``, all three accepted by the engine and all three
-present in shipped tunes) and states the event count, the note count, the final sector, the
+present in shipped tunes) and records the event count, the note count, the final sector, the
 opening marker and where it falls, and a 60-byte music-bar bitmap at ``0x24``. One 16-bit field at
 ``0x10`` is never read by the engine and is reported here unnamed.
 
@@ -64,7 +64,7 @@ def _parse_header(data: bytes) -> ChartHeaderDict:
     magic = data[:4]
     if magic not in MAGICS:
         expected = ', '.join(m.decode() for m in MAGICS)
-        msg = f'Not a chart: magic {magic!r}, expected one of {expected}.'
+        msg = f'Not a chart. Magic {magic!r}, expected one of {expected}.'
         raise ValueError(msg)
     event_count, note_count, end_sector = struct.unpack_from('<III', data, 4)
     unknown, first_marker = struct.unpack_from('<HH', data, 0x10)

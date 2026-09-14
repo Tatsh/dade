@@ -22,7 +22,7 @@ def _under(output_dir: Path, path: str) -> Path | None:
     r"""
     Place one member's stored path inside the output directory, or refuse to.
 
-    A member's path is whatever the archive states, and nothing stops an archive specifying
+    A member's path is whatever the archive records, and no part of the format stops one specifying
     ``..\..\.ssh\authorized_keys``. Anything that would land outside the directory the caller
     requested is dropped rather than written somewhere it was not wanted.
 

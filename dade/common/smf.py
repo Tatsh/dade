@@ -284,7 +284,7 @@ def to_xg(data: bytes, drum_map: dict[int, int] | None = None, drum_program: int
     data : bytes
         A standard MIDI file.
     drum_map : dict[int, int] | None
-        Game drum key to General MIDI percussion note. When ``None`` the notes are left as they
+        Game drum key to General MIDI percussion note. When ``None`` the notes remain as they
         are, faithful to the game but needing its SoundFont to sound right.
     drum_program : int
         Drum kit selected on the percussion channel.

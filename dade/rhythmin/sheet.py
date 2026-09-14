@@ -26,7 +26,7 @@ markers, and BGM-start markers. Arcade charts have nine real lanes. Standard cha
 position-based rather than lane-based, and, as osu!mania does when it converts osu! beatmaps, each
 note's judge-target x percentage is bucketed into a chosen number of columns, the button colour
 cycles with the note kind, holds become long notes, and the measure grid is synthesised from the
-tempo map when the chart states no bar records.
+tempo map when the chart does not include bar records.
 """
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ SUFFIX_LEVEL_KEYS: Mapping[str, str] = {
 }
 """Chart suffix to the difficulty-level key it maps to in the package's ``info`` plist.
 
-The arcade info states all four; a standard ``.orb`` info has no Easy.
+The arcade info records all four; a standard ``.orb`` info does not include Easy.
 
 :meta hide-value:
 """
@@ -598,7 +598,7 @@ def arcade_strip(units: Sequence[ArcadeUnit]) -> ChartStrip:
     Raises
     ------
     ValueError
-        If the chart states no measure events, with no grid to align against.
+        If the chart does not include measure events, with no grid to align against.
     """
     measures = sorted({unit.tick for unit in units if unit.unit_type == _UNIT_MEASURE})
     if not measures:

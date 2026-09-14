@@ -176,7 +176,7 @@ def read_textures(data: bytes) -> tuple[TextureImage, ...]:
 
     Each texture is stored as a complete image file, byte for byte as the artist saved it, under
     the absolute path it was authored at. ``X_LevelDBTextureImage``'s writer emits a format code,
-    a byte count, and then the file, and nothing needs decoding here.
+    a byte count, and then the file, and no decoding is needed here.
 
     Parameters
     ----------
@@ -252,9 +252,9 @@ def _resolve_images(materials: dict[int, Material], images: dict[str, tuple[str,
     Fill in each material's colour and alpha image paths from the category table.
 
     The category entry's second path is the colour and its third is the alpha mask. Across the 29
-    shipped levels every entry's colour path is embedded, and 592 of the 4060 entries name a second,
-    different image for the mask: ``cardboardalpha`` draws with ``cardboard10a.JPG`` and takes its
-    alpha from ``boxalpha01c.JPG``. The third path is never a fallback for the second.
+    shipped levels every entry's colour path is embedded, and 592 of the 4060 entries specify a
+    second, different image for the mask. ``cardboardalpha`` draws with ``cardboard10a.JPG`` and
+    takes its alpha from ``boxalpha01c.JPG``. The third path is never a fallback for the second.
 
     Parameters
     ----------
@@ -279,7 +279,7 @@ def _resolve_images(materials: dict[int, Material], images: dict[str, tuple[str,
         resolved[key] = material._replace(alpha='' if alpha == image else alpha, image=image)
     missing = sum(1 for material in resolved.values() if not material.image)
     if missing:
-        log.debug('%d of %d materials name no embedded image.', missing, len(resolved))
+        log.debug('%d of %d materials do not specify an embedded image.', missing, len(resolved))
     return resolved
 
 
@@ -822,7 +822,7 @@ def _place_rooms(exits: dict[str, tuple[tuple[float, ...], str]],
     than half the smaller room's volume before the walk and 15 after it.
 
     Rooms with no path from the first are given a separate component rather than dropped, and
-    nothing disappears when a level's graph is not fully connected.
+    no room disappears when a level's graph is not fully connected.
 
     Parameters
     ----------
@@ -1347,8 +1347,8 @@ def _room_of(name: str) -> str:
     """
     Take the room out of an object's name.
 
-    Every placed object is named ``::room::rest``, and that prefix is the only link back to its
-    room; the object's own room field is left empty on the shipped levels.
+    Every placed object is titled ``::room::rest``, and the prefix is the only link back to its
+    room; the object's room field is empty on the shipped levels.
 
     Parameters
     ----------
@@ -1358,7 +1358,7 @@ def _room_of(name: str) -> str:
     Returns
     -------
     str
-        The room's name, or an empty string when the record states none.
+        The room's name, or an empty string when the record does not specify one.
     """
     parts = name.split('::')
     return f'::{parts[1]}' if len(parts) > 2 else ''  # ruff: ignore[magic-value-comparison]
@@ -1452,7 +1452,7 @@ def _read_tail(data: bytes, offset: int, mesh: RenderMesh, exits: dict[str, tupl
     mesh : RenderMesh
         The static meshes, still in their rooms' spaces.
     exits : dict[str, tuple[tuple[float, ...], str]]
-        The level's exits, stating how the rooms fit together.
+        The level's exits, recording how the rooms fit together.
 
     Returns
     -------
@@ -1465,7 +1465,7 @@ def _read_tail(data: bytes, offset: int, mesh: RenderMesh, exits: dict[str, tupl
     try:
         characters, props, items, rooms = _read_tail_containers(data, offset)
     except (IndexError, InvalidLevelError, struct.error, ValueError):
-        log.warning('Could not walk the tail containers; the level is left unassembled.')
+        log.warning('Could not walk the tail containers; the level remains unassembled.')
         return _Tail(characters=characters, items=items, mesh=mesh, props=props)
     placed = _place_rooms(exits, rooms)
     by_key = {identifier: placed.get(name, _IDENTITY) for ids, name in rooms for identifier in ids}

@@ -2,7 +2,8 @@
 Writer for the StepMania ``.sm`` simfile.
 
 A simfile is a run of ``#TAG:value;`` headers followed by one ``#NOTES`` block per chart. Each
-block states five colon-separated fields (the steps type, a description, the difficulty, the meter,
+block records five colon-separated fields (the steps type, a description, the difficulty, the
+meter,
 and the groove radar) and then the note data, in which every measure is a run of rows and measures
 are separated by commas. A row has one character per panel: ``0`` for nothing, ``1`` for a tap,
 ``2`` and ``3`` for the start and end of a sustain, and ``M`` for a mine.

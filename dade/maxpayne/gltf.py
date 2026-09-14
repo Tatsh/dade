@@ -498,7 +498,7 @@ def _keyframes(duration: float, curve: Sequence[float], total: float,
         What the curve's last sample means as a whole, making the samples fractions of it.
     times : collections.abc.Sequence[float]
         When each sample falls, as a fraction of *duration*. Empty when the format spaces them
-        evenly and states no times.
+        evenly and does not record times.
 
     Returns
     -------
@@ -506,7 +506,7 @@ def _keyframes(duration: float, curve: Sequence[float], total: float,
         The keyframe times and the fraction of the motion done at each.
     """
     if not times:
-        # Round the step up so that adding the final sample back cannot push the count over.
+        # Round the step up. Adding the final sample back then cannot push the count over.
         step = max(1, -(-(len(curve) - 1) // (_MAX_KEYFRAMES - 1)))
         picked = list(range(0, len(curve), step))
         if picked[-1] != len(curve) - 1:
@@ -521,7 +521,7 @@ def _keyframes(duration: float, curve: Sequence[float], total: float,
 
 def _samples(times: Sequence[float]) -> list[float]:
     """
-    Choose where to read a curve so that straight lines between the readings follow it.
+    Choose where to read a curve, leaving straight lines between the readings that follow it.
 
     A curve of two samples is already a straight line and needs nothing between them. A longer one
     is a spline, and each of its spans is therefore cut into steps, up to a clip's keyframe limit.
@@ -847,7 +847,7 @@ class _Document(GLBDocument):
         """
         Return the glTF material for a level material and lightmap pair, creating it once.
 
-        A face states both the material it draws with and which of the level's baked lighting
+        A face specifies both the material it draws with and which of the level's baked lighting
         atlases lights it, and the two together therefore decide the material a primitive needs. The
         atlas goes in the occlusion slot on the second coordinate set. glTF has no slot that
         multiplies a baked lightmap into the base colour, and occlusion is the one a plain viewer
@@ -882,7 +882,7 @@ class _Document(GLBDocument):
             pbr['baseColorFactor'] = list(_FALLBACK_COLOR)
         else:
             pbr['baseColorTexture'] = {'index': index, 'texCoord': 0}
-        # A material whose image includes alpha states how to blend it rather than referencing a
+        # A material whose image includes alpha records how to blend it rather than referencing a
         # mask to composite. There is therefore nothing to build, and the mode is taken as given.
         if not mode and material:
             mode = material.blend
@@ -934,7 +934,7 @@ class _Document(GLBDocument):
 
     def _lightmap(self, index: int) -> int | None:
         """
-        Embed one baked lighting atlas, reusing it across every material that names it.
+        Embed one baked lighting atlas, reusing it across every material that references it.
 
         Parameters
         ----------
@@ -1120,7 +1120,7 @@ def _add_static_mesh(document: _Document,
             coords.append(corner.uv)
             baked.append(corner.lightmap_uv)
         fan = [(base, base + i, base + i + 1) for i in range(1, face.corner_count - 1)]
-        # A face states both its material and the atlas that lights it, and a primitive supports
+        # A face specifies both its material and the atlas that lights it, and a primitive supports
         # only one of each. The two together therefore group the triangles.
         groups.setdefault((face.material, face.lightmap), []).extend(
             _wind(fan, positions, _mirror(face.normal)))
@@ -1138,7 +1138,7 @@ def _add_static_mesh(document: _Document,
                      lightmap_coords=baked)
     written = sum(document.add_animation(node, name, clip) for clip in moving)
     if moving and not written and placed:
-        # Nothing drove the node after all, and it may as well use a matrix like the rest.
+        # No clip drove the node after all, and it may as well use a matrix like the rest.
         document.settle(node, mesh.transform)
 
 
@@ -1263,10 +1263,10 @@ def _lift_decals(level: Level, containers: Sequence[RenderMesh]) -> list[list[di
     -------
     list[list[dict[int, int]]]
         One entry per container, one per mesh within it, mapping a face's index to how many steps
-        of :py:data:`dade.maxpayne.decals.DECAL_STEP` it has to rise. Faces that stay put are left
-        out.
+        of :py:data:`dade.maxpayne.decals.DECAL_STEP` it has to rise. Faces that stay put are
+        omitted.
     """
-    # A level that states which of its surfaces sit over others is believed rather than measured.
+    # A level that records which of its surfaces sit over others is believed rather than measured.
     # Only the second game does; the first sets every priority to nought.
     stated = {key: m.sort_priority for key, m in level.materials.items() if m.sort_priority}
     if stated:

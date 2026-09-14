@@ -838,7 +838,7 @@ def decode_level_textures(rom: bytes, base: int, dialect: Dialect = XG1) -> list
     """
     Decode a level's textures out of its ``r2`` pool.
 
-    Each descriptor states its pixels and its palette as offsets into that pool. Format one is
+    Each descriptor records its pixels and its palette as offsets into the pool. Format one is
     eight-bit colour indices against a 256-entry palette, matching what the loader's tile setup
     assumes and what the sizes bear out.
 

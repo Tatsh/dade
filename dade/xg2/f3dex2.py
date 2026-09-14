@@ -470,7 +470,7 @@ def parse_display_lists(data: bytes, endian: Endian = '>') -> list[Mesh]:
                 if (w1 >> 24) == _SEGMENT_5:
                     buffer.load(data, w1 & 0xFFFFFF, count, first, endian)
             elif op == _G_GEOMETRYMODE:
-                # The first word states the bits to retain, already inverted, and the second the
+                # The first word records the bits to retain, already inverted, and the second the
                 # bits to set.
                 mode = (mode & (w0 & 0xFFFFFF)) | w1
             elif op == _G_TRI1:

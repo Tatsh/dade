@@ -198,7 +198,7 @@ def _read_records(
 
 def flag_names(flags: int) -> tuple[str, ...]:
     """
-    Name the bits set in a note's flags.
+    Identify the bits set in a note's flags.
 
     Parameters
     ----------
@@ -234,7 +234,7 @@ def parse_chart(data: bytes) -> ChartDict:
         inside a record.
     """
     if not data.startswith(MAGIC):
-        msg = f'Not a chart: expected {MAGIC!r}, got {data[:len(MAGIC)]!r}.'
+        msg = f'Not a chart. Expected {MAGIC!r}, got {data[:len(MAGIC)]!r}.'
         raise ChartError(msg)
     version = _FLAGS.unpack_from(data, _VERSION_OFFSET)[0]
     if version not in MODERN_VERSIONS:

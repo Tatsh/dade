@@ -10,8 +10,9 @@ __all__ = ('ArchiveHeader', 'Corner', 'Level', 'LevelGeometry', 'Material', 'Mes
 Vector3: TypeAlias = 'tuple[float, float, float]'
 """A point or direction in level space, where one unit is about a metre.
 
-Nothing in a level states that outright, but the skins settle it. ``gognitti_vinnie_l0.kfs`` is a
-man 1.88 units tall, and the doors he walks through are a little over two."""
+No record in a level specifies the scale outright, but the skins settle it.
+``gognitti_vinnie_l0.kfs`` is a man 1.88 units tall, and the doors he walks through are a little
+over two."""
 
 
 class ArchiveHeader(NamedTuple):
@@ -157,17 +158,18 @@ class Material(NamedTuple):
     blend: str = ''
     """glTF alpha mode the material requests outright, or an empty string when it requests none.
 
-    Max Payne 2 states how a material blends rather than referencing a mask. Its images are DDS and
-    include an alpha channel. Max Payne 1 stores nothing here, and the mode is worked out from
-    :py:attr:`alpha` instead."""
+    Max Payne 2 records how a material blends rather than referencing a mask. Its images are DDS
+    and include an alpha channel. Max Payne 1 does not store a value here, and the mode is worked
+    out from :py:attr:`alpha` instead."""
     dual_sided: bool = False
     """Whether the material is drawn from both sides."""
     sort_priority: int = 0
     """How far in front of what it covers the material is drawn.
 
-    Max Payne 2 states this for the surfaces placed over other surfaces (graffiti, signage, decals),
-    and an exporter therefore need not work it out from the geometry. Max Payne 1 stores nothing and
-    the value stays zero, and :py:mod:`dade.maxpayne.decals` does the working out instead."""
+    Max Payne 2 records the distance for the surfaces placed over other surfaces (graffiti,
+    signage, decals), and an exporter therefore need not work it out from the geometry. Max Payne 1
+    does not store it and the value stays zero, and :py:mod:`dade.maxpayne.decals` does the working
+    out instead."""
 
 
 class Level(NamedTuple):
@@ -262,10 +264,10 @@ class PropAnimation(NamedTuple):
     separate sample counts, and a prop that both slides and turns eases them differently."""
     distance_times: tuple[float, ...] = ()
     """When each of :py:attr:`distance`'s samples falls, as a fraction of :py:attr:`duration`.
-    Empty when the format spaces them evenly and states no times, as the first game does."""
+    Empty when the format spaces them evenly and does not record times, as the first game does."""
     turn_times: tuple[float, ...] = ()
     """When each of :py:attr:`turn`'s samples falls, as a fraction of :py:attr:`duration`. Empty
-    when the format spaces them evenly and states no times, as the first game does."""
+    when the format spaces them evenly and does not record times, as the first game does."""
 
 
 class RenderMesh(NamedTuple):

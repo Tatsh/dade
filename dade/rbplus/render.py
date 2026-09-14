@@ -87,7 +87,7 @@ The route selectors specifying a target beyond the seven lanes, drawn green by t
 
 ``AssignGreenTargets`` starts a note's availability bitmap with slots 0 to 6 set and 7 to 9 clear.
 The seven are therefore the lanes a note can be given, and these three are the alternative targets
-a chart has to state outright. A hold arrives at them as its colour tone plus seven, matching the
+a chart has to specify outright. A hold arrives at them as its colour tone plus seven, matching the
 engine's three-slot side scan.
 
 :meta hide-value:
@@ -289,7 +289,7 @@ class _Claim(NamedTuple):
     """One run of notes competing for a lane, and what it needs to be given one."""
 
     start: int
-    """When the run first claims a lane."""
+    """When the run first takes a lane."""
     end: int
     """When it gives the lane up."""
     side: int
@@ -368,8 +368,8 @@ def _timing_selector(note: NoteDict, version: int) -> int:
 
 
 def _vertical(note: NoteDict, version: int) -> bool:
-    # Whether a note comes straight down into a lane the chart states, rather than taking a path
-    # the tracker builds. A slide states its lane the same way, and the caller rules those out.
+    # Whether a note comes straight down into a lane the chart specifies, rather than taking a path
+    # the tracker builds. A slide specifies its lane the same way, and the caller excludes slides.
     return 0 <= _timing_selector(note, version) < LANE_COUNT
 
 
@@ -390,7 +390,7 @@ def _note_color(note: NoteDict, version: int) -> tuple[int, int, int]:
 
 def _claimed_until(note: NoteDict) -> int:
     # The last moment a note occupies its lane against another. A hold occupies its lane for as long
-    # as it runs, and nothing may land in that lane until it is released.
+    # as it runs, and no other note may land in the lane until it is released.
     return note['hit_time'] + _hold_length(note)
 
 
@@ -452,12 +452,13 @@ def _column_span(notes: Sequence[NoteDict], end_time: int) -> tuple[int, int]:
 
 def _fixed_lane(note: NoteDict, version: int) -> int | None:
     # The slot a note is pinned to, or None when the game is free to choose one. A note aimed at an
-    # alternative target states it outright, and it is drawn in that target's slot with no
+    # alternative target specifies it outright, and it is drawn in the target's slot with no
     # randomness touching it.
     selector = _timing_selector(note, version)
     if selector in ALTERNATE_TARGETS:
         return ALTERNATE_TARGET_LANES[ALTERNATE_TARGETS.index(selector)]
-    # A selector stating one of the seven lanes is a note that comes straight down into it, covering
+    # A selector specifying one of the seven lanes is a note that comes straight down into it,
+    # covering
     # every slide and every vertical note. The tracker never sees them, and no seed moves them.
     return selector if 0 <= selector < LANE_COUNT else None
 
@@ -813,7 +814,7 @@ def _slide_paths(notes: Sequence[NoteDict],
     """
     Work out the lane a slide is in at each moment it is drawn through.
 
-    A slide's records are its waypoints. Each states the lane the finger is to be in and, in the
+    A slide's records are its waypoints. Each specifies the lane the finger is to be in and, in the
     same shape a note's timing takes, a spawn time and a travel time whose sum is the moment it is
     to be there. The note itself is the first point, where the finger goes down.
 
@@ -882,8 +883,8 @@ def _note_details(note: NoteDict, index: int, lane: int | None, version: int, *,
         kinds.append('Swipe Back')
     if _alternate_target(note, version):
         kinds.append('Green')
-    # The flag word is more use read out as the names the engine gives its bits than as a number,
-    # so it is given both ways.
+    # The flag word is more use read out as the names the engine gives its bits than as a number.
+    # It is therefore given both ways.
     names = ' | '.join(name.upper() for name in flag_names(note['flags'])) or 'NONE'
     details = {
         'Index': str(index),
@@ -892,7 +893,7 @@ def _note_details(note: NoteDict, index: int, lane: int | None, version: int, *,
         'Hit Time': f'{note["hit_time"]} ms',
         'Spawn Time': f'{note["spawn_time"]} ms',
         'Travel Time': f'{note["travel_time"]} ms',
-        'Lane': 'Not laid out' if lane is None else str(lane),
+        'Lane': 'Not positioned' if lane is None else str(lane),
         'Route Selector': str(_timing_selector(note, version)),
         'Group': 'Free' if note['start_time'] == FREE_NOTE_START_TIME else str(note['start_time']),
         'Flags': names,

@@ -60,7 +60,7 @@ def _item(database: Path, item: str) -> Path | None:
     Returns
     -------
     pathlib.Path | None
-        The model, or :py:obj:`None` when the script does not name a readable one.
+        The model, or :py:obj:`None` when the script does not identify a readable one.
     """
     script = database / 'level_items' / f'{item}.txt'
     if not script.is_file():
@@ -76,7 +76,7 @@ def _read(path: Path) -> Model | None:
     """
     Read one model and the images its materials name.
 
-    The model states a search path, its ``textures`` directory, then the shared one beside
+    The model records a search path, its ``textures`` directory, then the shared one beside
     it -- and the images are looked up along it in order.
 
     Parameters

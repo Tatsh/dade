@@ -220,8 +220,8 @@ def read_directory(path: Path, base: int = 0, length: int | None = None) -> tupl
     """
     Read an archive's table of contents.
 
-    Entries whose hash matches no name in the string table are returned with a synthesised
-    ``unnamed/<hash>.bin`` name so that nothing is silently dropped.
+    Entries whose hash does not match a name in the string table are returned with a synthesised
+    ``unnamed/<hash>.bin`` name. Nothing is therefore silently dropped.
 
     Parameters
     ----------

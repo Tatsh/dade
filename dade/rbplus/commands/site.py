@@ -56,8 +56,8 @@ debug_option = bascom.debug_option({'dade.common': {}, 'dade.rbplus': {}})
 """
 
 
-# Every package named, with a directory standing for the packages inside it. A path named twice is
-# read once, and the order is settled so that two runs over the same collection agree.
+# Every package listed, with a directory standing for the packages inside it. A path listed twice
+# is read once, and the order is settled. Two runs over the same collection therefore agree.
 def _packages(sources: Sequence[Path]) -> list[Path]:
     found: set[Path] = set()
     for source in sources:
@@ -175,7 +175,7 @@ def _pair(tunes: Sequence[_Tune]) -> tuple[list[_Tune], dict[int, _Tune]]:
     return [*(tune for tune in tunes if not tune.extend), *orphans], attached
 
 
-# Where the site is served from, with a slash at each end so that a path can simply be added to it.
+# Where the site is served from, with a slash at each end. A path can therefore simply be added.
 def _slashed(ctx: click.Context, param: click.Parameter, value: str | None) -> str | None:
     if value is None:
         return None

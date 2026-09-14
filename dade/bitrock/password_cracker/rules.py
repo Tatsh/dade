@@ -27,7 +27,7 @@ _LEET = bytes.maketrans(b'aAeEiIoOsStT', b'@43310055771')
 :meta hide-value:
 """
 _DEFAULT_RULES: tuple[Rule, ...] = ('none', 'capitalize', 'upper', 'lower')
-"""Rules applied when the caller does not name any.
+"""Rules applied when the caller does not specify any.
 
 :meta hide-value:
 """
