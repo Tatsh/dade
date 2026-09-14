@@ -245,7 +245,7 @@ def test_build_horizon_empty_strip_list(runner: CliRunner, tmp_path: Path, missi
     (root / 'horizon.hzd').write_bytes(b'nothing here')
     result = runner.invoke(cli, ['build-horizon', str(msn), str(tmp_path / 'out'), '-g', str(root)])
     assert result.exit_code == 1
-    assert 'names no strips' in result.output
+    assert 'does not list any strips' in result.output
 
 
 def test_build_horizon_no_strips_in_bundle(runner: CliRunner, tmp_path: Path, hzd: bytes,
@@ -304,7 +304,7 @@ def test_stage_i82_copies_textures(runner: CliRunner, tmp_path: Path, i82_source
 def test_stage_i82_reports_missing_textures(runner: CliRunner, tmp_path: Path,
                                             i82_source: Path) -> None:
     result = runner.invoke(cli, ['stage-i82', str(i82_source), str(tmp_path / 'out')])
-    # grass.tga is named by the terrain but is in no pool.
+    # grass.tga is listed by the terrain but is in no pool.
     assert 'Textures: 3 staged, 1 missing.' in result.output
     assert 'grass.tga' in result.output
 

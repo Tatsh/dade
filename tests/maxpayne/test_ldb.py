@@ -113,7 +113,7 @@ def test_read_level_ignores_a_container_that_is_too_small(make_ldb: Callable[...
 
 
 def test_read_level_resolves_a_material_to_its_image(make_ldb: Callable[..., bytes]) -> None:
-    # The material's own name is not the filename; the category table is what names the picture.
+    # The material's name is not the filename; the category table is what identifies the picture.
     level = read_level(
         make_ldb(materials=((7, 'wood', 'A_128X256.JPG'), (9, 'metal', 'B.JPG')),
                  textures=(('X:\\art\\a_256x256.jpg', 4, b'\xff\xd8fake'),),
@@ -284,7 +284,7 @@ def test_read_level_without_lightmaps(make_ldb: Callable[..., bytes]) -> None:
 
 
 def test_read_level_reads_the_faces_lightmap_field(make_ldb: Callable[..., bytes]) -> None:
-    # A face names which of the level's atlases lights it.
+    # A face specifies which of the level's atlases lights it.
     level = read_level(make_ldb())
     assert level.mesh is not None
     assert {f.lightmap for f in level.mesh.meshes[0].faces} == {0}

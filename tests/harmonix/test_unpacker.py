@@ -54,7 +54,7 @@ async def test_unpack_delegates_with_layout(make_amp_ark: Callable[..., bytes],
     assert await _AmpUnpacker(game).unpack(out, jobs=2) == {'MAIN.ARK': 'ok'}
     assert run_game.call_args.args == (out,)  # Processed in place in the output directory.
     assert (out / 'MAIN.ARK').is_file()  # The source was materialised into the output directory.
-    assert (game / 'MAIN.ARK').is_file()  # The source is left untouched.
+    assert (game / 'MAIN.ARK').is_file()  # The source is not modified.
     assert run_game.call_args.kwargs['jobs'] == 2
     assert run_game.call_args.kwargs['layout'] == 'amplitude'
 

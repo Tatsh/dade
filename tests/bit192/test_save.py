@@ -73,7 +73,7 @@ def test_unlock_all_songs_sets_array_only() -> None:
     assert count == UNLOCK_FLAGS_COUNT - 1
     # Every flag from 1 to the array end is set...
     assert all(sf.data[UNLOCK_FLAGS_OFFSET + n] == 1 for n in range(1, UNLOCK_FLAGS_COUNT))
-    # ...and the array stops exactly at the integrity hash (which is left untouched).
+    # ...and the array stops exactly at the integrity hash. The hash is not modified.
     assert UNLOCK_FLAGS_OFFSET + UNLOCK_FLAGS_COUNT == _INTEGRITY_OFFSET
     assert sf.data[_INTEGRITY_OFFSET] == 0
     # DLC token region is not touched by song unlocking.

@@ -47,7 +47,7 @@ async def test_materialize_directory_copies(tmp_path: Path) -> None:
     out = tmp_path / 'out'
     await materialize(source, out)
     assert (out / 'GEN' / 'MAIN.ARK').read_bytes() == b'ARK DATA'
-    assert (source / 'GEN' / 'MAIN.ARK').is_file()  # The source is left untouched.
+    assert (source / 'GEN' / 'MAIN.ARK').is_file()  # The source is not modified.
 
 
 def test_iter_ark_bytes_directory(tmp_path: Path) -> None:

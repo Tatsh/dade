@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 _ENTRIES = (('gen/a.txt', b'AAA'), ('b.bin', b'BB'))
 _REPORTED_SIZE = 1 << 20
-"""The inflated size a truncated archive claims to have.
+"""The inflated size a truncated archive reports having.
 
 :meta hide-value:
 """
@@ -221,7 +221,7 @@ def test_extract_partial_gzip_stops_at_eof(make_amp_ark: Callable[..., bytes],
 
 
 def test_extract_empty_gzip_member(make_amp_ark: Callable[..., bytes], tmp_path: Path) -> None:
-    # A member that decompresses to nothing yields no bytes to write.
+    # A member that decompresses to nothing does not yield bytes to write.
     archive = tmp_path / 'MAIN.ARK'
     archive.write_bytes(make_amp_ark((('empty.txt.gz', gzip.compress(b'')),)))
     stats = ark.extract(archive, tmp_path / 'out')

@@ -181,7 +181,7 @@ def test_build_glb_falls_back_to_the_bsp_faces(make_ldb: Callable[..., bytes]) -
 
 
 def test_build_glb_draws_a_face_whose_material_is_missing(make_ldb: Callable[..., bytes]) -> None:
-    # Nothing marks the face as hidden, and an unknown identifier has to draw rather than vanish.
+    # No record marks the face as hidden, and an unknown identifier has to draw rather than vanish.
     document, _ = _parse(build_glb(read_level(make_ldb(face_materials=(7, 99)))))
     assert len(document['meshes'][0]['primitives']) == 2
 
@@ -292,7 +292,7 @@ def test_build_glb_resizes_a_mask_to_its_colour(make_ldb: Callable[..., bytes]) 
 
 
 def test_build_glb_does_not_embed_a_mask_on_its_own(make_ldb: Callable[..., bytes]) -> None:
-    # The mask is only ever read through the material that names it.
+    # The mask is only ever read through the material that references it.
     level = read_level(
         make_ldb(**_masked(textures=(('X:\\plant.png', 0, _png((4, 4), (20, 200, 20))),
                                      ('X:\\plant_alpha.png', 0, _gray((4, 4), 255))))))
@@ -629,7 +629,7 @@ def test_build_glb_keeps_a_face_with_no_side_as_written(make_ldb: Callable[..., 
 
 def test_build_glb_believes_a_level_that_states_its_own_decals(
         make_ldb: Callable[..., bytes]) -> None:
-    # A level that states which of its surfaces sit over others is taken at its word rather than
+    # A level that records which of its surfaces sit over others is taken at its word rather than
     # measured. Working it out from the geometry separates ordinary neighbouring tiles.
     level = read_level(make_ldb(face_materials=(7,), layout='stacked'))
     stated = level._replace(
@@ -647,8 +647,9 @@ def test_build_glb_believes_a_level_that_states_its_own_decals(
 
 def test_build_glb_paces_a_clip_by_the_times_the_curve_states(
         make_ldb2: Callable[..., bytes]) -> None:
-    # The second game states when each of a curve's samples falls. This one is half way along at
-    # three quarters of the clip, and pacing it evenly would have it half way at half the clip.
+    # The second game records when each of a curve's samples falls. The middle sample is half way
+    # along at three quarters of the clip, and pacing it evenly would have it half way at half the
+    # clip.
     from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
     clip = _ldb2_animation(times=(0.0, 0.75, 1.0), values=(0.0, 0.5, 1.0))
     level = read_level2(

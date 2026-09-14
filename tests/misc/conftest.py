@@ -658,8 +658,8 @@ def sc_info_dir_with_two_records(tmp_path: Path, sinf_bytes: bytes, supf_bytes: 
     """
     Write an ``SC_Info`` directory with two sets of protection files.
 
-    The second set is named for another architecture and has no ``.supf``. A real download takes
-    this shape when one set is left beside the main record.
+    The second set is titled for another architecture and does not include a ``.supf``. A real
+    download takes this shape when one set remains beside the main record.
 
     Returns
     -------
@@ -1006,7 +1006,7 @@ class DSStoreBuilder:
         pairs : collections.abc.Sequence[tuple[int, bytes]]
             Each child block number and the record that follows it.
         last : int
-            The block number of the child after the final record, which the node opens with.
+            The block number of the child after the final record. The node opens with it.
 
         Returns
         -------

@@ -70,7 +70,7 @@ def _pc_model() -> tuple[bytes, bytes]:
     """Build a Windows model and the vertex bank segment 8 points it at."""
     table = struct.pack('<I', 0x05000004)
     commands = (
-        (0xAC000000, 0),  # A texture descriptor, whose next word names the pixels.
+        (0xAC000000, 0),  # A texture descriptor, whose next word specifies the pixels.
         (0, 0x05000400),  # Consumed as that descriptor's pixel offset.
         (0x04000C00, 0),  # G_VTX loading three vertices from bank offset zero.
         (0x05000204, 0),  # G_TRI1 over corners 0, 1, 2.

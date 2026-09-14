@@ -28,7 +28,7 @@ def test_decipher_image_takes_another_key(make_png: Callable[..., bytes]) -> Non
 
 
 def test_decipher_image_accepts_a_payload_that_is_only_a_header() -> None:
-    # Four bytes is the shortest plaintext that is not too short, and it leaves nothing behind.
+    # Four bytes is the shortest plaintext that is not too short, and no remainder follows it.
     assert decipher_image(BFCodec(texture_key()).encipher(b'\1\2\3\4')) == b''
 
 

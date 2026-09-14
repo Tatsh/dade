@@ -47,7 +47,7 @@ def test_convert_writes_json(make_dtb: Callable[..., bytes], tmp_path: Path) -> 
     source.write_bytes(make_dtb([['name', 'value']]))
     out = dataarray.convert(source)
     assert out == tmp_path / 'config.txt.json'
-    assert source.exists()  # The original is left in place.
+    assert source.exists()  # The original remains in place.
     assert json.loads(out.read_text(encoding='utf-8')) == [['name', 'value']]
 
 

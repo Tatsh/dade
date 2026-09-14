@@ -44,7 +44,7 @@ def test_convert_writes_wav_and_keeps_source(tmp_path: Path) -> None:
     source.write_bytes(bytes(4096))
     out = audio.convert(source)
     assert out == tmp_path / 'song.wav'
-    assert source.exists()  # The original is left in place.
+    assert source.exists()  # The original remains in place.
     assert out.read_bytes()[:4] == b'RIFF'
 
 

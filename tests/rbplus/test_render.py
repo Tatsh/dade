@@ -145,7 +145,7 @@ def test_a_hold_note_extends_to_its_end(tmp_path: Path, make_chart: Callable[...
 
 def test_a_note_that_is_not_a_hold_draws_no_bar(tmp_path: Path, make_chart: Callable[..., bytes],
                                                 make_note: Callable[..., bytes]) -> None:
-    # A non-hold note has a zero first target coordinate, and nothing extends from it.
+    # A non-hold note has a zero first target coordinate, and no bar extends from it.
     plain = make_note(target=(0, 0, 0, 0))
     held = make_note(note_type=HOLD_NOTE_TYPE, target=(4000, 0, 0, 0))
 
@@ -205,7 +205,7 @@ def test_a_chain_of_one_is_not_a_chain(tmp_path: Path, make_chart: Callable[...,
 def test_an_unlinked_pair_is_two_chains_of_one(tmp_path: Path, make_chart: Callable[..., bytes],
                                                make_note: Callable[..., bytes]) -> None:
     # A chain is the note's linked list, and two notes that reference each other are one chain and
-    # two that name nothing are not.
+    # two that reference nothing are not.
     split = tmp_path / 'split.png'
     together = tmp_path / 'together.png'
     render_chart_image(parse_chart(make_chart(notes=_loose(make_note))), split, seed=0)
@@ -513,7 +513,7 @@ def _pixels_of(path: Path, wanted: tuple[int, int, int]) -> set[tuple[int, int]]
 def test_a_hold_keeps_its_lane_until_released(tmp_path: Path, make_chart: Callable[..., bytes],
                                               make_note: Callable[..., bytes], seed: int) -> None:
     # A note struck while a hold is still running may not be put in the hold's lane. The hold's body
-    # is drawn in a colour nothing else uses and marks where the hold's lane is; between the
+    # is drawn in a colour no other mark uses and marks where the hold's lane is; between the
     # hold's two ends the only note-coloured mark is the other note.
     out = tmp_path / f'chart{seed}.png'
     notes = (make_note(note_id=1, note_type=HOLD_NOTE_TYPE, target=(4000, 0, 0, 0),
@@ -589,7 +589,7 @@ def test_a_slide_draws_its_track(tmp_path: Path, make_chart: Callable[..., bytes
 def test_a_slide_naming_no_note_is_left_out(tmp_path: Path, make_chart: Callable[..., bytes],
                                             make_note: Callable[..., bytes],
                                             make_slide: Callable[..., bytes]) -> None:
-    # A record whose note index is past the end of the chart names nothing to start from.
+    # A record whose note index is past the end of the chart identifies no note to start from.
     note = make_note(note_type=SLIDE_NOTE_TYPE, target=(0, 6, 0, 0), travel_time=0)
     slides = (make_slide(note_index=99, lane=0, value_a=1000, value_b=0),)
     chart = parse_chart(make_chart(notes=(note,), slides=slides, version=_MODERN))

@@ -66,7 +66,7 @@ def test_read_meshes_leaves_an_unclaimed_mesh_without_a_material() -> None:
 
 
 def test_read_meshes_skips_a_block_past_the_end() -> None:
-    # No material claims the mesh; the table is the only way it could be found.
+    # No material owns the mesh; the table is the only way it could be found.
     data = bytearray(build_geometry([('a.tga', 1)], [(1, [mesh_packet(_TRIANGLE)])]))
     table = struct.unpack_from('<I', data, 0x64)[0]
     struct.pack_into('<I', data, table, 0xFFFFFF)

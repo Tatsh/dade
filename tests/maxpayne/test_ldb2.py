@@ -21,8 +21,8 @@ def test_read_level2_reads_a_level(make_ldb2: Callable[..., bytes]) -> None:
 
 
 def test_read_level2_places_a_batch_by_its_rooms_transform(make_ldb2: Callable[..., bytes]) -> None:
-    # A Max Payne 2 room has the transform that puts it in the world, where the first game's
-    # left it to the exit graph.
+    # A Max Payne 2 room has the transform that puts it in the world, where the first game
+    # deferred placement to the exit graph.
     level = read_level2(make_ldb2())
     assert level.mesh is not None
     assert level.mesh.meshes[0].transform == (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
@@ -135,7 +135,7 @@ def test_read_level2_ignores_a_frame_past_the_diffuse_group(
 
 
 def test_read_level2_falls_back_to_the_first_frame(make_ldb2: Callable[..., bytes]) -> None:
-    # An animated material names a range and which frame to show; a frame outside it is ignored.
+    # An animated material records a range and which frame to show; a frame outside it is ignored.
     from .conftest import _ldb2_material
     level = read_level2(make_ldb2(materials=(_ldb2_material(first=0, showing=9),)))
     assert level.materials[0].image == 'x:\\a.dds'
@@ -295,7 +295,7 @@ def test_read_level2_carries_the_midpoint_into_a_clip(make_ldb2: Callable[..., b
 
 
 def test_read_level2_keeps_the_times_a_curve_states(make_ldb2: Callable[..., bytes]) -> None:
-    # The second game states when each sample falls and rarely spaces them evenly, and assuming
+    # The second game records when each sample falls and rarely spaces them evenly, and assuming
     # even spacing paces every eased clip wrongly.
     from .conftest import _ldb2_animation, _ldb2_machine, _ldb2_prop
     clip = _ldb2_animation(times=(0.0, 0.75, 1.0), values=(0.0, 0.5, 1.0))

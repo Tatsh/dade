@@ -93,6 +93,6 @@ def test_unwrap_leaves_plain_data_alone() -> None:
 
 
 def test_unwrap_stops_on_an_encrypted_block_too_short_to_read() -> None:
-    # Long enough to be a compressed block, too short to be the encrypted one it claims to be.
+    # Long enough to be a compressed block, too short to be the encrypted one it reports being.
     data = b'RC->' + bytes(8)
     assert unwrap(data) == (data, ())

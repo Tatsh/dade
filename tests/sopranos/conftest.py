@@ -342,8 +342,8 @@ def mesh_packet(vertices: Sequence[tuple[float, float, float, float, float]],
         The whole packet.
     """
     low = min(v[0] for v in vertices), min(v[1] for v in vertices), min(v[2] for v in vertices)
-    # The upper corner is nudged out so that a flat run of vertices still gives the box an extent,
-    # which is how the reader tells a bounding box from ordinary vertex data.
+    # The upper corner is nudged out. A flat run of vertices therefore still gives the box an
+    # extent, and the extent is how the reader tells a bounding box from ordinary vertex data.
     high = (max(v[0] for v in vertices) + 1.0, max(v[1] for v in vertices) + 1.0,
             max(v[2] for v in vertices) + 1.0)
     out = bytearray(struct.pack('<4f', *low, 1.0) + struct.pack('<4f', *high, 1.0))
@@ -373,7 +373,7 @@ def build_geometry(materials: Sequence[tuple[str, int]],
     meshes : Sequence[tuple[int, Sequence[bytes]]]
         Per mesh, the index it records and its packets.
     owners : Mapping[int, int] | None
-        Material index by mesh position; meshes omitted are claimed by no material.
+        Material index by mesh position; meshes omitted are owned by no material.
     images : Sequence[bytes]
         Records from :py:func:`build_image`, embedded after the header.
     pass_sums : Sequence[int] | None

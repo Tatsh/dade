@@ -45,7 +45,7 @@ def test_convert_decomposes_objects(make_milo: Callable[..., bytes], tmp_path: P
     source.write_bytes(make_milo(_objects(3)))
     out = milo.convert(source)
     assert out == tmp_path / 'scene'
-    assert source.exists()  # The original is left in place.
+    assert source.exists()  # The original remains in place.
     manifest = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
     assert manifest['version'] == 10
     assert manifest['object_count'] == 3
@@ -117,7 +117,7 @@ def test_convert_v6_without_separators(tmp_path: Path) -> None:
 
 
 def test_convert_keeps_truncated_table_whole(tmp_path: Path) -> None:
-    # The record table runs off the end of the directory; nothing can be split out.
+    # The record table runs off the end of the directory; no record can be split out.
     body = struct.pack('<II', 10, 4) + struct.pack('<I', 4) + b'Rnd\x00'
     data = struct.pack('<4I', 0xCABEDEAF, 0x14, 1, len(body)) + bytes(4) + body
     source = tmp_path / 'scene.rnd'

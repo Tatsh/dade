@@ -22,7 +22,7 @@ def test_every_action_succeeds(unpacked: tuple[dict[str, Any], Path]) -> None:
 
 def test_every_file_is_planned_as_its_own_kind(unpacked: tuple[dict[str, Any], Path]) -> None:
     # One count per file in the bundle; a file routed to the wrong converter, counted twice, or
-    # left out of the walk shows up here rather than only in whichever output test happens to look.
+    # omitted from the walk shows up here rather than only in whichever output test happens to look.
     stats, _ = unpacked
     assert {
         action: step.ok

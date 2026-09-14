@@ -522,7 +522,7 @@ def test_read_sc_info_from_an_ipa(sc_info_ipa: Path) -> None:
         'Example.sinf', 'Example.supf', 'Example.supp', 'Example.supx', 'Manifest.plist'
     ]
     assert info.manifest == SC_INFO_MANIFEST
-    # The path names where the directory sits inside the archive.
+    # The path records where the directory sits inside the archive.
     assert str(info.path).endswith('Example.ipa/Payload/Example.app/SC_Info')
 
 

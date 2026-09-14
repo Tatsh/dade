@@ -359,7 +359,7 @@ def test_ldb_textures_aborts_on_a_bad_level(runner: CliRunner, tmp_path: Path) -
 
 def test_ras_extract_refuses_to_write_outside_the_output_directory(
         runner: CliRunner, tmp_path: Path, make_ras: Callable[..., bytes]) -> None:
-    # An archive specifies its member paths, and nothing stops one pointing its way back out.
+    # An archive specifies its member paths, and no part of the format stops one pointing back out.
     archive = tmp_path / 'x_data.ras'
     archive.write_bytes(make_ras(directories=('\\', '\\..\\..\\')))
     out = tmp_path / 'out'

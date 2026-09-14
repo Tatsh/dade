@@ -63,7 +63,7 @@ def test_read_model_uses_the_per_face_material(make_model: Callable[..., bytes])
 
 
 def test_read_model_falls_back_to_the_first_material(make_model: Callable[..., bytes]) -> None:
-    # A mesh that names its materials but not a per-face list draws entirely with the first.
+    # A mesh that lists its materials but not a per-face list draws entirely with the first.
     model = read_model(make_model(face_materials=()))
     assert model.meshes[0].faces[0].material == 0
 
@@ -201,7 +201,7 @@ def test_read_model_ignores_a_negative_texture_coordinate_index(
 
 
 def test_read_model_rejects_a_run_of_vectors_past_its_chunk() -> None:
-    # The count states a thousand vectors; the chunk stores one. Reading on regardless takes what
+    # The count records a thousand vectors; the chunk stores one. Reading on regardless takes what
     # follows the chunk and calls it geometry.
     positions = _chunk(0x00010006, 1, b'\x02' + struct.pack('<i', 1000) + bytes(12))
     with pytest.raises(InvalidModelError, match='does not fit inside its chunk'):

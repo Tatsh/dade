@@ -201,7 +201,7 @@ def packed_dll() -> bytes:
 
 @pytest.fixture
 def mrm_terrain() -> bytes:
-    """Provide a ``.mrm`` terrain whose surface table names two textures."""
+    """Provide a ``.mrm`` terrain whose surface table lists two textures."""
     data = bytearray(b'ZONV' + bytes(8) + struct.pack('<I', 2) + bytes(0x80 * 2))
     data[0x10:0x10 + 8] = b'road.bmp'
     data[0x90:0x90 + 9] = b'grass.tga'
