@@ -658,7 +658,7 @@ def sc_info_dir_with_two_records(tmp_path: Path, sinf_bytes: bytes, supf_bytes: 
     """
     Write an ``SC_Info`` directory with two sets of protection files.
 
-    The second set is titled for another architecture and does not include a ``.supf``. A real
+    The second set is named after another architecture and does not include a ``.supf``. A real
     download takes this shape when one set remains beside the main record.
 
     Returns

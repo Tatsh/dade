@@ -150,7 +150,7 @@ def test_read_items_drops_a_group_that_draws_nothing() -> None:
         ('*HEAD8_s0_Face_0', True, 'head'),
         # An accessory worn with a head retains its family.
         ('*HEADPHONES12', True, 'HEADPHONES'),
-        # A head wears one hat and one pair of glasses however the pieces are titled, and a dock
+        # A head wears one hat and one pair of glasses however the pieces are called, and a dock
         # hand's three hats and two pairs of glasses come down to one of each.
         ('*HATBANDANA2', True, 'headwear'),
         ('*HATSKULLCAP15', True, 'headwear'),
@@ -159,7 +159,7 @@ def test_read_items_drops_a_group_that_draws_nothing() -> None:
         ('*hairVisor08_S3', True, 'headwear'),
         ('*GLASSES3_s1', True, 'eyewear'),
         ('*SUNGLASSES4', True, 'eyewear'),
-        # A body has one head however the cooker titles it, but headphones and a bandage go over a
+        # A body has one head however the cooker labels it, but headphones and a bandage go over a
         # head rather than instead of one.
         ('*Waiter_Head07', True, 'head'),
         ('*HEAD_WHITEA07', True, 'head'),
@@ -173,12 +173,12 @@ def test_read_items_drops_a_group_that_draws_nothing() -> None:
         ('*HEAD_Black02', True, 'head'),
         # A hairpick is a comb stuck in the hair, not a hairstyle.
         ('*HAIRPICK7', True, 'HAIRPICK'),
-        # Most models number their shoes, but a few title them for the style.
+        # Most models number their shoes, but a few label them by style.
         ('*SHOE31', True, 'footwear'),
         ('*SHOEHIGHHILL30', True, 'footwear'),
         ('*Shoe_Sniker30', True, 'footwear'),
         ('*FEETBOOTS31', True, 'footwear'),
-        # Known limitation. A waiter's torso is titled for the outfit rather than the slot. These
+        # Known limitation. A waiter's torso is named after the outfit rather than the slot. These
         # two are one torso under two names, and no rule here pairs them.
         ('*Water_Body17', True, 'Water_Body'),
         ('*Cook_jacket16', True, 'Cook_jacket'),

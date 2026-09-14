@@ -266,7 +266,7 @@ def convert(path: Path, output_dir: Path) -> tuple[Path, ...]:
     """
     Decode every image in a ``.TEX2`` file and write PNGs beside each other.
 
-    Each PNG is titled after the stem of the image's recorded source path.
+    Each PNG is named after the stem of the image's recorded source path.
 
     Parameters
     ----------

@@ -145,7 +145,7 @@ export const App = () => {
         setStatus({ ...it, difficulty: 'basic', kind: 'chart' });
         return;
       }
-      // Nothing was opened in this page, and this address therefore identifies nothing. Someone has
+      // No chart was opened in this page, and this address is therefore stale. Someone has
       // reloaded, or followed a link to it. The list is shown and the address is put back to the
       // list's, in place rather than as a new entry. Going back therefore does not land here again.
       history.replaceState(null, '', writeRoute({ difficulty: null, id: null }));
@@ -290,8 +290,8 @@ const TuneHeading = ({
       ←
     </button>
     <div>
-      {/* A chart opened from the reader's machine is titled by its file name. There is nothing to
-          look up for a file name. Only a tune from the collection is linked. */}
+      {/* A chart opened from the reader's machine takes its title from its file name. There is
+          nothing to look up for a file name. Only a tune from the collection is linked. */}
       <h1 className="h5 mb-0">
         <Remy linked={tune.id !== OPENED} what={tune.title} />
       </h1>

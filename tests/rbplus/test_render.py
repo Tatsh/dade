@@ -589,7 +589,7 @@ def test_a_slide_draws_its_track(tmp_path: Path, make_chart: Callable[..., bytes
 def test_a_slide_naming_no_note_is_left_out(tmp_path: Path, make_chart: Callable[..., bytes],
                                             make_note: Callable[..., bytes],
                                             make_slide: Callable[..., bytes]) -> None:
-    # A record whose note index is past the end of the chart identifies no note to start from.
+    # A record whose note index is past the end of the chart does not identify a note to start from.
     note = make_note(note_type=SLIDE_NOTE_TYPE, target=(0, 6, 0, 0), travel_time=0)
     slides = (make_slide(note_index=99, lane=0, value_a=1000, value_b=0),)
     chart = parse_chart(make_chart(notes=(note,), slides=slides, version=_MODERN))

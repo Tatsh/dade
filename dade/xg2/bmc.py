@@ -1,7 +1,7 @@
 r"""
 The ``BMC`` skeletal animation container in the Extreme-G XG2 ``mfs`` archive.
 
-Every ``BMC`` blob in the ROM is titled after a skeleton file: ``man2sk.asf`` thirteen times,
+Every ``BMC`` blob in the ROM is named after a skeleton file: ``man2sk.asf`` thirteen times,
 ``ivask.bsf`` three times, and ``albeanosk.bs`` once. ``.asf`` is Acclaim's own Skeleton File
 format, and Iva and Albeano are two of the game's riders, who also appear as ``bulk/data/iva.cmp``
 and ``bulk/data/albeano.cmp`` in the Windows executable. These are motion clips, not sounds.

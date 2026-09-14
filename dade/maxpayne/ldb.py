@@ -1347,8 +1347,8 @@ def _room_of(name: str) -> str:
     """
     Take the room out of an object's name.
 
-    Every placed object is titled ``::room::rest``, and the prefix is the only link back to its
-    room; the object's room field is empty on the shipped levels.
+    Every placed object's name takes the form ``::room::rest``, and the prefix is the only link
+    back to its room; the object's room field is empty on the shipped levels.
 
     Parameters
     ----------

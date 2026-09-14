@@ -29,7 +29,7 @@ export interface Tune {
   artistRomaji: string;
   /** The lowest and highest tempo. Either may be absent. */
   bpm: [number | null, number | null];
-  /** The tune's identifier. The chart file is titled after it. */
+  /** The tune's identifier. The chart file is named after it. */
   id: number;
   /** Which letter it is filed under: A to Z, `#` for a digit, or `?` for neither. */
   letter: string;
@@ -180,7 +180,7 @@ export const base = (): string | null => {
  * The identifier a chart opened from the reader's machine is given, being no tune's.
  *
  * It has a separate address, and the browser therefore has a location to go back to. Opening a file
- * that changed nothing in the location would give the back button no destination, and the way out
+ * that did not change the location would not give the back button a destination, and the way out
  * of the chart would be a button that wrote the address it already had.
  */
 export const OPENED = -1;

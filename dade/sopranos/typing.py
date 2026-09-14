@@ -91,7 +91,7 @@ class SoundEntry(NamedTuple):
     """One sound described by a ``.MSH`` header and stored in the matching ``.MSB`` body."""
 
     number: int
-    """Position among the header's playable entries, used to title the extracted file."""
+    """Position among the header's playable entries, used in the name of the extracted file."""
     offset: int
     """Byte offset of the sound's PS-ADPCM data within the ``.MSB`` body."""
     size: int

@@ -236,7 +236,7 @@ def extract(path: Path) -> tuple[Path, int]:
     """
     Extract every asset of a ``.rpk`` pack into a sibling ``<stem>/`` directory.
 
-    Texture assets are titled from the ``STRS`` ``TGA`` path list (in order); other
+    Texture assets take their names from the ``STRS`` ``TGA`` path list (in order); other
     assets fall back to ``asset<NNNN>_<hash>`` names. A ``_manifest.tsv`` is written.
 
     Parameters

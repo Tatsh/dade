@@ -148,7 +148,7 @@ local utils = import 'utils.libjsonnet';
   ],
   // The chart viewer's bundle is built from `assets/site`, not hand-written, and is committed
   // because an install from PyPI has no Node to build it with. It is committed exactly as webpack
-  // writes it, and Prettier therefore makes no edit rather than drifting it from a fresh build.
+  // writes it, and Prettier therefore does not edit it rather than drifting it from a fresh build.
   gitattributes+: ['/dade/rbplus/site/** linguist-generated=true'],
   prettierignore+: ['/dade/rbplus/site/'],
   // Retained outside every pre-commit hook. None of the file-normalising ones (end-of-file,
