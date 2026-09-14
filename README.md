@@ -286,7 +286,7 @@ A chart to be read in a browser is a whole site rather than one picture; see
 
 `dade rbplus dump-chart` also reads one note chart from a separate file, either as the package
 stores it or already deciphered, in which case the difficulty is taken from the file name when the
-name states one and must be given otherwise. `--key` and `--iv`, both hex, read a chart enciphered
+name specifies one and must be given otherwise. `--key` and `--iv`, both hex, read a chart enciphered
 under neither of the game's keys.
 
 `dade rbplus extract-assets` unpacks one of the three texture archives the game downloads (`iPad`,
@@ -587,7 +587,7 @@ exit graph and had to be assembled by walking it. Geometry an artist placed more
 written once and referred to afterwards. A reader that always expects a mesh therefore loses its
 place on the second copy and every byte after it.
 
-Two of the sequel's records beat working the values out. The sequel states each surface's draw
+Two of the sequel's records beat working the values out. The sequel records each surface's draw
 order, and decals are therefore lifted from what the level records rather than from the geometry.
 Deriving them instead moves 3917 faces of `21_The_Manor` where the level marks 1761. The sequel
 duplicates a material per lightmap, neighbouring floor tiles end up with different material IDs, and
@@ -600,7 +600,7 @@ its state machine exactly while its translation does not, the first of them read
 transforms and its doors hang open and its parented props collapse towards the origin.
 
 The state machine is only half of a prop's placement. Its vertices are written about their midpoint,
-and 582 of `09_Upper_East_Side`'s 594 props sit exactly on that midpoint. The mesh container states,
+and 582 of `09_Upper_East_Side`'s 594 props sit exactly on that midpoint. The mesh container records,
 ahead of its batches, where the midpoint falls in the state machine's space. Both are needed. Take
 the state machine alone and `10_Police_Station`'s vending machine stands with its front panel out of
 the recess it closes, and a cell door floats 1.5 units over the floor. The state machine is the

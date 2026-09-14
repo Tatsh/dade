@@ -165,7 +165,8 @@ def _elide_long_parameter_defaults(_app: object, _what: str, _name: str, _obj: o
     """
     Replace a documented signature's long default values with ``...``.
 
-    Short defaults (for example ``1``, ``False``, ``'.txt'``) are kept; only defaults longer than
+    Short defaults (for example ``1``, ``False``, ``'.txt'``) are retained; only defaults longer
+    than
     :py:data:`_MAX_DEFAULT_LENGTH` (large tuples, byte keys, and the like) are elided. The already
     rendered signature string is edited in place so autodoc's type formatting is preserved.
 

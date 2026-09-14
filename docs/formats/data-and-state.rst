@@ -26,22 +26,22 @@ See :ref:`the legend <formats-legend>` for the status symbols.
      - PC
      - JSON
      - ✅
-     - Mission-state snapshot: named fields decoded; gaps as base64.
+     - Mission-state snapshot with named fields decoded and gaps as base64.
    * - ``.cfg``
      - PC
      - JSON
      - ✅
-     - Config: named blocks split; build stamp and verified checksum decoded.
+     - Config with named blocks split, and the build stamp and verified checksum decoded.
    * - ``.lev``
      - PC
      - JSON
      - ✅
-     - Level-state snapshot: shares the mission field table minus its prefix.
+     - Level-state snapshot sharing the mission field table minus its prefix.
    * - ``.xxx``
      - PC
      - JSON
      - ✅
-     - Debug snapshot: same format as ``.sav``.
+     - Debug snapshot in the same format as ``.sav``.
    * - ``.TXT``
      - DC
      - UTF-8

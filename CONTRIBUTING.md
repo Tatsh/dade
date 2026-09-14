@@ -55,7 +55,7 @@ The above all need to pass for any code changes to be accepted.
 - Use single quotes for strings and double quotes for docstrings only.
 - Add `from __future__ import annotations` at the top of every file (this will be done by Ruff in
   VS Code if you have the extension installed).
-- Keep imports sorted and grouped: future, standard library, third-party, local (also done by Ruff).
+- Sort and group imports: future, standard library, third-party, local (also done by Ruff).
 - Prefer latest Python features (3.10+).
 - For subprocess, avoid `shell=True` and `check=False`.
 - Alias subprocess as `import subprocess as sp`.
@@ -72,7 +72,7 @@ The above all need to pass for any code changes to be accepted.
 - Use `@pytest.mark.parametrize` for parametrised tests and `@pytest.mark.asyncio` for async tests.
 - Do not add docstrings to test functions.
 - Mock external dependencies and I/O operations.
-- Strive to keep the coverage level the same or higher.
+- Strive to retain the coverage level or raise it.
 - Use `# pragma: no cover` when appropriate.
 - See [Python tests instructions] for more details.
 
