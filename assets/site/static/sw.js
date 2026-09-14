@@ -1,5 +1,5 @@
-// Service worker for the REFLEC BEAT plus chart browser. It is here so the site is installable as a
-// standalone app and keeps working offline: an install prompt needs a service worker with a fetch
+// Service worker for the REFLEC BEAT plus chart browser. It makes the site installable as a
+// standalone app and able to work offline. An install prompt needs a service worker with a fetch
 // handler, and the cache lets a tune already looked at open again with no network.
 const CACHE = 'rbp-charts-v1';
 
@@ -29,9 +29,10 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) {
     return;
   }
-  // A navigation is served network-first, so a new build is picked up, and falls back to the cached
-  // shell so that a deep link still opens with no network. Everything else is served cache-first,
-  // since the script and stylesheet carry a content hash in their name and a chart never changes.
+  // A navigation is served network-first, and a new build is therefore picked up. It falls back to
+  // the cached shell, and a deep link therefore still opens with no network. Everything else is
+  // served cache-first. The script and stylesheet include a content hash in their file name, and a
+  // chart never changes.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)

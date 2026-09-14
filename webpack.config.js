@@ -1,9 +1,9 @@
 // Builds the `dade rbplus site` chart browser.
 //
-// The output is committed and shipped inside the package, since anyone who installs `dade` from
-// PyPI has no Node and no way to build it. Bootstrap is compiled in rather than fetched, and every
-// path the page asks for is relative, so a built site works from a subdirectory — which is what
-// GitHub Pages serves a project site from.
+// The output is committed and shipped inside the package. A reader who installs `dade` from PyPI
+// does not have Node and cannot build it. Bootstrap is compiled in rather than fetched, and every
+// path the page requests is relative. A built site therefore works from a subdirectory, and GitHub
+// Pages serves a project site from one.
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -12,9 +12,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 // Copies every file in `assets/site/static` into the output verbatim. These are the files a chart
-// is never built from and webpack would otherwise never see — the web app manifest, the service
-// worker, and the icons — which have to keep their own names (the manifest and the page reference
-// them by name) and must not be hashed or minified.
+// is never built from and webpack would otherwise never see: the web app manifest, the service
+// worker, and the icons. They have to retain their names (the manifest and the page reference them
+// by name) and must not be hashed or minified.
 class EmitStaticPlugin {
   apply(compiler) {
     const dir = path.resolve(__dirname, 'assets/site/static');
@@ -52,12 +52,13 @@ module.exports = (_env, argv) => ({
           { loader: 'css-loader', options: { url: false } },
           {
             loader: 'sass-loader',
-            // Bootstrap 5 still uses `@import` internally, which the modern Sass compiler warns
-            // about at length on every build. The warnings belong to Bootstrap rather than to
-            // anything written here, so they are silenced rather than left to bury real ones.
+            // Bootstrap 5 still uses `@import` internally, and the modern Sass compiler warns
+            // about it at length on every build. The warnings belong to Bootstrap rather than to
+            // anything written here. They are therefore silenced rather than allowed to bury real
+            // ones.
             options: {
-              // `charset: false` stops Dart Sass prepending a UTF-8 byte-order mark to the output,
-              // which a pre-commit hook strips and which would then drift the committed bundle from
+              // `charset: false` stops Dart Sass prepending a UTF-8 byte-order mark to the output.
+              // A pre-commit hook strips the mark, and the committed bundle would then drift from
               // a fresh build.
               sassOptions: {
                 charset: false,
@@ -72,12 +73,12 @@ module.exports = (_env, argv) => ({
   },
   optimization: {
     minimizer: [
-      // Bootstrap's licence notice stays inside the script rather than being drawn off into a file
-      // of its own.
+      // Bootstrap's licence notice stays inside the script rather than being drawn off into a
+      // separate file.
       new TerserPlugin({ extractComments: false }),
-      // Bootstrap embeds percent-encoded SVG as data URIs, which the minifier's SVG pass tries to
-      // parse as a document and warns about on every build. Nothing here is an SVG file, so the
-      // pass has nothing to do and is turned off rather than left to complain.
+      // Bootstrap embeds percent-encoded SVG as data URIs. The minifier's SVG pass tries to parse
+      // them as a document and warns about it on every build. No file here is an SVG, and the pass
+      // therefore has no work to do. It is turned off rather than allowed to complain.
       new CssMinimizerPlugin({
         minimizerOptions: { preset: ['default', { svgo: false }] },
       }),
@@ -86,7 +87,7 @@ module.exports = (_env, argv) => ({
   output: {
     clean: true,
     filename: '[name].[contenthash:8].js',
-    // Relative, so the page finds its own script wherever the site is served from.
+    // Relative. The page therefore finds its script wherever the site is served from.
     publicPath: '',
     path: path.resolve(__dirname, 'dade/rbplus/site'),
   },

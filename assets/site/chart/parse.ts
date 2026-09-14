@@ -1,9 +1,9 @@
 // Reading an RBFF chart in the browser. A port of `parse_chart` and its readers in
-// `dade/rbplus/chart.py`, so that a chart file can be dropped on the page and drawn without going
+// `dade/rbplus/chart.py`. A chart file can therefore be dropped on the page and drawn without going
 // back through the command.
 //
-// Only a deciphered chart is read. What a tune package holds is enciphered, and nothing here
-// deciphers: the key belongs to the game and the page has no business carrying it.
+// Only a deciphered chart is read. What a tune package stores is enciphered, and nothing here
+// deciphers. The key belongs to the game, and the page has no business with it.
 import { SLIDE_LANE_REMAP } from './constants';
 import type { Chart, Note, Slide, TempoEvent } from './types';
 
@@ -11,7 +11,7 @@ import type { Chart, Note, Slide, TempoEvent } from './types';
 const MAGIC = 'RBFF';
 /** The format versions this parser reads. */
 const MODERN_VERSIONS = [10, 11, 12, 13, 14];
-/** The format versions the game reads with an older parser, which is not ported. */
+/** The format versions the game reads with an older parser. The older parser is not ported. */
 const LEGACY_VERSIONS = [6, 7];
 
 const FILE_HEADER_SIZE = 16;
@@ -32,7 +32,7 @@ const SLIDE_LANE_SENTINELS: Record<number, number> = {
 /** Raised when a file is not a chart this reads. */
 export class ChartError extends Error {}
 
-/** A cursor over the bytes, which reads little-endian and keeps its own place. */
+/** A cursor over the bytes. It reads little-endian and tracks its position. */
 class Reader {
   at: number;
   private readonly view: DataView;
@@ -107,7 +107,7 @@ const slideLane = (raw: number) => {
   return raw;
 };
 
-/** One note. A note is variable length, so the cursor is carried on rather than computed. */
+/** One note. A note is variable length, and the cursor is therefore advanced rather than computed. */
 const readNote = (read: Reader): Note => {
   const spawn_time = read.i32('a note');
   const travel_time = read.i32('a note');
@@ -128,7 +128,7 @@ const readNote = (read: Reader): Note => {
   ];
   const flags = read.u32('a note');
   // The engine reads these four fields into its staging record and never unpacks them again. They
-  // are stepped over here rather than ignored, so that a chart ending inside them is caught.
+  // are stepped over here rather than ignored. A chart ending inside them is therefore caught.
   read.skip(NOTE_TRAILER_SIZE, "a note's trailer");
   let chain: [number, number, number, number] | null = null;
   if (flags & LONG_HEAD_FLAG) {
@@ -151,8 +151,8 @@ const readNote = (read: Reader): Note => {
   };
 };
 
-// Three fields are read out of the event and the whole of it is kept as hex besides, since most of
-// its thirty-six bytes are undocumented and throwing them away would lose what has not been worked
+// Three fields are read out of the event, and the whole of it is retained as hex besides. Most of
+// its thirty-six bytes are undocumented, and discarding them would lose what has not been worked
 // out yet.
 const readTempoEvent = (read: Reader): TempoEvent => {
   const start = read.at;
@@ -186,13 +186,13 @@ const readSlide = (read: Reader): Slide => {
 export const parseChart = (bytes: Uint8Array): Chart => {
   const magic = [...bytes.subarray(0, 4)].map((byte) => String.fromCharCode(byte)).join('');
   if (magic !== MAGIC) {
-    throw new ChartError(`Not a chart: expected ${MAGIC}, got ${JSON.stringify(magic)}.`);
+    throw new ChartError(`Not a chart. Expected ${MAGIC}, got ${JSON.stringify(magic)}.`);
   }
   const head = new Reader(bytes, VERSION_OFFSET);
   const version = head.u32('the header');
   if (!MODERN_VERSIONS.includes(version)) {
     const known = LEGACY_VERSIONS.includes(version)
-      ? 'the legacy layout, which is not read here'
+      ? 'the legacy layout, not read here'
       : 'no known layout';
     throw new ChartError(`Chart format version ${version} uses ${known}.`);
   }

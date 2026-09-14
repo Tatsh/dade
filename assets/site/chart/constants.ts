@@ -1,14 +1,14 @@
 // The numbers a chart is drawn by. Every one of these is a port of the same name in
-// `dade/rbplus/render.py`, which draws the PNG and the SVG. The two are separate implementations
-// of one layout: change a number here and the same number has to change there, or a chart will
-// look different depending on how it was asked for.
+// `dade/rbplus/render.py`, the module that draws the PNG and the SVG. The two are separate
+// implementations of one layout. Change a number here and the same number has to change there, or
+// a chart will look different depending on how it was requested.
 
 /**
  * The multiple the layout's units are of the finished size.
  *
- * The raster renderer draws large and reduces once at the end so that every edge is smoothed by the
- * reduction. Nothing here is reduced — an SVG in a browser has no such need — but the units are
- * kept the same so the two layouts are comparable number for number.
+ * The raster renderer draws large and reduces once at the end, and every edge is therefore smoothed
+ * by the reduction. Nothing here is reduced, an SVG in a browser having no such need. The units are
+ * retained unchanged, and the two layouts are therefore comparable number for number.
  */
 export const SUPERSAMPLE = 3;
 
@@ -18,14 +18,14 @@ export const SIDE_COUNT = 2;
 export const SIDE_LABELS = ['Pink', 'Blue'] as const;
 /** How many lanes the field has, the engine's `NoteLaneTracker::kLaneCount`. */
 export const LANE_COUNT = 7;
-/** How many seconds of chart one column holds by default. */
+/** How many seconds of chart one column covers by default. */
 export const SECONDS_PER_COLUMN = 30;
 
-/** The route selectors naming a target beyond the seven lanes, which the game draws green. */
+/** The route selectors identifying a target beyond the seven lanes. The game draws them green. */
 export const ALTERNATE_TARGETS = [7, 8, 9];
 /** The slot each alternative target is drawn in. */
 export const ALTERNATE_TARGET_LANES = [5, 3, 1];
-/** The note type that is held, the engine's `kNoteTypeHold`. */
+/** The note type that is a hold, the engine's `kNoteTypeHold`. */
 export const HOLD_NOTE_TYPE = 1;
 /** The note type that slides. */
 export const SLIDE_NOTE_TYPE = 2;
@@ -40,13 +40,13 @@ export const SLIDE_LANE_REMAP = [0, 1, 2, 3, 4, 5, 6];
 
 /** The last chart version whose route selector is not remapped. */
 export const REMAPPED_ROUTE_VERSION = 12;
-/** The selector value meaning the note names no route at all. */
+/** The selector value meaning the note does not specify a route at all. */
 export const UNSET_ROUTE = -2;
 /** Where a sixteen-bit route selector turns negative. */
 export const SIGN_BIT = 0x8000;
-/** The raw selector value that names no route. */
+/** The raw selector value that does not specify a route. */
 export const NO_ROUTE_SELECTOR = 0xfffe;
-/** The group value that marks a free note, which belongs to no chain. */
+/** The group value that marks a free note. A free note does not belong to a chain. */
 export const FREE_NOTE_START_TIME = -1;
 /** How many notes a run needs before it counts as a chain. */
 export const CHAIN_MINIMUM = 2;
@@ -68,7 +68,7 @@ export const COLORS = {
   trackFill: 'rgb(40 40 52)',
 } as const;
 
-/** Geometry, in the layout's own units. */
+/** Geometry, in the layout's units. */
 export const GUTTER = 52 * SUPERSAMPLE;
 export const LANE_PX = 15 * SUPERSAMPLE;
 export const PIXELS_PER_SECOND = 46 * SUPERSAMPLE;

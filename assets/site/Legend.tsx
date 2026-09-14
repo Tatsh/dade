@@ -1,8 +1,8 @@
-// A drawn example of every mark, so the chart explains itself. A port of `_draw_legend` and its
-// glyphs in `dade/rbplus/render.py`.
+// A drawn example of every mark. The chart therefore explains itself. A port of `_draw_legend` and
+// its glyphs in `dade/rbplus/render.py`.
 //
-// Each mark is drawn from the same shapes the chart is, rather than described in words, so a change
-// to how a note looks reaches the legend without anything else being edited.
+// Each mark is drawn from the same shapes the chart is, rather than described in words. A change to
+// how a note looks therefore arrives at the legend without anything else being edited.
 import {
   BAR_WIDTH,
   COLORS,

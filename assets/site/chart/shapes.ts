@@ -2,9 +2,9 @@
 // `_draw_tempo_events`, `_draw_slides`, `_draw_chains`, and `_draw_notes` in
 // `dade/rbplus/render.py`.
 //
-// Nothing here is JSX. The renderer calls a surface and the shapes go straight out; this returns
-// them instead, so what a column holds can be set beside what `render.py` draws for the same
-// column, and so React only has to turn a shape into an element.
+// Nothing here is JSX. The renderer calls a surface and the shapes go straight out; this module
+// returns them instead. What a column includes can therefore be set beside what `render.py` draws
+// for the same column, and React only has to turn a shape into an element.
 import {
   ALTERNATE_TARGETS,
   BAR_WIDTH,
@@ -41,12 +41,12 @@ export interface LineShape {
   kind: 'line';
   /** Alternating x and y, at least two points. */
   points: number[];
-  /** Whether the corners are rounded, which the vertical mark wants. */
+  /** Whether the corners are rounded. The vertical mark requires it. */
   round?: boolean;
   width: number;
 }
 
-/** A filled rectangle, which is how a hold is drawn. */
+/** A filled rectangle. A hold is drawn as one. */
 export interface RectShape {
   color: string;
   height: number;
@@ -65,7 +65,7 @@ export interface DiscShape {
   y: number;
 }
 
-/** Half a disc, being the half a note that travels to the other side leaves by. */
+/** Half a disc, being the half a note that travels to the other side departs by. */
 export interface HalfShape {
   color: string;
   /** Whether the filled half is the lower one. */
@@ -78,32 +78,32 @@ export interface HalfShape {
 
 export type Shape = DiscShape | HalfShape | LineShape | RectShape;
 
-/** One note, with the shapes it is drawn from and what it says about itself. */
+/** One note, with the shapes it is drawn from and what it reports about itself. */
 export interface DrawnNote {
-  /** Which lane it was laid out in, or null when it was not drawn. */
+  /** Which lane it was positioned in, or null when it was not drawn. */
   lane: number | null;
   /** The note's index in the chart. */
   index: number;
-  /** What it says about itself when it is pointed at. */
+  /** What it reports about itself when it is pointed at. */
   details: Record<string, string>;
-  /** The shapes it is drawn from. The disc comes last, so it sits over its own hold. */
+  /** The shapes it is drawn from. The disc comes last and therefore sits over its hold. */
   shapes: Shape[];
-  /** The middle of the disc, so the page can put a tip beside it. */
+  /** The middle of the disc. The page puts a tip beside it. */
   x: number;
   y: number;
 }
 
-/** Everything one column of one side holds. */
+/** Everything one column of one side includes. */
 export interface Column {
   /** Which column of the chart it is, counting from the start of the tune. */
   column: number;
-  /** The lane divisions, which the page offers to leave out. */
+  /** The lane divisions. The page offers to omit them. */
   laneRules: Shape[];
   /** The chains, slides, and speed changes drawn under the notes. */
   under: Shape[];
   /** The notes. */
   notes: DrawnNote[];
-  /** The seconds and beats across the column, which the page offers to leave out. */
+  /** The seconds and beats across the column. The page offers to omit them. */
   timeRules: Shape[];
   /** Each second's line, against what to call it. */
   seconds: { label: string; y: number }[];
@@ -119,7 +119,7 @@ const noteColor = (note: Note, version: number) => {
 
 /**
  * The names the engine gives the bits of a note's flag word, a port of `NOTE_FLAGS` in
- * `dade/rbplus/chart.py`. Only these five bits are named; anything else is left out.
+ * `dade/rbplus/chart.py`. Only these five bits are identified; every other bit is omitted.
  */
 const NOTE_FLAGS: [number, string][] = [
   [0x01, 'same_lane'],
@@ -135,9 +135,9 @@ const flagNames = (flags: number) =>
 /**
  * The lane a slide is in at each moment it is drawn through.
  *
- * A slide's records are its waypoints. Each carries the lane the finger is to be in and, in the
- * same shape a note's own timing takes, a spawn time and a travel time whose sum is the moment it
- * is to be there. The note itself is the first point, since that is where the finger goes down.
+ * A slide's records are its waypoints. Each includes the lane the finger is to be in and, in the
+ * same shape a note's timing takes, a spawn time and a travel time whose sum is the moment it is to
+ * be there. The note itself is the first point. The note is where the finger goes down.
  */
 export const slidePaths = (notes: Note[], slides: Slide[]) => {
   const grouped = new Map<number, Slide[]>();
@@ -160,7 +160,7 @@ export const slidePaths = (notes: Note[], slides: Slide[]) => {
   return paths;
 };
 
-/** What one note says about itself when it is pointed at. */
+/** What one note reports about itself when it is pointed at. */
 const noteDetails = (
   note: Note,
   index: number,
@@ -184,7 +184,7 @@ const noteDetails = (
     'Hit Time': `${note.hit_time} ms`,
     'Spawn Time': `${note.spawn_time} ms`,
     'Travel Time': `${note.travel_time} ms`,
-    Lane: lane === null ? 'Not laid out' : String(lane),
+    Lane: lane === null ? 'Not positioned' : String(lane),
     'Route Selector': String(timingSelector(note, version)),
     Group: note.start_time === FREE_NOTE_START_TIME ? 'Free' : String(note.start_time),
     Flags: names.length ? names.join(' | ') : 'NONE',
@@ -196,7 +196,7 @@ const noteDetails = (
   return details;
 };
 
-/** A note's disc: its colour, the gold half it leaves by, and the V cut into a vertical one. */
+/** A note's disc: its colour, the gold half it departs by, and the V cut into a vertical one. */
 const discShapes = (
   x: number,
   y: number,
@@ -207,7 +207,7 @@ const discShapes = (
 ): Shape[] => {
   const shapes: Shape[] = [{ color, kind: 'disc', radius: NOTE_RADIUS, x, y }];
   if (sideObject) {
-    // The gold half is the one the note leaves by, which is whichever way time runs.
+    // The gold half is the one the note departs by, whichever way time runs.
     shapes.push({
       color: COLORS.sideObject,
       down: flip,
@@ -232,13 +232,13 @@ const discShapes = (
 };
 
 /**
- * Lay out every column of a chart.
+ * Position every column of a chart.
  *
  * @param chart The parsed chart.
  * @param layout Where its columns, lanes, and times land.
  * @param lanes Each note's index against the lane it is drawn in.
  * @param BPM The tune's tempo. Given one, a line is drawn on every quarter note and a brighter one
- *   on every bar. A tempo that is absent or not positive leaves the beat grid off.
+ *   on every bar. A tempo that is absent or not positive omits the beat grid.
  */
 export const chartColumns = (
   chart: Chart,
@@ -281,7 +281,7 @@ export const chartColumns = (
   const at = (side: number, column: number) => columns[side * layout.columns + column];
 
   // A line on every quarter note, with a brighter one every fourth. The grid is anchored at time
-  // zero, which is where the tune's own clock starts; a chart may begin before it.
+  // zero, where the tune's clock starts; a chart may begin before it.
   if (BPM !== null && BPM > 0) {
     const beatMs = (SECONDS_PER_MINUTE * MILLISECONDS) / BPM;
     const lastBeat = Math.ceil((layout.startMs + layout.columns * layout.spanMs) / beatMs);
@@ -329,7 +329,7 @@ export const chartColumns = (
   };
 
   // The track a finger takes: down on the note, then across to each waypoint in turn. A leg whose
-  // two ends fall in different columns is left out, there being nowhere to run it.
+  // two ends fall in different columns is omitted, there being nowhere to run it.
   for (const [index, path] of slidePaths(notes, chart.slides)) {
     const side = notes[index].side >= 0 && notes[index].side < SIDE_COUNT ? notes[index].side : 0;
     const points: { column: number; x: number; y: number }[] = [];
@@ -356,7 +356,7 @@ export const chartColumns = (
   }
 
   // A line joins each note of a chain to the next, drawn under the notes themselves. A pair split
-  // across two columns is left without a line, there being nowhere to run one.
+  // across two columns has no line, there being nowhere to run one.
   for (const members of groups(notes)) {
     if (members.length < CHAIN_MINIMUM) continue;
     const placed = members.map(spotOf);
@@ -383,8 +383,8 @@ export const chartColumns = (
     const shapes: Shape[] = [];
     if (held > 0) {
       // A hold runs from the note up to the moment it is released, clipped to the column. It is
-      // drawn wide, with a cap at the release, so that a hold sitting at the end of a chain cannot
-      // be taken for the narrower line joining the chain.
+      // drawn wide, with a cap at the release. A hold sitting at the end of a chain therefore
+      // cannot be taken for the narrower line joining the chain.
       const reach = Math.trunc((held / MILLISECONDS) * layout.pixelsPerSecond);
       const run = layout.later(spot.y, reach);
       const end = layout.flip ? Math.min(run, layout.limit()) : Math.max(run, layout.limit());

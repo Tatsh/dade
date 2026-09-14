@@ -1,9 +1,9 @@
-// The site's stylesheet. Bootstrap is compiled in rather than fetched, so a built site needs
-// nothing from the network — which is also what lets it be opened from a file.
+// The site's stylesheet. Bootstrap is compiled in rather than fetched. A built site therefore needs
+// nothing from the network, and it opens from a file.
 //
-// Bootstrap's own partials share one global scope: `_variables.scss` calls a mixin that
+// Bootstrap's partials share one global scope. `_variables.scss` calls a mixin that
 // `_functions.scss` defines without importing it. They are therefore brought in the way Bootstrap
-// supports rather than as modules, in Bootstrap's own order.
+// supports rather than as modules, in Bootstrap's order.
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/variables-dark';
@@ -29,7 +29,7 @@
   --rb-side-0: rgb(255 120 180);
   --rb-side-1: rgb(80 220 255);
   // How wide a column is drawn and how tall one second of it stands. The drawing is stretched to
-  // whatever these give it, so they are the one place its size is decided.
+  // whatever these give it. They are therefore the one place its size is decided.
   --rb-column: 150px;
   --rb-second: 46px;
   --rb-seconds-per-column: 30;
@@ -43,9 +43,10 @@ body {
 }
 
 // The tune and the controls sit on one line where there is room for both and take a line each
-// where there is not, so a wide screen spends its width and a narrow one is not squeezed. Each is
-// as wide as it needs and no wider: stretching them wastes the height the chart wants, and fitted
-// the page is wider than the window, so a full-width bar would run off the side carrying nothing.
+// where there is not. A wide screen therefore spends its width and a narrow one is not squeezed.
+// Each is as wide as it needs and no wider. Stretching them wastes the height the chart wants, and
+// fitted the page is wider than the window. A full-width bar would run off the side with nothing
+// in it.
 .rb-bar {
   align-items: start;
   display: flex;
@@ -66,14 +67,14 @@ body {
 }
 
 // The controls are a long row of switches. Below this there is no window wide enough for them to
-// stand beside the tune, so they take a line of their own and wrap within it.
+// stand beside the tune. They therefore take a separate line and wrap within it.
 @media (width < 100em) {
   .rb-controls {
     inline-size: 100%;
   }
 }
 
-// A drawn example of every mark, so the chart explains itself.
+// A drawn example of every mark. The chart therefore explains itself.
 .rb-legend {
   display: flex;
   flex-wrap: wrap;
@@ -110,8 +111,8 @@ body {
   gap: 0.25rem;
   grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
 
-  // A grid row is as tall as the tallest card in it, and every card fills its own cell, so a title
-  // that wraps to two lines does not leave its neighbours short.
+  // A grid row is as tall as the tallest card in it, and every card fills its cell. A title that
+  // wraps to two lines therefore does not shorten its neighbours.
   > li {
     display: grid;
   }
@@ -139,8 +140,8 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  // Pushed to the foot of the card, so the levels line up across a row whatever the titles above
-  // them do.
+  // Pushed to the foot of the card. The levels therefore line up across a row whatever the titles
+  // above them do.
   margin-block-start: auto;
   padding-block-start: 0.25rem;
 }
@@ -150,13 +151,14 @@ body {
   font-weight: 600;
 }
 
-// A side's columns run across and wrap, so a chart reads left to right and down. Each column keeps
-// its own width, which is what stops one from being squeezed when there are many.
+// A side's columns run across and wrap. A chart therefore reads left to right and down. Each
+// column retains its width, and one column is therefore not squeezed when there are many.
 .rb-columns {
   display: flex;
   flex-wrap: wrap;
-  // A column carries its own gutter on the left, which already separates one track from the next.
-  // This is the room on top of that, so the columns read as separate rather than as one wide field.
+  // A column includes a gutter on the left. The gutter already separates one track from the next.
+  // This is the room on top of the gutter. The columns therefore read as separate rather than as
+  // one wide field.
   gap: 1.25rem;
 }
 
@@ -165,13 +167,13 @@ body {
   display: block;
   flex: 0 0 auto;
   inline-size: var(--rb-column);
-  // The first and last second are named on the band's own edges, so half of each label sits
-  // outside the view box. Letting it paint there keeps the labels whole without moving the chart
-  // to make room, which would put every note a little off where the renderer has it.
+  // The first and last second are labelled on the band's edges, and half of each label therefore
+  // sits outside the view box. Painting there preserves the labels whole without moving the chart
+  // to make room. Moving the chart would put every note a little off where the renderer has it.
   overflow: visible;
 }
 
-// The room those labels paint into, so they are not cut off by whatever the columns sit in.
+// The room the labels paint into. Without it the labels are cut off by whatever the columns sit in.
 .rb-columns {
   padding-block: 0.75rem;
 }
@@ -187,11 +189,11 @@ body {
 }
 
 // Fitted, the chart is not allowed to take the page down with it. The columns stop wrapping and run
-// off the side instead, and the page is what scrolls across — one bar for the whole chart rather
-// than one per side. That is also what keeps the two sides together: scrolling the page moves both,
-// so the same moment of the tune is under the eye in each.
+// off the side instead, and the page is what scrolls across, one bar for the whole chart rather
+// than one per side. Scrolling the page also moves both sides together. The same moment of the tune
+// is therefore under the eye in each.
 .rb-fitted {
-  // As wide as the columns need, which is what gives the page something to scroll.
+  // As wide as the columns need. The width is what gives the page a scroll range.
   grid-template-columns: max-content;
   inline-size: max-content;
 
@@ -200,8 +202,8 @@ body {
   }
 }
 
-// A link to what is written about a tune elsewhere. It looks exactly like the text it is made of —
-// the pointer is the only thing that says it is a link, which is enough beside a heading and stops
+// A link to what is written about a tune elsewhere. It looks exactly like the text it is made of.
+// The pointer is the only indication of a link. The indication is enough beside a heading and stops
 // the page reading as a list of links.
 .rb-remy {
   color: inherit;
@@ -237,7 +239,7 @@ body {
   }
 }
 
-// A number or a flag word, set so that a column of them lines up digit under digit.
+// A number or a flag word. A column of them lines up digit under digit.
 .rb-mono {
   font-family: var(--bs-font-monospace);
   font-size: 0.85em;

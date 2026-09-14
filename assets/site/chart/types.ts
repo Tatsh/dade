@@ -1,32 +1,32 @@
-// The shapes `dade rbplus site` writes, which mirror `dade/rbplus/typing.py`. The keys are the
-// Python ones so that what is emitted and what is read here can be compared without a translation
-// step in between.
+// The shapes `dade rbplus site` writes. They mirror `dade/rbplus/typing.py`. The keys are the
+// Python ones, and what is emitted and what is read here can therefore be compared without a
+// translation step in between.
 
 /** One note as it is stored in an RBFF chart. */
 export interface Note {
-  /** The chain block a long-note head carries, or null. */
+  /** The chain block a long-note head includes, or null. */
   chain: [number, number, number, number] | null;
   /** The note flag bits. */
   flags: number;
-  /** When the note must be hit, in milliseconds: `spawn_time` plus `travel_time`. */
+  /** When the note must be hit, in milliseconds, being `spawn_time` plus `travel_time`. */
   hit_time: number;
   /** 1 marks a hold's head, the engine's `kHoldKindHead`. */
   hold_kind: number;
-  /** The note identifier, which another note's chain fields refer to. */
+  /** The note identifier. Another note's chain fields refer to it. */
   id: number;
   /** The note's place in its chain, counting from zero. */
   kind: number;
-  /** The note's path-point coordinates, empty when it carries no path. */
+  /** The note's path-point coordinates, empty when it has no path. */
   path_points: number[];
   /** The play side, 0 or 1. The two sides are separate sets of notes. */
   side: number;
-  /** When the note appears, in milliseconds. Often negative: a chart starts before its audio. */
+  /** When the note appears, in milliseconds. Often negative, a chart starting before its audio. */
   spawn_time: number;
   /** The chain the note belongs to, or -1 when the note is free. */
   start_time: number;
   /** The four target coordinates. The first is a hold's length; the second selects a target. */
   target: [number, number, number, number];
-  /** How long the note takes to reach the player, in milliseconds. */
+  /** How long the note takes to arrive at the player, in milliseconds. */
   travel_time: number;
   /** The note type. 1 is a hold, 2 a slide. */
   type: number;
@@ -66,15 +66,15 @@ export interface ChartHeader {
   free_note_count: number;
   /** The scroll speed the chart starts at. */
   initial_speed: number;
-  /** How many notes the chart holds. */
+  /** How many notes the chart includes. */
   note_count: number;
-  /** The chart's own seed value, which is not the lane seed. */
+  /** The chart's seed value, not the lane seed. */
   seed: number;
   /** How many slide records follow the tempo events. */
   slide_record_count: number;
   /** How many tempo events follow the notes. */
   tempo_event_count: number;
-  /** The chart format version, which decides how a note's route selector is read. */
+  /** The chart format version. It decides how a note's route selector is read. */
   version: number;
 }
 

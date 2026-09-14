@@ -1,7 +1,7 @@
 // The whole app: fetch the index, follow the hash, and show either the list or one chart.
 //
-// Every path is relative — `./data/…`, never `/data/…` — because GitHub Pages serves a project
-// site from a subdirectory, and an absolute path would look for the data at the domain's root.
+// Every path is relative (`./data/…`, never `/data/…`). GitHub Pages serves a project site from a
+// subdirectory, and an absolute path would look for the data at the domain's root.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ChartView, defaultView, type View } from './ChartView';
@@ -25,7 +25,7 @@ import {
 
 const DATA = './data';
 
-/** Whether a kept view is one this version still understands. */
+/** Whether a stored view is one this version still understands. */
 const isView = (value: unknown): value is View => {
   if (!value || typeof value !== 'object') return false;
   const kept = value as Record<string, unknown>;
@@ -49,17 +49,17 @@ type Status =
   | { kind: 'loading' };
 
 /**
- * A chart the reader opened from their own machine.
+ * A chart the reader opened from their machine.
  *
- * The file is read in the page and nothing leaves it: there is no server here to send it to, and a
- * chart is somebody's own file. Only a deciphered chart is read — what a tune package holds is
+ * The file is read in the page and nothing departs it. There is no server here to send it to, and a
+ * chart is somebody's file. Only a deciphered chart is read. What a tune package stores is
  * enciphered, and the key belongs to the game.
  */
 const openChart = async (file: File): Promise<{ charts: Charts; tune: Tune }> => {
   const chart = parseChart(new Uint8Array(await file.arrayBuffer()));
   return {
-    // A chart file says what the notes are and nothing about which difficulty it is, so it is put
-    // under the first name there is and that name is not shown.
+    // A chart file records what the notes are and nothing about which difficulty it is. It is
+    // therefore filed under the first difficulty there is, and the difficulty is not shown.
     charts: { basic: chart },
     tune: {
       artist: '',
@@ -82,12 +82,12 @@ export const App = () => {
   const [index, setIndex] = useState<Index | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>({ kind: 'list' });
-  // Every difficulty of a tune is in the one file, so changing difficulty is a matter of picking a
-  // different chart out of what is already here. Fetching again would take the chart off the screen
-  // and put it back unchanged.
+  // Every difficulty of a tune is in the one file. Changing difficulty is therefore a matter of
+  // picking a different chart out of what is already here. Fetching again would take the chart off
+  // the screen and put it back unchanged.
   const [loaded, setLoaded] = useState<{ charts: Charts; id: number } | null>(null);
-  // A chart the reader opened from their own machine, which is nowhere else. Held in a reference
-  // rather than in state because the route is followed in the same breath as it is set: state set
+  // A chart the reader opened from their machine, stored nowhere else. It sits in a reference
+  // rather than in state because the route is followed in the same breath as it is set. State set
   // now is not readable until the next drawing, and following would find nothing there and fall
   // back to the list.
   const opened = useRef<{ charts: Charts; tune: Tune } | null>(null);
@@ -98,29 +98,29 @@ export const App = () => {
     '',
     isOneOf('', ...DIFFICULTIES),
   );
-  // Where the reader happens to be, as against what they have chosen. Not kept.
+  // Where the reader happens to be, as against what they have chosen. Not retained.
   const [heading, setHeading] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
     fetch(`${DATA}/index.json`)
       .then((answer) => {
-        if (!answer.ok) throw new Error(`the index answered ${answer.status}`);
+        if (!answer.ok) throw new Error(`the index responded ${answer.status}`);
         return answer.json() as Promise<Index>;
       })
       .then(setIndex)
       .catch((error: unknown) => setFailed(String(error)));
   }, []);
 
-  // Which difficulty to open a tune at when the link does not say: the one last looked at, if that
-  // tune has it, and otherwise its easiest.
+  // Which difficulty to open a tune at when the link does not specify one: the one last looked at,
+  // if the tune has it, and otherwise its easiest.
   const settle = useCallback(
     (tune: Tune, charts: Charts, asked: Difficulty | null) => {
       const wanted = [asked, lastDifficulty, ...difficulties(tune)].find(
         (name): name is Difficulty => name !== null && name !== '' && name in charts,
       );
       if (!wanted) {
-        setStatus({ kind: 'failed', why: 'That tune holds no chart that can be drawn.' });
+        setStatus({ kind: 'failed', why: 'That tune does not have a chart that can be drawn.' });
         return;
       }
       setLastDifficulty(wanted);
@@ -136,18 +136,18 @@ export const App = () => {
       setStatus({ kind: 'list' });
       return;
     }
-    // A chart opened from the reader's own machine lives only in this page. Its address is worth
-    // having so that the back button works, but a reload has nothing to read it from, so it falls
-    // back to the list rather than to an error about a tune that never existed.
+    // A chart opened from the reader's machine lives only in this page. Its address is worth having
+    // for the back button, but a reload has nothing to read it from. It falls back to the list
+    // rather than to an error about a tune that never existed.
     if (route.id === OPENED) {
       const it = opened.current;
       if (it) {
         setStatus({ ...it, difficulty: 'basic', kind: 'chart' });
         return;
       }
-      // Nothing was opened in this page, so this address names nothing — someone has reloaded, or
-      // followed a link to it. The list is shown and the address is put back to the list's, in
-      // place rather than as somewhere new, so that going back does not land here again.
+      // Nothing was opened in this page, and this address therefore identifies nothing. Someone has
+      // reloaded, or followed a link to it. The list is shown and the address is put back to the
+      // list's, in place rather than as a new entry. Going back therefore does not land here again.
       history.replaceState(null, '', writeRoute({ difficulty: null, id: null }));
       setStatus({ kind: 'list' });
       return;
@@ -164,7 +164,7 @@ export const App = () => {
     setStatus({ kind: 'loading' });
     fetch(`${DATA}/${tune.id}.json`)
       .then((answer) => {
-        if (!answer.ok) throw new Error(`tune ${tune.id} answered ${answer.status}`);
+        if (!answer.ok) throw new Error(`tune ${tune.id} responded ${answer.status}`);
         return answer.json() as Promise<Charts>;
       })
       .then((charts) => {
@@ -175,7 +175,7 @@ export const App = () => {
   }, [index, loaded, settle]);
 
   // Both are listened for: `popstate` is what real paths raise, `hashchange` what the hash does.
-  // Only one of them ever fires, since only one way of addressing the site is in use.
+  // Only one of them ever fires. Only one way of addressing the site is in use.
   useEffect(() => {
     follow();
     addEventListener('hashchange', follow);
@@ -186,13 +186,14 @@ export const App = () => {
     };
   }, [follow]);
 
-  if (failed) return <p className="alert alert-danger">Could not read the index: {failed}</p>;
+  if (failed) return <p className="alert alert-danger">Could not read the index. {failed}</p>;
   if (!index) return <p className="text-body-secondary">Reading the index…</p>;
 
-  // The route is always followed here rather than left to the event, because there may not be one:
-  // a chart opened from the reader's own machine does not change the location, so going back to the
-  // list writes the location it already had and the browser, rightly, says nothing has happened.
-  // Following twice is harmless — it is the same route either way, and the tune is already read.
+  // The route is always followed here rather than deferred to the event. There may not be an
+  // event. A chart opened from the reader's machine does not change the location. Going back to the
+  // list therefore writes the location it already had, and the browser, rightly, reports that
+  // nothing has happened. Following twice is harmless. It is the same route either way, and the
+  // tune is already read.
   const go = (id: number | null, difficulty: Difficulty | null = null) => {
     const where = writeRoute({ difficulty, id });
     if (base() === null) location.hash = where;
@@ -215,7 +216,7 @@ export const App = () => {
               go(OPENED);
             })
             .catch((error: unknown) =>
-              setStatus({ kind: 'failed', why: `${file.name}: ${String(error)}` }),
+              setStatus({ kind: 'failed', why: `Could not read ${file.name}. ${String(error)}` }),
             );
         }}
         onQuery={setQuery}
@@ -252,10 +253,11 @@ export const App = () => {
 };
 
 /**
- * A search of RemyWiki, which is where a tune is written about.
+ * A search of RemyWiki, where a tune is written about.
  *
- * Only on a tune's own page. In the list every title would be a link, which would make the list
- * read as a page of links rather than of tunes, and would take the reader away from it by accident.
+ * Only on a tune's page. In the list every title would be a link. Every title as a link would make
+ * the list read as a page of links rather than of tunes, and would take the reader away from it by
+ * accident.
  */
 const Remy = ({ linked, what }: { linked: boolean; what: string }) =>
   what && linked ? (
@@ -288,8 +290,8 @@ const TuneHeading = ({
       ←
     </button>
     <div>
-      {/* A chart opened from the reader's own machine is titled by its file name, which there is
-          nothing to look up. Only a tune from the collection is linked. */}
+      {/* A chart opened from the reader's machine is titled by its file name. There is nothing to
+          look up for a file name. Only a tune from the collection is linked. */}
       <h1 className="h5 mb-0">
         <Remy linked={tune.id !== OPENED} what={tune.title} />
       </h1>
@@ -297,8 +299,8 @@ const TuneHeading = ({
         <Remy linked={tune.id !== OPENED} what={tune.artist} />
       </p>
     </div>
-    {/* A chart file does not say which difficulty it is, so there is nothing to choose between and
-        nothing true to call what is shown. */}
+    {/* A chart file does not record which difficulty it is. There is therefore nothing to choose
+        between and nothing true to call what is shown. */}
     <div
       aria-label="Difficulty"
       className="btn-group btn-group-sm"

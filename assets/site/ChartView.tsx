@@ -18,16 +18,17 @@ export interface View {
    *
    * A column is cut down until it stands no taller than the window has room for, and the columns
    * are then set in one row that runs off the side and is read by scrolling across, rather than
-   * wrapping and taking the page down with them. Nothing shrinks: a note is the size it always was
+   * wrapping and taking the page down with them. Nothing shrinks. A note is the size it always was
    * and there are simply more columns.
    *
-   * A column is only ever cut at a whole second, so one second is the shortest it can be. A window
-   * too short even for that gets one and scrolls, there being nothing smaller to cut to.
+   * A column is only ever cut at a whole second, and one second is therefore the shortest it can
+   * be. A window too short even for one second gets one and scrolls, there being nothing smaller to
+   * cut to.
    */
   fit: boolean;
   /** Whether time runs downward rather than upward. */
   flip: boolean;
-  /** The lane seed, which names one of the layouts the game would pick between. */
+  /** The lane seed. It identifies one of the layouts the game would pick between. */
   seed: number;
   /** Whether the lane divisions are drawn. */
   showLanes: boolean;
@@ -42,20 +43,20 @@ export interface View {
 /**
  * How wide a screen must be on its shorter side for fitting the chart to the window to suit it.
  *
- * A phone is narrow whichever way it is turned, so its shorter side is what tells it apart from a
- * tablet or a desktop, rather than its current width, which turning it changes.
+ * A phone is narrow whichever way it is turned. Its shorter side is therefore what tells it apart
+ * from a tablet or a desktop, rather than its current width. Turning it changes the current width.
  */
 const LARGE_VIEW_MIN = 600;
 
-/** Whether the screen is large enough that fitting to it suits — that is, not a phone. */
+/** Whether the screen is large enough that fitting to it suits. That is, not a phone. */
 const largeView = () => Math.min(screen.width, screen.height) > LARGE_VIEW_MIN;
 
 /**
  * How a chart is shown before anything has been chosen.
  *
- * Both sides, both rulings, the chart's own spacing, and the first lane layout. It is fitted to the
- * window on a screen large enough to read a whole chart that way, and left at its natural length on
- * a phone, where fitting would cut it into a great many short columns.
+ * Both sides, both rulings, the chart's spacing, and the first lane layout. It is fitted to the
+ * window on a screen large enough to read a whole chart that way, and retained at its natural
+ * length on a phone, where fitting would cut it into a great many short columns.
  */
 export const defaultView = (): View => ({
   fit: largeView(),
@@ -67,28 +68,28 @@ export const defaultView = (): View => ({
   speed: 1,
 });
 
-/** The room left under the last column, so it does not sit against the window's edge. */
+/** The room under the last column. The last column does not sit against the window's edge. */
 const FOOT = 8;
 
 /**
  * How many times the fit is allowed to correct itself before it gives up.
  *
- * The correction converges in a pass or two on a steady window. A window that will not steady —
- * Android Chrome retracts its address bar as the page grows and extends it as the page shrinks, so
- * the height keeps moving under the fit — would otherwise never settle, so it is stopped after a
- * bounded number of tries rather than left to loop until React aborts the render.
+ * The correction converges in a pass or two on a steady window. A window that will not steady would
+ * otherwise never settle. Android Chrome retracts its address bar as the page grows and extends it
+ * as the page shrinks, and the height therefore moves under the fit. The correction is stopped
+ * after a bounded number of tries rather than allowed to loop until React aborts the render.
  */
 const MAX_FIT_PASSES = 8;
 
 /**
  * How tall the window is, taken as the small viewport rather than the current one.
  *
- * ``window.innerHeight`` is the *current* viewport, which on a phone grows and shrinks as the
- * browser shows and hides its address bar — and it hides it in answer to the page's own height, so
- * fitting against it feeds back on itself and never settles. ``100svh`` is the small viewport, the
- * height with the address bar shown, which the page cannot move. Fitting against it means the chart
- * fits whether the bar is shown or hidden, and the extra room the hidden bar frees is simply left
- * under the chart.
+ * ``window.innerHeight`` is the *current* viewport. On a phone it grows and shrinks as the browser
+ * shows and hides its address bar, and the browser hides the bar in response to the page's height.
+ * Fitting against it therefore feeds back on itself and never settles. ``100svh`` is the small
+ * viewport, the height with the address bar shown, and the page cannot move it. Fitting against the
+ * small viewport means the chart fits whether the bar is shown or hidden, and the extra room the
+ * hidden bar frees is simply room under the chart.
  */
 const viewportHeight = () => {
   const probe = document.createElement('div');
@@ -106,10 +107,10 @@ interface Room {
   /**
    * How tall the window is.
    *
-   * Kept here rather than read where it is used. Nothing else in this changes when the window is
-   * made shorter or taller — the chart begins where it began, and a heading is the height it was —
-   * so without the height the measurement would compare equal to the last one, nothing would be
-   * redrawn, and the chart would keep the shape it had until the page was loaded again.
+   * Stored here rather than read where it is used. Nothing else in the measurement changes when the
+   * window is made shorter or taller. The chart begins where it began, and a heading is the height
+   * it was. Without the height the measurement would compare equal to the last one, nothing would
+   * be redrawn, and the chart would retain the shape it had until the page was loaded again.
    */
   height: number;
   /** What sits under the chart, being the legend. */
@@ -123,8 +124,8 @@ interface Room {
 /**
  * How tall one second stands, read back from the stylesheet.
  *
- * The stylesheet is where that is settled, since it is what gives a column its height. Reading it
- * back is what stops the number being written down twice and drifting.
+ * The stylesheet is what gives a column its height and is therefore where the height is settled.
+ * Reading it back is what stops the number being written down twice and drifting.
  */
 const secondPx = () => {
   const kept = getComputedStyle(document.documentElement).getPropertyValue('--rb-second');
@@ -132,18 +133,18 @@ const secondPx = () => {
 };
 
 /**
- * How many seconds a column holds so that the whole chart fits the window.
+ * How many seconds a column covers when the whole chart fits the window.
  *
  * The room is measured from where the chart actually begins rather than guessed at. What sits above
- * it changes with the window — the controls take one line or two, the title wraps or does not — so
- * a fixed allowance is either wrong or wasteful, and being wasteful shows as a band of nothing
- * under the chart.
+ * it changes with the window (the controls take one line or two, the title wraps or does not). A
+ * fixed allowance is therefore either wrong or wasteful, and being wasteful shows as a band of
+ * nothing under the chart.
  *
- * Both sides are stacked when both are shown, so the room is shared between them: a chart that
- * fitted only because half of it was off the bottom would not be fitted at all.
+ * Both sides are stacked when both are shown, and the room is therefore shared between them. A
+ * chart that fitted only because half of it was off the bottom would not be fitted at all.
  *
- * A column is only ever cut at a whole second, so one second is the shortest it can be. A window
- * too short even for one gets one and scrolls.
+ * A column is only ever cut at a whole second, and one second is therefore the shortest it can be.
+ * A window too short even for one gets one and scrolls.
  */
 const secondsThatFit = (room: Room, secondPx: number, speed: number, sides: number) => {
   const left =
@@ -167,9 +168,9 @@ interface ChartViewProps {
 /**
  * Whether a value is set in a fixed width.
  *
- * A bare number and the flag word are, since a column of them is read against the one above it and
- * they line up only if every digit is the same width. A time is not: it is a sentence with a unit
- * on the end, read on its own, and setting it in a typewriter face only makes it harder to read.
+ * A bare number and the flag word are. A column of them is read against the one above it, and they
+ * line up only if every digit is the same width. A time is not. It is a sentence with a unit on the
+ * end, read on its own, and setting it in a typewriter face only makes it harder to read.
  */
 const fixed = (value: string) => !value.endsWith(' ms') && /[\d|]/.test(value);
 
@@ -194,9 +195,10 @@ export const ChartView = ({ chart, difficulty, heading, onView, tune, view }: Ch
   const [hovered, setHovered] = useState<{ at: { x: number; y: number }; note: DrawnNote } | null>(
     null,
   );
-  // Fitting shortens a column rather than shrinking it, so the notes stay the size they were and
-  // there are simply more columns. Where the chart begins is measured rather than assumed, and
-  // measured again on a resize, since that is what decides how much room is left for it.
+  // Fitting shortens a column rather than shrinking it. The notes therefore stay the size they
+  // were, and there are simply more columns. Where the chart begins is measured rather than
+  // assumed, and measured again on a resize. Where it begins is what decides how much room remains
+  // for it.
   const sides = useRef<HTMLDivElement>(null);
   const legend = useRef<HTMLDivElement>(null);
   const [room, setRoom] = useState<Room | null>(null);
@@ -220,8 +222,9 @@ export const ChartView = ({ chart, difficulty, heading, onView, tune, view }: Ch
           top: Math.round(box.top + window.scrollY),
           under: Math.ceil(under),
         };
-        // The measurement decides the column height, which decides where things are, so a new
-        // object every time would measure and re-render for ever. Only a real change is kept.
+        // The measurement decides the column height, and the column height decides where the
+        // columns are. A new object every time would therefore measure and re-render for ever.
+        // Only a real change is retained.
         return was &&
           was.gap === now.gap &&
           was.height === now.height &&
@@ -245,20 +248,20 @@ export const ChartView = ({ chart, difficulty, heading, onView, tune, view }: Ch
           Math.min(SECONDS_PER_COLUMN, secondsThatFit(room, secondPx(), view.speed, shownSides)),
         )
       : SECONDS_PER_COLUMN;
-  // What the arithmetic above cannot know: every side rounds its own height up to a whole pixel,
-  // and a border or a hairline gap can land either side of one. Rather than guess at that, the page
-  // is measured once it is drawn and a second is given back if it still does not fit.
+  // What the arithmetic above cannot know. Every side rounds its height up to a whole pixel, and a
+  // border or a hairline gap can land either side of one. Rather than guess at the rounding, the
+  // page is measured once it is drawn, and a second is given back if it still does not fit.
   const [giveBack, setGiveBack] = useState(0);
   // The correction is forgotten when what is drawn changes, or when the number of seconds that fit
-  // changes — a genuine resize. A window that only wobbles by less than a second leaves `fitSeconds`
-  // untouched, so it does not restart the fit.
+  // changes, a genuine resize. A window that only wobbles by less than a second does not alter
+  // `fitSeconds` and therefore does not restart the fit.
   useLayoutEffect(
     () => setGiveBack(0),
     [view.fit, view.speed, view.flip, view.seed, shownSides, chart, fitSeconds],
   );
-  // The number of tries is counted so the fit cannot correct for ever on a window that will not
-  // settle. It is re-armed only when the reader changes what is drawn, never on a resize, so a
-  // wobbling window stops after `MAX_FIT_PASSES` rather than looping.
+  // The number of tries is counted. The fit therefore cannot correct for ever on a window that will
+  // not settle. It is re-armed only when the reader changes what is drawn, never on a resize. A
+  // wobbling window therefore stops after `MAX_FIT_PASSES` rather than looping.
   const passes = useRef(0);
   useLayoutEffect(() => {
     passes.current = 0;
@@ -283,16 +286,16 @@ export const ChartView = ({ chart, difficulty, heading, onView, tune, view }: Ch
 
   return (
     <section className="rb-chart">
-      {/* The tune and the controls share one row and wrap onto their own when the window is too
-          narrow to hold both, so a wide screen spends its width rather than its height. */}
+      {/* The tune and the controls share one row and wrap onto separate rows when the window is too
+          narrow for both. A wide screen therefore spends its width rather than its height. */}
       <div className="rb-bar">
         {heading}
         <form
           className="rb-controls card card-body d-flex flex-row flex-wrap align-items-center"
           onSubmit={(event) => event.preventDefault()}
         >
-          {/* The last side left on cannot be switched off: a chart with neither side is nothing to
-            look at, and the way back from it is not obvious. */}
+          {/* The last side still shown cannot be switched off. A chart with neither side is nothing
+            to look at, and the way back from it is not obvious. */}
           {SIDE_LABELS.map((label, side) => {
             const only = view.sides[side] && view.sides.filter(Boolean).length === 1;
             return (
@@ -406,8 +409,8 @@ export const ChartView = ({ chart, difficulty, heading, onView, tune, view }: Ch
           </label>
         </form>
       </div>
-      {/* The speed modifier reaches the drawing through the height a column is given: the layout
-          makes the column taller and this lets it be taller on the screen. */}
+      {/* The speed modifier arrives at the drawing through the height a column is given. The layout
+          makes the column taller, and this rule lets it be taller on the screen. */}
       <div
         className={`rb-sides${view.fit ? ' rb-fitted' : ''}`}
         ref={sides}
@@ -442,9 +445,9 @@ export const ChartView = ({ chart, difficulty, heading, onView, tune, view }: Ch
           ) : null,
         )}
       </div>
-      {/* Under the chart rather than over it. It is read once and then known, so it should not be
+      {/* Under the chart rather than over it. It is read once and then known. It should not be
           spending the height the chart wants every time the page is opened. Its height is measured
-          and taken off the chart's budget, so fitting the window still fits. */}
+          and taken off the chart's budget, and fitting the window therefore still fits. */}
       <div ref={legend}>
         <Legend />
       </div>

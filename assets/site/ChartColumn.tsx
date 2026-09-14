@@ -1,5 +1,5 @@
-// One column of one side, as SVG. Every shape `shapes.ts` produces has a case here and nothing
-// else does any drawing, so what is on the screen is what that module decided.
+// One column of one side, as SVG. Every shape `shapes.ts` produces has a case here, and nothing
+// else does any drawing. What is on the screen is therefore what `shapes.ts` decided.
 import type { JSX } from 'react';
 
 import { COLORS, GUTTER, LANE_PX, SMALL_SIZE } from './chart/constants';
@@ -50,11 +50,11 @@ const draw = (shape: Shape, key: number): JSX.Element => {
   }
 };
 
-/** What one column is asked to draw. */
+/** What one column is given to draw. */
 export interface ChartColumnProps {
   column: Column;
   layout: Layout;
-  /** Told which note the pointer is on, or null when it leaves. */
+  /** Told which note the pointer is on, or null when it departs. */
   onNote: (note: DrawnNote | null, at: { x: number; y: number } | null) => void;
   /** Whether the lane divisions are drawn. */
   showLanes: boolean;
@@ -69,9 +69,9 @@ export const ChartColumn = ({ column, layout, onNote, showLanes, showTimes }: Ch
     viewBox={`0 ${layout.top} ${layout.columnWidth} ${layout.columnHeight}`}
     xmlns="http://www.w3.org/2000/svg"
   >
-    {/* The track starts after the gutter, which is the room the seconds are named in. Drawing it
-        across the whole column would put the chart under its own labels and take away the space
-        that separates one column from the next. */}
+    {/* The track starts after the gutter, the room the seconds are labelled in. Drawing it across
+        the whole column would put the chart under its labels and take away the space that
+        separates one column from the next. */}
     <rect
       fill={COLORS.trackFill}
       height={layout.columnHeight}
@@ -82,8 +82,8 @@ export const ChartColumn = ({ column, layout, onNote, showLanes, showTimes }: Ch
     />
     {showTimes && <g>{column.timeRules.map(draw)}</g>}
     {showLanes && <g>{column.laneRules.map(draw)}</g>}
-    {/* The times are not ruling and stay whether the lines they name are drawn or not: they are
-        what says where in the tune a column is. They sit in the gutter to the left of the track. */}
+    {/* The times are not ruling and remain whether the lines they label are drawn or not. They are
+        what records where in the tune a column is. They sit in the gutter left of the track. */}
     <g>
       {column.seconds.map((second) => (
         <text

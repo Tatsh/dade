@@ -1,9 +1,9 @@
-// What the reader has chosen, kept between visits.
+// What the reader has chosen, retained between visits.
 //
-// Everything that is a *setting* is kept: the switches, the sliders, the seed, how the list is
-// filed, and which difficulty was last looked at. What is not kept is where the reader happens to
-// be — the search box and the chosen heading start empty, since coming back to a search you have
-// forgotten typing is worse than typing it again.
+// Everything that is a *setting* is retained: the switches, the sliders, the seed, how the list is
+// filed, and which difficulty was last looked at. Where the reader happens to be is not retained.
+// The search box and the chosen heading start empty. Coming back to a search you have forgotten
+// typing is worse than typing it again.
 import { useCallback, useState } from 'react';
 
 const KEY = 'dade.rbplus.site';
@@ -26,11 +26,11 @@ const writeAll = (all: Record<string, unknown>) => {
 };
 
 /**
- * A piece of state that comes back the way it was left.
+ * A piece of state that comes back the way it was set.
  *
  * @param name What to file it under.
  * @param fallback What it is before anything has been chosen.
- * @param sound Whether a kept value is still one this version understands. A setting that has
+ * @param sound Whether a stored value is still one this version understands. A setting that has
  *   changed shape since it was written falls back rather than being trusted.
  */
 export const useSetting = <T>(
@@ -52,7 +52,7 @@ export const useSetting = <T>(
   return [value, keep];
 };
 
-/** Whether a kept value is one of a known set of strings. */
+/** Whether a stored value is one of a known set of strings. */
 export const isOneOf =
   <T extends string>(...allowed: readonly T[]) =>
   (value: unknown): value is T =>

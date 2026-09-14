@@ -1,11 +1,11 @@
 // Where a chart's columns, lanes, and times land. A port of `_Layout` in
 // `dade/rbplus/render.py`.
 //
-// One thing is deliberately different. The renderer draws every column of both sides onto a single
-// image, so its coordinates are absolute and a column has to be found by its side and its number.
-// The site draws each column into an SVG of its own, so a column's origin is always zero and the
-// band always starts at the top. Everything that decides *where in time* something falls is
-// unchanged; only the frame it is measured against is smaller.
+// One detail is deliberately different. The renderer draws every column of both sides onto a single
+// image. Its coordinates are therefore absolute, and a column has to be found by its side and its
+// number. The site draws each column into a separate SVG. A column's origin is therefore always
+// zero, and the band always starts at the top. Everything that decides *where in time* a moment
+// falls is unchanged; only the frame it is measured against is smaller.
 import {
   GUTTER,
   HOLD_NOTE_TYPE,
@@ -16,14 +16,14 @@ import {
 } from './constants';
 import type { Chart, Note } from './types';
 
-/** How long a hold note is held, in milliseconds, or zero when it is not one. */
+/** How long a hold note lasts, in milliseconds, or zero when it is not one. */
 export const holdLength = (note: Note) => (note.type === HOLD_NOTE_TYPE ? note.target[0] : 0);
 
 /**
  * The first and last millisecond the chart has to cover.
  *
- * The end comes from the notes rather than the chart's own end time, which can fall a little past
- * the last of them. A hold reaches past the note that starts it and is counted.
+ * The end comes from the notes rather than the chart's end time. The end time can fall a little
+ * past the last note. A hold extends past the note that starts it and is counted.
  */
 export const columnSpan = (notes: Note[], endTime: number): [number, number] => {
   if (!notes.length) return [0, Math.max(endTime, 1)];
@@ -46,15 +46,15 @@ export class Layout {
   readonly flip: boolean;
   /** How many lanes are drawn, used or not. */
   readonly lanes = LANE_COUNT;
-  /** How far one second reaches. */
+  /** How far one second extends. */
   readonly pixelsPerSecond: number;
-  /** How many seconds one column holds. */
+  /** How many seconds one column covers. */
   readonly secondsPerColumn: number;
-  /** How many milliseconds one column holds. */
+  /** How many milliseconds one column covers. */
   readonly spanMs: number;
   /** The first millisecond drawn. */
   readonly startMs: number;
-  /** The band's top edge, which is always zero here. */
+  /** The band's top edge, always zero here. */
   readonly top = 0;
 
   private constructor(init: {
@@ -78,12 +78,12 @@ export class Layout {
   }
 
   /**
-   * Lay a chart out.
+   * Build the layout for a chart.
    *
    * @param chart The parsed chart.
-   * @param secondsPerColumn How many seconds one column holds.
-   * @param speed The speed modifier, which spreads the notes further apart without changing how
-   *   much time a column holds, exactly as it does in play.
+   * @param secondsPerColumn How many seconds one column covers.
+   * @param speed The speed modifier. It spreads the notes further apart without changing how much
+   *   time a column covers, exactly as it does in play.
    * @param flip Whether time runs downward.
    */
   static forChart(chart: Chart, secondsPerColumn: number, speed: number, flip: boolean) {
@@ -101,7 +101,7 @@ export class Layout {
     });
   }
 
-  /** The middle of one lane, measured from the column's own left edge. */
+  /** The middle of one lane, measured from the column's left edge. */
   laneCenter(lane: number) {
     return GUTTER + lane * LANE_PX + Math.floor(LANE_PX / 2);
   }
@@ -109,12 +109,12 @@ export class Layout {
   /**
    * The column and the row a time lands on, or null when it falls outside the chart.
    *
-   * Time runs upward by default, so the earliest moment in a column sits at its bottom edge.
+   * Time runs upward by default. The earliest moment in a column therefore sits at its bottom edge.
    */
   place(timeMs: number): { column: number; y: number } | null {
     const offset = timeMs - this.startMs;
-    // Python floors towards negative infinity and JavaScript truncates towards zero, so a time
-    // before the first note would land in column -0 rather than out of the chart.
+    // Python floors towards negative infinity and JavaScript truncates towards zero. A time before
+    // the first note would otherwise land in column -0 rather than outside the chart.
     const column = Math.floor(offset / this.spanMs);
     if (column < 0 || column >= this.columns) return null;
     const within = Math.trunc(
@@ -124,7 +124,7 @@ export class Layout {
     return { column, y: this.flip ? this.top + within : this.bottom - within };
   }
 
-  /** Where a moment `distance` further on lands, which is the way a hold runs from its note. */
+  /** Where a moment `distance` further on lands, the way a hold runs from its note. */
   later(y: number, distance: number) {
     return this.flip ? y + distance : y - distance;
   }

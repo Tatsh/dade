@@ -1,5 +1,5 @@
-// Finding a tune: search, the two ways of filing, and the list itself. What each of those means is
-// `browse.ts`; this only shows it.
+// Finding a tune: search, the two ways of filing, and the list itself. What each of the three means
+// is `browse.ts`; this module only shows it.
 import { useMemo } from 'react';
 
 import {
@@ -17,7 +17,7 @@ interface SongListProps {
   index: Index;
   onFiling: (filing: Filing) => void;
   onHeading: (heading: string | null) => void;
-  /** Given a chart file the reader has picked, which is read here rather than sent anywhere. */
+  /** Given a chart file the reader has picked. It is read here rather than sent anywhere. */
   onOpen: (file: File) => void;
   onQuery: (query: string) => void;
   onTune: (tune: Tune) => void;
@@ -65,9 +65,9 @@ export const SongList = ({
           type="search"
           value={query}
         />
-        {/* A chart from outside the collection. Only a deciphered one is read: what a tune package
-            holds is enciphered, and the page carries no key. Nothing is uploaded — the file is read
-            where it is. */}
+        {/* A chart from outside the collection. Only a deciphered one is read. What a tune package
+            stores is enciphered, and the page does not have a key. Nothing is uploaded, and the
+            file is read where it is. */}
         <label className="btn btn-sm btn-outline-secondary mb-0" htmlFor="rb-open">
           Open a chart file…
           <input
@@ -93,7 +93,7 @@ export const SongList = ({
               }}
               type="button"
             >
-              {which === 'letter' ? 'A–Z' : '五十音'}
+              {which === 'letter' ? 'A-Z' : '五十音'}
             </button>
           ))}
         </div>
