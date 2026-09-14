@@ -45,7 +45,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "anyio>=4.15.0",
+  "anyio>=4.15.1",
   "bascom>=0.2.0",
   "click>=8.5.0",
   "cryptography<49; sys_platform == 'darwin' and platform_machine == 'x86_64'",
