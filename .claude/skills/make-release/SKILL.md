@@ -28,7 +28,7 @@ with the changelog.
    opens a series the table does not already list, replace the stale entry with the new one (a
    `0.5.1` release is covered by `0.5.x`); a patch inside a series already listed does not need a
    change.
-   State which series you dropped, since dropping one ends its support.
+   Record which series you dropped. Dropping one ends its support.
 
 1. **Launch agents in parallel** before bumping:
    - **copy-editor** - to fix prose in the changelog entries.
@@ -85,9 +85,12 @@ with the changelog.
    are unsure whether a change is intended, prefer to revert and stop with a report rather
    than ship the bump with a corrupted dependency or transitive version.
 
+1. **Set the release date in `CITATION.cff`** if the file exists. Replace the `date-released`
+   value with today's date in `YYYY-MM-DD` form. `cz bump` does not update this field.
+
 1. **Verify version-bound and source-bound files.** Stop and report if any check fails:
    - **`CITATION.cff`** if present: `version` matches `NEW` and `date-released` equals today's
-     date. If `cz bump` did not update either, the file is missing from
+     date. If `cz bump` did not update `version`, the file is missing from
      `[tool.commitizen].version_files` - add it in `.wiswa.jsonnet` and restart the bump.
    - **Flatpak manifest** (`flatpak/**`, any `*.flatpak.{json,yaml}`) if present: every version
      reference is updated to `NEW` (cz must drive this through `version_files` - fix the

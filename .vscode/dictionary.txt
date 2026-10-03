@@ -767,7 +767,6 @@ winget
 wiswa
 wiswa's
 wojciech
-worktree
 worl
 wrld
 wrlds

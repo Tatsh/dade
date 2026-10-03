@@ -4,12 +4,12 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
-  "commitizen>=4.18.0",
+  "commitizen>=4.19.0",
   "cz-path>=0.0.7",
   "mypy>=2.3.1",
-  "ruff==0.16.8",
-  "ty>=0.0.78",
-  "yapf>=0.43.0",
+  "ruff==0.16.9",
+  "ty>=0.0.84",
+  "yapf>=0.43.0"
 ]
 docs = [
   "autodoc-pydantic>=2.2.0",
@@ -21,7 +21,7 @@ docs = [
   "sphinx-datatables>=1.0.0",
   "sphinx-immaterial>=0.13.9",
   "sphinx>=9.1.0; python_version >= \"3.13\"",
-  "tomlkit>=0.15.1",
+  "tomlkit>=0.15.1"
 ]
 tests = [
   "coveralls>=4.1.0",
@@ -29,7 +29,7 @@ tests = [
   "pytest-asyncio>=1.4.0",
   "pytest-cov>=7.1.0",
   "pytest-mock>=3.15.1",
-  "pytest>=9.1.1",
+  "pytest>=9.1.1"
 ]
 
 [project]
@@ -42,7 +42,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
-  "Typing :: Typed",
+  "Typing :: Typed"
 ]
 dependencies = [
   "anyio>=4.15.1",
@@ -56,7 +56,7 @@ dependencies = [
   "numpy>=2.3; platform_machine == 'ARM64' and sys_platform == 'win32' and python_version >= '3.11'",
   "pillow>=12.3.0",
   "rich>=15.0.0",
-  "typing-extensions>=4.16.0",
+  "typing-extensions>=4.16.0"
 ]
 description = "Extract and convert assets from a collection of PC and console video games."
 keywords = [
@@ -79,7 +79,7 @@ keywords = [
   "neversoft",
   "rage software",
   "tone sphere",
-  "tony hawk",
+  "tony hawk"
 ]
 license = "MIT"
 name = "dade"
@@ -119,7 +119,7 @@ version_files = [
   "man/dade.1",
   "package.json",
   "sh.tat.dade.yml",
-  "snapcraft.yaml",
+  "snapcraft.yaml"
 ]
 version_provider = "pep621"
 
@@ -134,7 +134,7 @@ omit = [
   "dade/bitrock/password_cracker/cuda.py",
   "dade/bitrock/password_cracker/opencl.py",
   "dade/*/__main__.py",
-  "dade/*/typing.py",
+  "dade/*/typing.py"
 ]
 show_missing = true
 
@@ -149,7 +149,7 @@ omit = [
   "dade/bitrock/password_cracker/cuda.py",
   "dade/bitrock/password_cracker/opencl.py",
   "dade/*/__main__.py",
-  "dade/*/typing.py",
+  "dade/*/typing.py"
 ]
 
 [tool.doc8]
@@ -222,7 +222,7 @@ ignore = [
   "missing-trailing-comma",
   "multi-line-summary-first-line",
   "subprocess-without-shell-equals-true",
-  "suspicious-subprocess-import",
+  "suspicious-subprocess-import"
 ]
 preview = true
 

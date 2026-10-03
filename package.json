@@ -1,8 +1,8 @@
 {
   "_wiswa": {
-    "commandLine": "wiswa",
-    "lastRun": "2026-09-14T01:53:11Z",
-    "version": "73e9f7f"
+    "commandLine": "wiswa -q --skip-remote --cache-time 86400",
+    "lastRun": "2026-10-03T00:35:55Z",
+    "version": "4bb9fe2"
   },
   "contributors": ["Andrew Udvare <audvare@gmail.com>"],
   "cspell": {
@@ -27,6 +27,7 @@
       ".git/**",
       ".yarn/**/*.cjs",
       ".vscode/extensions.json",
+      ".wiswa-ci/**",
       "dist/**",
       "man/**",
       "dade/rbplus/site/**"
@@ -47,18 +48,18 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "bootstrap": "^5.3.3",
-    "cspell": "^10.2.2",
+    "cspell": "^10.3.4",
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.0",
     "html-webpack-plugin": "^5.6.3",
-    "markdownlint-cli2": "^0.23.2",
+    "markdownlint-cli2": "^0.23.3",
     "mini-css-extract-plugin": "^2.9.2",
     "playwright": "^1.62.1",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.9",
     "prettier-plugin-ini": "^1.3.0",
     "prettier-plugin-sort-json": "^4.2.0",
-    "prettier-plugin-toml": "^2.0.6",
-    "pyright": "^1.1.413",
+    "prettier-plugin-toml": "^3.0.2",
+    "pyright": "^1.1.414",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sass": "^1.83.0",
@@ -115,7 +116,7 @@
     "showFound": true
   },
   "name": "dade",
-  "packageManager": "yarn@4.18.0",
+  "packageManager": "yarn@4.18.1",
   "prettier": {
     "endOfLine": "lf",
     "iniSpaceAroundEquals": true,
@@ -125,6 +126,12 @@
         "files": ["*.json.dist", "package.json"],
         "options": {
           "parser": "json"
+        }
+      },
+      {
+        "files": ["*.toml"],
+        "options": {
+          "singleQuote": false
         }
       }
     ],
