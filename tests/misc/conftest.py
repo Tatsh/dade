@@ -1,7 +1,7 @@
 """Shared pytest configuration for the ``dade.misc`` suite."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 import plistlib
 import struct
@@ -487,10 +487,10 @@ def _self_signed(key: Any, common_name: str) -> bytes:
     ])
     builder = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(
         key.public_key()).serial_number(CERTIFICATE_SERIAL).not_valid_before(
-            datetime(2020, 1, 1, tzinfo=timezone.utc)).not_valid_after(
-                datetime(2030, 1, 1, tzinfo=timezone.utc)).add_extension(x509.BasicConstraints(
-                    ca=False, path_length=None),
-                                                                         critical=True))
+            datetime(2020, 1, 1, tzinfo=UTC)).not_valid_after(datetime(
+                2030, 1, 1, tzinfo=UTC)).add_extension(x509.BasicConstraints(ca=False,
+                                                                             path_length=None),
+                                                       critical=True))
     return builder.sign(key, hashes.SHA256()).public_bytes(Encoding.DER)
 
 

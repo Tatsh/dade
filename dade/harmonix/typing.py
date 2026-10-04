@@ -1,9 +1,7 @@
 """Shared typing helpers and converter result types for :py:mod:`dade.amplitude`."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeAlias, TypedDict
-
-from typing_extensions import NotRequired
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NotRequired, TypeAlias, TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

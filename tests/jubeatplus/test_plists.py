@@ -1,7 +1,7 @@
 """Tests for :py:mod:`dade.jubeatplus.plists`."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 import plistlib
 
@@ -27,7 +27,7 @@ def test_json_safe_leaves_plain_values_alone() -> None:
 
 
 def test_json_safe_converts_a_date() -> None:
-    when = datetime(2014, 11, 11, 17, 45, tzinfo=timezone.utc)
+    when = datetime(2014, 11, 11, 17, 45, tzinfo=UTC)
     assert json_safe({'when': when}) == {'when': '2014-11-11T17:45:00+00:00'}
 
 

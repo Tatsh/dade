@@ -17,12 +17,10 @@ rejected.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Self, cast
 import logging
 import plistlib
 import zipfile
-
-from typing_extensions import Self
 
 from dade.common.bfcodec import DEFAULT_IV, BFCodec
 

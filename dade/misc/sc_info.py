@@ -50,7 +50,7 @@ usual candidates that puts the sample bundles' purchase dates in the plausible p
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, NamedTuple
 import hashlib
 import plistlib
@@ -275,7 +275,7 @@ STOREFRONTS: Mapping[int, str] = {
 
 :meta hide-value:
 """
-QUICKTIME_EPOCH = datetime(1904, 1, 1, tzinfo=timezone.utc)
+QUICKTIME_EPOCH = datetime(1904, 1, 1, tzinfo=UTC)
 """Epoch the ``sinf`` timestamps count seconds from.
 
 :meta hide-value:

@@ -9,9 +9,7 @@ for :py:func:`dade.bitrock.password_cracker.crack.crack`. It verifies them on th
 from __future__ import annotations
 
 from itertools import product
-from typing import TYPE_CHECKING, Literal
-
-from typing_extensions import assert_never
+from typing import TYPE_CHECKING, Literal, assert_never
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator, Sequence

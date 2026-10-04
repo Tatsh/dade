@@ -8,7 +8,7 @@ own bookkeeping is reported beside it.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, NamedTuple
 import io
 import plistlib
@@ -35,10 +35,10 @@ _FREE_LISTS = 32
 _PLIST_MAGIC = b'bplist00'
 _FIRST_PRINTABLE = 0x20
 _LAST_PRINTABLE = 0x7E
-_MAC_EPOCH = datetime(1904, 1, 1, tzinfo=timezone.utc)
+_MAC_EPOCH = datetime(1904, 1, 1, tzinfo=UTC)
 # A ``dutc`` value counts 1/65536 of a second.
 _MAC_TICKS = 65536
-_CF_EPOCH = datetime(2001, 1, 1, tzinfo=timezone.utc)
+_CF_EPOCH = datetime(2001, 1, 1, tzinfo=UTC)
 # Finder writes a modification date either as a ``dutc`` or as a blob of these two codes.
 _DATE_BLOBS = ('moDD', 'modD')
 _CF_DATE = struct.Struct('<d')

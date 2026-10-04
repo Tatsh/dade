@@ -17,8 +17,7 @@ from dade.common.io import BytesReader, u16, u32
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-
-    from typing_extensions import Self
+    from typing import Self
 
     from dade.common.io import Reader
 

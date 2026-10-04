@@ -52,7 +52,7 @@ def decode_text(raw: bytes,
     for encoding in encodings:
         try:
             return raw.decode(encoding)
-        except UnicodeDecodeError:  # ruff:ignore[try-except-in-loop]
+        except UnicodeDecodeError:
             continue
     return raw.decode(fallback)
 

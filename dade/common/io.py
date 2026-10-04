@@ -8,9 +8,7 @@ import struct
 
 if TYPE_CHECKING:
     from types import TracebackType
-    from typing import BinaryIO
-
-    from typing_extensions import Self
+    from typing import BinaryIO, Self
 
     from .typing import Endian
 

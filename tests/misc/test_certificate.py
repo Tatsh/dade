@@ -1,7 +1,7 @@
 """Tests for :py:mod:`dade.misc.certificate`."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from cryptography import x509
@@ -29,8 +29,8 @@ if TYPE_CHECKING:
     )
 
 _NAME = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'Test')])
-_BEFORE = datetime(2020, 1, 1, tzinfo=timezone.utc)
-_AFTER = datetime(2030, 1, 1, tzinfo=timezone.utc)
+_BEFORE = datetime(2020, 1, 1, tzinfo=UTC)
+_AFTER = datetime(2030, 1, 1, tzinfo=UTC)
 
 
 def _cert(
@@ -86,7 +86,7 @@ def test_extensions(ec_certificate_der: bytes) -> None:
 
 def test_key_usage_extension_is_broken_into_flags(rsa_certificate_der: bytes) -> None:
     # The sample certificates have no keyUsage; build one that does.
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes
@@ -97,18 +97,18 @@ def test_key_usage_extension_is_broken_into_flags(rsa_certificate_der: bytes) ->
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'Usage')])
     der = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(
         key.public_key()).serial_number(1).not_valid_before(
-            datetime(2020, 1, 1, tzinfo=timezone.utc)).not_valid_after(
-                datetime(2030, 1, 1, tzinfo=timezone.utc)).add_extension(
-                    x509.KeyUsage(digital_signature=True,
-                                  content_commitment=False,
-                                  key_encipherment=True,
-                                  data_encipherment=False,
-                                  key_agreement=False,
-                                  key_cert_sign=False,
-                                  crl_sign=False,
-                                  encipher_only=False,
-                                  decipher_only=False),
-                    critical=True).sign(key, hashes.SHA256()).public_bytes(Encoding.DER))
+            datetime(2020, 1, 1,
+                     tzinfo=UTC)).not_valid_after(datetime(2030, 1, 1, tzinfo=UTC)).add_extension(
+                         x509.KeyUsage(digital_signature=True,
+                                       content_commitment=False,
+                                       key_encipherment=True,
+                                       data_encipherment=False,
+                                       key_agreement=False,
+                                       key_cert_sign=False,
+                                       crl_sign=False,
+                                       encipher_only=False,
+                                       decipher_only=False),
+                         critical=True).sign(key, hashes.SHA256()).public_bytes(Encoding.DER))
     fields = dict(load_certificate(der).extensions[0].fields)
     assert fields['digitalSignature'] is True
     assert fields['keyEncipherment'] is True

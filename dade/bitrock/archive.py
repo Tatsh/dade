@@ -9,8 +9,7 @@ from .sansio import CookFS
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
-
-    from typing_extensions import Self
+    from typing import Self
 
     from .typing import PageCompression, PayloadInfo, Reader
 

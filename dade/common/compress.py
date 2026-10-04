@@ -1,10 +1,8 @@
 """One-shot DEFLATE decompression helpers shared by the game submodules."""
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, assert_never
 import zlib
-
-from typing_extensions import assert_never
 
 __all__ = ('GZIP_WBITS', 'inflate')
 

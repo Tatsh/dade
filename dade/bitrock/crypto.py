@@ -14,12 +14,10 @@ References
 from __future__ import annotations
 
 from hashlib import sha256
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, assert_never
 import binascii
 import lzma
 import struct
-
-from typing_extensions import assert_never
 
 from dade.common.compress import inflate
 from dade.common.twofish import Twofish, cbc_decrypt, cbc_encrypt
