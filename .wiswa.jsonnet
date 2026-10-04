@@ -51,20 +51,9 @@ local utils = import 'utils.libjsonnet';
       ],
       jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
       mido: utils.latestPypiPackageVersionCaret('mido'),
-      // numpy 2.3 dropped Python 3.10 (it requires >=3.11) and the project still supports it, so
-      // cap at the last 2.2.x release. Windows on ARM64 is the exception. numpy ships win_arm64
-      // wheels only from 2.3, and there (Python is always >=3.11) require >=2.3 to install from a
-      // wheel rather than build from source.
-      numpy: [
-        {
-          markers: "platform_machine != 'ARM64' or sys_platform != 'win32' or python_version < '3.11'",
-          version: '<=2.2.6',
-        },
-        {
-          markers: "platform_machine == 'ARM64' and sys_platform == 'win32' and python_version >= '3.11'",
-          version: '>=2.3',
-        },
-      ],
+      // Not the latest release: numpy 2.5 requires Python 3.12. 2.3.2 is the first release with
+      // wheels for Python 3.11 and 3.14 on Linux x86_64 and aarch64 and on Windows ARM64.
+      numpy: '>=2.3.2',
       pillow: utils.latestPypiPackageVersionCaret('pillow'),
       rich: utils.latestPypiPackageVersionCaret('rich'),
     },
@@ -167,7 +156,7 @@ local utils = import 'utils.libjsonnet';
       '@types/react-dom': '^19.0.0',
       bootstrap: '^5.3.3',
       'css-loader': '^7.1.2',
-      'css-minimizer-webpack-plugin': '^7.0.0',
+      'css-minimizer-webpack-plugin': '^8.0.0',
       'html-webpack-plugin': '^5.6.3',
       'mini-css-extract-plugin': '^2.9.2',
       // Drives a real browser over the built site, the only way to check that a page is positioned
@@ -176,12 +165,12 @@ local utils = import 'utils.libjsonnet';
       react: '^19.0.0',
       'react-dom': '^19.0.0',
       sass: '^1.83.0',
-      'sass-loader': '^16.0.4',
+      'sass-loader': '^17.0.1',
       'terser-webpack-plugin': '^5.3.11',
       'ts-loader': '^9.5.2',
-      typescript: '^5.7.2',
+      typescript: '^7.0.2',
       webpack: '^5.97.1',
-      'webpack-cli': '^6.0.1',
+      'webpack-cli': '^7.2.3',
     },
     scripts+: {
       build: 'webpack --mode production',

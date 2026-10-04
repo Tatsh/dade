@@ -18,6 +18,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   property lists that store a view's settings are all decoded; every other blob is reported as hex.
   The allocator's blocks, directories, and free lists are reported alongside the records.
 
+### Removed
+
+- Support for Python 3.10. Python 3.11 or later is now required.
+
 ## [0.1.0] - 2026-09-10
 
 ### Added
