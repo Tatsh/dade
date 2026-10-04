@@ -51,9 +51,18 @@ local utils = import 'utils.libjsonnet';
       ],
       jinja2: utils.latestPypiPackageVersionCaret('jinja2'),
       mido: utils.latestPypiPackageVersionCaret('mido'),
-      // Not the latest release: numpy 2.5 requires Python 3.12. 2.3.2 is the first release with
-      // wheels for Python 3.11 and 3.14 on Linux x86_64 and aarch64 and on Windows ARM64.
-      numpy: '>=2.3.2',
+      // numpy 2.5 requires Python 3.12, so Python 3.11 stays on 2.4. 2.3.2 is the first release
+      // with Python 3.11 wheels on Linux x86_64 and aarch64 and on Windows ARM64.
+      numpy: [
+        {
+          markers: "python_version < '3.12'",
+          version: '>=2.3.2,<2.5',
+        },
+        {
+          markers: "python_version >= '3.12'",
+          version: utils.latestPypiPackageVersionCaret('numpy'),
+        },
+      ],
       pillow: utils.latestPypiPackageVersionCaret('pillow'),
       rich: utils.latestPypiPackageVersionCaret('rich'),
     },
