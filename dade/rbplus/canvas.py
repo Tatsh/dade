@@ -25,7 +25,7 @@ from PIL import Image, ImageDraw
 from dade.common.fonts import load_font
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping, Sequence
+    from collections.abc import Generator, Iterator, Mapping, Sequence
     from pathlib import Path
 
 __all__ = ('Canvas', 'PillowCanvas', 'SVGCanvas', 'canvas_for')
@@ -378,9 +378,9 @@ class PillowCanvas:
 
     @contextmanager
     def note(  # ruff: ignore[no-self-use]
-            self,
-            details: Mapping[str, Any]  # ruff: ignore[unused-method-argument]
-    ) -> Iterator[None]:
+        self,
+        details: Mapping[str, Any]  # ruff: ignore[unused-method-argument]
+    ) -> Generator[None, None, None]:
         """
         Draw one note. A drawn image reports nothing, and the details are dropped.
 
@@ -400,7 +400,7 @@ class PillowCanvas:
     def marks(  # ruff: ignore[no-self-use]
             self,
             kind: str  # ruff: ignore[unused-method-argument]
-    ) -> Iterator[None]:
+    ) -> Generator[None, None, None]:
         """
         Draw ruling of one kind, always shown by a drawn image.
 
@@ -420,7 +420,7 @@ class PillowCanvas:
     def tied(  # ruff: ignore[no-self-use]
             self,
             index: int  # ruff: ignore[unused-method-argument]
-    ) -> Iterator[None]:
+    ) -> Generator[None, None, None]:
         """
         Draw what follows a note's lane, placed only once by a drawn image.
 
@@ -437,7 +437,7 @@ class PillowCanvas:
         yield
 
     @contextmanager
-    def head(self) -> Iterator[None]:  # ruff: ignore[no-self-use]
+    def head(self) -> Generator[None, None, None]:  # ruff: ignore[no-self-use]
         """
         Draw a note's disc, stored apart only where a page needs it.
 
@@ -633,7 +633,7 @@ class SVGCanvas:
             (x, y, x + size * len(body), y + size))
 
     @contextmanager
-    def note(self, details: Mapping[str, Any]) -> Iterator[None]:
+    def note(self, details: Mapping[str, Any]) -> Generator[None, None, None]:
         """
         Wrap everything drawn inside the block in a group with the note's details.
 
@@ -660,7 +660,7 @@ class SVGCanvas:
                 box)
 
     @contextmanager
-    def marks(self, kind: str) -> Iterator[None]:
+    def marks(self, kind: str) -> Generator[None, None, None]:
         """
         Wrap ruling of one kind, letting a page offer to omit it.
 
@@ -681,7 +681,7 @@ class SVGCanvas:
             self._add(f'<g class="rb-rule rb-rule-{kind}">{inner}</g>', _merge(parts))
 
     @contextmanager
-    def tied(self, index: int) -> Iterator[None]:
+    def tied(self, index: int) -> Generator[None, None, None]:
         """
         Wrap what follows one note's lane, letting a fresh placement of the chart move it too.
 
@@ -702,7 +702,7 @@ class SVGCanvas:
             self._add(f'<g data-tie="{index}">{inner}</g>', _merge(parts))
 
     @contextmanager
-    def head(self) -> Iterator[None]:
+    def head(self) -> Generator[None, None, None]:
         """
         Wrap a note's disc, letting a page retain its shape while it stretches everything else.
 
@@ -718,7 +718,7 @@ class SVGCanvas:
             self._add(f'<g class="rb-head">{inner}</g>', _merge(parts))
 
     @contextmanager
-    def _collect(self) -> Iterator[list[_Part]]:
+    def _collect(self) -> Generator[list[_Part], None, None]:
         # Gather what is drawn inside the block instead of writing it out, letting it be wrapped or
         # filed away. Nesting is not needed and is not supported.
         previous, self._buffer = self._buffer, []
