@@ -25,7 +25,7 @@ from PIL import Image, ImageDraw
 from dade.common.fonts import load_font
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterator, Mapping, Sequence
+    from collections.abc import Generator, Mapping, Sequence
     from pathlib import Path
 
 __all__ = ('Canvas', 'PillowCanvas', 'SVGCanvas', 'canvas_for')
@@ -172,7 +172,7 @@ class Canvas(Protocol):
         ...
 
     @contextmanager
-    def note(self, details: Mapping[str, Any]) -> Iterator[None]:
+    def note(self, details: Mapping[str, Any]) -> Generator[None, None, None]:
         """
         Mark everything drawn inside the block as belonging to one note.
 
@@ -192,7 +192,7 @@ class Canvas(Protocol):
         ...
 
     @contextmanager
-    def marks(self, kind: str) -> Iterator[None]:
+    def marks(self, kind: str) -> Generator[None, None, None]:
         """
         Mark everything drawn inside the block as ruling of one kind.
 
@@ -212,7 +212,7 @@ class Canvas(Protocol):
         ...
 
     @contextmanager
-    def tied(self, index: int) -> Iterator[None]:
+    def tied(self, index: int) -> Generator[None, None, None]:
         """
         Mark everything drawn inside the block as following one note's lane.
 
@@ -232,7 +232,7 @@ class Canvas(Protocol):
         ...
 
     @contextmanager
-    def head(self) -> Iterator[None]:
+    def head(self) -> Generator[None, None, None]:
         """
         Mark a note's disc, apart from anything that runs on from it.
 

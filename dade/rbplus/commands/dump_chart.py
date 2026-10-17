@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 import json
 import logging
 import zipfile
@@ -69,7 +69,7 @@ def _read_bare(path: Path, difficulty: str | None, *, key: bytes | None,
         msg = (f'`{path.name}` does not state which difficulty it is. '
                f'Specify it, as in `{path.name} har`.')
         raise PackageError(msg)
-    return cast('TuneInfoDict', {}), entry, parse_chart(read_chart_file(path, iv=iv, key=key))
+    return {}, entry, parse_chart(read_chart_file(path, iv=iv, key=key))
 
 
 # A key or an initialisation vector given as hex, the form both are usually written down in.
