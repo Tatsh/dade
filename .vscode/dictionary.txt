@@ -473,7 +473,6 @@ numpy
 numpydoc
 nums
 nverts
-nvrtc
 objfile
 objtex
 offs

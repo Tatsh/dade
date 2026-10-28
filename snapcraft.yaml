@@ -20,7 +20,8 @@ parts:
     plugin: 'python'
     python-packages:
       - '.'
-    source: '.'
+    source: 'https://github.com/Tatsh/dade.git'
+    source-tag: 'v0.2.0'
     stage-packages: []
 platforms:
   amd64:
