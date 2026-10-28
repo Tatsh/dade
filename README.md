@@ -43,24 +43,25 @@ Run `dade --help` to list the games, and `dade <game> --help` to list a game's s
 
 ## Games
 
-| Sub-command       | Game(s)                                     | Publisher / developer         |
-| ----------------- | ------------------------------------------- | ----------------------------- |
-| `dade amplitude`  | _Amplitude_ (PS2)                           | Harmonix                      |
-| `dade bit192`     | _Tone Sphere_                               | bit192labs                    |
-| `dade bitrock`    | BitRock / InstallBuilder installers         | BitRock / VMware              |
-| `dade frequency`  | _FreQuency_ (PS2)                           | Harmonix                      |
-| `dade i76`        | _Interstate '76_ and _Interstate '82_       | Activision                    |
-| `dade incoming`   | _Incoming_ (PC and Dreamcast)               | Rage Software / Interplay     |
-| `dade jubeatplus` | _jubeat plus_ (iOS)                         | Konami                        |
-| `dade marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup) | Marmalade / Ideaworks         |
-| `dade maxpayne`   | _Max Payne_ and _Max Payne 2_ (PC)          | Remedy Entertainment          |
-| `dade misc`       | Formats belonging to no single game         | None                          |
-| `dade monopoly08` | _Monopoly_ (2008, multi-platform)           | Electronic Arts               |
-| `dade rbplus`     | _REFLEC BEAT plus_ (iOS)                    | Konami                        |
-| `dade rhythmin`   | _pop'n rhythmin_ (iOS)                      | Konami                        |
-| `dade sopranos`   | _The Sopranos: Road to Respect_ (PS2)       | 7 Studios / THQ               |
-| `dade thps2pc`    | _Tony Hawk's Pro Skater 2_ (PC)             | Neversoft / Activision        |
-| `dade xg2`        | _Extreme-G_ and _Extreme-G 2_ (N64 and PC)  | Probe Entertainment / Acclaim |
+| Sub-command       | Game(s)                                      | Publisher / developer         |
+| ----------------- | -------------------------------------------- | ----------------------------- |
+| `dade amplitude`  | _Amplitude_ (PS2)                            | Harmonix                      |
+| `dade bit192`     | _Tone Sphere_                                | bit192labs                    |
+| `dade bitrock`    | BitRock / InstallBuilder installers          | BitRock / VMware              |
+| `dade frequency`  | _FreQuency_ (PS2)                            | Harmonix                      |
+| `dade i76`        | _Interstate '76_ and _Interstate '82_        | Activision                    |
+| `dade incoming`   | _Incoming_ (PC and Dreamcast)                | Rage Software / Interplay     |
+| `dade jubeatplus` | _jubeat plus_ (iOS)                          | Konami                        |
+| `dade marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup)  | Marmalade / Ideaworks         |
+| `dade maxpayne`   | _Max Payne_ and _Max Payne 2_ (PC)           | Remedy Entertainment          |
+| `dade misc`       | Formats belonging to no single game          | None                          |
+| `dade monopoly08` | _Monopoly_ (2008, multi-platform)            | Electronic Arts               |
+| `dade rbplus`     | _REFLEC BEAT plus_ (iOS)                     | Konami                        |
+| `dade rhythmin`   | _pop'n rhythmin_ (iOS)                       | Konami                        |
+| `dade sopranos`   | _The Sopranos: Road to Respect_ (PS2)        | 7 Studios / THQ               |
+| `dade tgr`        | _Top Gear Rally_ (N64) and _Boss Rally_ (PC) | Boss Game Studios / Kemco     |
+| `dade thps2pc`    | _Tony Hawk's Pro Skater 2_ (PC)              | Neversoft / Activision        |
+| `dade xg2`        | _Extreme-G_ and _Extreme-G 2_ (N64 and PC)   | Probe Entertainment / Acclaim |
 
 ## Installation
 
@@ -477,6 +478,67 @@ given one of each, rather than all of them at once.
 
 The retail disc converts clean, and `--ignore-failures` is not needed for it. Pass the flag to log
 and skip an asset that will not convert instead of stopping.
+
+## Top Gear Rally and Boss Rally
+
+```shell
+dade tgr extract usa.z64 jpn.z64 eur.z64 "Boss Rally.cue" -o out/
+```
+
+One command converts the cartridge of _Top Gear Rally_ (Nintendo 64) and the disc of _Boss Rally_,
+its Windows release. A source ending in `.z64`, `.v64`, or `.n64` is a cartridge image in any byte
+order, and is written under `n64/` in a directory for its release (`us`, `jp`, or `eu`). Any other
+source is the disc, given as a cue sheet, the `.bin` of a cue/bin pair, an ISO image, or a directory
+of the disc or of an installation, and is written under `pc/`. A cartridge image is checked against
+the SHA-1 of its release before anything is read from it.
+
+The cartridge stores its assets as chains of zlib streams after the program, and each is found by
+inflating it. The tables of the program identify the cars and the tracks.
+
+| Asset                                     | Output                                 |
+| ----------------------------------------- | -------------------------------------- |
+| Car                                       | `.glb` with its four wheels, and PNGs  |
+| Track                                     | `.glb` of every placed model, and PNGs |
+| Sky panorama of a track                   | `-sky.glb`, and PNGs                   |
+| Model of the menus and the title sequence | `.glb`, and PNGs                       |
+| Music, FastTracker 2 modules              | `.xm`, and a WAV rendered by `ffmpeg`  |
+| Sky reflected by the cars, day and night  | `.png`                                 |
+| Images of the menus (North America)       | `.png`                                 |
+| Any other asset                           | `.bin`, inflated                       |
+
+The cars and the tracks of the disc are the structures of the cartridge, and they are converted the
+same way.
+
+| File of the disc            | Output                                            |
+| --------------------------- | ------------------------------------------------- |
+| `cars/*.rca`                | `.glb` and PNGs                                   |
+| `tracks/*.trk`              | `.glb`, `-sky.glb`, and PNGs                      |
+| `cargfx/*.ci4` and `*.lut4` | `.png` of the reflected sky                       |
+| `*.bmp`                     | `.png`                                            |
+| `*.ico`                     | One `.png` for each size                          |
+| `*.img`                     | `.png`                                            |
+| `BossRally.pod`             | Its entries, and a `.glb` of the model it stores  |
+| `*.exe` and `*.dll`         | Copied, with a `.resources` directory beside each |
+| CD audio                    | `music/trackNN.flac`, from a cue sheet only       |
+| Any other file              | Copied                                            |
+
+The resources of a program are its icons and cursors (one PNG for each size), its bitmaps (PNG), its
+string tables (one JSON file), and every other resource as stored.
+
+A model is z up in the game and is turned to glTF's y up. The display lists are followed as the game
+draws them, and the textures they sample are embedded in the `.glb` and written beside it as PNG,
+named after their offset. Many textures of the walls and signs are stored on their side, upside
+down, or mirrored, the texture coordinates turning them back. Each PNG is therefore turned upright,
+with the direction of down worked out from the faces that use it. The paint of a car is a
+placeholder the game replaces with the colour a player picks, and the cars are written painted red.
+
+The reflected sky is a strip the game addresses from the normals of the body, a face pointing up
+reading its bottom, and it is stored with the ground at the top. It is written the other way up.
+
+The music plays once in each WAV. The `.xm` files loop as the game plays them.
+
+`ffmpeg` must be on `PATH` or given with `--ffmpeg-path` to render the music and to encode the CD
+audio. Pass `--no-audio` to skip both, and `--debug` for verbose logging.
 
 ## Max Payne and Max Payne 2
 

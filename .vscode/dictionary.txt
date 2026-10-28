@@ -42,8 +42,11 @@ automodule
 autouse
 backslashreplace
 bada
+badc
 bandagehead
 bascom
+bbbbhhih
+bbbbhhii
 bbhhh
 bbhi
 bcasino
@@ -58,7 +61,9 @@ bidx
 bigf
 bigs
 bindatload
+bitangent
 bitfield
+bitfields
 bitpos
 bitrock
 bmax
@@ -79,6 +84,7 @@ cand
 caplog
 capsys
 cardboardalpha
+cargfx
 catmull
 cbar
 cdda
@@ -94,6 +100,7 @@ chunksize
 cigam
 circ
 ciwmodel
+cleargeometrymode
 clen
 clut
 cluts
@@ -134,6 +141,7 @@ datatable
 datatables
 dbfs
 dblclick
+dcba
 ddrs
 ddrsplus
 deadbeefdeadbeef
@@ -237,6 +245,7 @@ getchannel
 getcolors
 geteuid
 getextrema
+getimage
 getpixel
 gigayears
 glbs
@@ -294,6 +303,7 @@ ihhiihh
 ihhiii
 iibbbbb
 iihhh
+iiih
 ijbq
 ijsq
 iloc
@@ -329,12 +339,14 @@ jubeatplus
 jubeatskmpledata
 junkjunk
 kdei
+kemco
 kext
 keybind
 keybinds
 keysounded
 kocjan
 ksdataformat
+kseg
 kwargs
 lacromial
 lanczos
@@ -360,6 +372,7 @@ lightmaps
 linecap
 linejoin
 linters
+loadblock
 loadtile
 loadtlut
 lproj
@@ -372,9 +385,11 @@ lzhuf
 lzss
 magick
 magics
+mainicon
 manylinux
 marm
 maskable
+maskt
 maxcolors
 maxidx
 maxpayne
@@ -416,6 +431,7 @@ nege
 neversoft
 newmtl
 newtex
+ngre
 nhoriz
 nlist
 nloop
@@ -446,6 +462,9 @@ nsamp
 nsfr
 nsmoc
 nsym
+ntrj
+ntrp
+ntst
 nullglob
 numblocks
 numpad
@@ -563,6 +582,7 @@ roundtrips
 rpaths
 rpks
 rrggbb
+rsrc
 rstcheck
 rstr
 samp
@@ -592,6 +612,8 @@ secp
 segs
 setattr
 setcombine
+setgeometrymode
+setothermode
 setprimcolor
 settile
 settilesize
@@ -603,6 +625,7 @@ sharedtextures
 shdr
 shellcheck
 shellformat
+shiftt
 shiya
 shoehighhill
 shopt
@@ -612,6 +635,7 @@ shpx
 shya
 siga
 signtool
+siii
 simfile
 simfile's
 simfiles
@@ -702,6 +726,7 @@ thps
 timecents
 titletranslit
 tlut
+tmem
 tmov
 tobytes
 toctree

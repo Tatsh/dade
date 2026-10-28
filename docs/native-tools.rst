@@ -16,7 +16,8 @@ skipped and the affected files are copied verbatim.
      - Extracting ``DATA1.CAB`` from a PC ISO, when ``isodump`` is not found.
      -
    * - `ffmpeg <https://ffmpeg.org/>`_
-     - Rewrapping *jubeat plus* ``.caf`` sound effects as WAV.
+     - Rewrapping *jubeat plus* ``.caf`` sound effects as WAV, rendering the *Top Gear Rally*
+       music to WAV, and encoding the *Boss Rally* CD audio as FLAC.
      - ``--ffmpeg-path``
    * - `gdiextract <https://github.com/MachXNU/gdiextract>`_
      - Extracting the ISO 9660 file system from a Dreamcast GDI.

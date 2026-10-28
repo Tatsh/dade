@@ -11,6 +11,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `dade tgr extract` converts the assets of _Top Gear Rally_ (Nintendo 64, the North American,
+  Japanese, and European releases) and of _Boss Rally_, its Windows release. Cars, tracks, the sky
+  panoramas, and the models of the menus become GLB with their textures embedded and written beside
+  them as upright PNGs. The music is written as the FastTracker 2 modules it ships as
+  and rendered to WAV. The disc may be a cue sheet, a `.bin`, an ISO image, or a directory. Its
+  bitmaps, icons, and `.img` images become PNG, the resources of its programs are written out, and
+  its CD audio becomes FLAC.
+- The ISO 9660 reader reads the Joliet tree when an image has one, and the long names it records
+  are returned with their case retained.
 - `dade misc ds-store` reads a Finder `.DS_Store` desktop database and writes it as JSON. The file
   is a Buddy allocator file storing one B-tree, and the tree is flattened into one entry per file
   name, with the `.` entry belonging to the folder itself. Icon positions (`Iloc`), window frames

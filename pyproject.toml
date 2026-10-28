@@ -63,6 +63,7 @@ keywords = [
   "amplitude",
   "bit192labs",
   "bitrock",
+  "boss rally",
   "dreamcast",
   "extractor",
   "extreme-g",
@@ -77,7 +78,8 @@ keywords = [
   "neversoft",
   "rage software",
   "tone sphere",
-  "tony hawk"
+  "tony hawk",
+  "top gear rally"
 ]
 license = "MIT"
 name = "dade"

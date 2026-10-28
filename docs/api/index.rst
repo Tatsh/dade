@@ -30,5 +30,6 @@ and :doc:`../utilities`.
    rbplus
    rhythmin
    sopranos
+   tgr
    thps2pc
    xg2

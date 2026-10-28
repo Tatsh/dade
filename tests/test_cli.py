@@ -26,6 +26,7 @@ _GAMES = (
     'rbplus',
     'rhythmin',
     'sopranos',
+    'tgr',
     'thps2pc',
     'xg2',
 )
