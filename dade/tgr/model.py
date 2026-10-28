@@ -171,10 +171,10 @@ def _read(memory: bytes | bytearray,
           address: int,
           *,
           bound: TextureKey | None = None,
-          lit: bool | None = None) -> tuple[Triangle, ...]:
+          lit: bool) -> tuple[Triangle, ...]:
     reader = DisplayListReader(memory, base)
-    if lit is not None:
-        reader.geometry_mode |= 0x20000 if lit else 0
+    if lit:
+        reader.geometry_mode |= 0x20000
     reader.bound = bound
     reader.run(address)
     return tuple(reader.triangles)
