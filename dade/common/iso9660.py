@@ -4,8 +4,10 @@ Read-only ISO 9660 filesystem reader.
 Parse a standard ISO 9660 image and extract files by path. The image may be an in-memory buffer or
 any :py:class:`~dade.common.io.Reader`, and it therefore reads from a cue/bin data track as well.
 
-Only the primary volume descriptor is used. Joliet (the UCS-2 supplementary volume descriptor for
-long names) is not yet handled; paths are the short upper-case names of the primary descriptor.
+When the image has a Joliet supplementary volume descriptor, its tree is read instead of the tree
+of the primary descriptor, and paths are the long names it records with their case retained.
+Otherwise paths are the short upper-case names of the primary descriptor. Lookups ignore case in
+both trees.
 """
 from __future__ import annotations
 
@@ -30,6 +32,31 @@ _PVD_OFFSET = 16 * 2048
 """
 _STANDARD_ID = b'\x01CD001'
 """Volume-descriptor type byte (``1``) followed by the ``CD001`` standard identifier.
+
+:meta hide-value:
+"""
+_JOLIET_TYPE = 2
+"""Volume-descriptor type of a supplementary volume descriptor.
+
+:meta hide-value:
+"""
+_TERMINATOR_TYPE = 255
+"""Volume-descriptor type that ends the descriptor set.
+
+:meta hide-value:
+"""
+_JOLIET_ESCAPES = frozenset({b'%/@', b'%/C', b'%/E'})
+"""Escape sequences marking a supplementary descriptor as Joliet, one for each UCS-2 level.
+
+:meta hide-value:
+"""
+_ESCAPE_OFFSET = 88
+"""Offset of the escape sequences within a supplementary volume descriptor.
+
+:meta hide-value:
+"""
+_DESCRIPTOR_LIMIT = 32
+"""The most volume descriptors read before giving up on a terminator.
 
 :meta hide-value:
 """
@@ -105,7 +132,18 @@ class Iso9660Image:
             raise InvalidFormatError(msg)
         self._block_size = u16(pvd, _BLOCK_SIZE_OFFSET)
         self._files: dict[str, tuple[int, int]] = {}
-        self._walk(pvd[_ROOT_RECORD_OFFSET:_ROOT_RECORD_OFFSET + _ROOT_RECORD_LENGTH], '')
+        self._names: dict[str, str] = {}
+        self._joliet = False
+        root = pvd
+        for index in range(1, _DESCRIPTOR_LIMIT):
+            descriptor = reader.read(_PVD_OFFSET + index * 2048, 2048)
+            if descriptor[1:6] != _STANDARD_ID[1:] or descriptor[0] == _TERMINATOR_TYPE:
+                break
+            if descriptor[0] == _JOLIET_TYPE and descriptor[_ESCAPE_OFFSET:_ESCAPE_OFFSET +
+                                                            3] in _JOLIET_ESCAPES:
+                root, self._joliet = descriptor, True
+                break
+        self._walk(root[_ROOT_RECORD_OFFSET:_ROOT_RECORD_OFFSET + _ROOT_RECORD_LENGTH], '')
 
     @classmethod
     def from_bytes(cls, data: bytes | bytearray | memoryview) -> Self:
@@ -150,7 +188,7 @@ class Iso9660Image:
             The POSIX-style path and the file size in bytes, sorted by path.
         """
         for path in sorted(self._files):
-            yield path, self._files[path][1]
+            yield self._names[path], self._files[path][1]
 
     def locate(self, path: str) -> tuple[int, int]:
         """
@@ -247,12 +285,13 @@ class Iso9660Image:
             identifier = child[_ID_OFFSET:_ID_OFFSET + child[_ID_LENGTH_OFFSET]]
             if identifier in {b'\x00', b'\x01'}:
                 continue
-            name = _VERSION_RE.sub('', identifier.decode('ascii'))
+            name = _VERSION_RE.sub('', identifier.decode('utf-16-be' if self._joliet else 'ascii'))
             if child[_FLAGS_OFFSET] & _FLAG_DIRECTORY:
                 self._walk(child, f'{prefix}{name}/')
             else:
-                self._files[f'{prefix}{name}'.upper()] = (u32(
-                    child, _EXTENT_OFFSET), u32(child, _SIZE_OFFSET))
+                key = f'{prefix}{name}'.upper()
+                self._names[key] = f'{prefix}{name}' if self._joliet else key
+                self._files[key] = (u32(child, _EXTENT_OFFSET), u32(child, _SIZE_OFFSET))
 
 
 def _normalize(path: str) -> str:

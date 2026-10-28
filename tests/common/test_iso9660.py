@@ -81,3 +81,59 @@ def test_extent_out_of_range_raises(make_iso9660: Callable[..., bytes]) -> None:
     image[16 * 2048 + 156 + 2:16 * 2048 + 156 + 6] = (0xFFFF).to_bytes(4, 'little')
     with pytest.raises(InvalidFormatError, match='outside the image'):
         Iso9660Image.from_bytes(bytes(image))
+
+
+def _joliet_record(identifier: bytes, extent: int, size: int, *, is_dir: bool) -> bytes:
+    length = 33 + len(identifier) + (1 - len(identifier) % 2)
+    record = bytearray(length)
+    record[0] = length
+    record[2:10] = extent.to_bytes(4, 'little') + extent.to_bytes(4, 'big')
+    record[10:18] = size.to_bytes(4, 'little') + size.to_bytes(4, 'big')
+    record[25] = 0x02 if is_dir else 0x00
+    record[32] = len(identifier)
+    record[33:33 + len(identifier)] = identifier
+    return bytes(record)
+
+
+def _joliet_image(escape: bytes = b'%/E') -> bytes:
+    block = 2048
+    image = bytearray(24 * block)
+
+    def descriptor(type_: int, root: int) -> bytes:
+        sector = bytearray(block)
+        sector[0:6] = bytes((type_,)) + b'CD001'
+        sector[6] = 1
+        sector[128:132] = block.to_bytes(2, 'little') + block.to_bytes(2, 'big')
+        if type_ == 2:
+            sector[88:91] = escape
+        sector[156:190] = _joliet_record(b'\x00', root, block, is_dir=True)
+        return bytes(sector)
+
+    def directory(lba: int, parent: int, *records: bytes) -> None:
+        extent = (_joliet_record(b'\x00', lba, block, is_dir=True) +
+                  _joliet_record(b'\x01', parent, block, is_dir=True) + b''.join(records))
+        image[lba * block:lba * block + len(extent)] = extent
+
+    image[16 * block:17 * block] = descriptor(1, 19)
+    image[17 * block:18 * block] = descriptor(2, 20)
+    image[18 * block:18 * block + 6] = b'\xffCD001'
+    directory(19, 19, _joliet_record(b'README.TXT;1', 22, 5, is_dir=False))
+    directory(20, 20, _joliet_record('Data'.encode('utf-16-be'), 21, block, is_dir=True),
+              _joliet_record('ReadMe.txt;1'.encode('utf-16-be'), 22, 5, is_dir=False))
+    directory(21, 20, _joliet_record('Long File Name.bin'.encode('utf-16-be'), 23, 4, is_dir=False))
+    image[22 * block:22 * block + 5] = b'hello'
+    image[23 * block:23 * block + 4] = b'long'
+    return bytes(image)
+
+
+def test_joliet_tree_is_read_with_original_case() -> None:
+    image = Iso9660Image.from_bytes(_joliet_image())
+    assert list(image.iter_files()) == [('Data/Long File Name.bin', 4), ('ReadMe.txt', 5)]
+    assert image.read_file('data/long file name.BIN') == b'long'
+    assert image.contains('README.TXT')
+
+
+def test_supplementary_descriptor_without_joliet_escape_is_ignored() -> None:
+    image = Iso9660Image.from_bytes(_joliet_image(b'\0\0\0'))
+    assert list(image.iter_files()) == [('README.TXT', 5)]
+    assert image.read_file('readme.txt') == b'hello'
