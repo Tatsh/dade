@@ -137,3 +137,26 @@ def test_supplementary_descriptor_without_joliet_escape_is_ignored() -> None:
     image = Iso9660Image.from_bytes(_joliet_image(b'\0\0\0'))
     assert list(image.iter_files()) == [('README.TXT', 5)]
     assert image.read_file('readme.txt') == b'hello'
+
+
+def _image_without_terminator() -> bytes:
+    block = 2048
+    root_lba = 48
+    image = bytearray((root_lba + 1) * block)
+    for sector in range(16, root_lba):
+        descriptor = bytearray(block)
+        descriptor[0:6] = b'\x01CD001'
+        descriptor[6] = 1
+        descriptor[128:132] = block.to_bytes(2, 'little') + block.to_bytes(2, 'big')
+        descriptor[156:190] = _joliet_record(b'\x00', root_lba, block, is_dir=True)
+        image[sector * block:(sector + 1) * block] = descriptor
+    image[root_lba * block:root_lba * block +
+          68] = (_joliet_record(b'\x00', root_lba, block, is_dir=True) +
+                 _joliet_record(b'\x01', root_lba, block, is_dir=True))
+    return bytes(image)
+
+
+def test_descriptor_scan_exhausts_without_a_terminator() -> None:
+    image = Iso9660Image.from_bytes(_image_without_terminator())
+    assert list(image.iter_files()) == []
+    assert not image.contains('anything')

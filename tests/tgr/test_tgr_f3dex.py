@@ -176,3 +176,8 @@ def test_vertices_past_the_slots_or_memory_are_not_loaded() -> None:
     reader = _run(_vtx(0x100, 3, 62) + _vtx(0x1F8, 1, 0) + _tri(62, 63, 0) + _END)
     assert [c.position for c in reader.triangles[0].corners] == [(0.0, 0.0, 0.0), (10.0, 0.0, 0.0),
                                                                  (0.0, 0.0, 0.0)]
+
+
+def test_command_loop_stops_at_its_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr('dade.tgr.f3dex._MAX_COMMANDS', 2)
+    assert _run(_cmd(0xE7) * 3).triangles == []
