@@ -27,9 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DADE" "1" "Sep 10, 2026" "0.1.0" "dade"
+.TH "DADE" "1" "Oct 28, 2026" "0.2.0" "dade"
 .SH NAME
-dade \- dade v0.1.0
+dade \- dade v0.2.0
 .SH COMMAND REFERENCE
 .sp
 Every game is a sub\-group of the top\-level \fBdade\fP command, and each tool is invoked as
@@ -1663,7 +1663,7 @@ Unpack each FILE, a Dance Dance Revolution S+ song container, into a directory.
 .sp
 Every section is written out as stored. The banner also becomes a PNG, the metadata and note
 count tables also become JSON, and each set of step charts also becomes a StepMania simfile.
-Nothing replaces the section it came from.
+No conversion replaces the section it came from.
 .sp
 The simfile\(aqs \fB#OFFSET\fP is measured from the audio and needs \fBffmpeg\fP; pass \fB\-\-gap\fP
 to set it yourself.
@@ -2917,6 +2917,38 @@ Arguments
 .B MODEL
 Required argument
 .UNINDENT
+.SS ds\-store
+.sp
+Convert the Finder desktop database FILE to JSON on standard output.
+.sp
+Records are grouped by the file name they belong to, and the \fB\&.\fP entry belongs to the folder
+itself. Icon positions, window frames, and the property lists that store a view\(aqs settings are
+decoded; every other blob is reported as hex. The allocator\(aqs blocks, directories, and free
+lists are reported alongside the records.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade misc ds\-store [OPTIONS] FILE
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B FILE
+Required argument
+.UNINDENT
 .SS macho
 .sp
 Read the properties of a Mach\-O executable.
@@ -3961,6 +3993,64 @@ Also convert textures and audio after extracting.
 .TP
 .B \-\-ignore\-failures
 Log and skip a conversion failure instead of stopping.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B SOURCES
+Required argument(s)
+.UNINDENT
+.SS tgr
+.sp
+Top Gear Rally (Nintendo 64) and Boss Rally (Windows) assets.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade tgr [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.SS extract
+.sp
+Convert every asset of cartridge images and of the Boss Rally disc.
+.sp
+Each SOURCE is a cartridge image (.z64, .v64, or .n64), a directory of the disc or of an
+installation, an ISO image, or the cue sheet or .bin of a cue/bin pair.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade tgr extract [OPTIONS] SOURCES...
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+Directory to write to.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-ffmpeg\-path <ffmpeg_path>
+Path to ffmpeg, used to render the music and to encode the CD audio.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-no\-audio
+Skip rendering the music and the CD audio.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-d, \-\-debug
+Enable debug level logging.
 .UNINDENT
 .sp
 Arguments

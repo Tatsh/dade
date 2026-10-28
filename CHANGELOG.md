@@ -9,22 +9,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.2.0] - 2026-10-28
+
 ### Added
 
 - `dade tgr extract` converts the assets of _Top Gear Rally_ (Nintendo 64, the North American,
-  Japanese, and European releases) and of _Boss Rally_, its Windows release. Cars, tracks, the sky
+  Japanese, and European releases) and of _Boss Rally_, its Windows release. Cars, tracks, sky
   panoramas, and the models of the menus become GLB with their textures embedded and written beside
-  them as upright PNGs. The music is written as the FastTracker 2 modules it ships as
-  and rendered to WAV. The disc may be a cue sheet, a `.bin`, an ISO image, or a directory. Its
-  bitmaps, icons, and `.img` images become PNG, the resources of its programs are written out, and
-  its CD audio becomes FLAC.
+  them as upright PNGs. The music is written as the FastTracker 2 modules it ships as and rendered
+  to WAV. The disc may be a cue sheet, a `.bin`, an ISO image, or a directory. Its bitmaps, icons,
+  and `.img` images become PNG, the resources of its programs are written out, and its CD audio
+  becomes FLAC.
 - The ISO 9660 reader reads the Joliet tree when an image has one, and the long names it records
   are returned with their case retained.
 - `dade misc ds-store` reads a Finder `.DS_Store` desktop database and writes it as JSON. The file
   is a Buddy allocator file storing one B-tree, and the tree is flattened into one entry per file
   name, with the `.` entry belonging to the folder itself. Icon positions (`Iloc`), window frames
-  (`fwi0`), modification dates in either the `dutc` form or the Core Foundation blob form, and the
-  property lists that store a view's settings are all decoded; every other blob is reported as hex.
+  (`fwi0`), modification dates in either the `dutc` form or the Core Foundation blob form, and
+  property lists that store a view's settings are decoded; every other blob is reported as hex.
   The allocator's blocks, directories, and free lists are reported alongside the records.
 
 ### Removed
@@ -328,7 +330,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Ported the asset-format reference into the Sphinx documentation under `docs/formats/` and
   expanded the documentation into separate, well-organised pages.
 
-[unreleased]: https://github.com/Tatsh/dade/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/Tatsh/dade/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Tatsh/dade/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Tatsh/dade/compare/v0.0.2...v0.1.0
 [0.0.2]: https://github.com/Tatsh/dade/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/Tatsh/dade/releases/tag/v0.0.1
