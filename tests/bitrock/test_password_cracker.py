@@ -246,7 +246,10 @@ def test_mangle_append_years() -> None:
     assert len(result) == 2031 - 1940
 
 
-def test_crack_auto_backend_falls_back_to_cpu(encrypted_installer: Path) -> None:
+def test_crack_auto_backend_falls_back_to_cpu(encrypted_installer: Path,
+                                              mocker: MockerFixture) -> None:
+    mocker.patch('dade.bitrock.password_cracker.cuda.list_devices', return_value=[])
+    mocker.patch('dade.bitrock.password_cracker.opencl.list_devices', return_value=[])
     assert crack(encrypted_installer, [b'ab'], backend='auto') == b'ab'
 
 
@@ -260,7 +263,7 @@ def test_crack_cpu_serial_periodic_progress(encrypted_installer: Path,
     # module object explicitly before patching its clock.
     crack_module = importlib.import_module('dade.bitrock.password_cracker.crack')
     # A clock that jumps 0.2s per read forces the periodic-report branch on every candidate.
-    mocker.patch.object(crack_module.time, 'monotonic', side_effect=itertools.count(0.0, 0.2))
+    mocker.patch.object(crack_module, 'time').monotonic.side_effect = itertools.count(0.0, 0.2)
     calls: list[tuple[int, bytes]] = []
     result = crack(encrypted_installer, [b'no', b'ab'],
                    backend='cpu',
@@ -285,7 +288,7 @@ def test_crack_main_wordlist_with_rule(runner: CliRunner, encrypted_installer: P
 def test_crack_main_reports_large_duration(runner: CliRunner, encrypted_installer: Path,
                                            mocker: MockerFixture) -> None:
     mocker.patch('dade.bitrock.commands.crack.crack', return_value=b'ab')
-    mocker.patch('dade.bitrock.commands.crack.time.monotonic', side_effect=[0.0, 0.0, 4e18])
+    mocker.patch('dade.bitrock.commands.crack.time').monotonic.side_effect = [0.0, 0.0, 4e18]
     result = runner.invoke(
         crack_main,
         [str(encrypted_installer), '--charset', 'ab', '--max-length', '2', '--backend', 'cpu'])
