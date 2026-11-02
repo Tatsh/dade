@@ -1,5 +1,6 @@
 *.cl
 *.kate-swp
+*.lock
 *.log
 *.min.js
 *.tsbuildinfo
