@@ -364,6 +364,7 @@ libaudio
 libera
 libjsonnet
 librarys
+librsvg
 libsg
 libsonnet
 lightmap
@@ -584,6 +585,7 @@ rrggbb
 rsrc
 rstcheck
 rstr
+rsvg
 samp
 samplelength
 samplestart

@@ -1,4 +1,5 @@
 * text=auto eol=lf
 *.lock binary
+/.github/workflows/actions.lock text diff merge
 /.yarn/**/*.cjs binary
 /dade/rbplus/site/** linguist-generated=true
