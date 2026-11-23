@@ -21,7 +21,7 @@ parts:
     python-packages:
       - '.'
     source: 'https://github.com/Tatsh/dade.git'
-    source-tag: 'v0.2.0'
+    source-tag: 'v0.3.0'
     stage-packages: []
 platforms:
   amd64:
@@ -31,5 +31,5 @@ platforms:
 source-code: 'https://github.com/Tatsh/dade'
 summary: 'Extract and convert assets from a collection of PC and console video games.'
 title: 'dade'
-version: '0.2.0'
+version: '0.3.0'
 website: 'https://tatsh.github.io/dade/'

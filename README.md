@@ -6,7 +6,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/dade)](https://pypi.org/project/dade/)
 [![GitHub tag (with filter)](https://img.shields.io/github/v/tag/Tatsh/dade)](https://github.com/Tatsh/dade/tags)
 [![License](https://img.shields.io/github/license/Tatsh/dade)](https://github.com/Tatsh/dade/blob/master/LICENSE.txt)
-[![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/Tatsh/dade/v0.2.0/master)](https://github.com/Tatsh/dade/compare/v0.2.0...master)
+[![GitHub commits since latest release (by SemVer including pre-releases)](https://img.shields.io/github/commits-since/Tatsh/dade/v0.3.0/master)](https://github.com/Tatsh/dade/compare/v0.3.0...master)
 [![CodeQL](https://github.com/Tatsh/dade/actions/workflows/codeql.yml/badge.svg)](https://github.com/Tatsh/dade/actions/workflows/codeql.yml)
 [![QA](https://github.com/Tatsh/dade/actions/workflows/qa.yml/badge.svg)](https://github.com/Tatsh/dade/actions/workflows/qa.yml)
 [![Tests](https://github.com/Tatsh/dade/actions/workflows/tests.yml/badge.svg)](https://github.com/Tatsh/dade/actions/workflows/tests.yml)
@@ -55,6 +55,7 @@ Run `dade --help` to list the games, and `dade <game> --help` to list a game's s
 | `dade marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup)  | Marmalade / Ideaworks         |
 | `dade maxpayne`   | _Max Payne_ and _Max Payne 2_ (PC)           | Remedy Entertainment          |
 | `dade misc`       | Formats belonging to no single game          | None                          |
+| `dade mkw`        | _Mario Kart World_ (Switch 2)                | Nintendo                      |
 | `dade monopoly08` | _Monopoly_ (2008, multi-platform)            | Electronic Arts               |
 | `dade rbplus`     | _REFLEC BEAT plus_ (iOS)                     | Konami                        |
 | `dade rhythmin`   | _pop'n rhythmin_ (iOS)                       | Konami                        |
@@ -68,6 +69,18 @@ Run `dade --help` to list the games, and `dade <game> --help` to list a game's s
 ```shell
 pip install dade
 ```
+
+## Mario Kart World
+
+```shell
+dade mkw extract '/path/to/Mario Kart World [title][version]' -o output/
+```
+
+Pass an extracted NUP directory or its `romfs` directory. The command converts models to GLB, with
+one file per detail level, textures to PNG, sound effects to WAV, and soundtrack streams to FLAC. It
+does not retain source game formats. Install `vgmstream-cli` for audio decoding and FFmpeg for FLAC
+conversion. Use `--pattern` or `--limit` to restrict a run, and `--force` to regenerate existing
+files. See [Mario Kart World documentation](docs/mkw.rst) for output layout and model limitations.
 
 ## Incoming
 

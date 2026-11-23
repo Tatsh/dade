@@ -9,6 +9,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+## [0.3.0] - 2026-11-23
+
 ### Added
 
 - `dade mkw extract` converts Mario Kart World models into one GLB per

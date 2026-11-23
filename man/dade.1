@@ -27,9 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "DADE" "1" "Oct 28, 2026" "0.2.0" "dade"
+.TH "DADE" "1" "Nov 23, 2026" "0.3.0" "dade"
 .SH NAME
-dade \- dade v0.2.0
+dade \- dade v0.3.0
 .SH COMMAND REFERENCE
 .sp
 Every game is a sub\-group of the top\-level \fBdade\fP command, and each tool is invoked as
@@ -3100,6 +3100,67 @@ Arguments
 .INDENT 0.0
 .TP
 .B STRINGS
+Required argument
+.UNINDENT
+.SS mkw
+.sp
+Convert Mario Kart World assets from an extracted NUP directory.
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade mkw [OPTIONS] COMMAND [ARGS]...
+.EE
+.UNINDENT
+.UNINDENT
+.SS extract
+.sp
+Extract and convert assets from SOURCE.
+.SS Raises
+.INDENT 0.0
+.TP
+.B click.ClickException
+Conversion failed.
+.UNINDENT
+.sp
+Usage
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+dade mkw extract [OPTIONS] SOURCE
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Options
+.INDENT 0.0
+.TP
+.B \-o, \-\-output\-dir <output_dir>
+\fBRequired\fP Destination directory.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-limit <limit>
+Inspect at most this many files.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-pattern <pattern>
+Glob pattern of romfs paths to convert.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-\-force
+Replace existing converted files.
+.UNINDENT
+.sp
+Arguments
+.INDENT 0.0
+.TP
+.B SOURCE
 Required argument
 .UNINDENT
 .SS monopoly08
