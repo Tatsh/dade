@@ -54,7 +54,9 @@ dependencies = [
   "numpy>=2.5.4; python_version >= '3.12'",
   "pillow>=13.0.0",
   "rich>=15.0.0",
-  "typing-extensions>=4.16.0"
+  "texture2ddecoder>=1.0.5",
+  "typing-extensions>=4.16.0",
+  "zstandard>=0.25.0"
 ]
 description = "Extract and convert assets from a collection of PC and console video games."
 keywords = [

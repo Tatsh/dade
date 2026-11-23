@@ -34,6 +34,7 @@ arow
 artisttranslit
 ascontiguousarray
 asdt
+astc
 asyncio
 atst
 audo
@@ -56,6 +57,9 @@ beginswith
 behavior
 bemani
 bfcodec
+bfres
+bfstm
+bfwav
 bgra
 bidx
 bigf
@@ -68,13 +72,16 @@ bitpos
 bitrock
 bmax
 bmin
+bntx
 bootram
 boxalpha
 bpms
 bpps
+brti
 bsky
 bspan
 bsum
+bwav
 bwsp
 byteswap
 cabdata
@@ -142,6 +149,7 @@ datatables
 dbfs
 dblclick
 dcba
+ddecoder
 ddrs
 ddrsplus
 deadbeefdeadbeef
@@ -169,6 +177,7 @@ displaylist
 docstrings
 doctree
 doctrees
+dougchansan
 dreamcast
 drec
 dsdb
@@ -201,7 +210,9 @@ esbenp
 esbonio
 excinfo
 extern
+extm
 falsepredicate
+fanm
 fcomment
 fdirs
 feetboots
@@ -212,6 +223,8 @@ firstsecond
 firsttex
 flathub
 fluidsynth
+fmat
+fmdl
 fmtword
 fntx
 fontconfig
@@ -222,16 +235,19 @@ fqsah
 frag
 frds
 frec
+fres
 frma
 fromarray
 frombuffer
 frombytes
+fshp
 fsindex
 ftre
 ftyp
 fuhl
 functools
 fvmlib
+fvtx
 gagigugego
 gamedata
 gbix
@@ -258,6 +274,7 @@ gojūon
 gojūon's
 gputextureformat
 graphviz
+gridify
 gymnopedie
 hairblondeside
 hairpick
@@ -370,6 +387,7 @@ libsonnet
 lightmap
 lightmapped
 lightmaps
+linalg
 linecap
 linejoin
 linters
@@ -451,6 +469,7 @@ noone
 noqa
 norecursedirs
 noseparator
+nostdin
 notachart
 notarytool
 notcfs
@@ -481,6 +500,7 @@ okumura
 onefile
 oneline
 outofsync
+outros
 overpromised
 packetised
 pagezero
@@ -578,6 +598,7 @@ rndartt
 rndobject
 rocm
 romaji
+romfs
 roundtrips
 rpaths
 rpks
@@ -659,6 +680,7 @@ snapcraft
 sndh
 sneaker
 sniker
+snorm
 sosb
 sosp
 soundbank
@@ -758,6 +780,7 @@ uncompiled
 undraft
 undrafted
 unframeable
+unorm
 unparseable
 unshield
 unshields
@@ -821,6 +844,7 @@ zizmor
 zonv
 zplays
 zrating
+zstandard
 zstr
 ztitle
 Ångström

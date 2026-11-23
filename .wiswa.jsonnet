@@ -66,6 +66,8 @@ local utils = import 'utils.libjsonnet';
       ],
       pillow: utils.latestPypiPackageVersionCaret('pillow'),
       rich: utils.latestPypiPackageVersionCaret('rich'),
+      texture2ddecoder: utils.latestPypiPackageVersionCaret('texture2ddecoder'),
+      zstandard: utils.latestPypiPackageVersionCaret('zstandard'),
     },
     tests+: {
       'pytest-asyncio': utils.latestPypiPackageVersionCaret('pytest-asyncio'),

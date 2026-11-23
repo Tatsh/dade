@@ -9,6 +9,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- `dade mkw extract` converts Mario Kart World models into one GLB per
+  detail level, textures into PNG, sound effects into WAV, and BGM streams
+  into FLAC from an unpacked NUP directory.
+
 ## [0.2.0] - 2026-10-28
 
 ### Added

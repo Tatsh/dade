@@ -25,6 +25,7 @@ from .jubeatplus.main import jubeatplus as jubeatplus_group
 from .marmalade.main import marm as marmalade_group
 from .maxpayne.main import cli as maxpayne_group
 from .misc.main import misc as misc_group
+from .mkw.main import mkw as mkw_group
 from .monopoly08.main import main as monopoly_extract
 from .rbplus.main import rbplus as rbplus_group
 from .rhythmin.main import rhythmin as rhythmin_group
@@ -98,6 +99,7 @@ main.add_command(jubeatplus_group, name='jubeatplus')
 main.add_command(marmalade_group, name='marmalade')
 main.add_command(maxpayne_group, name='maxpayne')
 main.add_command(misc_group, name='misc')
+main.add_command(mkw_group, name='mkw')
 main.add_command(_monopoly08())
 main.add_command(rbplus_group, name='rbplus')
 main.add_command(rhythmin_group, name='rhythmin')

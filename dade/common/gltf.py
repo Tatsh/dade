@@ -304,6 +304,28 @@ class GLBDocument:
         self.textures.append({'sampler': 0, 'source': len(self.images) - 1})
         return len(self.textures) - 1
 
+    def add_image_uri(self, uri: str, name: str) -> int:
+        """
+        Add an external image and give it a texture that materials can reference.
+
+        Parameters
+        ----------
+        uri : str
+            Image path relative to the GLB file.
+        name : str
+            Name for the image.
+
+        Returns
+        -------
+        int
+            Index into the document's textures.
+        """
+        if not self.samplers:
+            self.samplers.append({'wrapS': REPEAT, 'wrapT': REPEAT})
+        self.images.append({'uri': uri, 'name': name})
+        self.textures.append({'sampler': 0, 'source': len(self.images) - 1})
+        return len(self.textures) - 1
+
     def use(self, extension: str) -> None:
         """
         Record that the document relies on an extension, once however often it is called.
@@ -346,8 +368,6 @@ class GLBDocument:
             'buffers': [{
                 'byteLength': len(self.blob) + (-len(self.blob) % 4)
             }],
-            'materials':
-                self.materials,
             'meshes':
                 self.meshes,
             'nodes':
@@ -362,7 +382,7 @@ class GLBDocument:
         # These are all optional, and glTF requires an array it declares to be non-empty. Each
         # is written only when the converter actually filled it.
         optional = (('animations', self.animations), ('extensionsUsed', self.extensions_used),
-                    ('images', self.images), ('samplers', self.samplers), ('skins', self.skins),
-                    ('textures', self.textures))
+                    ('images', self.images), ('materials', self.materials),
+                    ('samplers', self.samplers), ('skins', self.skins), ('textures', self.textures))
         document.update({key: value for key, value in optional if value})
         return pack_glb(document, bytes(self.blob))

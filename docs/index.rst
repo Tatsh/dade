@@ -29,6 +29,7 @@ dade
 
       installation
       usage
+      mkw
       harmonix
       utilities
       native-tools

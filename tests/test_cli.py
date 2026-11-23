@@ -22,6 +22,7 @@ _GAMES = (
     'marmalade',
     'maxpayne',
     'misc',
+    'mkw',
     'monopoly08',
     'rbplus',
     'rhythmin',
