@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 import subprocess as sp
 
 import pytest
@@ -10,6 +10,7 @@ from dade.incoming.sources import PreparedSource, SourceError, prepare_source
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from io import BufferedWriter
 
     from pytest_mock import MockerFixture
 
@@ -81,8 +82,7 @@ def test_iso_isodump_success(tmp_path: Path, mocker: MockerFixture) -> None:
     mocker.patch('dade.incoming.sources.which', side_effect=_which({'isodump': '/isodump'}))
 
     def run(args: tuple[str, ...], **kwargs: object) -> object:
-        kwargs['stdout'].write(  # type: ignore[attr-defined] # ty: ignore[unresolved-attribute]
-            b'CABDATA')
+        cast('BufferedWriter', kwargs['stdout']).write(b'CABDATA')
         return mocker.Mock()
 
     mocker.patch('dade.incoming.sources.sp.run', side_effect=run)
