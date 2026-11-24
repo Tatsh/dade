@@ -730,6 +730,17 @@ Asset extractors and converters for _Extreme-G_ / _Extreme-G 2_ (N64 and PC), _I
 _Interstate '82_, and the PC version of _Tony Hawk's Pro Skater 2_. Run each game's `--help` for its
 subcommands.
 
+```shell
+dade xg2 xg2-to-glb XG2.z64 out/
+```
+
+`xg2-to-glb` writes each _Extreme-G 2_ rider skinned to its skeleton, with one joint per bone. The
+mesh is in its bind pose, each vertex is weighted to the bones the game moves it with, and every
+motion clip in the ROM is an animation in the same file. The game skins its riders on the CPU, and
+the weights, pivots, and turn axes are those of its pose and skinning code. Only the N64 build is
+converted. The Windows port stores the same riders, but its display lists use opcodes the reader
+does not decode yet.
+
 ## Development
 
 ```shell

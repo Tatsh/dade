@@ -390,7 +390,6 @@ ldrsb
 lerp
 lextudio
 lfemur
-lfingers
 lhipjoint
 lhuf
 lhumerus

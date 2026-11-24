@@ -86,8 +86,8 @@ def test_parse_bmc_reads_the_name_and_frame_count() -> None:
 
 
 def test_parse_bmc_rescales_a_quantised_channel() -> None:
-    # An eight-bit channel spans its two bounds; 0 and 255 land on them exactly.
-    clip = parse_bmc(_clip(2, struct.pack('>H2h', 0, -100, 100) + b'\x00\xff'))
+    # An eight-bit channel is its base plus the sample times an 8.8 step; 255 * 201 >> 8 is 200.
+    clip = parse_bmc(_clip(2, struct.pack('>HhH', 0, -100, 201) + b'\x00\xff'))
     assert clip is not None
     assert [round(v) for v in clip.channels[0]] == [-100, 100]
 
@@ -103,7 +103,7 @@ def test_parse_bmc_reads_a_raw_channel() -> None:
 
 def test_parse_bmc_takes_a_zero_length_as_the_last_channel() -> None:
     first = struct.pack('>H2h', BMC_HEADER_SIZE // 4 + 2, 0, 255) + b'\x00\xff'
-    clip = parse_bmc(_clip(2, first, struct.pack('>H2h', 0, 0, 255) + b'\xff\x00'))
+    clip = parse_bmc(_clip(2, first, struct.pack('>HhH', 0, 0, 256) + b'\xff\x00'))
     assert clip is not None
     assert len(clip.channels) == 2
     assert [round(v) for v in clip.channels[1]] == [255, 0]

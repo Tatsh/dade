@@ -143,6 +143,16 @@ def test_parse_display_lists_walks_every_opcode() -> None:
     assert len(mesh.triangles) == 3
 
 
+def test_parse_display_lists_loads_segment_8_from_the_bank() -> None:
+    header = struct.pack('>2I', 0x05000008, 0)
+    commands = ((0x01003006, 0x08000000), (0x05000204, 0), (0xDF000000, 0))
+    model = header + b''.join(struct.pack('>2I', w0, w1) for w0, w1 in commands)
+    bank = _vertices([(0, 0), (1, 0), (0, 1)])
+    (mesh,) = parse_display_lists(model, '>', bank, (8,))
+    assert [(v.x, v.y) for v in mesh.vertices] == [(0, 0), (1, 0), (0, 1)]
+    assert not parse_display_lists(model, '>', None, (8,))
+
+
 def test_parse_display_lists_of_a_non_model() -> None:
     assert parse_display_lists(b'\x00' * 32) == []
 

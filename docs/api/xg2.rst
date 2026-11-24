@@ -95,6 +95,12 @@ stack (ALBank, ALCSeq, VADPCM, SoundFont, and SMF).
 .. automodule:: dade.xg2.offsets
    :members:
 
+``dade.xg2.rider``
+--------------------
+
+.. automodule:: dade.xg2.rider
+   :members:
+
 ``dade.xg2.rom``
 ------------------
 

@@ -1,7 +1,9 @@
 """Tests for :mod:`dade.xg2.gltf`."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+import json
+import math
 import struct
 
 from dade.xg2.bmc import BmcClip
@@ -11,9 +13,11 @@ from dade.xg2.gltf import (
     build_glb,
     build_level_glb,
     build_pc_glb,
+    build_rider_glb,
     build_track_glb,
     iter_models,
     pc_bank_size,
+    pose_clip,
 )
 from dade.xg2.skeleton import Bone, Skeleton
 from dade.xg2.typing import Texture
@@ -23,6 +27,13 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 _GLB_MAGIC = b'glTF'
+_IDENTITY = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
+
+
+def _document(glb: bytes) -> dict[str, Any]:
+    length = struct.unpack_from('<I', glb, 12)[0]
+    document: dict[str, Any] = json.loads(glb[20:20 + length])
+    return document
 
 
 def _triangle_mesh(*, lit: bool, texture: int | None = 0x400) -> Mesh:
@@ -119,12 +130,79 @@ def test_build_level_glb_of_a_zero_length_normal() -> None:
 
 
 def test_build_clip_glb_aligns_opposed_rotations() -> None:
-    skeleton = Skeleton(6, [Bone('root', -1, 0, 6, (0.0, 1.0, 0.0), ())])
-    # The root spins a full turn about Z (65536 binary-angle units), whose quaternion changes sign
-    # between the two frames.
-    channels = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 65536.0]]
-    glb = build_clip_glb(BmcClip('walk.asf', 2, channels), 'anim', skeleton)
+    skeleton = Skeleton(6, [Bone('hip', -1, 0, 6, (), _IDENTITY, (0.0, 0.0, 0.0))], (9, 8))
+    # The root turns about X by nothing, then by all but a sliver of a full turn; the second
+    # frame's quaternion lies on the far hemisphere and is flipped to meet the first.
+    channels = [[0.0, 65520.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
+    translations, rotations = pose_clip(BmcClip('walk.asf', 2, channels), skeleton)
+    assert translations == [(0.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
+    assert sum(a * b for a, b in zip(*rotations[0], strict=True)) > 0
+    assert build_clip_glb(BmcClip('walk.asf', 2, channels), 'anim', skeleton) is not None
+
+
+def test_pose_clip_follows_the_channel_codes() -> None:
+    # Code 8 translates Z, Y, then X; code 6 has no meaning and only consumes its curve; code 3
+    # turns about the basis's first column, which this basis makes the Y axis.
+    turned = ((0.0, 0.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0))
+    skeleton = Skeleton(4, [Bone('knee', -1, 2, 4, (3, 10), turned, (0.0, 5.0, 0.0))], (8, 6),
+                        _IDENTITY, (0.0, 1.0, 0.0))
+    channels = [[1.0], [2.0], [3.0], [99.0], [16384.0], [0.0]]
+    translations, rotations = pose_clip(BmcClip('walk.asf', 1, channels), skeleton)
+    assert translations == [(12.0, 8.0, 4.0)]
+    assert rotations[0] == [(0.0, 0.0, 0.0, 1.0)]
+    x, y, z, w = rotations[1][0]
+    # A quarter turn about Y; the bone's second curve is all its dof leaves, and its later codes
+    # find no curve.
+    assert (round(x, 6), round(y, 6), round(z, 6), round(w, 6)) == (0.0, round(
+        math.sqrt(0.5), 6), 0.0, round(math.sqrt(0.5), 6))
+
+
+def test_build_clip_glb_places_the_joints_at_their_pivots() -> None:
+    skeleton = Skeleton(6, [
+        Bone('hip', -1, 0, 6, (), _IDENTITY, (0.0, 0.0, 0.0)),
+        Bone('knee', 0, 1, 6, (3,), _IDENTITY, (0.0, -10.0, 0.0)),
+    ], (9, 8), _IDENTITY, (1.0, 2.0, 3.0))
+    clip = BmcClip('walk.asf', 2, [[0.0, 0.0]] * 7)
+    glb = build_clip_glb(clip, 'anim', skeleton)
     assert glb is not None
+    document = _document(glb)
+    assert [node['translation'] for node in document['nodes']] == [[1.0, 2.0, 3.0],
+                                                                   [-1.0, -2.0, -3.0],
+                                                                   [0.0, -10.0, 0.0]]
+    assert document['scenes'][0]['nodes'] == [0]
+    assert 'meshes' not in document
+
+
+def test_build_rider_glb_skins_the_mesh(make_rider: Callable[..., bytes]) -> None:
+    texture = Texture('ci8', 0x380, 2, 2, bytes([0xFF] * 16))
+    clips = [('walk', BmcClip('walk.asf', 2, [[0.0, 4096.0]] * 7)),
+             ('other', BmcClip('man2sk.asf', 2, [[0.0, 0.0]] * 3)),
+             ('empty', BmcClip('walk.asf', 0, []))]
+    glb = build_rider_glb(make_rider(), [texture], clips, 'rider')
+    assert glb is not None
+    document = _document(glb)
+    (skin,) = document['skins']
+    assert [document['nodes'][j]['name'] for j in skin['joints']] == ['root', 'hip', 'knee']
+    assert document['nodes'][0] == {'mesh': 0, 'name': 'rider', 'skin': 0}
+    attributes = document['meshes'][0]['primitives'][0]['attributes']
+    assert {'JOINTS_0', 'NORMAL', 'POSITION', 'TEXCOORD_0', 'WEIGHTS_0'} <= set(attributes)
+    assert [animation['name'] for animation in document['animations']] == ['walk']
+    assert document['scenes'][0]['nodes'] == [0, 1]
+
+
+def test_build_rider_glb_of_an_untextured_rider(make_rider: Callable[..., bytes]) -> None:
+    assert build_rider_glb(make_rider(), [], [], 'rider') is not None
+
+
+def test_build_rider_glb_of_a_rider_that_draws_nothing(make_rider: Callable[..., bytes]) -> None:
+    model = make_rider()
+    # The display list's first command ends it.
+    silent = model[:0x20] + struct.pack('>2I', 0xDF000000, 0) + model[0x28:]
+    assert build_rider_glb(silent, [], [], 'rider') is None
+
+
+def test_build_rider_glb_of_a_model_that_is_not_a_rider() -> None:
+    assert build_rider_glb(_lit_model(), [], [], 'bike') is None
 
 
 def test_build_track_glb_without_a_glow_model() -> None:
@@ -155,9 +233,9 @@ def test_build_clip_glb_without_a_skeleton() -> None:
 
 def test_build_clip_glb_with_a_matching_skeleton() -> None:
     skeleton = Skeleton(6, [
-        Bone('root', -1, 3, 6, (0.0, 1.0, 0.0), (0x0A,)),
-        Bone('tip', 0, 0, 9, (1.0, 0.0, 0.0), ()),
-    ])
+        Bone('spine', -1, 3, 6, (0x0A,), _IDENTITY, (0.0, 1.0, 0.0)),
+        Bone('tip', 0, 0, 9, (), _IDENTITY, (1.0, 0.0, 0.0)),
+    ], (9, 8))
     clip = BmcClip('walk.asf', 3, [[float(v)] * 3 for v in range(skeleton.channels)])
     glb = build_clip_glb(clip, 'anim', skeleton)
     assert glb is not None

@@ -24,6 +24,8 @@ from dade.xg2.offsets import (
     XG2_SEQUENCE_ARCHIVE,
     XG2_SOUNDBANKS,
 )
+from dade.xg2.rider import SKIN_MAGIC
+from dade.xg2.skeleton import BONE_RECORD_SIZE, SKELETON_MAGIC
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -285,6 +287,67 @@ def bmc_blob() -> bytes:
     """
     return (BMC_MAGIC + b'engine\x00\x00\x00\x00\x00\x00' + b'\x00' * (BMC_HEADER_SIZE - 16) +
             bytes([1, 2, 3, 0xFE]))
+
+
+@pytest.fixture
+def make_rider() -> Callable[..., bytes]:
+    """
+    Build an N64 rider that draws one textured triangle from the vertices it skins.
+
+    The skeleton is a root turning about X, Y, then Z and translating Z, Y, then X (codes 9 and 8),
+    then the given bones. The skin's groups are ``(bone, first, rigid count, blends)``, each blend
+    a position and its weight.
+
+    Returns
+    -------
+    collections.abc.Callable[..., bytes]
+        A callable returning the model.
+    """
+    def build(*,
+              bones: Sequence[tuple[str, int, int, Sequence[int],
+                                    tuple[int, int, int]]] = (('hip', -1, 0, (), (0, 0, 0)),
+                                                              ('knee', 0, 1, (3,), (0, 100, 0))),
+              count: int = 3,
+              groups: Sequence[tuple[int, int, int,
+                                     Sequence[tuple[int, int]]]] = ((0, 0, 1, ()),
+                                                                    (1, 1, 2, ((0, 0x8000),))),
+              indices: Sequence[int] = (0, 1, 2),
+              normals: Sequence[tuple[int, int, int]] = ((0, 4, 0), (0, 0, 0), (4, 0, 0)),
+              skin_magic: bytes = SKIN_MAGIC) -> bytes:
+        blob = bytearray(0x600)
+        regions = (0x20, 0x60, 0x68, 0x80, 0xC0, 0x100, 0x140, 0x500)
+        struct.pack_into('>8I', blob, 0, *(0x05000000 | offset for offset in regions))
+        commands = ((0xFD100000, 0x05000380), (0xF5000000, 0), (0x01003006, 0x08000000),
+                    (0x05000204, 0), (0xDF000000, 0))
+        for index, (w0, w1) in enumerate(commands):
+            struct.pack_into('>2I', blob, regions[0] + index * 8, w0, w1)
+        struct.pack_into('>i', blob, regions[1], count)
+        struct.pack_into(f'>{len(indices)}H', blob, regions[2], *indices)
+        struct.pack_into('>9h', blob, regions[3], 0, 0, 0, 100, 0, 0, 0, 100, 0)
+        # The third coordinate doubles past sixteen bits and wraps.
+        struct.pack_into('>6h', blob, regions[4], 0, 0, 32, 0, 0x7000, 32)
+        for index, normal in enumerate(normals):
+            struct.pack_into('>3b', blob, regions[5] + index * 3, *normal)
+        skeleton = bytearray(BONE_RECORD_SIZE)
+        skeleton[0:8] = SKELETON_MAGIC + struct.pack('>2H', len(bones), 6)
+        skeleton[8:11] = bytes((2, 9, 8))
+        struct.pack_into('>9h', skeleton, 0x10, 4096, 0, 0, 0, 4096, 0, 0, 0, 4096)
+        for _, parent, dof, codes, pivot in bones:
+            record = bytearray(BONE_RECORD_SIZE)
+            struct.pack_into('>hBB', record, 0, parent, dof, len(codes))
+            record[4:4 + len(codes)] = bytes(codes)
+            struct.pack_into('>9h', record, 8, 4096, 0, 0, 0, 4096, 0, 0, 0, 4096)
+            struct.pack_into('>3i', record, 0x1C, *(v * 16 for v in pivot))
+            skeleton += record
+        skeleton += b''.join(name.encode() + b'\x00' for name, *_ in bones)
+        blob[regions[6]:regions[6] + len(skeleton)] = skeleton
+        skin = bytearray(skin_magic + struct.pack('>2h', 0, len(groups)))
+        for bone, first, rigid, blends in groups:
+            skin += struct.pack('>HHhH', rigid, len(blends), bone, first)
+            skin += b''.join(struct.pack('>2H', *blend) for blend in blends)
+        return bytes(blob[:regions[7]] + skin)
+
+    return build
 
 
 @pytest.fixture

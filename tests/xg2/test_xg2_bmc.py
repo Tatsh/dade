@@ -55,16 +55,27 @@ def test_demo_reports_a_broken_clip(mocker: MockerFixture, clip: BmcClip | None,
 
 def test_parse_bmc_reads_quantised_channels() -> None:
     frames = 4
-    first = struct.pack('>H2h', CHANNEL_HEADER_SIZE + frames, 0, 255) + bytes((0, 85, 170, 255))
+    # A value is the base plus the sample times an 8.8 step.
+    first = struct.pack('>HhH', CHANNEL_HEADER_SIZE + frames, 0, 256) + bytes((0, 85, 170, 255))
     # The last record has a zero length and runs to the end.
-    last = struct.pack('>H2h', 0, -100, 100) + bytes((0, 128, 255, 0))
+    last = struct.pack('>HhH', 0, -100, 201) + bytes((0, 128, 255, 0))
     clip = parse_bmc(_header(frames, 2) + first + last)
     assert clip is not None
     assert clip.name == 'walk.asf'
     assert clip.frames == frames
-    assert [round(v) for v in clip.channels[0]] == [0, 85, 170, 255]
-    assert round(clip.channels[1][0]) == -100
-    assert round(clip.channels[1][2]) == 100
+    assert clip.channels[0] == [0.0, 85.0, 170.0, 255.0]
+    assert clip.channels[1] == [-100.0, 0.0, 100.0, -100.0]
+
+
+def test_parse_bmc_tells_a_stored_record_from_a_quantised_one() -> None:
+    frames = 7
+    stored = struct.pack('>H7h', 2 + frames * 2, -3, 2, 1, 0, 300, -300, 32767)
+    # Six header bytes and seven samples, padded to fourteen.
+    quantised = struct.pack('>HhH', 0, 10, 512) + bytes((0, 1, 2, 3, 4, 5, 6)) + b'\x00'
+    clip = parse_bmc(_header(frames, 2) + stored + quantised)
+    assert clip is not None
+    assert clip.channels[0] == [-3.0, 2.0, 1.0, 0.0, 300.0, -300.0, 32767.0]
+    assert clip.channels[1] == [10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0]
 
 
 def test_parse_bmc_rejects_the_wrong_magic() -> None:

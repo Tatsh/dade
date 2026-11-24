@@ -13,13 +13,12 @@ too. Rotating them only stands them on end.
 """
 from __future__ import annotations
 
-from itertools import starmap
 from typing import TYPE_CHECKING
 import logging
 import math
+import struct
 
-from dade.common.exceptions import UnreachableState
-from dade.common.gltf import ARRAY_BUFFER, TRIANGLES, UNSIGNED_BYTE, GLBDocument
+from dade.common.gltf import ARRAY_BUFFER, FLOAT, TRIANGLES, UNSIGNED_BYTE, GLBDocument
 from dade.common.png import encode_rgba
 
 from .f3dex2 import (
@@ -33,6 +32,7 @@ from .f3dex2 import (
     texcoords,
 )
 from .models import walk_sub_archive
+from .rider import parse_rider
 from .xg1_objects import (
     GLOW_ALPHA,
     GLOW_TEXTURE_KEY,
@@ -44,15 +44,16 @@ from .xg1_objects import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator, Mapping, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
 
     from .bmc import BmcClip
     from .skeleton import Skeleton
-    from .typing import Endian, Texture
+    from .typing import Basis, Endian, Quaternion, Texture, Vector
     from .xg1_objects import ObjectModel, ObjectPlacement
 
-__all__ = ('ANGLE_SCALE', 'BONE_LENGTH', 'build_clip_glb', 'build_glb', 'build_level_glb',
-           'build_pc_glb', 'build_track_glb', 'iter_models', 'pc_bank_size')
+__all__ = ('ANGLE_SCALE', 'TRANSLATION_SCALE', 'build_clip_glb', 'build_glb', 'build_level_glb',
+           'build_pc_glb', 'build_rider_glb', 'build_track_glb', 'iter_models', 'pc_bank_size',
+           'pose_clip')
 
 log = logging.getLogger(__name__)
 
@@ -68,22 +69,37 @@ _FRAME_RATE = 30.0
 ANGLE_SCALE = math.tau / 65536.0
 """Radians per unit of a motion curve, a binary angle with a full turn to 65536.
 
-Confirmed against anatomy rather than assumed. Taking the widest sweep each single-axis joint makes
-across all seventeen clips, and undoing the wraps first, this scale puts the knees at 130 and 122
-degrees and the elbows at 136 and 145, against roughly 135 and 150 for a real rider. Four
-independent joints landing that close is no accident of a wrong scale; the next candidate up, a
-turn to 16384, would have knees bending five hundred degrees.
+The game drops the low four bits and turns by ``angle * pi / 4096`` per half angle
+(``BuildPackedAxisAngleQuaternion``, ``0x800AF3E8`` in the N64 build). The half angle is
+therefore ``angle * ANGLE_SCALE / 2``.
 
 :meta hide-value:
 """
-BONE_LENGTH = 1.0
-"""Length given to every bone. The skeleton's real lengths have not been located.
+TRANSLATION_SCALE = 4.0
+"""Vertex units per unit of a translation curve.
 
-**An assumption**, and the reason a played-back clip has the right articulation but uniform limb
-proportions. The bone *directions* are read from the file and are exact.
+The pose decoder shifts a sample left by six into 28.4 fixed point, and the skinning drops the four
+fraction bits again.
 
 :meta hide-value:
 """
+_ANGLE_DROP = 4
+_ANGLE_MASK = 0xFFFF
+# What each channel code drives, as (kind, axis) pairs in curve order. A code the decoder has no
+# case for still consumes its curve.
+_CODES: dict[int, tuple[tuple[str, int], ...]] = {
+    0: (('t', 0),),
+    1: (('t', 1),),
+    2: (('t', 2),),
+    3: (('r', 0),),
+    4: (('r', 1),),
+    5: (('r', 2),),
+    7: (('t', 0), ('t', 1), ('t', 2)),
+    8: (('t', 2), ('t', 1), ('t', 0)),
+    9: (('r', 0), ('r', 1), ('r', 2)),
+    10: (('r', 2), ('r', 1), ('r', 0))
+}
+_IGNORED = (('', 0),)
 
 
 def iter_models(blob: bytes, endian: Endian = '>') -> Iterator[tuple[str, bytes]]:
@@ -146,34 +162,171 @@ def pc_bank_size(model: bytes) -> int:
     return needed
 
 
-def _euler(x: float, y: float, z: float) -> tuple[float, float, float, float]:
+def _turn(basis: Basis, column: int, value: float) -> Quaternion:
     """
-    Turn one frame's three joint curves into a quaternion.
-
-    The axes are applied Z, then Y, then X, the order Acclaim skeletons use for a three-degree
-    joint. That order is **not** confirmed against this game's data; the skeleton records an
-    axis code per joint (:py:attr:`dade.xg2.skeleton.Bone.axes`) whose meaning is still unknown.
+    Turn about one column of a basis by one curve value, as the game's pose decoder does.
 
     Parameters
     ----------
-    x : float
-        Curve value for the first axis, in the units :py:data:`ANGLE_SCALE` converts.
-    y : float
-        Second axis.
-    z : float
-        Third axis.
+    basis : dade.xg2.typing.Basis
+        The joint's basis, row by row.
+    column : int
+        Which column is the axis.
+    value : float
+        The curve value, a binary angle.
 
     Returns
     -------
-    tuple[float, float, float, float]
-        The rotation as ``x, y, z, w``, glTF's order.
+    dade.xg2.typing.Quaternion
+        The rotation.
     """
-    hx, hy, hz = (v * ANGLE_SCALE / 2.0 for v in (x, y, z))
-    sx, cx = math.sin(hx), math.cos(hx)
-    sy, cy = math.sin(hy), math.cos(hy)
-    sz, cz = math.sin(hz), math.cos(hz)
-    return (sx * cy * cz - cx * sy * sz, cx * sy * cz + sx * cy * sz, cx * cy * sz - sx * sy * cz,
-            cx * cy * cz + sx * sy * sz)
+    half = ((int(value) & _ANGLE_MASK) >> _ANGLE_DROP << _ANGLE_DROP) * ANGLE_SCALE / 2.0
+    sine = math.sin(half)
+    return (basis[0][column] * sine, basis[1][column] * sine, basis[2][column] * sine,
+            math.cos(half))
+
+
+def _multiply(first: Quaternion, second: Quaternion) -> Quaternion:
+    """
+    Multiply two quaternions, *second* applied first.
+
+    Parameters
+    ----------
+    first : dade.xg2.typing.Quaternion
+        The rotation applied last.
+    second : dade.xg2.typing.Quaternion
+        The rotation applied first.
+
+    Returns
+    -------
+    dade.xg2.typing.Quaternion
+        The product.
+    """
+    x1, y1, z1, w1 = first
+    x2, y2, z2, w2 = second
+    return (w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2, w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2,
+            w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2, w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2)
+
+
+def pose_clip(clip: BmcClip, skeleton: Skeleton) -> tuple[list[Vector], list[list[Quaternion]]]:
+    """
+    Decode every frame of a clip into the skeleton's joint rotations and root translation.
+
+    Each joint reads its curves in the order its channel codes give. A turn is about a column of
+    the joint's basis, and a joint's turns multiply together in that order, the first applied last.
+    A translation code sets the root's translation whichever joint it belongs to, as the game's
+    decoder does.
+
+    Parameters
+    ----------
+    clip : dade.xg2.bmc.BmcClip
+        The clip.
+    skeleton : dade.xg2.skeleton.Skeleton
+        The skeleton it drives.
+
+    Returns
+    -------
+    tuple[list[dade.xg2.typing.Vector], list[list[dade.xg2.typing.Quaternion]]]
+        The root's translation per frame in vertex units, and per joint the rotation per frame,
+        joint 0 being the root and joint *n* bone *n - 1*.
+    """
+    joints = [(0, skeleton.root_dof, skeleton.root_axes, skeleton.root_basis)]
+    joints += [(bone.channel, bone.dof, bone.axes, bone.basis) for bone in skeleton.bones]
+    translations: list[list[float]] = [[0.0, 0.0, 0.0] for _ in range(clip.frames)]
+    rotations: list[list[Quaternion]] = []
+    for start, dof, codes, basis in joints:
+        curves = iter(clip.channels[start:start + dof])
+        turns: list[list[Quaternion]] = []
+        for kind, axis in (step for code in codes for step in _CODES.get(code, _IGNORED)):
+            if (curve := next(curves, None)) is None:
+                break
+            if kind == 't':
+                for frame, value in enumerate(curve):
+                    translations[frame][axis] = value * TRANSLATION_SCALE
+            elif kind == 'r':
+                turns.append([_turn(basis, axis, value) for value in curve])
+        frames: list[Quaternion] = []
+        for frame in range(clip.frames):
+            rotation: Quaternion = (0.0, 0.0, 0.0, 1.0)
+            for turn in turns:
+                rotation = _multiply(rotation, turn[frame])
+            frames.append(rotation)
+        rotations.append(_aligned(frames))
+    return [(x, y, z) for x, y, z in translations], rotations
+
+
+def _add_joints(document: GLBDocument, skeleton: Skeleton) -> list[int]:
+    """
+    Add one node per joint, posed at rest, and return their indices.
+
+    A joint's node sits at its pivot, its translation being the step from its parent's pivot. The
+    game's transform for a joint is its parent's, then a turn about the pivot, and at rest every
+    joint is therefore where its pivot is and the mesh is in its bind pose.
+
+    Parameters
+    ----------
+    document : dade.common.gltf.GLBDocument
+        The document being built.
+    skeleton : dade.xg2.skeleton.Skeleton
+        The skeleton.
+
+    Returns
+    -------
+    list[int]
+        Node indices, the root first and then one per bone.
+    """
+    first = len(document.nodes)
+    pivots = [skeleton.root_pivot, *(bone.pivot for bone in skeleton.bones)]
+    parents = [-1, *(bone.parent + 1 for bone in skeleton.bones)]
+    names = ['root', *(bone.name for bone in skeleton.bones)]
+    for index, (name, parent) in enumerate(zip(names, parents, strict=True)):
+        origin = pivots[parent] if parent >= 0 else (0.0, 0.0, 0.0)
+        node: dict[str, object] = {
+            'name': name,
+            'translation': [a - b for a, b in zip(pivots[index], origin, strict=True)]
+        }
+        if children := [first + child for child, owner in enumerate(parents) if owner == index]:
+            node['children'] = children
+        document.nodes.append(node)
+    return list(range(first, first + len(names)))
+
+
+def _add_clip(document: GLBDocument, clip: BmcClip, label: str, skeleton: Skeleton,
+              joints: Sequence[int], frame_rate: float) -> None:
+    """
+    Add a clip as an animation of the joint nodes :py:func:`_add_joints` made.
+
+    Parameters
+    ----------
+    document : dade.common.gltf.GLBDocument
+        The document being built.
+    clip : dade.xg2.bmc.BmcClip
+        The clip.
+    label : str
+        Name for the animation.
+    skeleton : dade.xg2.skeleton.Skeleton
+        The skeleton the clip drives.
+    joints : collections.abc.Sequence[int]
+        The joint nodes, the root first.
+    frame_rate : float
+        Frames per second the keyframe times are spaced at.
+    """
+    translations, rotations = pose_clip(clip, skeleton)
+    times = document.floats([(index / frame_rate,) for index in range(clip.frames)],
+                            'SCALAR',
+                            bounds=True)
+    channels: list[dict[str, object]] = []
+    samplers: list[dict[str, object]] = []
+    pivot = skeleton.root_pivot
+    outputs = [(document.floats([(x + pivot[0], y + pivot[1], z + pivot[2])
+                                 for x, y, z in translations], 'VEC3'), joints[0], 'translation')]
+    dof = [skeleton.root_dof, *(bone.dof for bone in skeleton.bones)]
+    outputs += [(document.floats(frames, 'VEC4'), joints[index], 'rotation')
+                for index, frames in enumerate(rotations) if dof[index]]
+    for output, node, path in outputs:
+        samplers.append({'input': times, 'interpolation': 'LINEAR', 'output': output})
+        channels.append({'sampler': len(samplers) - 1, 'target': {'node': node, 'path': path}})
+    document.animations.append({'channels': channels, 'name': label, 'samplers': samplers})
 
 
 def _aligned(frames: list[tuple[float, float, float, float]]) \
@@ -263,7 +416,8 @@ def _primitive(document: GLBDocument,
                material: int,
                width: int,
                height: int,
-               scale: float = 1.0) -> dict[str, object]:
+               scale: float = 1.0,
+               extra: Mapping[str, int] | None = None) -> dict[str, object]:
     """
     Build one glTF primitive from a mesh.
 
@@ -281,6 +435,8 @@ def _primitive(document: GLBDocument,
         Height of that image.
     scale : float
         Factor the game's ``G_TEXTURE`` applies to the coordinates.
+    extra : collections.abc.Mapping[str, int] | None
+        Further attributes and their accessors, such as a skin's ``JOINTS_0``.
 
     Returns
     -------
@@ -292,7 +448,8 @@ def _primitive(document: GLBDocument,
     corners = [i for triangle in mesh.triangles for i in triangle]
     attributes = {
         'POSITION': document.floats(positions, 'VEC3', target=ARRAY_BUFFER, bounds=True),
-        'TEXCOORD_0': document.floats(coords, 'VEC2', target=ARRAY_BUFFER)
+        'TEXCOORD_0': document.floats(coords, 'VEC2', target=ARRAY_BUFFER),
+        **(extra or {})
     }
     if mesh.lit:
         attributes['NORMAL'] = document.floats([_normal(v) for v in mesh.vertices],
@@ -433,16 +590,11 @@ def build_clip_glb(clip: BmcClip,
 
     A clip is a run of degree-of-freedom curves rather than a pose per bone. Given the *skeleton*
     those curves drive (:py:func:`dade.xg2.skeleton.parse_skeleton` reads it out of any rider
-    model), each curve can be attached to the joint it belongs to, and the result is a real
-    hierarchy. Without one, the fallback applies: a node per channel, driven on Y, preserving the
-    values exactly and playing back as 67 sliders.
-
-    Two scales are **assumptions**, flagged here because they change how the motion looks rather
-    than whether it is structurally right. :py:data:`ANGLE_SCALE` reads the curves as binary angles,
-    a full turn to 65536, suiting their observed range of roughly plus or minus eight thousand.
-    :py:data:`BONE_LENGTH` gives every bone the same length, the field with the real one never
-    having been found. The hierarchy, the channel-to-joint mapping, and the bone directions are all
-    read from the file and cross-checked on fourteen riders.
+    model), each curve is attached to the joint it belongs to and decoded as
+    :py:func:`pose_clip` describes, on joints placed at the skeleton's pivots. Without one, the
+    fallback writes a node per channel, driven on Y, preserving the values exactly and playing back
+    as 67 sliders. :py:func:`build_rider_glb` writes the same animation with the rider's mesh
+    bound to it.
 
     Parameters
     ----------
@@ -462,64 +614,120 @@ def build_clip_glb(clip: BmcClip,
     -------
     bytes | None
         The ``.glb`` file, or :py:obj:`None` when the clip has no frames.
-
-    Raises
-    ------
-    UnreachableState
-        If a node this function just wrote has no list of children.
     """
     if not clip.frames or not clip.channels:
         return None
     document = GLBDocument(generator)
-    times = [(index / frame_rate,) for index in range(clip.frames)]
-    input_accessor = document.floats(times, 'SCALAR', bounds=True)
+    if skeleton is not None and skeleton.channels == len(clip.channels):
+        joints = _add_joints(document, skeleton)
+        _add_clip(document, clip, label, skeleton, joints, frame_rate)
+        return document.finish(label, joints[:1])
+    times = document.floats([(index / frame_rate,) for index in range(clip.frames)],
+                            'SCALAR',
+                            bounds=True)
     channels: list[dict[str, object]] = []
     samplers: list[dict[str, object]] = []
-
-    def sampler(output: int, node: int, path: str) -> None:
-        samplers.append({'input': input_accessor, 'interpolation': 'LINEAR', 'output': output})
-        channels.append({'sampler': len(samplers) - 1, 'target': {'node': node, 'path': path}})
-
-    if skeleton is None or skeleton.channels != len(clip.channels):
-        for index, values in enumerate(clip.channels):
-            document.nodes.append({
-                'name': f'{clip.name}/dof{index:02d}',
-                'translation': [0.0, 0.0, 0.0]
-            })
-            sampler(document.floats([(0.0, v, 0.0) for v in values], 'VEC3'), index, 'translation')
-    else:
-        # Node 0 is the root the clip's first six curves drive; a bone's node is its index plus one.
-        document.nodes.append({'name': clip.name, 'children': [], 'translation': [0.0, 0.0, 0.0]})
-        for bone in skeleton.bones:
-            document.nodes.append({
-                'name': bone.name,
-                'children': [],
-                'translation': [v * BONE_LENGTH for v in bone.direction]
-            })
-        for index, bone in enumerate(skeleton.bones):
-            parent = 0 if bone.parent < 0 else bone.parent + 1
-            children = document.nodes[parent]['children']
-            if not isinstance(children, list):  # pragma: no cover
-                msg = f"Node {parent} has a {type(children).__name__} for 'children', not a list."
-                raise UnreachableState(msg)
-            children.append(index + 1)
-
-        root = clip.channels
-        sampler(document.floats(list(zip(root[0], root[1], root[2], strict=True)), 'VEC3'), 0,
-                'translation')
-        turns = _aligned(list(starmap(_euler, zip(root[3], root[4], root[5], strict=True))))
-        sampler(document.floats(turns, 'VEC4'), 0, 'rotation')
-        for index, bone in enumerate(skeleton.bones):
-            if not bone.dof:
-                continue
-            curves = clip.channels[bone.channel:bone.channel + bone.dof]
-            # A joint turning about fewer than three axes has the rest at zero.
-            padded = list(curves) + [[0.0] * clip.frames] * (3 - len(curves))
-            rotations = list(starmap(_euler, zip(*padded, strict=True)))
-            sampler(document.floats(rotations, 'VEC4'), index + 1, 'rotation')
-
+    for index, values in enumerate(clip.channels):
+        document.nodes.append({
+            'name': f'{clip.name}/dof{index:02d}',
+            'translation': [0.0, 0.0, 0.0]
+        })
+        samplers.append({
+            'input': times,
+            'interpolation': 'LINEAR',
+            'output': document.floats([(0.0, v, 0.0) for v in values], 'VEC3')
+        })
+        channels.append({
+            'sampler': len(samplers) - 1,
+            'target': {
+                'node': index,
+                'path': 'translation'
+            }
+        })
     document.animations.append({'channels': channels, 'name': label, 'samplers': samplers})
     return document.finish(label)
+
+
+def build_rider_glb(model: bytes,
+                    textures: list[Texture],
+                    clips: Iterable[tuple[str, BmcClip]],
+                    name: str,
+                    frame_rate: float = _FRAME_RATE,
+                    generator: str = 'dade xg2') -> bytes | None:
+    """
+    Build a binary glTF of an N64 rider, skinned to its skeleton, with every clip that drives it.
+
+    The mesh is written in its bind pose and bound with a glTF skin, one joint for the root and one
+    per bone, each joint's inverse bind matrix undoing its pivot. The weights are the game's
+    (:py:func:`dade.xg2.rider.parse_rider`). Each clip whose curve count matches the skeleton's
+    becomes an animation of the joints, decoded as :py:func:`pose_clip` describes, and a viewer
+    playing one moves the mesh as the game's software skinning does.
+
+    Parameters
+    ----------
+    model : bytes
+        The decompressed rider.
+    textures : list[dade.xg2.typing.Texture]
+        Images decoded from the same model.
+    clips : collections.abc.Iterable[tuple[str, dade.xg2.bmc.BmcClip]]
+        Candidate clips, each with a name for its animation.
+    name : str
+        Name for the scene, the mesh, and its node.
+    frame_rate : float
+        Frames per second the keyframe times are spaced at.
+    generator : str
+        Value recorded in the glTF ``asset.generator`` field.
+
+    Returns
+    -------
+    bytes | None
+        The ``.glb`` file, or :py:obj:`None` when *model* is not a rider or draws nothing.
+    """
+    if (rider := parse_rider(model)) is None or not rider.meshes:
+        return None
+    document = GLBDocument(generator)
+    by_offset = {texture.offset: texture for texture in textures}
+    primitives = []
+    for mesh, weights in zip(rider.meshes, rider.weights, strict=True):
+        texture = by_offset.get(mesh.texture) if mesh.texture is not None else None
+        skinning = {
+            'JOINTS_0':
+                document.accessor(bytes(j for joints, _ in weights for j in joints),
+                                  ARRAY_BUFFER,
+                                  componentType=UNSIGNED_BYTE,
+                                  count=len(weights),
+                                  type='VEC4'),
+            'WEIGHTS_0':
+                document.floats([w for _, w in weights], 'VEC4', target=ARRAY_BUFFER)
+        }
+        primitives.append(
+            _primitive(document,
+                       mesh,
+                       _material(document, texture, mesh.texture, lit=mesh.lit),
+                       texture.width if texture else 1,
+                       texture.height if texture else 1,
+                       extra=skinning))
+    document.meshes.append({'name': name, 'primitives': primitives})
+    document.nodes.append({'mesh': 0, 'name': name, 'skin': 0})
+    joints = _add_joints(document, rider.skeleton)
+    pivots = [rider.skeleton.root_pivot, *(bone.pivot for bone in rider.skeleton.bones)]
+    inverse = b''.join(
+        struct.pack('<16f', 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -x, -y, -z,
+                    1.0) for x, y, z in pivots)
+    document.skins.append({
+        'inverseBindMatrices':
+            document.accessor(inverse, componentType=FLOAT, count=len(pivots), type='MAT4'),
+        'joints':
+            joints,
+        'name':
+            name,
+        'skeleton':
+            joints[0]
+    })
+    for label, clip in clips:
+        if clip.frames and rider.skeleton.channels == len(clip.channels):
+            _add_clip(document, clip, label, rider.skeleton, joints, frame_rate)
+    return document.finish(name, [0, joints[0]])
 
 
 def build_level_glb(meshes: Sequence[Mesh],

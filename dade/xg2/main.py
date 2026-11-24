@@ -20,7 +20,14 @@ from .extract_xg2 import (
     run as run_xg2,
     unpack as unpack_xg2,
 )
-from .gltf import build_clip_glb, build_glb, build_level_glb, build_track_glb, iter_models
+from .gltf import (
+    build_clip_glb,
+    build_glb,
+    build_level_glb,
+    build_rider_glb,
+    build_track_glb,
+    iter_models,
+)
 from .images import write_png
 from .models import collect_textures
 from .montage import DEFAULT_CELL, DEFAULT_COLUMNS, build_index, build_montage
@@ -40,8 +47,9 @@ from .xg1_objects import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterable
+    from collections.abc import Generator, Iterable, Sequence
 
+    from .bmc import BmcClip
     from .typing import Endian, Texture
     from .xg1_level import Dialect
 
@@ -305,7 +313,10 @@ def make_sf2(rom: Path,
     click.echo(f'Wrote {out} ({len(soundfont)} bytes).')
 
 
-def _write_glbs(blobs: Iterable[tuple[str, bytes]], out: Path, endian: Endian) -> tuple[int, int]:
+def _write_glbs(blobs: Iterable[tuple[str, bytes]],
+                out: Path,
+                endian: Endian,
+                clips: Sequence[tuple[str, BmcClip]] = ()) -> tuple[int, int]:
     """
     Convert every model in a set of archive entries to a separate ``.glb``.
 
@@ -317,6 +328,8 @@ def _write_glbs(blobs: Iterable[tuple[str, bytes]], out: Path, endian: Endian) -
         Output directory, created if missing.
     endian : dade.xg2.typing.Endian
         Byte order: ``>`` for the N64 builds, ``<`` for the PC port.
+    clips : collections.abc.Sequence[tuple[str, dade.xg2.bmc.BmcClip]]
+        Motion clips, each with a name, written as animations into every N64 rider they drive.
 
     Returns
     -------
@@ -328,7 +341,9 @@ def _write_glbs(blobs: Iterable[tuple[str, bytes]], out: Path, endian: Endian) -
     for label, blob in blobs:
         for suffix, model in iter_models(blob, endian):
             name = f'{label}{suffix}'.replace('/', '_').replace('#', '_')
-            glb = build_glb(model, collect_textures(model, endian), name, endian)
+            textures = collect_textures(model, endian)
+            glb = ((build_rider_glb(model, textures, clips, name) if endian == '>' else None)
+                   or build_glb(model, textures, name, endian))
             if glb is None:
                 empty += 1
                 continue
@@ -420,18 +435,39 @@ def xg2_to_glb(rom: Path, out: Path) -> None:
 
     The two come out of the ROM differently. Models are stored as F3DEX2 display lists and are read
     straight off; levels are the same compressed bytecode the first game uses, with twenty opcodes
-    instead of fifteen and a visibility byte in front of every triangle.
+    instead of fifteen and a visibility byte in front of every triangle. A rider is written skinned
+    to its skeleton, with every motion clip as an animation.
     """
     image = _read_rom(rom, XG2_GAME_CODE)
     levels, skipped = _write_levels(image, xg2_level_bases(image), out, XG2)
-    written, empty = _write_glbs(iter_n64_model_blobs(image), out, '>')
+    blobs = iter_n64_model_blobs(image)
+    clips = [(_clip_name(label, clip), clip) for label, blob in blobs
+             if (clip := parse_bmc(blob)) is not None]
+    written, empty = _write_glbs(blobs, out, '>', clips)
     # Riders include the skeleton the clips drive; any of them will do, as they are identical.
-    skeleton = next(
-        (s for _, blob in iter_n64_model_blobs(image) if (s := parse_skeleton(blob)) is not None),
-        None)
-    clips = _write_clips(iter_n64_model_blobs(image), out, skeleton)
-    click.echo(f'Wrote {levels} levels, {written} models and {clips} animations to {out} '
+    skeleton = next((s for _, blob in blobs if (s := parse_skeleton(blob)) is not None), None)
+    animations = _write_clips(blobs, out, skeleton)
+    click.echo(f'Wrote {levels} levels, {written} models and {animations} animations to {out} '
                f'({skipped} containers and {empty} models drew nothing).')
+
+
+def _clip_name(label: str, clip: BmcClip) -> str:
+    """
+    Build a clip's name from the archive entry it came from and the skeleton it records.
+
+    Parameters
+    ----------
+    label : str
+        Where the clip came from, such as ``mfs/file002``.
+    clip : dade.xg2.bmc.BmcClip
+        The clip.
+
+    Returns
+    -------
+    str
+        A name such as ``anim_mfs_file002_man2sk_asf``.
+    """
+    return f'anim_{label.replace("/", "_")}_{clip.name.replace(".", "_")}'
 
 
 def _write_clips(blobs: Iterable[tuple[str, bytes]],
@@ -460,7 +496,7 @@ def _write_clips(blobs: Iterable[tuple[str, bytes]],
         clip = parse_bmc(blob)
         if clip is None:
             continue
-        name = f'anim_{label.replace("/", "_")}_{clip.name.replace(".", "_")}'
+        name = _clip_name(label, clip)
         glb = build_clip_glb(clip, name, skeleton)
         if glb is None:
             continue

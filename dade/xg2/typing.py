@@ -3,8 +3,26 @@ from __future__ import annotations
 
 from typing import Literal, NamedTuple, TypeAlias, TypedDict
 
-__all__ = ('ArchEntry', 'Endian', 'MfsEntry', 'ParsedBank', 'SampleMeta', 'Sf2Preset', 'Sf2Zone',
-           'SoundZone', 'Texture', 'TextureFormat')
+__all__ = ('ArchEntry', 'Basis', 'Endian', 'MfsEntry', 'ParsedBank', 'Quaternion', 'SampleMeta',
+           'Sf2Preset', 'Sf2Zone', 'SoundZone', 'Texture', 'TextureFormat', 'Vector')
+
+Vector: TypeAlias = tuple[float, float, float]
+"""A point or a direction, X, Y, then Z.
+
+:meta hide-value:
+"""
+
+Basis: TypeAlias = tuple[Vector, Vector, Vector]
+"""A three-by-three rotation, row by row.
+
+:meta hide-value:
+"""
+
+Quaternion: TypeAlias = tuple[float, float, float, float]
+"""A rotation as ``x, y, z, w``, glTF's order.
+
+:meta hide-value:
+"""
 
 Endian: TypeAlias = Literal['<', '>']
 """:py:mod:`struct` byte-order character: little-endian (PC) or big-endian (N64).

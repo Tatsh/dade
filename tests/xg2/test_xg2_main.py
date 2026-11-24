@@ -13,6 +13,7 @@ from dade.xg2.smf import GM_DRUM_MAP, split_tracks
 from dade.xg2.typing import Texture
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
     from click.testing import CliRunner
@@ -206,6 +207,26 @@ def test_xg2_to_glb(runner: CliRunner, tmp_path: Path, mocker: MockerFixture) ->
     assert '1 models' in result.output
     assert '1 animations' in result.output
     assert list(out.glob('anim_*.glb'))
+
+
+def test_xg2_to_glb_writes_a_skinned_rider(runner: CliRunner, tmp_path: Path, mocker: MockerFixture,
+                                           make_rider: Callable[..., bytes]) -> None:
+    rom = tmp_path / 'game.z64'
+    rom.write_bytes(_rom())
+    header = b'BMC\x80' + b'walk.asf'.ljust(12, b'\x00') + struct.pack('>4H', 2, 2, 0x7800, 7)
+    clip = header + b''.join(struct.pack('>HhH', 8, 0, 256) + bytes([0, 255])
+                             for _ in range(6)) + struct.pack('>HhH', 0, 0, 256) + bytes([0, 9])
+    blobs = [('models/rider', make_rider()), ('mfs/file002', clip)]
+    mocker.patch('dade.xg2.main.xg2_level_bases', return_value=[])
+    mocker.patch('dade.xg2.main.iter_n64_model_blobs', return_value=blobs)
+    mocker.patch('dade.xg2.main.collect_textures', return_value=[])
+    out = tmp_path / 'glb'
+    result = runner.invoke(cli, ['xg2-to-glb', str(rom), str(out)])
+    assert result.exit_code == 0
+    assert '1 models and 1 animations' in result.output
+    glb = (out / 'models_rider.glb').read_bytes()
+    assert b'"skins"' in glb
+    assert b'anim_mfs_file002_walk_asf' in glb
 
 
 def test_xg2_to_glb_skips_an_empty_clip(runner: CliRunner, tmp_path: Path,

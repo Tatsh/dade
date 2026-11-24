@@ -368,8 +368,6 @@ class GLBDocument:
             'buffers': [{
                 'byteLength': len(self.blob) + (-len(self.blob) % 4)
             }],
-            'meshes':
-                self.meshes,
             'nodes':
                 self.nodes,
             'scene':
@@ -382,7 +380,7 @@ class GLBDocument:
         # These are all optional, and glTF requires an array it declares to be non-empty. Each
         # is written only when the converter actually filled it.
         optional = (('animations', self.animations), ('extensionsUsed', self.extensions_used),
-                    ('images', self.images), ('materials', self.materials),
+                    ('images', self.images), ('materials', self.materials), ('meshes', self.meshes),
                     ('samplers', self.samplers), ('skins', self.skins), ('textures', self.textures))
         document.update({key: value for key, value in optional if value})
         return pack_glb(document, bytes(self.blob))

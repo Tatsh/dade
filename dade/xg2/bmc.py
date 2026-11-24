@@ -2,7 +2,7 @@ r"""
 The ``BMC`` skeletal animation container in the Extreme-G XG2 ``mfs`` archive.
 
 Every ``BMC`` blob in the ROM is named after a skeleton file: ``man2sk.asf`` thirteen times,
-``ivask.bsf`` three times, and ``albeanosk.bs`` once. ``.asf`` is Acclaim's own Skeleton File
+``ivask.bsf`` three times, and ``albeanosk.bs`` once. ``.asf`` is Acclaim's Skeleton File
 format, and Iva and Albeano are two of the game's riders, who also appear as ``bulk/data/iva.cmp``
 and ``bulk/data/albeano.cmp`` in the Windows executable. These are motion clips, not sounds.
 
@@ -11,7 +11,8 @@ constant ``0x7800``, and a channel count that is always 67. That is the degrees 
 human skeleton, a root with six and the joints with one to three each. The payload is then one
 length-prefixed curve per channel, each with one value per frame:
 
-* ``[u16 length][s16 low][s16 high][frames x u8]``, eight-bit, rescaled from *low* to *high*;
+* ``[u16 length][s16 base][u16 step][frames x u8]``, eight-bit, each value
+  ``base + (sample * step >> 8)``, *step* being 8.8 fixed point;
 * ``[u16 length][frames x s16]``, stored outright, when eight bits will not do.
 
 Which one a record is follows from its length, and records are padded to an even boundary. The
@@ -19,7 +20,11 @@ final record records a length of zero and runs to the end of the payload, where 
 dropped.
 
 Verified against the ROM. All seventeen clips parse to exactly 67 channels and consume every byte.
-That is the decisive check. A wrong record size desynchronises the rest of the clip.
+That is the decisive check. A wrong record size desynchronises the rest of the clip. The eight-bit
+arithmetic is the game's (``DecodePackedAnimationPose``, ``0x800AF62C`` in the N64 build), and
+the game only ever reads an eight-bit record as a turn and a sixteen-bit one as a translation.
+Every clip's records line up with the skeleton's channel codes that way, the root's three turns
+then three translations included.
 """
 from __future__ import annotations
 
@@ -46,7 +51,7 @@ CHANNEL_HEADER_SIZE = 6
 :meta hide-value:
 """
 
-_QUANTISED_STEPS = 255.0
+_STEP_SHIFT = 8
 _NAME_SIZE = 12
 _LENGTH_SIZE = 2
 
@@ -66,22 +71,35 @@ def _channel(payload: bytes, at: int, size: int, frames: int) -> tuple[list[floa
     """
     Read one channel's curve.
 
+    A record is sixteen-bit when it has room for a value per frame at that width, unless its size
+    is also exactly that of an eight-bit record. The two sizes coincide only in a clip of four or
+    five frames.
+
+    Parameters
+    ----------
+    payload : bytes
+        The clip's channel data, after the header.
+    at : int
+        Offset of the record within *payload*.
+    size : int
+        Size of the record, padding included.
+    frames : int
+        Number of frames in the clip.
+
     Returns
     -------
     tuple[list[float], bool]
         The values, and whether the record was well formed.
     """
-    quantised = at + CHANNEL_HEADER_SIZE + frames <= at + size
-    if quantised:
-        if at + CHANNEL_HEADER_SIZE + frames > len(payload):  # pragma: no cover
-            return [], False
-        low, high = struct.unpack_from('>2h', payload, at + _LENGTH_SIZE)
-        body = payload[at + CHANNEL_HEADER_SIZE:at + CHANNEL_HEADER_SIZE + frames]
-        span = (high - low) / _QUANTISED_STEPS
-        return [low + value * span for value in body], True
-    if at + _LENGTH_SIZE + frames * 2 > len(payload):
+    quantised = CHANNEL_HEADER_SIZE + frames + ((CHANNEL_HEADER_SIZE + frames) & 1)
+    if size >= _LENGTH_SIZE + frames * 2 and size != quantised:
+        return [float(v)
+                for v in struct.unpack_from(f'>{frames}h', payload, at + _LENGTH_SIZE)], True
+    if size < CHANNEL_HEADER_SIZE + frames:
         return [], False
-    return [float(v) for v in struct.unpack_from(f'>{frames}h', payload, at + _LENGTH_SIZE)], True
+    base, step = struct.unpack_from('>hH', payload, at + _LENGTH_SIZE)
+    body = payload[at + CHANNEL_HEADER_SIZE:at + CHANNEL_HEADER_SIZE + frames]
+    return [float(base + (value * step >> _STEP_SHIFT)) for value in body], True
 
 
 def parse_bmc(blob: bytes) -> BmcClip | None:
@@ -124,6 +142,8 @@ _DEMO_FRAMES = 4
 _DEMO_CHANNELS = 2
 _DEMO_LOW = -100
 _DEMO_HIGH = 100
+# 255 * 201 >> 8 is 200, the step that carries -100 up to 100.
+_DEMO_STEP = 201
 
 
 def demo() -> None:
@@ -137,11 +157,11 @@ def demo() -> None:
     """
     header = BMC_MAGIC + b'walk.asf'.ljust(_NAME_SIZE, b'\x00')
     header += struct.pack('>4H', _DEMO_FRAMES, _DEMO_FRAMES, 0x7800, _DEMO_CHANNELS)
-    # An eight-bit channel spanning 0 to 255 maps its bytes straight onto that range.
-    first = struct.pack('>H2h', CHANNEL_HEADER_SIZE + _DEMO_FRAMES, 0, 255)
+    # A step of one (256 in 8.8) maps an eight-bit channel's bytes straight onto their values.
+    first = struct.pack('>HhH', CHANNEL_HEADER_SIZE + _DEMO_FRAMES, 0, 256)
     first += bytes((0, 85, 170, 255))
     # The last channel records a zero length and runs to the end.
-    second = struct.pack('>H2h', 0, _DEMO_LOW, _DEMO_HIGH) + bytes((0, 128, 255, 0))
+    second = struct.pack('>HhH', 0, _DEMO_LOW, _DEMO_STEP) + bytes((0, 128, 255, 0))
     clip = parse_bmc(header + first + second)
     if clip is None:
         msg = 'A well-formed clip did not parse.'

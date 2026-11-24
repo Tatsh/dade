@@ -30,9 +30,10 @@ def _demo_skeleton(*,
                    first_name: str = 'lhipjoint',
                    first_dof: int = 0,
                    extra_dof: int = 61) -> Skeleton:
-    first = Bone(first_name, -1, first_dof, root_dof, (0.0, 0.0, 0.0), ())
+    identity = ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
+    first = Bone(first_name, -1, first_dof, root_dof, (), identity, (0.0, 0.0, 0.0))
     rest = [
-        Bone(f'b{i}', 0, extra_dof if i == 0 else 0, 0, (0.0, 0.0, 0.0), ())
+        Bone(f'b{i}', 0, extra_dof if i == 0 else 0, 0, (), identity, (0.0, 0.0, 0.0))
         for i in range(count - 1)
     ]
     return Skeleton(root_dof, [first, *rest])
@@ -80,6 +81,27 @@ def test_parse_skeleton_numbers_the_channels_after_the_root() -> None:
     assert skeleton is not None
     assert [bone.channel for bone in skeleton.bones] == [6, 6, 9]
     assert skeleton.channels == 10
+
+
+def test_parse_skeleton_reads_the_codes_bases_and_pivots() -> None:
+    model = bytearray(_model(_SIMPLE))
+    header = 0x20
+    model[header + 8:header + 11] = bytes((2, 9, 8))
+    struct.pack_into('>9h', model, header + 0x10, 0, 4096, 0, -4096, 0, 0, 0, 0, 4096)
+    struct.pack_into('>3i', model, header + 0x24, 16, 32, -48)
+    femur = header + BONE_RECORD_SIZE * 2
+    model[femur + 3:femur + 5] = bytes((1, 10))
+    struct.pack_into('>9h', model, femur + 8, 2048, 0, 0, 0, 4096, 0, 0, 0, 4096)
+    struct.pack_into('>3i', model, femur + 0x1C, 800, -8, 0)
+    skeleton = parse_skeleton(bytes(model))
+    assert skeleton is not None
+    assert skeleton.root_axes == (9, 8)
+    assert skeleton.root_basis == ((0.0, 1.0, 0.0), (-1.0, 0.0, 0.0), (0.0, 0.0, 1.0))
+    assert skeleton.root_pivot == (1.0, 2.0, -3.0)
+    femur_bone = skeleton.bones[1]
+    assert femur_bone.axes == (10,)
+    assert femur_bone.basis[0] == (0.5, 0.0, 0.0)
+    assert femur_bone.pivot == (50.0, -0.5, 0.0)
 
 
 def test_parse_skeleton_rejects_a_foreign_region() -> None:

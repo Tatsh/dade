@@ -23,7 +23,7 @@ import struct
 from dade.common.exceptions import SelfCheckFailed, UnreachableState
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterable, Iterator
 
     from .typing import Endian
 
@@ -55,6 +55,7 @@ _PC_G_VTX = 0x04
 _PC_G_TRI2 = 0xB1
 _PC_TEXTURE = 0xAC
 _SEGMENT_5 = 0x05
+_SEGMENT_8 = 0x08
 _VERTEX_SIZE = 16
 _COMMAND_SIZE = 8
 _TEXCOORD_SHIFT = 32.0
@@ -441,7 +442,10 @@ def parse_pc_display_lists(data: bytes, vertices: bytes) -> list[Mesh]:
     return buffer.meshes()
 
 
-def parse_display_lists(data: bytes, endian: Endian = '>') -> list[Mesh]:
+def parse_display_lists(data: bytes,
+                        endian: Endian = '>',
+                        vertices: bytes | None = None,
+                        starts: Iterable[int] | None = None) -> list[Mesh]:
     """
     Decode every triangle a flat model draws, grouped by the image it draws with.
 
@@ -451,6 +455,12 @@ def parse_display_lists(data: bytes, endian: Endian = '>') -> list[Mesh]:
         A flat model blob, whose segment-5 addresses index into itself.
     endian : dade.xg2.typing.Endian
         Byte order: ``>`` for the N64 builds, ``<`` for the PC port.
+    vertices : bytes | None
+        The buffer segment 8 addresses. A rider's display list loads its skinned vertices from
+        this buffer. Without it, segment-8 loads are skipped.
+    starts : collections.abc.Iterable[int] | None
+        Offsets of the display lists to walk. Defaults to every entry of the model's pointer
+        table. In a rider, some entries lead to data rather than to commands.
 
     Returns
     -------
@@ -461,7 +471,7 @@ def parse_display_lists(data: bytes, endian: Endian = '>') -> list[Mesh]:
     texture: int | None = None
     pending: int | None = None
     mode = _G_LIGHTING
-    for start in _entry_points(data, endian):
+    for start in _entry_points(data, endian) if starts is None else starts:
         for op, w0, w1 in _commands(data, start, endian):
             lit = bool(mode & _G_LIGHTING)
             if op == _G_VTX:
@@ -469,6 +479,8 @@ def parse_display_lists(data: bytes, endian: Endian = '>') -> list[Mesh]:
                 first = ((w0 >> 1) & 0x7F) - count
                 if (w1 >> 24) == _SEGMENT_5:
                     buffer.load(data, w1 & 0xFFFFFF, count, first, endian)
+                elif (w1 >> 24) == _SEGMENT_8 and vertices is not None:
+                    buffer.load(vertices, w1 & 0xFFFFFF, count, first, endian)
             elif op == _G_GEOMETRYMODE:
                 # The first word records the bits to retain, already inverted, and the second the
                 # bits to set.

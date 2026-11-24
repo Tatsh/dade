@@ -45,6 +45,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   read and recorded in `manifest.json` as `textures`. It was previously read as the start of the
   first object, and 49 meshes of the FreQ maker (among them the feet and the lower arms) did not
   convert.
+- `dade xg2 xg2-to-glb` writes each _Extreme-G 2_ rider as a skinned GLB, with one joint per bone of
+  its skeleton, the game's vertex weights, and every motion clip as an animation.
+
+- _Extreme-G 2_ motion clips decode an eight-bit curve as a base plus an 8.8 step, as the game does,
+  and a sixteen-bit curve at full width rather than as eight-bit samples.
+- _Extreme-G 2_ clip GLBs place each joint at its pivot and turn it about the skeleton's axes, in the
+  order its channel codes give.
+- A GLB without meshes omits the empty `meshes` array the glTF validator rejects.
 
 ## [0.3.0] - 2026-11-23
 
