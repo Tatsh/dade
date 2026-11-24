@@ -144,6 +144,18 @@ streaming songs are converted to WAV, and assets are converted in place (bitmaps
 to JSON, Milo scenes to object folders, meshes to OBJ, audio to WAV). The output directory defaults
 to the current directory; set it with `-o`/`--output-dir`.
 
+For _Amplitude_, the default FreQ is also assembled into `GEN/MAIN/freqmaker/avatar_default.glb`.
+The parts the game builds a FreQ from (lower body, torso, head, both arms, instrument, and two
+gears) are joined at their joint meshes into one skin, with the textures of their default choices
+embedded. Each frame range of the game's avatar animations (`guitar`, `idle`, `win1`, and the rest)
+becomes one glTF animation. Rotation keys move every bone and translation keys move the pelvis and
+the arms. Each arm is posed by the game's two-bone inverse kinematics, the hand following the
+instrument. Frames are song ticks at 480 a quarter note, timed at 120 beats a minute unless `--bpm`
+sets another tempo. The game is Z-up, and a root node turns the FreQ to glTF's Y-up.
+
+An animation plays one frame range on every part. In a song the game plays the arm ranges over the
+body's loop, and that layering is not reproduced.
+
 ## Tone Sphere
 
 ```shell
@@ -478,19 +490,34 @@ Each archive lands in a directory titled after it with the region suffix dropped
 therefore unpacks into `extracted/data`. With `--convert`, the `.LVL` containers are split first and
 the assets inside them are converted by the same pass, and then:
 
-| Input                         | Output                                                     |
-| ----------------------------- | ---------------------------------------------------------- |
-| `.TEX2` texture banks         | PNG, with PlayStation 2 alpha rescaled to `0..255`         |
-| `.EGP2` level geometry        | a `.glb` with the level's props placed in it, plus OBJ/MTL |
-| `.SGP2` prop libraries        | the PNGs they embed                                        |
-| `.MSH` / `.MSB` sound banks   | one WAV per sound                                          |
-| `.MIH` / `.MIB` music streams | WAV, de-interleaved back to stereo                         |
-| `.VO2` dialogue               | WAV, stitched from the `AUDO` blocks                       |
+| Input                         | Output                                                      |
+| ----------------------------- | ----------------------------------------------------------- |
+| `.TEX2` texture banks         | PNG, with PlayStation 2 alpha rescaled to `0..255`          |
+| `.EGP2` level geometry        | a `.glb` with the level's props placed in it, plus OBJ/MTL  |
+| `.SGP2` prop libraries        | the PNGs they embed, and a skinned `.glb` per rigged object |
+| `.MSH` / `.MSB` sound banks   | one WAV per sound                                           |
+| `.MIH` / `.MIB` music streams | WAV, de-interleaved back to stereo                          |
+| `.VO2` dialogue               | WAV, stitched from the `AUDO` blocks                        |
 
 The level `.glb` is the most involved output. Props are read from the `.SGP2` libraries belonging to
 the level, positioned and turned according to the `.OLV` file that records where each one stands, and
 written into the same file as the level geometry. Characters with interchangeable wardrobe pieces are
 given one of each, rather than all of them at once.
+
+Each rigged object of a `.SGP2` library (a character, and props such as doors and ropes) is also
+written as a separate `.glb` in a `<library>_skinned` directory beside the library, and
+`dade sopranos gltf` writes the same files. A file has the object's mesh, the bones of its `.SKL2`
+skeleton as joints, and one animation for each `.SAM2` clip of the level that drives only bones of
+that skeleton. A character of a level with animations comes to about 5.5 MB, most of it the 230 or
+so clips the human skeletons share. The skeleton is matched by the hash the object records, from
+the same level first and then from any other, and otherwise by a skeleton in the same object
+directory with every bone the object uses.
+
+Two parts of the skin are provisional, and each skin's `extras` record both. The files record which
+one or two bones move a vertex and not how much each bone moves it. A vertex following two bones
+therefore weighs each at a half. The first entry of every object's bone list is unnamed, and a
+vertex selecting it is bound to the skeleton root. Treating a clip's rate (15, 10, 30, or 5) as
+frames a second is also unconfirmed.
 
 The retail disc converts clean, and `--ignore-failures` is not needed for it. Pass the flag to log
 and skip an asset that will not convert instead of stopping.

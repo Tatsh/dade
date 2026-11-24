@@ -3,13 +3,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 import gzip
+import json
+import math
 import struct
 import zlib
 
 import pytest
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Collection, Mapping, Sequence
+    from pathlib import Path
 
     from dade.harmonix.typing import DataArrayNode
 
@@ -27,6 +30,28 @@ _BLOCK = 0x800
 
 def _rstr(text: str) -> bytes:
     return struct.pack('<I', len(text)) + text.encode()
+
+
+def _turn(degrees: float) -> tuple[float, float, float, float]:
+    half = math.radians(degrees) / 2
+    return (0.0, 0.0, math.sin(half), math.cos(half))
+
+
+def _at(x: float, y: float, z: float) -> tuple[float, ...]:
+    return (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, x, y, z)
+
+
+def _scene(path: Path, objects: Mapping[str, bytes], extra: Sequence[tuple[str, str]] = ()) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    entries = [{'type': typ, 'name': name, 'file': name} for typ, name in extra]
+    entries += [{
+        'type': 'Mat' if name.endswith('.mat') else 'Mesh',
+        'name': name,
+        'file': name
+    } for name in objects]
+    (path / 'manifest.json').write_text(json.dumps({'objects': entries}), encoding='utf-8')
+    for name, body in objects.items():
+        (path / name).write_bytes(body)
 
 
 @pytest.fixture
@@ -223,12 +248,13 @@ def make_milo() -> Callable[..., bytes]:
     Returns
     -------
     collections.abc.Callable[..., bytes]
-        A callable taking the objects and keyword ``version`` and ``magic`` values.
+        A callable taking the objects and keyword ``version``, ``magic``, and ``textures`` values.
     """
     def build(objects: Sequence[tuple[str, str, bytes]],
               *,
               version: int = 10,
-              magic: int = 0xCBBEDEAF) -> bytes:
+              magic: int = 0xCBBEDEAF,
+              textures: Sequence[str] = ()) -> bytes:
         directory = bytearray(struct.pack('<II', version, len(objects)))
         for typ, name, _ in objects:
             if version == 6:
@@ -237,6 +263,8 @@ def make_milo() -> Callable[..., bytes]:
                 directory += _rstr(typ) + _rstr(name)
         if version == 6:
             directory += _SENTINEL
+        if version >= 9:
+            directory += struct.pack('<I', len(textures)) + b''.join(_rstr(t) for t in textures)
         for _, _, body in objects:
             directory += body + _SENTINEL
         if version == 6:
@@ -329,15 +357,27 @@ def make_v14_mesh() -> Callable[..., bytes]:
     Returns
     -------
     collections.abc.Callable[..., bytes]
-        A callable taking keyword ``material``, ``vertices``, and ``faces`` values.
+        A callable taking keyword ``material``, ``vertices``, ``faces``, ``handles``,
+        ``transform_version``, ``world``, ``owner``, ``draws``, ``showing``, ``weights``, and
+        ``bones`` values. ``world`` is twelve floats written as both the local and the world
+        transform, and ``bones`` is ``(bone0, bone1, bind0, bind1)``.
     """
+    identity = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0)
+
     def build(*,
               material: str = 'ship.mat',
               vertices: int = 3,
               faces: Sequence[tuple[int, int, int]] = ((0, 1, 2),),
               handles: Sequence[str] = (),
-              transform_version: int = 0) -> bytes:
-        out = bytearray(struct.pack('<II', 14, transform_version) + bytes(96))
+              transform_version: int = 0,
+              world: Sequence[float] = identity,
+              owner: str = '',
+              draws: Sequence[str] = (),
+              showing: bool = True,
+              weights: tuple[float, float] = (0.0, 0.0),
+              bones: tuple[str, str, Sequence[float], Sequence[float]] | None = None) -> bytes:
+        out = bytearray(struct.pack('<II', 14, transform_version))
+        out += struct.pack('<24f', *world, *world)
         out += struct.pack('<I', len(handles))  # Child handle list.
         for handle in handles:
             out += _rstr(handle)
@@ -345,22 +385,31 @@ def make_v14_mesh() -> Callable[..., bytes]:
             out += bytes(16)  # Constraint and pivot.
         if 2 <= transform_version <= 4:
             out += b'\0'
-        out += struct.pack('<I', 0) + b'\0' + struct.pack('<I', 0)  # RndDrawable.
+        out += struct.pack('<I', 0) + bytes((int(showing),)) + struct.pack('<I', len(draws))
+        for draw in draws:
+            out += _rstr(draw)
         out += struct.pack('<I', 0) + struct.pack('<I', 0)  # RndCollideable.
         out += bytes(8)
-        out += _rstr(material) + _rstr('') + _rstr('')
+        out += _rstr(material) + _rstr('') + _rstr(owner)
         out += bytes(16)  # Bounds.
         out += _rstr('') + bytes(4) + b'\0'
         out += struct.pack('<I', vertices)
         for i in range(vertices):
             vertex = bytearray(56)
             struct.pack_into('<3f', vertex, 0, float(i), float(i) * 2, float(i) * 3)
+            struct.pack_into('<2f', vertex, 12, *weights)
             struct.pack_into('<3f', vertex, 20, 0.0, 1.0, 0.0)
             struct.pack_into('<2f', vertex, 48, i / 4, i / 8)
             out += vertex
         out += struct.pack('<I', len(faces))
         for face in faces:
             out += struct.pack('<3H', *face)
+        out += struct.pack('<I', 1) + struct.pack('<2H', 0, 1)  # One edge.
+        if bones is None:
+            out += _rstr('')
+        else:
+            out += _rstr(bones[0]) + _rstr(bones[1])
+            out += struct.pack('<24f', *bones[2], *bones[3])
         return bytes(out)
 
     return build
@@ -400,5 +449,217 @@ def make_v10_mesh() -> Callable[..., bytes]:
         for face in faces:
             out += struct.pack('<3H', *face)
         return bytes(out)
+
+    return build
+
+
+@pytest.fixture
+def make_trans_anim() -> Callable[..., bytes]:
+    """
+    Build an Amplitude revision-3 ``RndTransAnim`` body.
+
+    Returns
+    -------
+    collections.abc.Callable[..., bytes]
+        A callable taking keyword ``rotations`` and ``translations`` (``(value, frame)`` pairs),
+        ``filters`` (``(type, data)`` pairs), ``translation_interpolation``, and ``revision``.
+    """
+    def build(*,
+              rotations: Sequence[tuple[Sequence[float], float]] = (),
+              translations: Sequence[tuple[Sequence[float], float]] = (),
+              filters: Sequence[tuple[int, bytes]] = (),
+              translation_interpolation: int = 0,
+              revision: int = 3) -> bytes:
+        out = bytearray(struct.pack('<III', revision, 0, len(filters)))
+        for kind, data in filters:
+            out += struct.pack('<I', kind) + data
+        out += struct.pack('<I', 1) + _rstr('other.tnm')  # Animatable list.
+        out += struct.pack('<I', 0) + b'\x01' + struct.pack('<I', 0)  # RndDrawable.
+        out += _rstr('bone.mesh')
+        out += struct.pack('<I', len(rotations))
+        for value, frame in rotations:
+            out += struct.pack('<5f', *value, frame)
+        out += struct.pack('<I', len(translations))
+        for value, frame in translations:
+            out += struct.pack('<4f', *value, frame)
+        out += _rstr('owner.tnm') + struct.pack('<I', translation_interpolation) + b'\x01'
+        out += struct.pack('<I', 1) + struct.pack('<4f', 1.0, 1.0, 1.0, 0.0)  # One scale key.
+        out += struct.pack('<I', 7) + b'\x00'
+        return bytes(out)
+
+    return build
+
+
+@pytest.fixture
+def make_avatar_tree(make_dtb: Callable[..., bytes], make_v14_mesh: Callable[..., bytes],
+                     make_trans_anim: Callable[..., bytes]) -> Callable[..., Path]:
+    """
+    Write a synthetic extracted ``MAIN.ARK`` with a small FreQ avatar.
+
+    The lower body, the torso, the instrument, and both arms are complete; the head scene has no
+    meshes, the head gear's scene is missing, and the face gear's choice is not listed.
+
+    Returns
+    -------
+    collections.abc.Callable[..., pathlib.Path]
+        A callable taking the root directory and keyword ``omit`` (part numbers left out of the
+        default settings), ``hands`` (``'t'`` and ``'r'`` for the translation and rotation keys of
+        each hand, empty for none), ``right_pole``, ``tracks``, ``scenes``, ``config``,
+        ``base_rnd``, and ``incomplete`` values. It returns the root.
+    """
+    def mesh(**kwargs: object) -> bytes:
+        kwargs.setdefault('material', '')
+        return make_v14_mesh(**kwargs)
+
+    def build(root: Path,
+              *,
+              omit: Collection[int] = (),
+              hands: tuple[str, str] = ('tr', ''),
+              right_pole: bool = True,
+              tracks: bool = True,
+              scenes: bool = True,
+              config: str = 'gen/freq2_config.txt.bin',
+              base_rnd: bool = True,
+              incomplete: bool = False) -> Path:
+        maker = root / 'freqmaker'
+        base = maker / 'fullfreq'
+        base.mkdir(parents=True)
+        (base / 'other.bin').write_bytes(b'')
+        if tracks:
+            anims: dict[str, bytes] = {
+                'pelvis':
+                    make_trans_anim(
+                        rotations=(((0.0, 0.0, 0.0, 1.0), 0.0), ((0.0, 0.0, 0.0, 1.0), 40.0)),
+                        translations=(((0.0, 0.0, 10.0), 0.0), ((0.0, 0.0, 11.0), 40.0))),
+                'torso':
+                    make_trans_anim(rotations=((_turn(0), 0.0), (tuple(
+                        -x for x in _turn(170)), 20.0), (_turn(300), 40.0))),
+                'instr':
+                    make_trans_anim(rotations=((_turn(10), 0.0),)),
+                'larm_l':
+                    make_trans_anim(translations=(((3.0, 2.0, 1.0), 0.0), ((3.0, 2.0, 2.0), 40.0))),
+            }
+            if right_pole:
+                anims['rarm_l'] = make_trans_anim(translations=(((-3.0, 2.0, 1.0), 0.0),))
+            for side, keys in zip(('larm_h', 'rarm_h'), hands, strict=True):
+                if keys:
+                    anims[side] = make_trans_anim(
+                        rotations=((_turn(30), 0.0),) if 'r' in keys else (),
+                        translations=(((3.5 if side == 'larm_h' else -3.5, -1.0, 1.0), 0.0),
+                                      ((3.6 if side == 'larm_h' else -3.6, -1.0, 1.0),
+                                       40.0)) if 't' in keys else ())
+            for name, body in anims.items():
+                (base / f'fbase_{name}.tnm').write_bytes(body)
+        if scenes:
+            _scene(
+                maker / 'lowerbody' / 'g1', {
+                    'pelvis.mesh':
+                        mesh(world=_at(0, 0, 10),
+                             handles=('torso_joint.mesh', 'missing.mesh'),
+                             vertices=0,
+                             faces=()),
+                    'torso_joint.mesh':
+                        mesh(world=_at(0, 0, 12), vertices=0, faces=()),
+                    'skin.mesh':
+                        mesh(owner='pelvis.mesh',
+                             draws=('ghost.mesh', 'hidden.mesh', 'pelvis.mesh', 'rigid.mesh'),
+                             weights=(0.5, 0.0),
+                             bones=('torso_joint.mesh', '', _at(0, 0, -2), _at(0, 0, 0))),
+                    'hidden.mesh':
+                        mesh(showing=False),
+                    'rigid.mesh':
+                        mesh(),
+                }, (('View', 'lg1.view'),))
+            _scene(maker / 'lowerbody' / 'm1', {'lower.mat': _rstr('legs.tex')},
+                   (('Mat', 'gone.mat'),))
+            (maker / 'lowerbody' / 'm1' / 'legs.png').write_bytes(b'\x89PNG legs')
+            mirrored = (-1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 16.0)
+            _scene(
+                maker / 'torso' / 'g1', {
+                    'torso.mesh':
+                        mesh(world=_at(0, 0, 12),
+                             handles=('larm_u_joint.mesh', 'rarm_u_joint.mesh', 'instr_joint.mesh',
+                                      'head_joint.mesh')),
+                    'larm_u_joint.mesh':
+                        mesh(world=_at(2, 0, 14), vertices=0, faces=()),
+                    'rarm_u_joint.mesh':
+                        mesh(world=_at(-2, 0, 14), vertices=0, faces=()),
+                    'instr_joint.mesh':
+                        mesh(world=_at(0, -2, 13), vertices=0, faces=()),
+                    'head_joint.mesh':
+                        mesh(world=mirrored, vertices=0, faces=()),
+                    'torso.mat':
+                        _rstr('nothing.tex'),
+                })
+            arms: dict[str, bytes] = {}
+            for side, sign in (('l', 1.0), ('r', -1.0)):
+                arms |= {
+                    f'{side}arm_u.mesh':
+                        mesh(world=_at(2 * sign, 0, 14), handles=(f'{side}arm_l.mesh',)),
+                    f'{side}arm_l.mesh':
+                        mesh(world=_at(4 * sign, 0, 14), handles=(f'{side}arm_h.mesh',)),
+                    f'{side}arm_h.mesh':
+                        mesh(world=_at(6 * sign, 0, 14)),
+                    f'{side}arm_skin.mesh':
+                        mesh(owner=f'{side}arm_h.mesh',
+                             weights=(0.25, 0.25),
+                             bones=(f'{side}arm_l.mesh', f'{side}arm_u.mesh', _at(
+                                 2 * sign, 0, 0), _at(4 * sign, 0, 0))),
+                }
+            _scene(maker / 'arms' / 'g1', arms)
+            _scene(maker / 'arms' / 'm1', {'arms.mat': _rstr('arms.tex')})
+            (maker / 'arms' / 'm1' / 'arms.png').write_bytes(b'\x89PNG arms')
+            _scene(maker / 'instr' / 'instr', {
+                'instr_00.mesh': mesh(world=_at(0, -2, 13), vertices=0, faces=()),
+            })
+            _scene(maker / 'head' / 'g1', {})
+
+        def part(number: int,
+                 directory: str,
+                 choice: list[DataArrayNode],
+                 root_name: str,
+                 draw_name: str,
+                 anims: Sequence[str] = ()) -> list[DataArrayNode]:
+            items: list[DataArrayNode] = [
+                number, ['rnd_dir', directory], ['types', choice], ['trans_root', root_name]
+            ]
+            if not (incomplete and number == 2):
+                items.append(['draw_root', draw_name])
+            if anims:
+                items.append(['anims', *anims])
+            return items
+
+        settings: list[DataArrayNode] = ['default_settings']
+        for number, name in ((7, 'fm_none'), (0, 'fm_a'), (1, 'fm_a'), (2, 'fm_h'), (3, 'fm_t'),
+                             (4, 'fm_lb'), (5, 'fm_hg'), (6, 'fm_none')):
+            if number not in omit:
+                settings.append([number, ['type', name]])
+        avatar: list[DataArrayNode] = [
+            'avatar',
+            [
+                'parts',
+                part(4, 'FreqMaker/lowerbody', ['fm_lb', 'g1', 'm1'], 'pelvis', 'skin',
+                     ('pelvis', 'torso_joint')),
+                part(3, 'FreqMaker/torso', ['fm_t', 'g1', ''], 'torso', 'torso', ('torso',)),
+                part(7, 'FreqMaker/instr/instr.rnd', ['fm_none', 0], 'instr', 'instr', ('instr',)),
+                part(0, 'FreqMaker/arms', ['fm_a', 'g1', 'm1'], 'larm_u', 'larm_skin',
+                     ('larm_l', 'larm_h')),
+                part(1, 'FreqMaker/arms', ['fm_a', 'g1', 'm1'], 'rarm_u', 'rarm_skin',
+                     ('rarm_l', 'rarm_h')),
+                part(2, 'FreqMaker/head', ['fm_h', 'g1', ''], 'head', 'head'),
+                part(5, 'FreqMaker/head_gear', ['fm_hg', 'g9', ''], 'head_gear', 'head_gear'),
+                part(6, 'FreqMaker/face_gear', ['fm_fg', 'g1', ''], 'face_gear', 'face_gear'),
+            ],
+            settings,
+            [
+                'anims', ['clip', [3, 0, 40], [0, 10, 60], [4, 0, 0]], ['copy', [3, 0, 40]],
+                ['empty'], 'junk', [5], ['bad', [3, 'x', 10]]
+            ],
+        ]
+        if base_rnd:
+            avatar.insert(1, ['base_rnd', 'FreqMaker/fullfreq.rnd'])
+        (root / 'gen').mkdir(parents=True, exist_ok=True)
+        (root / config).write_bytes(make_dtb([['version', 1], ['db', avatar]]))
+        return root
 
     return build

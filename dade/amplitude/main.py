@@ -11,6 +11,7 @@ import click
 
 from dade.amplitude.unpacker import AmplitudeUnpacker
 from dade.common.exceptions import InvalidFormatError
+from dade.harmonix.avatar import DEFAULT_BPM
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -56,9 +57,15 @@ debug_option = bascom.debug_option({'dade.amplitude': {}, 'dade.common': {}, 'da
 @click.option('--delete',
               is_flag=True,
               help='Delete converted intermediate files (the source is never touched).')
+@click.option('--bpm',
+              type=click.FloatRange(min=0, min_open=True),
+              default=DEFAULT_BPM,
+              show_default=True,
+              help='Tempo the avatar animations are timed at, in beats a minute.')
 def main(input_: Path,
          *,
          output_dir: Path,
+         bpm: float = DEFAULT_BPM,
          jobs: int = 0,
          no_convert: bool = False,
          no_gunzip: bool = False,
@@ -70,6 +77,7 @@ def main(input_: Path,
 
     async def run(on_status: Callable[[str], None] | None) -> dict[str, str]:
         return await unpacker.unpack(output_dir,
+                                     bpm=bpm,
                                      convert=not no_convert,
                                      delete=delete,
                                      gunzip=not no_gunzip,

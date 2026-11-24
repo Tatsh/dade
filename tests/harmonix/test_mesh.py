@@ -39,6 +39,19 @@ def test_mesh_to_obj_v14(make_v14_mesh: Callable[..., bytes]) -> None:
     assert lines[-1] == 'f 3/3/3 2/2/2 1/1/1'
 
 
+@pytest.mark.parametrize(('vertices', 'faces'), [(0, ()), (3, ((0, 1, 3),))])
+def test_mesh_to_obj_v14_rejects_bad_geometry(make_v14_mesh: Callable[..., bytes], vertices: int,
+                                              faces: tuple[tuple[int, int, int], ...]) -> None:
+    assert mesh.mesh_to_obj(make_v14_mesh(vertices=vertices, faces=faces)) is None
+
+
+def test_mesh_to_obj_v14_skinned(make_v14_mesh: Callable[..., bytes]) -> None:
+    bind = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0)
+    obj = mesh.mesh_to_obj(make_v14_mesh(weights=(0.5, 0.0), bones=('a.mesh', '', bind, bind)))
+    assert obj is not None
+    assert obj.count('\nv ') == 3
+
+
 def test_mesh_to_obj_v14_without_material(make_v14_mesh: Callable[..., bytes]) -> None:
     obj = mesh.mesh_to_obj(make_v14_mesh(material=''))
     assert obj is not None

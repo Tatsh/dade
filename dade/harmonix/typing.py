@@ -5,11 +5,16 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, NotRequired, TypeAli
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from pathlib import Path
 
-__all__ = ('ARKEntry', 'ArenaMeta', 'ArkLayout', 'Asset', 'BankMeta', 'DataArrayNode',
-           'EnvironMeta', 'Geometry', 'IPUMeta', 'LightMeta', 'LnmMeta', 'MIDIFile', 'MIDITrack',
-           'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta', 'PoolOutcome', 'SampleMeta', 'TnmMeta',
-           'ViewMeta')
+    import numpy as np
+
+__all__ = ('ARKEntry', 'ArenaMeta', 'ArkLayout', 'Asset', 'AvatarArm', 'AvatarPart', 'AvatarTrack',
+           'BankMeta', 'DataArrayNode', 'EnvironMeta', 'Geometry', 'IPUMeta', 'LightMeta',
+           'LnmMeta', 'MIDIFile', 'MIDITrack', 'MMVMeta', 'MatMeta', 'MmeshMeta', 'MovieMeta',
+           'PoolOutcome', 'RndBones', 'RndFilter', 'RndKey', 'RndMesh', 'RndTransAnim',
+           'RndTransform', 'RndVertex', 'SampleMeta', 'TnmFilterMeta', 'TnmKeyMeta', 'TnmMeta',
+           'TnmScanMeta', 'ViewMeta')
 
 ArkLayout: TypeAlias = Literal['amplitude', 'frequency']
 """
@@ -175,19 +180,250 @@ class ViewMeta(TypedDict):
     """Object version (``u32`` at offset ``0``)."""
 
 
-class TnmMeta(TypedDict):
-    """Decoded ``Rnd::Trans`` named-mesh group (``.tnm``) metadata."""
+class TnmScanMeta(TypedDict):
+    """References and transforms found by scanning a FreQuency ``Rnd::TransAnim`` (``.tnm``)."""
 
     mesh_refs: Sequence[str]
     """The referenced ``.mesh`` object names."""
     references: Sequence[str]
     """Every referenced object name, in file order with duplicates removed."""
     tnm_refs: Sequence[str]
-    """The referenced child ``.tnm`` object names."""
+    """The referenced ``.tnm`` object names."""
     transforms: Sequence[Sequence[float]]
     """Every 4x3 row-major transform (twelve floats each) found in the body."""
     version: int
     """Object version (``u32`` at offset ``0``)."""
+
+
+class TnmKeyMeta(TypedDict):
+    """One key of a ``Rnd::TransAnim`` track."""
+
+    frame: float
+    """The key's frame, in song ticks."""
+    value: Sequence[float]
+    """The key's value: a quaternion ``(x, y, z, w)`` or a vector ``(x, y, z)``."""
+
+
+class TnmFilterMeta(TypedDict):
+    """One filter of a ``Rnd::Animatable``."""
+
+    data: str
+    """The filter's parameters as hexadecimal bytes."""
+    type: str
+    """The filter's class (``ScaleOffset``, ``MinMaxLoop``, ``ZeroOrder``, and so on)."""
+
+
+class TnmMeta(TypedDict):
+    """Decoded ``Rnd::TransAnim`` (``.tnm``) keyframe animation."""
+
+    anims: Sequence[str]
+    """The animations the ``Rnd::Animatable`` base drives along with this one."""
+    draws: Sequence[str]
+    """The ``Rnd::Drawable`` base's draw list."""
+    filters: Sequence[TnmFilterMeta]
+    """The ``Rnd::Animatable`` base's frame filters."""
+    follow_path: bool
+    """Whether the target turns to face along its translation path."""
+    frames_owner: str
+    """The animation whose keys are played (this one when it names itself)."""
+    repeat_translation: bool
+    """Whether the translation keys repeat, each repetition offset by the path's span."""
+    rotation_keys: Sequence[TnmKeyMeta]
+    """The rotation keys."""
+    scale_interpolation: str
+    """The interpolation of the scale keys (``linear`` or ``spline``)."""
+    scale_keys: Sequence[TnmKeyMeta]
+    """The scale keys."""
+    showing: bool
+    """The ``Rnd::Drawable`` base's visibility flag."""
+    target: str
+    """The ``Rnd::Transformable`` the animation moves."""
+    translation_interpolation: str
+    """The interpolation of the translation keys (``linear`` or ``spline``)."""
+    translation_keys: Sequence[TnmKeyMeta]
+    """The translation keys."""
+    version: int
+    """Object version (always ``3``)."""
+
+
+class AvatarPart(NamedTuple):
+    """One part of the FreQ avatar, resolved from the ``db avatar parts`` configuration."""
+
+    number: int
+    """The part's number (``0`` left arm through ``7`` instrument)."""
+    dirs: tuple[Path, ...]
+    """The decomposed Milo scenes the part loads, the geometry first."""
+    trans_root: str
+    """The mesh the part hangs from its parent by."""
+    joint: str
+    """The mesh of the parent part the trans root hangs from."""
+    draw_root: str
+    """The mesh the part's draw lists start from."""
+    anims: tuple[str, ...]
+    """The bones the part animates (an arm's forearm and hand)."""
+    material: str | None
+    """The material of an instrument mesh, or ``None`` for a part drawing with its scene's first."""
+
+
+class AvatarTrack(NamedTuple):
+    """The keys of one ``fbase_<bone>.tnm`` animation, as arrays."""
+
+    rotation_frames: np.ndarray
+    """The frame of each rotation key, ``(n,)``."""
+    rotations: np.ndarray
+    """The rotation keys as quaternions ``(x, y, z, w)``, ``(n, 4)``."""
+    translation_frames: np.ndarray
+    """The frame of each translation key, ``(m,)``."""
+    translations: np.ndarray
+    """The translation keys, ``(m, 3)``."""
+
+
+class AvatarArm(NamedTuple):
+    """The bones of an arm posed by ``ArmPart::SolveIK``."""
+
+    socket: int
+    """The joint the three bones hang from."""
+    upper: int
+    """The upper arm."""
+    forearm: int
+    """The forearm."""
+    hand: int
+    """The hand."""
+    left: bool
+    """Whether this is the left arm, whose bend axis is not reversed."""
+    upper_length: float
+    """The distance from the shoulder to the elbow at rest."""
+    forearm_length: float
+    """The distance from the elbow to the wrist at rest."""
+
+
+class RndTransform(NamedTuple):
+    """The ``Rnd::Transformable`` part of an object."""
+
+    revision: int
+    """Revision of the stored transform."""
+    local: tuple[float, ...]
+    """The transform relative to the parent: twelve floats, rows ``X``, ``Y``, ``Z``, origin."""
+    world: tuple[float, ...]
+    """The transform in the scene, in the same layout as :py:attr:`local`."""
+    children: tuple[str, ...]
+    """The objects transformed relative to this one."""
+    billboard: int
+    """The billboard mode (``0`` when the revision stores none)."""
+    origin: tuple[float, float, float]
+    """The pivot origin (zero when the revision stores none)."""
+
+
+class RndVertex(NamedTuple):
+    """A ``Rnd::Mesh`` vertex."""
+
+    position: tuple[float, float, float]
+    """The position in the mesh's space."""
+    weights: tuple[float, float]
+    """The weights of the mesh's two bones (the transform owner takes the rest)."""
+    normal: tuple[float, float, float]
+    """The normal."""
+    color: tuple[float, float, float, float]
+    """The RGBA colour."""
+    uv: tuple[float, float]
+    """The texture coordinates, with a top-left origin."""
+
+
+class RndBones(NamedTuple):
+    """The two bones that deform a skinned ``Rnd::Mesh``."""
+
+    names: tuple[str, str]
+    """The ``Rnd::Transformable`` objects acting as bones (the second may be empty)."""
+    binds: tuple[tuple[float, ...], tuple[float, ...]]
+    """Each bone's bind transform, mapping the mesh's space into the bone's at rest."""
+
+
+class RndMesh(NamedTuple):
+    """A version-14 ``Rnd::Mesh`` object."""
+
+    transform: RndTransform
+    """The ``Rnd::Transformable`` base."""
+    showing: bool
+    """The ``Rnd::Drawable`` base's visibility flag."""
+    draws: tuple[str, ...]
+    """The objects drawn along with this mesh."""
+    collides: tuple[str, ...]
+    """The ``Rnd::Collideable`` base's collision list."""
+    z_mode: int
+    """The depth-buffer mode."""
+    z_func: int
+    """The depth comparison."""
+    material: str
+    """The ``Rnd::Mat`` the mesh draws with (may be empty)."""
+    geometry_owner: str
+    """The mesh whose vertices and faces are drawn (this one when it names itself)."""
+    transform_owner: str
+    """The ``Rnd::Transformable`` whose world transform places the mesh."""
+    sphere: tuple[float, ...]
+    """The bounding sphere as four floats, the centre and then the radius."""
+    lod_next: str
+    """The next, coarser level of detail (may be empty)."""
+    min_screen: float
+    """The screen size below which :py:attr:`lod_next` is drawn instead."""
+    mutable: bool
+    """Whether the geometry is rewritten at run time."""
+    vertices: tuple[RndVertex, ...]
+    """The vertices."""
+    faces: tuple[tuple[int, int, int], ...]
+    """The triangles, as vertex indices."""
+    edges: tuple[tuple[int, int], ...]
+    """The edges, as vertex indices."""
+    bones: RndBones | None
+    """The bones that deform the mesh, or ``None`` for a rigid mesh."""
+
+
+class RndKey(NamedTuple):
+    """One key of a ``Rnd::TransAnim`` track."""
+
+    value: tuple[float, ...]
+    """A quaternion ``(x, y, z, w)`` or a vector ``(x, y, z)``."""
+    frame: float
+    """The frame, in song ticks."""
+
+
+class RndFilter(NamedTuple):
+    """One frame filter of a ``Rnd::Animatable``."""
+
+    type: int
+    """The filter's class number."""
+    data: bytes
+    """The filter's parameters as stored."""
+
+
+class RndTransAnim(NamedTuple):
+    """A revision-3 ``Rnd::TransAnim`` object."""
+
+    filters: tuple[RndFilter, ...]
+    """The ``Rnd::Animatable`` base's frame filters."""
+    anims: tuple[str, ...]
+    """The animations the ``Rnd::Animatable`` base drives along with this one."""
+    showing: bool
+    """The ``Rnd::Drawable`` base's visibility flag."""
+    draws: tuple[str, ...]
+    """The ``Rnd::Drawable`` base's draw list."""
+    target: str
+    """The ``Rnd::Transformable`` the animation moves."""
+    rotation_keys: tuple[RndKey, ...]
+    """The rotation keys, quaternions ``(x, y, z, w)``."""
+    translation_keys: tuple[RndKey, ...]
+    """The translation keys."""
+    frames_owner: str
+    """The animation whose keys are played (this one when it names itself)."""
+    translation_interpolation: int
+    """``0`` for linear and ``1`` for spline translation."""
+    repeat_translation: bool
+    """Whether the translation keys repeat, each repetition offset by the path's span."""
+    scale_keys: tuple[RndKey, ...]
+    """The scale keys."""
+    scale_interpolation: int
+    """``0`` for linear and ``1`` for spline scale."""
+    follow_path: bool
+    """Whether the target turns to face along its translation path."""
 
 
 class MmeshMeta(TypedDict):

@@ -19,7 +19,7 @@ import anyio
 from dade.common.exceptions import InvalidFormatError
 from dade.common.json import write_json
 
-from . import ark, audio, bitmap, mesh, workers
+from . import ark, audio, avatar, bitmap, mesh, workers
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -164,6 +164,7 @@ async def run(ark_path: Path,
               jobs: int = 1,
               disc_audio: Path | None = None,
               layout: ArkLayout | None = None,
+              bpm: float = avatar.DEFAULT_BPM,
               on_status: Callable[[str], None] | None = None) -> dict[str, str]:
     """
     Unpack an ARK archive into ``out`` and convert its assets in place.
@@ -190,7 +191,11 @@ async def run(ark_path: Path,
     disc_audio : pathlib.Path | None
         If given, also convert the disc streaming songs in this directory to ``out/disc_audio``.
     layout : dade.harmonix.typing.ArkLayout | None
-        Force a specific ARK layout, or ``None`` to auto-detect it from the leading bytes.
+        Force a specific ARK layout, or ``None`` to auto-detect it from the leading bytes. Only an
+        ``'amplitude'`` layout has its default FreQ avatar exported (see
+        :py:func:`dade.harmonix.avatar.export_default_avatar`).
+    bpm : float
+        The tempo the avatar's animations are timed at, in beats a minute.
     on_status : collections.abc.Callable[[str], None] | None
         An optional progress hook called with a short status string at each conversion phase.
 
@@ -198,6 +203,16 @@ async def run(ark_path: Path,
     -------
     dict[str, str]
         A human-readable summary per pipeline step, keyed by step name.
+
+    Raises
+    ------
+    KeyError
+        If the avatar's configuration lists a bone its scenes do not have, unless
+        ``ignore_failures`` is set.
+    OSError
+        If a scene of the avatar cannot be read, unless ``ignore_failures`` is set.
+    ValueError
+        If a scene of the avatar is malformed, unless ``ignore_failures`` is set.
     """
     stats = ark.extract(ark_path, out, gunzip=gunzip, keep_gz=keep_gz, layout=layout)
     log.info('Extracted %d files (%d skipped, %d gunzipped).', stats.written, stats.skipped,
@@ -234,6 +249,17 @@ async def run(ark_path: Path,
     linked = await asyncio.to_thread(mesh.link_materials, out)
     log.info('Linked %d material reference(s).', linked)
     steps['materials'] = f'{linked} linked'
+    if layout == 'amplitude':
+        if on_status is not None:
+            on_status('Exporting the avatar')
+        try:
+            glb = await asyncio.to_thread(avatar.export_default_avatar, out, bpm=bpm)
+        except (KeyError, OSError, ValueError):
+            if not ignore_failures:
+                raise
+            log.warning('Failed to export the avatar (ignored).', exc_info=True)
+            glb = None
+        steps['avatar'] = 'not exported' if glb is None else str(glb.relative_to(out))
     bank_split, bank_json = await _split_banks(anyio_out,
                                                consumed=consumed,
                                                ignore_failures=ignore_failures,
@@ -266,6 +292,7 @@ async def run_game(work_dir: Path,
                    delete: bool = False,
                    jobs: int = 1,
                    layout: ArkLayout | None = None,
+                   bpm: float = avatar.DEFAULT_BPM,
                    on_status: Callable[[str], None] | None = None) -> dict[str, str]:
     """
     Unpack a whole game in place, every ARK in ``work_dir`` plus its on-disc streaming audio.
@@ -296,6 +323,8 @@ async def run_game(work_dir: Path,
         Maximum concurrent workers for the CPU-bound conversion phases; ``0`` uses the CPU count.
     layout : dade.harmonix.typing.ArkLayout | None
         Force a specific ARK layout for every archive, or ``None`` to auto-detect each one.
+    bpm : float
+        The tempo the Amplitude avatar's animations are timed at, in beats a minute.
     on_status : collections.abc.Callable[[str], None] | None
         An optional progress hook called with a short status string as each ARK and the disc audio
         are processed (for example ``'Unpacking GEN/MAIN.ARK'``).
@@ -332,6 +361,7 @@ async def run_game(work_dir: Path,
             on_status(f'Unpacking {rel}')
         steps = await run(ark_path,
                           dest,
+                          bpm=bpm,
                           convert=convert,
                           delete=delete,
                           gunzip=gunzip,

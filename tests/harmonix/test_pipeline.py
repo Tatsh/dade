@@ -135,6 +135,51 @@ async def test_run_converts_disc_audio(make_amp_ark: _Builder, tmp_path: Path) -
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(('result', 'summary'), [('glb', 'freqmaker/avatar_default.glb'),
+                                                 (None, 'not exported')])
+async def test_run_exports_avatar(make_amp_ark: _Builder, mocker: MockerFixture, tmp_path: Path,
+                                  result: str | None, summary: str) -> None:
+    archive = tmp_path / 'MAIN.ARK'
+    archive.write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
+    out = tmp_path / 'out'
+    export = mocker.patch('dade.harmonix.avatar.export_default_avatar',
+                          return_value=out / 'freqmaker' / 'avatar_default.glb' if result else None)
+    statuses: list[str] = []
+    steps = await pipeline.run(archive,
+                               out,
+                               bpm=90.0,
+                               layout='amplitude',
+                               on_status=statuses.append)
+    assert steps['avatar'] == summary
+    assert export.call_args.args == (out,)
+    assert export.call_args.kwargs == {'bpm': 90.0}
+    assert 'Exporting the avatar' in statuses
+
+
+@pytest.mark.asyncio
+async def test_run_skips_avatar_for_frequency(make_freq_ark: _Builder, mocker: MockerFixture,
+                                              tmp_path: Path) -> None:
+    archive = tmp_path / 'ROOT.ARK'
+    archive.write_bytes(make_freq_ark((('gen/a.txt', b'AAA'),)))
+    export = mocker.patch('dade.harmonix.avatar.export_default_avatar')
+    steps = await pipeline.run(archive, tmp_path / 'out', layout='frequency')
+    assert 'avatar' not in steps
+    export.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_run_avatar_failure(make_amp_ark: _Builder, mocker: MockerFixture,
+                                  tmp_path: Path) -> None:
+    archive = tmp_path / 'MAIN.ARK'
+    archive.write_bytes(make_amp_ark((('gen/a.txt', b'AAA'),)))
+    mocker.patch('dade.harmonix.avatar.export_default_avatar', side_effect=ValueError('bad'))
+    with pytest.raises(ValueError, match='bad'):
+        await pipeline.run(archive, tmp_path / 'out', layout='amplitude')
+    steps = await pipeline.run(archive, tmp_path / 'out2', ignore_failures=True, layout='amplitude')
+    assert steps['avatar'] == 'not exported'
+
+
+@pytest.mark.asyncio
 async def test_run_game(make_amp_ark: _Builder, make_hmx_bitmap: _Builder, make_dtb: _Builder,
                         make_milo: _Builder, make_v14_mesh: _Builder, make_samp_bank: _Builder,
                         make_vag: _Builder, tmp_path: Path) -> None:

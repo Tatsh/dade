@@ -9,6 +9,7 @@ from dade.common.disc import iter_ark_bytes, materialize, open_image
 from dade.common.exceptions import InvalidFormatError
 
 from .ark import _FREQ_MAGIC, parse_directory
+from .avatar import DEFAULT_BPM
 from .pipeline import _find_arks, run_game
 from .typing import Asset
 
@@ -132,6 +133,7 @@ class Unpacker:
                      ignore_failures: bool = False,
                      delete: bool = False,
                      jobs: int = 0,
+                     bpm: float = DEFAULT_BPM,
                      on_status: Callable[[str], None] | None = None) -> dict[str, str]:
         """
         Materialise this game's disc into ``out`` and unpack it in place.
@@ -159,6 +161,8 @@ class Unpacker:
         jobs : int
             Maximum concurrent workers for the CPU-bound conversion phases; ``0`` uses the CPU
             count.
+        bpm : float
+            The tempo the Amplitude avatar's animations are timed at, in beats a minute.
         on_status : collections.abc.Callable[[str], None] | None
             An optional progress hook called with a short status string at each phase (for example
             ``'Unpacking GEN/MAIN.ARK'`` or ``'Converting assets'``).
@@ -182,6 +186,7 @@ class Unpacker:
             raise InvalidFormatError(msg)
         await materialize(self.source, out)
         return await run_game(out,
+                              bpm=bpm,
                               convert=convert,
                               delete=delete,
                               gunzip=gunzip,

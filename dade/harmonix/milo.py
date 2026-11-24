@@ -29,6 +29,7 @@ _MILO_V6 = 6  # FreQuency's uncompressed Milo directory version (stored as the l
 _MILO_MIN_SIZE = 16  # Compressed Milo header: magic, dataStart, numBlocks, maxBlockSize.
 _DIR_VERSION_SIZE = 4  # A directory's leading version u32.
 _DIR_HEADER_SIZE = 8  # A directory's version plus its object count.
+_TEXTURE_LIST_VERSION = 9  # First directory version that lists its textures after the table.
 
 
 def milo_decompress(data: bytes) -> tuple[bytes | None, int]:
@@ -117,12 +118,31 @@ def _parse_v6_table(body: bytes, count: int) -> tuple[list[tuple[str, str]], int
     return table, off, True
 
 
+def _parse_texture_list(body: bytes, off: int) -> tuple[list[str], int]:
+    # From directory version 9 the object table is followed by the paths of the textures the
+    # directory loads, ``u32 count`` then ``count`` length-prefixed strings, ahead of the first
+    # object body.
+    paths: list[str] = []
+    try:
+        count = struct.unpack_from('<I', body, off)[0]
+        off += 4
+        for _ in range(count):
+            size = struct.unpack_from('<I', body, off)[0]
+            paths.append(body[off + 4:off + 4 + size].decode('latin-1'))
+            off += 4 + size
+    except struct.error:
+        return paths, len(body)
+    return paths, off
+
+
 def convert(path: Path) -> Path | None:  # ruff: ignore[too-many-locals]
     """
     Decompose a ``.rnd`` Milo archive into a ``<name>/`` folder of objects plus a manifest.
 
     The Amplitude directory layout (version 10) is ``u32 version, u32 objectCount, then objectCount
-    length-prefixed (type, name) pairs, then per-object bodies``. Each body is terminated by the
+    length-prefixed (type, name) pairs, then u32 textureCount and textureCount length-prefixed
+    texture paths, then per-object bodies``. The texture paths are recorded in the manifest's
+    ``textures`` list. Each body is terminated by the
     ``0xADDEADDE`` sentinel. The bodies can therefore be split without per-class deserializers.
     FreQuency (version 6) is stored uncompressed and uses NUL-terminated (type, name) pairs each
     followed by a ``0x01`` separator; the rest splits on the same sentinel.
@@ -149,6 +169,9 @@ def convert(path: Path) -> Path | None:  # ruff: ignore[too-many-locals]
     count = struct.unpack_from('<I', body, 4)[0] if len(body) >= _DIR_HEADER_SIZE else 0
     table, off, ok = (_parse_v6_table(body, count) if version == _MILO_V6 else _parse_table(
         body, count))
+    textures: list[str] | None = None
+    if ok and version is not None and version >= _TEXTURE_LIST_VERSION:
+        textures, off = _parse_texture_list(body, off)
     out_dir = path.with_suffix('')
     out_dir.mkdir(parents=True, exist_ok=True)
     objects: list[dict[str, object]] = []
@@ -181,6 +204,8 @@ def convert(path: Path) -> Path | None:  # ruff: ignore[too-many-locals]
         'decompressed_size': len(body),
         'objects': objects,
     }
+    if textures is not None:
+        manifest['textures'] = textures
     if note is not None:
         manifest['note'] = note
     write_json(out_dir / 'manifest.json', manifest, ensure_ascii=False, trailing_newline=False)

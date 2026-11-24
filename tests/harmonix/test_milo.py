@@ -55,6 +55,29 @@ def test_convert_decomposes_objects(make_milo: Callable[..., bytes], tmp_path: P
     assert 'note' not in manifest
 
 
+def test_convert_records_texture_list(make_milo: Callable[..., bytes], tmp_path: Path) -> None:
+    source = tmp_path / 'g17.rnd'
+    source.write_bytes(make_milo(_objects(2), textures=('legs_06_03.bmp', 'eyes.bmp')))
+    out = milo.convert(source)
+    assert out is not None
+    manifest = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+    assert manifest['textures'] == ['legs_06_03.bmp', 'eyes.bmp']
+    # The list is consumed ahead of the first body rather than read as the start of that body.
+    assert (out / 'obj0.mesh').read_bytes() == b'\x00' * 8
+
+
+def test_convert_truncated_texture_list(tmp_path: Path) -> None:
+    body = struct.pack('<II', 10, 1) + struct.pack('<I', 4) + b'Mesh' + struct.pack('<I', 6)
+    body += b'a.mesh' + struct.pack('<II', 2, 3) + b'abc'
+    source = tmp_path / 'scene.rnd'
+    source.write_bytes(struct.pack('<4I', 0xCABEDEAF, 0x14, 1, len(body)) + bytes(4) + body)
+    out = milo.convert(source)
+    assert out is not None
+    manifest = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+    assert manifest['textures'] == ['abc']
+    assert (out / 'a.mesh').read_bytes() == b''
+
+
 def test_convert_frequency_v6(make_milo: Callable[..., bytes], tmp_path: Path) -> None:
     source = tmp_path / 'arena.rnd'
     source.write_bytes(make_milo(_objects(2), version=6))

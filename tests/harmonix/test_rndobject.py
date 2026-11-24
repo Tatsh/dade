@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 import json
 import math
 import struct
@@ -13,6 +13,8 @@ from dade.harmonix import rndobject
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
     from pathlib import Path
+
+    from dade.harmonix.typing import TnmMeta, TnmScanMeta
 
 _IDENTITY = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 5.0, 6.0, 7.0)
 
@@ -98,11 +100,42 @@ def test_view_to_json() -> None:
 
 
 def test_tnm_to_json() -> None:
-    meta = rndobject.tnm_to_json(_tnm())
+    meta = cast('TnmScanMeta', rndobject.tnm_to_json(_tnm()))
     assert meta['version'] == 2
     assert meta['mesh_refs'] == ['spin.mesh']
     assert meta['tnm_refs'] == ['child.tnm']
     assert meta['transforms'] == [list(_IDENTITY)]
+
+
+@pytest.mark.parametrize(('interpolation', 'name'), [(0, 'linear'), (1, 'spline'), (5, '5')])
+def test_tnm_to_json_revision_3(make_trans_anim: Callable[..., bytes], interpolation: int,
+                                name: str) -> None:
+    meta = cast(
+        'TnmMeta',
+        rndobject.tnm_to_json(
+            make_trans_anim(rotations=(((0.0, 0.0, 0.0, 1.0), 0.0),),
+                            translations=(((1.0, 2.0, 3.0), 10.0),),
+                            filters=((1, bytes(9)),),
+                            translation_interpolation=interpolation)))
+    assert meta['version'] == 3
+    assert meta['target'] == 'bone.mesh'
+    assert meta['frames_owner'] == 'owner.tnm'
+    assert meta['filters'] == [{'type': 'MinMaxLoop', 'data': '00' * 9}]
+    assert meta['translation_interpolation'] == name
+    assert meta['scale_interpolation'] == '7'
+    assert meta['rotation_keys'] == [{'frame': 0.0, 'value': [0.0, 0.0, 0.0, 1.0]}]
+    assert meta['translation_keys'] == [{'frame': 10.0, 'value': [1.0, 2.0, 3.0]}]
+    assert meta['scale_keys'] == [{'frame': 0.0, 'value': [1.0, 1.0, 1.0]}]
+    assert meta['repeat_translation']
+    assert not meta['follow_path']
+
+
+def test_convert_tnm_revision_3(make_trans_anim: Callable[..., bytes], tmp_path: Path) -> None:
+    source = tmp_path / 'fbase_head.tnm'
+    source.write_bytes(make_trans_anim())
+    out = rndobject.convert(source)
+    assert out == tmp_path / 'fbase_head.tnm.json'
+    assert json.loads(out.read_text(encoding='utf-8'))['anims'] == ['other.tnm']
 
 
 def test_mmesh_to_json() -> None:

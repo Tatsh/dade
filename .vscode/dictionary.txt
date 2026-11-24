@@ -20,6 +20,7 @@ allmodsbound
 alnum
 anchore
 anim
+anims
 anyio
 apfn
 apkm
@@ -114,6 +115,7 @@ cleargeometrymode
 clen
 clut
 cluts
+cman
 cmmt
 cmpheader
 cmpr
@@ -135,6 +137,7 @@ crdt
 cryptheader
 cryptoff
 cryptsize
+csatriales
 cstring
 cstrings
 ctypes
@@ -216,6 +219,7 @@ extern
 extm
 falsepredicate
 fanm
+fbase
 fcomment
 fdirs
 feetboots
@@ -239,6 +243,7 @@ fqsah
 frag
 frds
 frec
+freqmaker
 fres
 frma
 fromarray
@@ -251,6 +256,7 @@ fskl
 ftre
 ftyp
 fuhl
+fullfreq
 functools
 fvmlib
 fvtx
@@ -377,6 +383,7 @@ kseg
 kwargs
 lacromial
 lanczos
+larm
 lastexitcode
 launchable
 ldrsb
@@ -404,6 +411,7 @@ linters
 loadblock
 loadtile
 loadtlut
+lowerbody
 lproj
 lshoulderj
 lsvp
@@ -582,7 +590,9 @@ qscale
 qseq
 quadword
 quadwords
+quat
 quicktime
+rarm
 rawmode
 rawptr
 rawsize
@@ -779,7 +789,6 @@ truecolour
 truepredicate
 tryfirst
 ttcf
-tver
 twolevel
 ubyte
 udvare
@@ -843,6 +852,7 @@ xfirst
 xform
 xmap
 xoff
+xother
 xsecond
 xyzw
 yapf

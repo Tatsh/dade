@@ -22,6 +22,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   armature.
 - The animation JSON files of `dade mkw extract` record material animations. A texture pattern, such
   as the blinking eyes of a driver, is written as the texture shown from each key frame on.
+- `dade sopranos unpack --convert` and `dade sopranos gltf` write a `.glb` for each rigged object of
+  a `.SGP2` library, with its `.SKL2` skeleton as a glTF skin and the level's `.SAM2` clips as
+  animations. Vertex weights are provisional. The files record which bones move a vertex and not
+  how much, and a vertex following two bones weighs each at a half.
+- `dade amplitude unpack` writes the default FreQ avatar as one skinned GLB,
+  `freqmaker/avatar_default.glb`, with one animation for each frame range of the game's avatar
+  animations. Each arm is posed by the game's two-bone inverse kinematics. `--bpm` sets the tempo
+  the animations are timed at (120 by default).
+- `dade.harmonix.rnd` reads Amplitude's `Rnd::Mesh` (revision 14) objects, with their bone weights
+  and bind transforms, and its `Rnd::TransAnim` (revision 3) objects field by field.
+
+### Changed
+
+- An Amplitude `.tnm` is decoded as a `Rnd::TransAnim` keyframe animation, and its JSON sidecar
+  lists every rotation, translation, and scale key. A FreQuency `.tnm` is scanned for references as
+  before.
+
+### Fixed
+
+- The texture list an Amplitude Milo scene stores between its object table and its first object is
+  read and recorded in `manifest.json` as `textures`. It was previously read as the start of the
+  first object, and 49 meshes of the FreQ maker (among them the feet and the lower arms) did not
+  convert.
 
 ## [0.3.0] - 2026-11-23
 

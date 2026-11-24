@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pytest
+
 from dade.amplitude.main import main
 
 if TYPE_CHECKING:
@@ -65,6 +67,23 @@ def test_main_delete_flag(runner: CliRunner, mocker: MockerFixture, tmp_path: Pa
     result = runner.invoke(main, (str(game), '-o', str(tmp_path / 'out'), '--delete'))
     assert result.exit_code == 0
     assert run_game.call_args.kwargs['delete'] is True
+
+
+@pytest.mark.parametrize(('args', 'bpm'), [((), 120.0), (('--bpm', '95.5'), 95.5)])
+def test_main_bpm(runner: CliRunner, mocker: MockerFixture, tmp_path: Path, args: tuple[str, ...],
+                  bpm: float) -> None:
+    (tmp_path / 'MAIN.ARK').write_bytes(bytes(16))
+    mocker.patch('dade.harmonix.unpacker.materialize')
+    run_game = mocker.patch('dade.harmonix.unpacker.run_game', return_value={'GEN/MAIN.ARK': 'ok'})
+    result = runner.invoke(main, (str(tmp_path), *args))
+    assert result.exit_code == 0
+    assert run_game.call_args.kwargs['bpm'] == bpm
+
+
+def test_main_rejects_zero_bpm(runner: CliRunner, tmp_path: Path) -> None:
+    (tmp_path / 'MAIN.ARK').write_bytes(bytes(16))
+    result = runner.invoke(main, (str(tmp_path), '--bpm', '0'))
+    assert result.exit_code == 2
 
 
 def test_main_default_output_dir(runner: CliRunner, mocker: MockerFixture, tmp_path: Path) -> None:

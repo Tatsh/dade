@@ -2,9 +2,10 @@
 Extract metadata from FreQuency Harmonix ``Rnd`` scene-graph and data objects.
 
 These objects are the building blocks of the games' arenas. There are scene-graph reference
-containers (``.view``, ``.tnm``, ``.mmesh``, ``.lnm``, ``.arena``) that reference other objects and
-have 4x3 transforms, and leaf data objects (``.mat`` materials, ``.lit`` lights, ``.env``
-environments, and ``.tmov`` texture movies). Each is parsed by extension to a JSON sidecar next to
+containers (``.view``, ``.mmesh``, ``.lnm``, ``.arena``) that reference other objects and have 4x3
+transforms, ``.tnm`` keyframe animations, and leaf data objects (``.mat`` materials, ``.lit``
+lights, ``.env`` environments, and ``.tmov`` texture movies). Each is parsed by extension to a JSON
+sidecar next to
 the original; the original file is retained. Object names embedded in these files are
 NUL-terminated ASCII looked up by the engine's ``RndString`` reader.
 """
@@ -20,7 +21,10 @@ from dade.common.exceptions import InvalidFormatError
 from dade.common.io import f32, read_cstring_at, u32
 from dade.common.json import write_json
 
+from .rnd import read_trans_anim
+
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from pathlib import Path
 
     from .typing import (
@@ -31,7 +35,10 @@ if TYPE_CHECKING:
         MatMeta,
         MmeshMeta,
         MovieMeta,
+        RndKey,
+        TnmKeyMeta,
         TnmMeta,
+        TnmScanMeta,
         ViewMeta,
     )
 
@@ -71,6 +78,10 @@ _MATRIX_FLOATS = 12
 _BASIS_MAX = 1.5  # A basis-row component never exceeds this in an orthonormal-ish matrix.
 _BASIS_MIN_LEN = 0.8  # A basis row's length stays within these bounds.
 _BASIS_MAX_LEN = 1.3
+
+_TNM_EXACT_VERSION = 3  # The Amplitude Rnd::TransAnim revision read field by field.
+_FILTER_NAMES = ('ScaleOffset', 'MinMaxLoop', 'ZeroOrder', 'FirstOrder', 'SecondOrder')
+_INTERPOLATIONS = {0: 'linear', 1: 'spline'}
 
 _MAT_VERSIONS = frozenset({2, 3, 7})  # Recognised Rnd::Mat versions.
 _MAT_BLEND_OFFSET = 8
@@ -166,9 +177,18 @@ def view_to_json(data: bytes) -> ViewMeta:
     }
 
 
-def tnm_to_json(data: bytes) -> TnmMeta:
+def _keys(keys: Iterable[RndKey]) -> list[TnmKeyMeta]:
+    return [{'frame': key.frame, 'value': list(key.value)} for key in keys]
+
+
+def tnm_to_json(data: bytes) -> TnmMeta | TnmScanMeta:
     """
-    Decode a ``Rnd::Trans`` named-mesh group (``.tnm``).
+    Decode a ``Rnd::TransAnim`` keyframe animation (``.tnm``).
+
+    An Amplitude (revision 3) animation is read exactly by
+    :py:func:`dade.harmonix.rnd.read_trans_anim`, and every key is written out. A FreQuency
+    (revision 2) animation stores its names as NUL-terminated text, and only its references and
+    transforms are found, by scanning.
 
     Parameters
     ----------
@@ -177,16 +197,52 @@ def tnm_to_json(data: bytes) -> TnmMeta:
 
     Returns
     -------
-    TnmMeta
-        The group's version, references, mesh and child-``.tnm`` references, and transforms.
+    TnmMeta | TnmScanMeta
+        Every field and key of a revision-3 animation, or the references and transforms of any
+        other revision.
 
     Raises
     ------
     InvalidFormatError
-        If the data is shorter than the object header.
+        If the data is shorter than the object header, or is a malformed revision-3 animation.
     """
     if len(data) < _HEADER_SIZE:
         raise InvalidFormatError(_HEADER_TOO_SHORT)
+    if u32(data, 0) == _TNM_EXACT_VERSION:
+        anim = read_trans_anim(data)
+        return {
+            'version':
+                _TNM_EXACT_VERSION,
+            'target':
+                anim.target,
+            'frames_owner':
+                anim.frames_owner,
+            'showing':
+                anim.showing,
+            'draws':
+                list(anim.draws),
+            'anims':
+                list(anim.anims),
+            'filters': [{
+                'type': _FILTER_NAMES[item.type],
+                'data': item.data.hex()
+            } for item in anim.filters],
+            'translation_interpolation':
+                _INTERPOLATIONS.get(anim.translation_interpolation,
+                                    str(anim.translation_interpolation)),
+            'repeat_translation':
+                anim.repeat_translation,
+            'scale_interpolation':
+                _INTERPOLATIONS.get(anim.scale_interpolation, str(anim.scale_interpolation)),
+            'follow_path':
+                anim.follow_path,
+            'rotation_keys':
+                _keys(anim.rotation_keys),
+            'translation_keys':
+                _keys(anim.translation_keys),
+            'scale_keys':
+                _keys(anim.scale_keys),
+        }
     references = _scan_refs(data)
     return {
         'version': u32(data, 0),

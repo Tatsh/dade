@@ -17,6 +17,12 @@ audio pipeline.
 .. automodule:: dade.harmonix.audio
    :members:
 
+``dade.harmonix.avatar``
+---------------------------
+
+.. automodule:: dade.harmonix.avatar
+   :members:
+
 ``dade.harmonix.bitmap``
 ---------------------------
 
@@ -57,6 +63,12 @@ audio pipeline.
 -----------------------------
 
 .. automodule:: dade.harmonix.pipeline
+   :members:
+
+``dade.harmonix.rnd``
+------------------------
+
+.. automodule:: dade.harmonix.rnd
    :members:
 
 ``dade.harmonix.rndobject``
