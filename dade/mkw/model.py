@@ -12,10 +12,15 @@ import zstandard
 
 from dade.common.gltf import ARRAY_BUFFER, GLBDocument
 
+from .skeleton import add_animations, add_skin, bind_shape, joint_accessors, read_skeleton
 from .texture import decode_texture
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
+    from typing import Any
+
+    from .skeleton import Skeleton
 
 __all__ = ('decode_model', 'model_lod_count')
 
@@ -42,6 +47,13 @@ _UV_UNORM8 = 0x0901
 _UV_SNORM8 = 0x0902
 _NORMAL_SNORM10 = 0x0E02
 _SNORM10_SIGN_BIT = 512
+_UINT_COMPONENTS = {
+    0x02: (1, '<u1'),
+    0x09: (2, '<u1'),
+    0x0B: (4, '<u1'),
+    0x12: (2, '<u2'),
+    0x15: (4, '<u2')
+}
 _SHY_GUY_BAZAAR_TEXTURE_SIZE = 512
 _ALBEDO_SUFFIX = re.compile(r'_Alb(?:\.\d+)?$')
 _EMISSIVE_SUFFIX = re.compile(r'_Emm(?:\.\d+)?$')
@@ -297,8 +309,26 @@ def _uv_accessor(data: bytes, vertex: int, records: np.ndarray,
     return None
 
 
-def _normal_accessor(data: bytes, vertex: int, records: np.ndarray,
-                     document: GLBDocument) -> int | None:
+def _integers(data: bytes, vertex: int, records: np.ndarray, name: str) -> np.ndarray | None:
+    count, stride = records.shape
+    attributes = _u64(data, vertex + 8)
+    for index in range(data[vertex + 0x4C]):
+        attribute = attributes + index * 16
+        if _string(data, _u64(data, attribute)) != name:
+            continue
+        offset = _u16(data, attribute + 12)
+        layout = _u32(data, attribute + 8) >> 8
+        if (entry := _UINT_COMPONENTS.get(layout)) is None:
+            return None
+        components, dtype = entry
+        width = components * np.dtype(dtype).itemsize
+        if offset + width > stride:
+            return None
+        return records[:, offset:offset + width].copy().view(dtype).reshape(count, components)
+    return None
+
+
+def _normals(data: bytes, vertex: int, records: np.ndarray) -> np.ndarray | None:
     count, stride = records.shape
     attributes = _u64(data, vertex + 8)
     for index in range(data[vertex + 0x4C]):
@@ -316,12 +346,12 @@ def _normal_accessor(data: bytes, vertex: int, records: np.ndarray,
         lengths = np.linalg.norm(normals, axis=1)
         normals[lengths > 0] /= lengths[lengths > 0, None]
         normals[lengths == 0] = (0.0, 0.0, 1.0)
-        return document.floats(normals.tolist(), 'VEC3', target=ARRAY_BUFFER)
+        return normals
     return None
 
 
 def _shape(data: bytes, shape: int, pool: int, document: GLBDocument, index: int, lod: int,
-           material_map: dict[int, int]) -> None:
+           material_map: dict[int, int], skeleton: Skeleton | None, skin: int | None) -> None:
     if data[shape:shape + 4] != b'FSHP':
         message = 'Invalid BFRES shape table.'
         raise ValueError(message)
@@ -336,10 +366,23 @@ def _shape(data: bytes, shape: int, pool: int, document: GLBDocument, index: int
     triangles = _triangles(data, mesh, pool, positions, valid)
     if not triangles:
         return
+    normals = _normals(data, vertex, records)
+    joints = weights = None
+    if skeleton is not None and skin is not None:
+        influences = data[shape + 0x5A]
+        indices = _integers(data, vertex, records, '_i0') if influences else None
+        binding = bind_shape(skeleton, positions, normals,
+                             None if indices is None else indices.astype(np.int64),
+                             _integers(data, vertex, records, '_w0'), _u16(data, shape + 0x54))
+        positions, normals = binding.positions, binding.normals
+        joints, weights = joint_accessors(document, binding)
     position = document.floats(positions.tolist(), 'VEC3', target=ARRAY_BUFFER, bounds=True)
     attributes = {'POSITION': position}
-    if (normal := _normal_accessor(data, vertex, records, document)) is not None:
-        attributes['NORMAL'] = normal
+    if normals is not None:
+        attributes['NORMAL'] = document.floats(normals.tolist(), 'VEC3', target=ARRAY_BUFFER)
+    if joints is not None and weights is not None:
+        attributes['JOINTS_0'] = joints
+        attributes['WEIGHTS_0'] = weights
     material_index = material_map.get(_u16(data, shape + 0x52))
     if (uv := _uv_accessor(data, vertex, records, document)) is not None:
         attributes['TEXCOORD_0'] = uv
@@ -356,7 +399,10 @@ def _shape(data: bytes, shape: int, pool: int, document: GLBDocument, index: int
     if material_index is not None:
         primitive['material'] = material_index
     document.meshes.append({'name': f'shape-{index}', 'primitives': [primitive]})
-    document.nodes.append({'mesh': len(document.meshes) - 1})
+    node: dict[str, object] = {'mesh': len(document.meshes) - 1}
+    if skin is not None:
+        node['skin'] = skin
+    document.nodes.append(node)
 
 
 def model_lod_count(data: bytes) -> int:
@@ -390,14 +436,17 @@ def model_lod_count(data: bytes) -> int:
         default=0)
 
 
-def decode_model(data: bytes,
-                 name: str,
-                 textures: Path | None = None,
-                 *,
-                 lod: int = 0,
-                 external_images: Path | None = None) -> bytes | None:
+def decode_model(
+    data: bytes,
+    name: str,
+    textures: Path | None = None,
+    *,
+    lod: int = 0,
+    external_images: Path | None = None,
+    animations: Sequence[tuple[str, dict[str, Any]]] = ()
+) -> bytes | None:
     """
-    Decode meshes from a BFRES v10 archive.
+    Decode meshes, and the skeleton and skeletal animations when present, from a BFRES v10 archive.
 
     Parameters
     ----------
@@ -411,6 +460,10 @@ def decode_model(data: bytes,
         Mesh detail level, starting at zero for the highest detail.
     external_images : Path | None
         Destination for shared PNG images referenced by the GLB.
+    animations : collections.abc.Sequence[tuple[str, dict[str, Any]]]
+        Skeletal animation clips to embed, each with the name to give it, as
+        :py:func:`dade.mkw.animation.read_animations` reports clips. A model without a skeleton of
+        more than one bone embeds none.
 
     Returns
     -------
@@ -420,7 +473,7 @@ def decode_model(data: bytes,
     Raises
     ------
     ValueError
-        The archive has invalid geometry offsets.
+        The archive has invalid geometry offsets or an invalid skeleton.
     """
     if data[:4] != b'FRES' or len(data) < _MIN_BFRES_SIZE:
         message = 'Invalid BFRES archive.'
@@ -450,8 +503,18 @@ def decode_model(data: bytes,
                         if name.startswith('Stage_ShyGuyBazaar.') else None)
     material_map = _materials(data, model, document, textures, used_materials, external_images,
                               max_texture_size)
+    skeleton = read_skeleton(data, model)
+    skin = None
+    roots: list[int] = []
+    if skeleton is not None and len(skeleton.names) > 1:
+        skin = add_skin(document, skeleton)
+        roots = [index for index, parent in enumerate(skeleton.parents) if parent < 0]
+        add_animations(document, skeleton, skin, animations)
+    else:
+        skeleton = None
     for shape_index, shape in selected_shapes:
-        _shape(data, shape, pool, document, shape_index, lod, material_map)
+        _shape(data, shape, pool, document, shape_index, lod, material_map, skeleton, skin)
     if not document.meshes:
         return None
-    return document.finish(name)
+    mesh_nodes = [index for index, node in enumerate(document.nodes) if 'mesh' in node]
+    return document.finish(name, roots + mesh_nodes)

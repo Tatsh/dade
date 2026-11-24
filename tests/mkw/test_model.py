@@ -7,6 +7,7 @@ import json
 import struct
 
 from PIL import Image
+import numpy as np
 import pytest
 import zstandard
 
@@ -404,3 +405,147 @@ def test_decode_model_reuses_shared_texture(tmp_path: Path, mocker: MockerFixtur
     document = _document(glb)
     assert len(document['meshes']) == 2
     assert len(document['images']) == 1
+
+
+def _skinned_archive(*, influences: int = 2, smooth: int = 2, bones: int = 2) -> bytearray:
+    archive = _archive()
+    struct.pack_into('<I', archive, 0x480, 32)
+    for index, position in enumerate(((0, 0, 0), (1, 0, 0), (0, 1, 0))):
+        struct.pack_into('<3f2e', archive, 0x1000 + index * 32, *position, 0.0, 0.0)
+    struct.pack_into('<Q', archive, 0x198, 0x1400)
+    archive[0x1400:0x1404] = b'FSKL'
+    struct.pack_into('<QQ', archive, 0x1410, 0x1480, 0x1540)
+    struct.pack_into('<HHH', archive, 0x1438, bones, smooth, bones - smooth)
+    struct.pack_into(f'<{bones}H', archive, 0x1540, *range(bones))
+    for index, (name, parent, z) in enumerate((('Root', -1, 0.0), ('Arm', 0, 5.0))[:bones]):
+        bone = 0x1480 + index * 0x58
+        struct.pack_into('<Q', archive, bone, 0x1560 + index * 0x10)
+        struct.pack_into(f'<H{len(name)}s', archive, 0x1560 + index * 0x10, len(name),
+                         name.encode())
+        struct.pack_into('<h', archive, bone + 0x22, parent)
+        struct.pack_into('<3f4f3f', archive, bone + 0x30, 1, 1, 1, 0, 0, 0, 1, 0, 0, z)
+    archive[0x25A] = influences
+    struct.pack_into('<H', archive, 0x254, bones - 1)
+    return archive
+
+
+def _attribute(archive: bytearray, slot: int, name: str, format_: int, offset: int) -> None:
+    archive[0x44C] = max(archive[0x44C], slot + 1)
+    pointer = 0x860 + slot * 8
+    struct.pack_into('<QIH', archive, 0x680 + slot * 16, pointer, format_, offset)
+    struct.pack_into('<H3s', archive, pointer, 3, name.encode())
+
+
+def _vertex_bytes(archive: bytearray, offset: int, value: bytes) -> None:
+    for index in range(3):
+        archive[0x1000 + index * 32 + offset:0x1000 + index * 32 + offset + len(value)] = value
+
+
+def _accessor_values(glb: bytes, document: dict[str, Any], index: int, dtype: str) -> list[Any]:
+    accessor = document['accessors'][index]
+    view = document['bufferViews'][accessor['bufferView']]
+    start = 28 + struct.unpack_from('<I', glb, 12)[0] + view['byteOffset']
+    return cast(
+        'list[Any]',
+        np.frombuffer(glb[start:start + view['byteLength']], dtype).reshape(accessor['count'],
+                                                                            -1).tolist())
+
+
+def test_decode_model_binds_smooth_skin() -> None:
+    archive = _skinned_archive()
+    _attribute(archive, 2, '_i0', 0x0900, 16)
+    _attribute(archive, 3, '_w0', 0x0900, 20)
+    _vertex_bytes(archive, 16, bytes((0, 1)))
+    _vertex_bytes(archive, 20, bytes((192, 64)))
+    glb = decode_model(bytes(archive), 'skinned')
+    assert glb is not None
+    document = _document(glb)
+    assert document['skins'][0]['joints'] == [0, 1]
+    assert document['skins'][0]['skeleton'] == 0
+    assert document['nodes'][0]['name'] == 'Root'
+    assert document['nodes'][0]['children'] == [1]
+    assert document['nodes'][2] == {'mesh': 0, 'skin': 0}
+    assert document['scenes'][0]['nodes'] == [0, 2]
+    attributes = document['meshes'][0]['primitives'][0]['attributes']
+    assert _accessor_values(glb, document, attributes['JOINTS_0'], '<u2') == [[0, 1, 0, 0]] * 3
+    assert _accessor_values(glb, document, attributes['WEIGHTS_0'],
+                            '<f4') == [[0.75, 0.25, 0.0, 0.0]] * 3
+    assert document['accessors'][attributes['POSITION']]['max'] == [1.0, 1.0, 0.0]
+
+
+@pytest.mark.parametrize(('layout', 'dtype', 'components'), [(0x02, '<u1', 1), (0x09, '<u1', 2),
+                                                             (0x0B, '<u1', 4), (0x12, '<u2', 2),
+                                                             (0x15, '<u2', 4)])
+def test_decode_model_reads_joint_layouts(layout: int, dtype: str, components: int) -> None:
+    archive = _skinned_archive()
+    _attribute(archive, 2, '_i0', layout << 8, 16)
+    values = [1, 0, 1, 0][:components]
+    _vertex_bytes(archive, 16, np.array(values, dtype).tobytes())
+    glb = decode_model(bytes(archive), 'layout')
+    assert glb is not None
+    document = _document(glb)
+    attributes = document['meshes'][0]['primitives'][0]['attributes']
+    assert _accessor_values(glb, document, attributes['JOINTS_0'], '<u2') == [[1, 0, 0, 0]] * 3
+    assert _accessor_values(glb, document, attributes['WEIGHTS_0'],
+                            '<f4') == [[1.0, 0.0, 0.0, 0.0]] * 3
+
+
+@pytest.mark.parametrize(('influences', 'format_', 'offset'), [(2, 0x0700, 16), (2, 0x1500, 28),
+                                                               (0, 0x0900, 16)])
+def test_decode_model_moves_shape_without_joints_to_shape_bone(influences: int, format_: int,
+                                                               offset: int) -> None:
+    archive = _skinned_archive(influences=influences)
+    _attribute(archive, 2, '_i0', format_, offset)
+    glb = decode_model(bytes(archive), 'shape-bone')
+    assert glb is not None
+    document = _document(glb)
+    attributes = document['meshes'][0]['primitives'][0]['attributes']
+    assert _accessor_values(glb, document, attributes['JOINTS_0'], '<u2') == [[1, 0, 0, 0]] * 3
+    assert document['accessors'][attributes['POSITION']]['min'] == [0.0, 0.0, 5.0]
+
+
+def test_decode_model_moves_rigid_entries() -> None:
+    archive = _skinned_archive(smooth=1)
+    _attribute(archive, 2, '_i0', 0x0200, 16)
+    _vertex_bytes(archive, 16, bytes((1,)))
+    glb = decode_model(bytes(archive), 'rigid')
+    assert glb is not None
+    document = _document(glb)
+    attributes = document['meshes'][0]['primitives'][0]['attributes']
+    assert _accessor_values(glb, document, attributes['JOINTS_0'], '<u2') == [[1, 0, 0, 0]] * 3
+    assert document['accessors'][attributes['POSITION']]['max'] == [1.0, 1.0, 5.0]
+
+
+def test_decode_model_omits_skin_for_single_bone() -> None:
+    archive = _skinned_archive(smooth=1, bones=1)
+    glb = decode_model(bytes(archive), 'single-bone')
+    assert glb is not None
+    document = _document(glb)
+    assert 'skins' not in document
+    assert document['nodes'] == [{'mesh': 0}]
+    assert document['scenes'][0]['nodes'] == [0]
+    assert 'JOINTS_0' not in document['meshes'][0]['primitives'][0]['attributes']
+
+
+CLIP = {
+    'bones': [{
+        'base': {},
+        'curves': [],
+        'name': 'Arm'
+    }],
+    'frame_count': 1,
+    'rotation': 'quaternion'
+}
+
+
+@pytest.mark.parametrize(('bones', 'smooth', 'expected'), [(2, 2, ['Model:Wave']), (1, 1, None)])
+def test_decode_model_embeds_animations_only_with_skin(bones: int, smooth: int,
+                                                       expected: list[str] | None) -> None:
+    glb = decode_model(bytes(_skinned_archive(bones=bones, smooth=smooth)),
+                       'animated',
+                       animations=[('Model:Wave', CLIP)])
+    assert glb is not None
+    document = _document(glb)
+    names = [animation['name']
+             for animation in document['animations']] if 'animations' in document else None
+    assert names == expected

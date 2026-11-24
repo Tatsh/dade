@@ -9,6 +9,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [unreleased]
 
+### Added
+
+- `dade mkw extract` writes the skeleton of every model with more than one bone into its GLB as a
+  glTF skin, with the rest pose, the inverse bind matrices, and up to four weighted bones for each
+  vertex. Blender imports the skin as an armature.
+- `dade mkw extract` decrypts the `.bfttf` and `.bfotf` fonts to TTF, OTF, or TTC under `fonts`.
+- `dade mkw extract` writes the skeletal animations of each archive as JSON under `animations`, each
+  quantised cubic curve decoded to Hermite keys with a frame, a value, and a slope.
+- The level 0 GLB of a model with more than one bone embeds the skeletal clips of its animation
+  archives as glTF animations, sampled at every frame. Blender lists the clips as actions of the
+  armature.
+- The animation JSON files of `dade mkw extract` record material animations. A texture pattern, such
+  as the blinking eyes of a driver, is written as the texture shown from each key frame on.
+
 ## [0.3.0] - 2026-11-23
 
 ### Added

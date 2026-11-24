@@ -4,7 +4,9 @@ from __future__ import annotations
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import TYPE_CHECKING, Any
 import fnmatch
+import json
 import logging
 import struct
 import subprocess as sp
@@ -13,8 +15,13 @@ import zstandard
 
 from dade.common.tools import locate_tool
 
+from .animation import read_animations, read_material_animations
+from .font import decode_font
 from .model import decode_model, model_lod_count
 from .texture import decode_texture, texture_count, texture_name
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 __all__ = ('extract',)
 
@@ -23,6 +30,7 @@ log = logging.getLogger(__name__)
 _BARS_HEADER_SIZE = 16
 _BARS_MISSING_ASSET = 0xFFFFFFFF
 _STREAM_DIR = Path('Sound/Resource/Stream')
+_DRIVER_PREFIX = 'Driver_'
 
 
 def _romfs(source: Path) -> Path:
@@ -61,8 +69,34 @@ def _write_textures(data: bytes, output: Path, relative: Path, *, force: bool) -
     return count
 
 
-def _write_model(data: bytes, name: str, destination: Path, textures: Path,
-                 external_images: Path | None, *, force: bool) -> int:
+def _model_animations(source: Path, cache: dict[Path, list[tuple[str, dict[str, Any]]]]) \
+        -> list[tuple[str, dict[str, Any]]]:
+    prefix = source.name.split('.', 1)[0]
+    patterns = [f'{prefix}.anim.bfres*']
+    if prefix.startswith(_DRIVER_PREFIX):
+        patterns.append(f'DriverA_{prefix.removeprefix(_DRIVER_PREFIX)}_*.anim.bfres*')
+    clips = []
+    for archive in sorted({path for pattern in patterns for path in source.parent.glob(pattern)}):
+        if archive not in cache:
+            try:
+                stem = archive.name.split('.anim', 1)[0]
+                cache[archive] = [(f'{stem}:{clip["name"]}', clip)
+                                  for clip in read_animations(_read_data(archive))]
+            except (ValueError, IndexError, struct.error) as error:
+                log.warning('Cannot decode the animations of `%s`. %s', archive, error)
+                cache[archive] = []
+        clips.extend(cache[archive])
+    return clips
+
+
+def _write_model(data: bytes,
+                 name: str,
+                 destination: Path,
+                 textures: Path,
+                 external_images: Path | None,
+                 *,
+                 force: bool,
+                 animations: Sequence[tuple[str, dict[str, Any]]] = ()) -> int:
     count = 0
     for lod in range(model_lod_count(data)):
         target = (destination if lod == 0 else
@@ -70,11 +104,48 @@ def _write_model(data: bytes, name: str, destination: Path, textures: Path,
         if target.exists() and not force:
             count += 1
             continue
-        if (model := decode_model(data, name, textures, lod=lod,
-                                  external_images=external_images)) is not None:
+        if (model := decode_model(data,
+                                  name,
+                                  textures,
+                                  lod=lod,
+                                  external_images=external_images,
+                                  animations=animations if lod == 0 else ())) is not None:
             target.write_bytes(model)
             count += 1
     return count
+
+
+def _write_font(data: bytes, output: Path, relative: Path, *, force: bool) -> None:
+    font, suffix = decode_font(data)
+    target = output / 'fonts' / relative.with_suffix(suffix).name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if force or not target.exists():
+        target.write_bytes(font)
+
+
+def _write_animations(data: bytes, output: Path, relative: Path, *, force: bool) -> int:
+    target = output / 'animations' / relative.with_suffix('.json')
+    if target.exists() and not force:
+        return 1
+    clips, material_clips = read_animations(data), read_material_animations(data)
+    if not clips and not material_clips:
+        return 0
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps({
+            'clips': clips,
+            'material_clips': material_clips
+        }, indent=2, sort_keys=True) + '\n',
+        encoding='utf-8')
+    return 1
+
+
+def _count_animations(data: bytes, output: Path, relative: Path, counts: dict[str, int],
+                      source: Path, *, force: bool) -> None:
+    try:
+        counts['animations'] += _write_animations(data, output, relative, force=force)
+    except (ValueError, IndexError, struct.error) as error:
+        log.warning('Cannot decode the animations of `%s`. %s', source, error)
 
 
 def _write_bars(data: bytes, output: Path, relative: Path, *, force: bool) -> tuple[int, int]:
@@ -190,11 +261,13 @@ def extract(source: Path,
     Returns
     -------
     dict[str, int]
-        Counts of files written by type.
+        Counts by type (``animations``, ``audio``, ``fonts``, ``models``, ``textures``, and
+        ``unsupported``), including files already present and not replaced.
     """
     romfs = _romfs(source)
-    counts = {'audio': 0, 'textures': 0, 'models': 0, 'unsupported': 0}
-    supported = {'.bwav', '.bfstm', '.bfwav', '.bntx', '.bfres', '.bars'}
+    cache: dict[Path, list[tuple[str, dict[str, Any]]]] = {}
+    counts = {'animations': 0, 'audio': 0, 'fonts': 0, 'models': 0, 'textures': 0, 'unsupported': 0}
+    supported = {'.bars', '.bfotf', '.bfres', '.bfstm', '.bfttf', '.bfwav', '.bntx', '.bwav'}
     paths = (path for path in romfs.rglob('*')
              if path.is_file() and fnmatch.fnmatch(str(path.relative_to(romfs)), pattern) and (
                  path.with_suffix('') if path.suffix == '.zs' else path).suffix in supported)
@@ -214,7 +287,14 @@ def extract(source: Path,
                                                       decoded_relative,
                                                       force=force)
             except ValueError as error:
-                log.warning('Cannot decode %s: %s.', path, error)
+                log.warning('Cannot decode `%s`. %s', path, error)
+                counts['unsupported'] += 1
+        elif decoded_relative.suffix in {'.bfttf', '.bfotf'}:
+            try:
+                _write_font(_read_data(path), output, decoded_relative, force=force)
+                counts['fonts'] += 1
+            except ValueError as error:
+                log.warning('Cannot decode `%s`. %s', path, error)
                 counts['unsupported'] += 1
         elif decoded_relative.suffix == '.bfres':
             glb = output / 'models' / decoded_relative.with_suffix('.glb')
@@ -222,14 +302,18 @@ def extract(source: Path,
             try:
                 external_images = (output / 'textures' /
                                    'Tex' if decoded_relative.name.startswith('Piece_') else None)
-                counts['models'] += _write_model(_read_data(path),
-                                                 decoded_relative.stem,
-                                                 glb,
-                                                 romfs / 'Tex',
-                                                 external_images,
-                                                 force=force)
+                data = _read_data(path)
+                _count_animations(data, output, decoded_relative, counts, path, force=force)
+                counts['models'] += _write_model(
+                    data,
+                    decoded_relative.stem,
+                    glb,
+                    romfs / 'Tex',
+                    external_images,
+                    force=force,
+                    animations=() if '.anim.' in path.name else _model_animations(path, cache))
             except (ValueError, IndexError, struct.error) as error:
-                log.warning('Cannot decode %s: %s.', path, error)
+                log.warning('Cannot decode `%s`. %s', path, error)
                 counts['unsupported'] += 1
         else:
             try:
@@ -240,7 +324,7 @@ def extract(source: Path,
                 counts['audio'] += audio
                 counts['unsupported'] += unsupported
             except (ValueError, struct.error) as error:
-                log.warning('Cannot decode %s: %s.', path, error)
+                log.warning('Cannot decode `%s`. %s', path, error)
                 counts['unsupported'] += 1
     log.info('Converted Mario Kart World assets: %s.', counts)
     return counts

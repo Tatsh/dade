@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING
+import json
 import struct
 import subprocess as sp
 
@@ -35,7 +36,14 @@ def test_extract_skips_unconverted_source_files(tmp_path: Path) -> None:
     source = _source(tmp_path)
     (source / 'Model/sample.extm').write_bytes(b'original')
     output = tmp_path / 'output'
-    assert extract(source, output) == {'audio': 0, 'textures': 0, 'models': 0, 'unsupported': 0}
+    assert extract(source, output) == {
+        'animations': 0,
+        'audio': 0,
+        'fonts': 0,
+        'models': 0,
+        'textures': 0,
+        'unsupported': 0
+    }
     assert not (output / 'raw').exists()
 
 
@@ -99,6 +107,7 @@ def test_extract_writes_each_model_detail_level(tmp_path: Path, mocker: MockerFi
     source = _source(tmp_path)
     piece = source / 'Model/Piece_test.bfres.zs'
     piece.write_bytes(zstandard.ZstdCompressor().compress(b'BFRES'))
+    mocker.patch('dade.mkw.extract.read_animations', return_value=[])
     mocker.patch('dade.mkw.extract.model_lod_count', return_value=3)
     decode = mocker.patch('dade.mkw.extract.decode_model',
                           side_effect=(b'lod0', None, b'lod2', b'lod1', b'new0', b'new1', b'new2'))
@@ -121,6 +130,7 @@ def test_extract_model_without_meshes_or_external_images(tmp_path: Path,
                                                          mocker: MockerFixture) -> None:
     source = _source(tmp_path)
     (source / 'Model/empty.bfres').write_bytes(b'BFRES')
+    mocker.patch('dade.mkw.extract.read_animations', return_value=[])
     mocker.patch('dade.mkw.extract.model_lod_count', return_value=1)
     decode = mocker.patch('dade.mkw.extract.decode_model', return_value=None)
     assert extract(source, tmp_path / 'output')['models'] == 0
@@ -160,7 +170,14 @@ def test_extract_counts_missing_non_audio_and_failed_bars_assets(tmp_path: Path,
     convert = mocker.patch('dade.mkw.extract.sp.run',
                            side_effect=(None, sp.CalledProcessError(1, 'vgmstream-cli')))
     output = tmp_path / 'output'
-    assert extract(source, output) == {'audio': 1, 'textures': 0, 'models': 0, 'unsupported': 2}
+    assert extract(source, output) == {
+        'animations': 0,
+        'audio': 1,
+        'fonts': 0,
+        'models': 0,
+        'textures': 0,
+        'unsupported': 2
+    }
     wav = output / 'audio/sample/00000.wav'
     wav.write_bytes(b'RIFF')
     convert.reset_mock()
@@ -262,9 +279,129 @@ def test_extract_pattern_and_limit_select_only_requested_assets(tmp_path: Path,
     source = _source(tmp_path)
     (source / 'Model/A.bfres').write_bytes(b'A')
     (source / 'Model/B.bfres').write_bytes(b'B')
+    mocker.patch('dade.mkw.extract.read_animations', return_value=[])
     mocker.patch('dade.mkw.extract.model_lod_count', return_value=1)
     decode = mocker.patch('dade.mkw.extract.decode_model', return_value=b'GLB')
     output = tmp_path / 'output'
     assert extract(source, output, limit=1, pattern='Model/*.bfres')['models'] == 1
     assert decode.call_count == 1
     assert decode.call_args.kwargs['external_images'] is None
+
+
+def _font(font: bytes) -> bytes:
+    key = b'\x21\x43\x65\x87'
+    plain = b'\x7f\x9a\x02\x18' + len(font).to_bytes(4, 'big') + font
+    return bytes(value ^ key[index % 4] for index, value in enumerate(plain))
+
+
+def test_extract_decrypts_fonts(tmp_path: Path) -> None:
+    source = _source(tmp_path)
+    (source / 'Font').mkdir()
+    (source / 'Font/Title.bfttf.zs').write_bytes(zstandard.ZstdCompressor().compress(
+        _font(b'OTTOcff')))
+    (source / 'Font/Body.bfotf').write_bytes(_font(b'true glyf'))
+    (source / 'Font/Broken.bfttf').write_bytes(b'short')
+    output = tmp_path / 'output'
+    counts = extract(source, output)
+    assert counts['fonts'] == 2
+    assert counts['unsupported'] == 1
+    title = output / 'fonts/Title.otf'
+    assert title.read_bytes() == b'OTTOcff'
+    assert (output / 'fonts/Body.ttf').read_bytes() == b'true glyf'
+    title.write_bytes(b'kept')
+    assert extract(source, output)['fonts'] == 2
+    assert title.read_bytes() == b'kept'
+    assert extract(source, output, force=True)['fonts'] == 2
+    assert title.read_bytes() == b'OTTOcff'
+
+
+def test_extract_writes_skeletal_animations(tmp_path: Path, mocker: MockerFixture) -> None:
+    source = _source(tmp_path)
+    (source / 'Model/Kart.bfres').write_bytes(b'FRES clips')
+    (source / 'Model/Static.bfres').write_bytes(b'FRES')
+    read = mocker.patch('dade.mkw.extract.read_animations',
+                        side_effect=lambda data: [{
+                            'name': 'Run'
+                        }] if data == b'FRES clips' else [])
+    mocker.patch('dade.mkw.extract.read_material_animations', return_value=[])
+    mocker.patch('dade.mkw.extract.model_lod_count', return_value=0)
+    output = tmp_path / 'output'
+    assert extract(source, output)['animations'] == 1
+    target = output / 'animations/Model/Kart.json'
+    text = target.read_text(encoding='utf-8')
+    assert json.loads(text) == {'clips': [{'name': 'Run'}], 'material_clips': []}
+    assert text.endswith('}\n')
+    assert not (output / 'animations/Model/Static.json').exists()
+    assert read.call_count == 2
+    target.write_text('kept', encoding='utf-8')
+    assert extract(source, output)['animations'] == 1
+    assert target.read_text(encoding='utf-8') == 'kept'
+    assert read.call_count == 3
+    assert extract(source, output, force=True)['animations'] == 1
+    assert target.read_text(encoding='utf-8').startswith('{')
+    assert read.call_count == 5
+
+
+def _clips(data: bytes) -> list[dict[str, str]]:
+    match data:
+        case b'bad':
+            message = 'Invalid BFRES archive.'
+            raise ValueError(message)
+        case b'idle' | b'run':
+            return [{'name': data.decode().title()}]
+        case _:
+            return []
+
+
+def test_extract_embeds_matching_animation_archives(tmp_path: Path, mocker: MockerFixture,
+                                                    caplog: pytest.LogCaptureFixture) -> None:
+    source = _source(tmp_path)
+    model = source / 'Model'
+    files = {
+        'DriverA_Luigi_Run.anim.bfres': b'run',
+        'DriverA_Mario_Bad.anim.bfres': b'bad',
+        'Driver_Mario.Body.bfres': b'body',
+        'Driver_Mario.Head.bfres': b'head',
+        'Driver_Mario.anim.bfres': b'idle',
+        'Kart.Body.bfres': b'kart',
+        'Kart.anim.bfres': b'idle'
+    }
+    for name, content in files.items():
+        (model / name).write_bytes(content)
+    (model / 'DriverA_Mario_Run.anim.bfres.zs').write_bytes(
+        zstandard.ZstdCompressor().compress(b'run'))
+    read = mocker.patch('dade.mkw.extract.read_animations', side_effect=_clips)
+    mocker.patch('dade.mkw.extract.read_material_animations', return_value=[])
+    mocker.patch('dade.mkw.extract.model_lod_count', return_value=2)
+    decode = mocker.patch('dade.mkw.extract.decode_model', return_value=b'GLB')
+    extract(source, tmp_path / 'output')
+    passed = {
+        (call.args[1], call.kwargs['lod']): list(call.kwargs['animations'])
+        for call in decode.call_args_list
+    }
+    driver = [('DriverA_Mario_Run:Run', {'name': 'Run'}), ('Driver_Mario:Idle', {'name': 'Idle'})]
+    assert passed == {
+        ('DriverA_Luigi_Run.anim', 0): [],
+        ('DriverA_Luigi_Run.anim', 1): [],
+        ('DriverA_Mario_Bad.anim', 0): [],
+        ('DriverA_Mario_Bad.anim', 1): [],
+        ('DriverA_Mario_Run.anim', 0): [],
+        ('DriverA_Mario_Run.anim', 1): [],
+        ('Driver_Mario.Body', 0): driver,
+        ('Driver_Mario.Body', 1): [],
+        ('Driver_Mario.Head', 0): driver,
+        ('Driver_Mario.Head', 1): [],
+        ('Driver_Mario.anim', 0): [],
+        ('Driver_Mario.anim', 1): [],
+        ('Kart.Body', 0): [('Kart:Idle', {
+            'name': 'Idle'
+        })],
+        ('Kart.Body', 1): [],
+        ('Kart.anim', 0): [],
+        ('Kart.anim', 1): []
+    }
+    assert [call.args[0] for call in read.call_args_list].count(b'run') == 3
+    assert [call.args[0] for call in read.call_args_list].count(b'bad') == 2
+    assert sum('DriverA_Mario_Bad' in record.getMessage()
+               and 'Cannot decode the animations' in record.getMessage()
+               for record in caplog.records) == 2

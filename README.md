@@ -77,10 +77,13 @@ dade mkw extract '/path/to/Mario Kart World [title][version]' -o output/
 ```
 
 Pass an extracted NUP directory or its `romfs` directory. The command converts models to GLB, with
-one file per detail level, textures to PNG, sound effects to WAV, and soundtrack streams to FLAC. It
-does not retain source game formats. Install `vgmstream-cli` for audio decoding and FFmpeg for FLAC
-conversion. Use `--pattern` or `--limit` to restrict a run, and `--force` to regenerate existing
-files. See [Mario Kart World documentation](docs/mkw.rst) for output layout and model limitations.
+one file per detail level and a skin for every model with more than one bone, textures to PNG,
+fonts to TTF, OTF, or TTC, skeletal and material animations to JSON, skeletal animations also to
+glTF animations in the level 0 GLB of each model, sound effects to WAV, and soundtrack streams to
+FLAC. It does not retain source game formats. Install `vgmstream-cli` for audio decoding and
+FFmpeg for FLAC conversion. Use `--pattern` or `--limit` to restrict a run, and `--force` to
+regenerate existing files. See [Mario Kart World documentation](docs/mkw.rst) for output layout
+and model limitations.
 
 ## Incoming
 
