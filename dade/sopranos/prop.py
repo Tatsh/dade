@@ -23,6 +23,11 @@ where each one stands.
 The GIFtag advertises three or four registers, amounting to forty-eight or sixty-four bytes of
 output, while the data is thirty-two bytes per vertex. There is no contradiction. What follows the
 tag is the input VU1 transforms, not the output it sends to the GS.
+
+A character is skinned through the same records. The section lists the names of the bones it uses
+at ``section[0x44]`` and records the CRC of its skeleton's path at ``0x04``. Opcode 6 loads a bone
+palette of up to sixteen indices into that list, twelve per command, and the low byte of each
+vertex's U and V words selects one palette entry each, as four times its position.
 """
 from __future__ import annotations
 
@@ -43,9 +48,11 @@ __all__ = (
     'VERTEX_SIZE',
     'PropGroup',
     'PropItem',
+    'PropPacket',
     'PropSection',
     'PropVertex',
     'is_alternate',
+    'read_bones',
     'read_items',
     'read_materials',
     'read_packets',
@@ -86,7 +93,14 @@ _ITEM_GEOMETRY_AT = 0x0C
 _COMMAND_SIZE = 16
 _COMMAND_LIST_AT = 0x10
 _COMMAND_COUNT_AT = 0x0C
+_SKELETON_HASH_AT = 0x04
+_BONE_COUNT_AT = 0x3C
+_BONE_TABLE_AT = 0x44
 _SET_MATERIAL = 1
+_SET_PALETTE = 6
+_PALETTE_PER_COMMAND = 12
+_SLOT_MASK = 0xFF
+_SLOT_SHIFT = 2
 _END_GROUP = frozenset({7, 8, 0x1007, 0x1008})
 _MATERIAL_SLOTS = 3
 _SLOT_SIZE = 16
@@ -118,6 +132,19 @@ class PropVertex(NamedTuple):
     """Texture coordinate along U."""
     v: float
     """Texture coordinate along V."""
+    slots: tuple[int, int] = (0, 0)
+    """The two bone palette entries the vertex selects, from the low bytes of its U and V."""
+
+
+class PropPacket(NamedTuple):
+    """One draw packet of a prop."""
+
+    primitive: int
+    """The GS primitive type."""
+    vertices: tuple[PropVertex, ...]
+    """The packet's vertices."""
+    mode: int = 0
+    """The fourth word of the GIFtag. Bit ``0x10`` marks a packet of two-bone vertices."""
 
 
 class PropGroup(NamedTuple):
@@ -125,8 +152,10 @@ class PropGroup(NamedTuple):
 
     material: int
     """Index into the section's material table."""
-    packets: tuple[tuple[int, tuple[PropVertex, ...]], ...]
-    """The GS primitive type and vertices of each packet."""
+    packets: tuple[PropPacket, ...]
+    """The group's packets."""
+    palette: tuple[int, ...] = ()
+    """The bone palette in force, as indices into the section's bone list."""
 
 
 class PropItem(NamedTuple):
@@ -324,6 +353,33 @@ def read_materials(section: bytes) -> tuple[tuple[str, ...], ...]:
     return tuple(out)
 
 
+def read_bones(section: bytes) -> tuple[int, tuple[str, ...]]:
+    """
+    Read the skeleton a section is skinned to and the names of the bones it uses.
+
+    The first name is empty in every skinned section the game ships. A palette entry selecting it
+    is taken to mean the skeleton's root.
+
+    Parameters
+    ----------
+    section : bytes
+        The section's bytes.
+
+    Returns
+    -------
+    tuple[int, tuple[str, ...]]
+        The CRC of the skeleton's path and the bone names, empty for an object without bones.
+    """
+    if len(section) < _ITEM_TABLE_AT + 4:
+        return 0, ()
+    count = struct.unpack_from('<H', section, _BONE_COUNT_AT)[0]
+    table = struct.unpack_from('<I', section, _BONE_TABLE_AT)[0]
+    if not count or table + count * 4 > len(section):
+        return 0, ()
+    return (struct.unpack_from('<I', section, _SKELETON_HASH_AT)[0],
+            tuple(_name(section, at) for at in struct.unpack_from(f'<{count}I', section, table)))
+
+
 def read_items(section: bytes) -> tuple[PropItem, ...]:
     """
     Read a section's items and the material each of their draw groups uses.
@@ -332,8 +388,9 @@ def read_items(section: bytes) -> tuple[PropItem, ...]:
     list starts and how long it is. Walking the list yields the groups. Opcode 1 gives the material
     to use from here on, and opcodes 7, 8, 0x1007 and 0x1008 close a group, recording the byte
     offset and quadword length of the packets it covers. Summed over an item, the triangle counts
-    those
-    commands report match the item's stated total for every one of the game's 8440 items.
+    those commands report match the item's recorded total for every one of the game's 8440 items.
+    Opcode 6 loads the bone palette. Its second half-word is the palette's length, and a palette
+    longer than twelve entries continues in the opcode 6 command immediately after it.
 
     Parameters
     ----------
@@ -365,26 +422,32 @@ def read_items(section: bytes) -> tuple[PropItem, ...]:
             continue
         name = _name(section, record + struct.unpack_from('<i', section, record + _ITEM_NAME_AT)[0])
         material = 0
+        palette: tuple[int, ...] = ()
+        previous = 0
         groups = []
         for step in range(total):
             at = commands + step * _COMMAND_SIZE
-            opcode = struct.unpack_from('<H', section, at)[0]
+            opcode, size = struct.unpack_from('<2H', section, at)
             if opcode == _SET_MATERIAL:
                 material = struct.unpack_from('<I', section, at + 4)[0]
+            elif opcode == _SET_PALETTE:
+                if previous != _SET_PALETTE or len(palette) >= size:
+                    palette = ()
+                palette += tuple(
+                    section[at + 4:at + 4 + min(_PALETTE_PER_COMMAND, size - len(palette))])
             elif opcode in _END_GROUP:
                 start, length = struct.unpack_from('<2I', section, at + 4)
                 packets = tuple(
                     read_packets(section, geometry + start, geometry + start + length * _QUADWORD))
                 if packets:
-                    groups.append(PropGroup(material, packets))
+                    groups.append(PropGroup(material, packets, palette))
+            previous = opcode
         if groups:
             items.append(PropItem(name, tuple(groups)))
     return tuple(items)
 
 
-def read_packets(section: bytes,
-                 start: int = 0,
-                 end: int | None = None) -> Iterator[tuple[int, tuple[PropVertex, ...]]]:
+def read_packets(section: bytes, start: int = 0, end: int | None = None) -> Iterator[PropPacket]:
     """
     Yield the draw packets in a stretch of a section.
 
@@ -406,8 +469,8 @@ def read_packets(section: bytes,
 
     Yields
     ------
-    tuple[int, tuple[PropVertex, ...]]
-        The GS primitive type and the packet's vertices.
+    PropPacket
+        Each packet found.
     """
     limit = len(section) if end is None else min(end, len(section))
     at = max(start, 0)
@@ -433,9 +496,12 @@ def read_packets(section: bytes,
                 break
             if max(abs(x), abs(y), abs(z)) > _COORDINATE_LIMIT:
                 break
-            vertices.append(PropVertex(x, y, z, u, v))
+            raw_u, raw_v = struct.unpack_from('<2I', section, row + 16)
+            vertices.append(
+                PropVertex(x, y, z, u, v, ((raw_u & _SLOT_MASK) >> _SLOT_SHIFT,
+                                           (raw_v & _SLOT_MASK) >> _SLOT_SHIFT)))
         if len(vertices) != count:
             at += 4
             continue
-        yield primitive, tuple(vertices)
+        yield PropPacket(primitive, tuple(vertices), struct.unpack_from('<I', section, at + 12)[0])
         at = finish

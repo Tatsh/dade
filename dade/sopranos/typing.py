@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import Literal, NamedTuple, TypeAlias
+from typing import TYPE_CHECKING, Literal, NamedTuple, TypeAlias
 
-__all__ = ('BlendMode', 'FSEntry', 'LevelEntry', 'PixelFormat', 'Primitive', 'SoundEntry',
-           'TextureInfo')
+if TYPE_CHECKING:
+    import numpy as np
+
+__all__ = ('BlendMode', 'Bone', 'Clip', 'FSEntry', 'LevelEntry', 'PixelFormat', 'Primitive',
+           'Skeleton', 'SoundEntry', 'TextureInfo', 'Track')
 
 Primitive: TypeAlias = Literal[3, 4]
 """GS primitive type: ``3`` is an independent triangle list, ``4`` a triangle strip.
@@ -100,3 +103,66 @@ class SoundEntry(NamedTuple):
     """Sample rate in Hz."""
     identifier: int
     """Raw second word of the entry: a sequential index in some banks, a name hash in others."""
+
+
+class Bone(NamedTuple):
+    """One bone of a ``.SKL2`` skeleton at rest."""
+
+    name: str
+    """The bone's name, such as ``Bip01 L Thigh``."""
+    name_hash: int
+    """CRC-32 of the lowercased name."""
+    parent: int
+    """Index of the parent bone, always lower than the bone's index, or ``-1`` for the root."""
+    local: tuple[float, ...]
+    """
+    The bind transform relative to the parent, as sixteen floats of a row-major matrix.
+
+    The matrix transforms row vectors and stores its translation in the last row. Units are inches
+    and Z is up.
+    """
+    inverse_world: tuple[float, ...]
+    """The inverse of the bone's world bind transform, laid out as :py:attr:`local`."""
+
+
+class Skeleton(NamedTuple):
+    """One skeleton of a ``.SKL2`` file."""
+
+    name: str
+    """The object path, such as ``data/objects/characters/heroes/joey/joey``."""
+    name_hash: int
+    """CRC-32 of the lowercased object path, recorded by every section skinned to it."""
+    bones: tuple[Bone, ...]
+    """The bones, every parent before its children."""
+
+
+class Track(NamedTuple):
+    """The keys of one bone in a ``.SAM2`` clip."""
+
+    bone: str
+    """The bone's name."""
+    bone_hash: int
+    """CRC-32 of the lowercased bone name."""
+    frames: np.ndarray
+    """The frame of each key, strictly increasing, ``(n,)``."""
+    rotations: np.ndarray
+    """Each key's rotation relative to the bind rotation, as quaternions ``(x, y, z, w)``."""
+    translations: np.ndarray | None
+    """Each key's offset from the bind translation, ``(n, 3)``, or :py:obj:`None` for rotations."""
+    offset: tuple[float, float, float]
+    """The constant offset from the bind translation of a track storing rotations only."""
+
+
+class Clip(NamedTuple):
+    """One animation clip of a ``.SAM2`` file."""
+
+    name: str
+    """The clip's path, such as ``data/objects/characters/common/human/human_walk``."""
+    name_hash: int
+    """CRC-32 of the lowercased path."""
+    frame_count: int
+    """Number of frames."""
+    rate: int
+    """Frames a second, taken from the header word that reads 15, 10, 30, or 5."""
+    tracks: tuple[Track, ...]
+    """One track per animated bone."""

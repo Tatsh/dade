@@ -7,16 +7,31 @@ import struct
 
 import pytest
 
-from dade.sopranos.gltf import GLB_MAGIC, build_glb, build_prop_glb, write_glb, write_prop_glb
+from dade.common.gltf import UNSIGNED_BYTE, UNSIGNED_SHORT
+from dade.sopranos.archive import name_hash
+from dade.sopranos.gltf import (
+    GLB_MAGIC,
+    SKIN_NOTE,
+    build_glb,
+    build_prop_glb,
+    build_skinned_glbs,
+    write_glb,
+    write_prop_glb,
+    write_skinned_glbs,
+)
 from dade.sopranos.olv import Placement
+from dade.sopranos.skeleton import read_clips, read_skeletons
 from dade.sopranos.texture import iter_geometry_textures
+from dade.sopranos.typing import Skeleton
 
 from .conftest import (
     FORMAT_RGBA,
+    build_clips,
     build_geometry,
     build_image,
     build_library,
     build_section,
+    build_skeletons,
     mesh_packet,
     prop_packet,
 )
@@ -431,3 +446,109 @@ def test_write_prop_glb_writes_nothing_without_geometry(tmp_path: Path) -> None:
     source = tmp_path / 'cast.sgp2'
     source.write_bytes(build_library([]))
     assert write_prop_glb(source, tmp_path / 'out') == ()
+
+
+_IDENTITY_ROWS = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+
+
+def _rig(extra: int = 0) -> tuple[Skeleton, ...]:
+    bones = [('root', -1, [*_IDENTITY_ROWS, 0.0, 0.0, 0.0, 1.0]),
+             ('hip', 0, [*_IDENTITY_ROWS, 0.0, 0.0, 10.0, 1.0]),
+             ('toe', 1, [*_IDENTITY_ROWS, 1.0, 0.0, -10.0, 1.0])]
+    bones += [(f'extra{n}', 0, [*_IDENTITY_ROWS, 0.0, 0.0, 0.0, 1.0]) for n in range(extra)]
+    return read_skeletons(build_skeletons([('lib/man/rig', bones)]))
+
+
+def _skinned_section(name: str = 'lib/man/man',
+                     bones: tuple[str, ...] = ('', 'hip', 'toe', 'tail'),
+                     *,
+                     draws: bool = True) -> bytes:
+    groups = [(0, [prop_packet(_PROP_TRIANGLE, slots=[(0, 1), (0, 0), (0, 5)], mode=0x12)]),
+              (0, [prop_packet(_PROP_TRIANGLE, slots=[(0, 1), (2, 2), (1, 1)], mode=0x02)])]
+    return build_section(name, [('body.tga',)], [('body', groups)] if draws else [],
+                         bones=bones,
+                         palettes=[[1, 2, 3]],
+                         skeleton_hash=name_hash('lib/man/rig'))
+
+
+def _skinned_library(*sections: bytes) -> bytes:
+    return build_library(
+        list(sections) or [_skinned_section()],
+        [build_image('data/body.tga', 2, 2, FORMAT_RGBA, opaque_pixels())])
+
+
+def _accessor(glb: bytes, index: int) -> list[list[float]]:
+    parsed = document(glb)
+    accessor = parsed['accessors'][index]
+    view = parsed['bufferViews'][accessor['bufferView']]
+    binary = glb[20 + struct.unpack_from('<I', glb, 12)[0] + 8:]
+    code = {5121: 'B', 5123: 'H', 5126: 'f'}[accessor['componentType']]
+    width = {'VEC4': 4}[accessor['type']]
+    values = struct.unpack_from(f'<{accessor["count"] * width}{code}', binary,
+                                view['byteOffset'] + accessor.get('byteOffset', 0))
+    return [list(values[i:i + width]) for i in range(0, len(values), width)]
+
+
+def test_build_skinned_glbs_binds_each_vertex_to_the_bones_it_selects() -> None:
+    (label, glb), = build_skinned_glbs(_skinned_library(), _rig())
+    assert label == 'man'
+    parsed = document(glb)
+    skin, = parsed['skins']
+    assert skin['extras'] == {'note': SKIN_NOTE}
+    assert skin['joints'] == [0, 1, 2]
+    assert parsed['nodes'][3] == {'mesh': 0, 'name': 'man', 'skin': 0}
+    assert parsed['scenes'][0] == {'name': 'man', 'nodes': [3, 0]}
+    first, second = parsed['meshes'][0]['primitives']
+    assert first['material'] == second['material'] == 0
+    attributes = first['attributes']
+    assert parsed['accessors'][attributes['JOINTS_0']]['componentType'] == UNSIGNED_BYTE
+    # Palette slot 0 is the hip and slot 1 the toe. Slot 5 is past the palette and entry 0 of the
+    # bone list is unnamed, and both are the root.
+    assert _accessor(glb, attributes['JOINTS_0']) == [[1, 2, 0, 0], [1, 0, 0, 0], [1, 0, 0, 0]]
+    assert _accessor(glb, attributes['WEIGHTS_0']) == [[0.5, 0.5, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0],
+                                                       [0.5, 0.5, 0.0, 0.0]]
+    # Without the two-bone flag only the first slot counts, and ``tail`` is not in the skeleton.
+    assert _accessor(glb, second['attributes']['JOINTS_0']) == [[1, 0, 0, 0], [0, 0, 0, 0],
+                                                                [2, 0, 0, 0]]
+    assert 'animations' not in parsed
+
+
+def test_build_skinned_glbs_animates_the_skin_with_each_clip_that_binds() -> None:
+    clips = read_clips(
+        build_clips([('lib/anim/walk', 2, 10, [('hip', 4, (0, 1), ((0, 0, 0, 0x7800),) * 2, (),
+                                                (0.0, 0.0, 0.0))]),
+                     ('lib/anim/wag', 2, 10, [('tail', 4, (0, 1), ((0, 0, 0, 0x7800),) * 2, (),
+                                               (0.0, 0.0, 0.0))])]))
+    (_label, glb), = build_skinned_glbs(_skinned_library(), _rig(), clips)
+    assert [animation['name'] for animation in document(glb)['animations']] == ['walk']
+
+
+def test_build_skinned_glbs_widens_the_joints_of_a_large_skeleton() -> None:
+    (_label, glb), = build_skinned_glbs(
+        _skinned_library(_skinned_section(bones=('', 'extra299', 'toe'))), _rig(300))
+    parsed = document(glb)
+    attributes = parsed['meshes'][0]['primitives'][0]['attributes']
+    assert parsed['accessors'][attributes['JOINTS_0']]['componentType'] == UNSIGNED_SHORT
+    assert _accessor(glb, attributes['JOINTS_0'])[0] == [302, 2, 0, 0]
+
+
+def test_build_skinned_glbs_skips_what_cannot_be_skinned() -> None:
+    library = _skinned_library(
+        build_section('lib/chair', [('body.tga',)],
+                      [('chair', [(0, [prop_packet(_PROP_TRIANGLE)])])]),
+        _skinned_section(draws=False), _skinned_section('elsewhere/man'))
+    assert list(build_skinned_glbs(library, ())) == []
+    assert [label for label, _glb in build_skinned_glbs(library, _rig())] == ['man']
+
+
+def test_build_skinned_glbs_skips_a_skeleton_without_bones() -> None:
+    empty = Skeleton('lib/man/rig', name_hash('lib/man/rig'), ())
+    assert list(build_skinned_glbs(_skinned_library(), (empty,))) == []
+
+
+def test_write_skinned_glbs_writes_one_file_per_object(tmp_path: Path) -> None:
+    source = tmp_path / 'cast.sgp2'
+    source.write_bytes(_skinned_library(_skinned_section(), _skinned_section('other/man')))
+    written, = write_skinned_glbs(source, tmp_path / 'out', _rig())
+    assert written == tmp_path / 'out' / 'cast_skinned' / 'man.glb'
+    assert written.read_bytes()[:4] == b'glTF'

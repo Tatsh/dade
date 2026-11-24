@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING
+import functools
+import re
 import struct
 
 import bascom
@@ -12,20 +14,24 @@ from dade.common.exceptions import InvalidFormatError
 
 from .archive import is_disc_image, iter_disc_archives, iter_entries, read_directory
 from .audio import convert_bank, convert_stream, convert_voice
-from .gltf import write_glb, write_prop_glb
+from .gltf import write_glb, write_prop_glb, write_skinned_glbs
 from .level import extract as extract_level
 from .model import write_model
 from .olv import Placement, read_placements
+from .skeleton import read_clips, read_skeletons
 from .texture import convert as convert_texture, convert_geometry
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Iterator
+
+    from .typing import Clip, Skeleton
 
 __all__ = ('archive_directory', 'iter_sources', 'sopranos')
 
 _CONTEXT_SETTINGS = {'help_option_names': ('-h', '--help')}
 _ARCHIVE_SUFFIX = '.fs'
 _COOKER_SUFFIX = '_p'
+_LEVEL_DIRECTORY = re.compile(r'p_.(.+?)(?:_hub)?', re.IGNORECASE)
 
 debug_option = bascom.debug_option({'dade.common': {}, 'dade.sopranos': {}})
 """Attach ``-d/--debug`` to a command and route it through :py:func:`bascom.setup_logging`.
@@ -77,6 +83,67 @@ def _prop_libraries(path: Path) -> tuple[tuple[bytes, ...], tuple[Placement, ...
     return (), ()
 
 
+@functools.cache
+def _skeleton_file(path: Path) -> tuple[Skeleton, ...]:
+    """
+    Read one ``.SKL2`` file, once however many libraries need it.
+
+    Parameters
+    ----------
+    path : Path
+        The file.
+
+    Returns
+    -------
+    tuple[Skeleton, ...]
+        Its skeletons.
+    """
+    return read_skeletons(path.read_bytes())
+
+
+def _rigs(path: Path) -> tuple[tuple[Skeleton, ...], tuple[Clip, ...]]:
+    """
+    Find the skeletons and clips a ``.SGP2`` library's objects may use.
+
+    A level's directories share a name once the ``p_`` prefix, the one-character variant tag after
+    it, and any ``_hub`` suffix are removed, ``p_0satriales_hub`` and ``p_csatriales`` both being
+    ``satriales``. The clips are those of every ``.SAM2`` of the level, the first of each name
+    winning. The skeletons are those of the library's directory first, then the rest of the
+    level, then every other directory beside them, a few objects being skinned to a skeleton only
+    another level ships. A library outside a level directory is offered its directory only.
+
+    Parameters
+    ----------
+    path : Path
+        The library.
+
+    Returns
+    -------
+    tuple[tuple[Skeleton, ...], tuple[Clip, ...]]
+        The skeletons, the preferred ones first, and the clips.
+    """
+    directory = path.parent
+
+    def level(candidate: Path) -> str | None:
+        return found[1].lower() if (found := _LEVEL_DIRECTORY.fullmatch(candidate.name)) else None
+
+    if (own := level(directory)) is None:
+        others = []
+    else:
+        others = sorted(p for p in directory.parent.iterdir() if p.is_dir() and p != directory)
+    levels = [directory, *(p for p in others if level(p) == own)]
+    skeletons = tuple(skeleton for candidate in (*levels, *(p for p in others if p not in levels))
+                      for file in sorted(candidate.iterdir()) if file.suffix.lower() == '.skl2'
+                      for skeleton in _skeleton_file(file))
+    clips: dict[int, Clip] = {}
+    for candidate in levels:
+        for file in sorted(candidate.iterdir()):
+            if file.suffix.lower() == '.sam2':
+                for clip in read_clips(file.read_bytes()):
+                    clips.setdefault(clip.name_hash, clip)
+    return skeletons, tuple(clips.values())
+
+
 def _expand_level(path: Path) -> int:
     """
     Split one ``.LVL`` container into the directory beside it.
@@ -119,6 +186,7 @@ def _convert_asset(path: Path) -> int:
             written += len(write_glb(path, path.parent, libraries=libraries, placements=placements))
         case '.sgp2':
             written += len(convert_geometry(path, path.parent / f'{path.stem}_textures'))
+            written += len(write_skinned_glbs(path, path.parent, *_rigs(path)))
         case '.msh' if (body := path.with_suffix('.msb')).is_file():
             written += len(convert_bank(path, body, path.parent))
         case '.mih' if (body := path.with_suffix('.mib')).is_file():
@@ -404,8 +472,12 @@ def mesh(files: tuple[Path, ...], *, output_dir: Path | None = None) -> None:
 def gltf(files: tuple[Path, ...], *, output_dir: Path | None = None) -> None:
     """Convert .EGP2 level geometry or .SGP2 prop libraries to binary glTF."""
     for path in files:
-        convert = write_prop_glb if path.suffix.lower() == '.sgp2' else write_glb
-        written = convert(path, output_dir or path.parent)
+        target = output_dir or path.parent
+        if path.suffix.lower() == '.sgp2':
+            written = (*write_prop_glb(path, target),
+                       *write_skinned_glbs(path, target, *_rigs(path)))
+        else:
+            written = write_glb(path, target)
         click.echo(f'{path}: {len(written)} file(s).')
 
 

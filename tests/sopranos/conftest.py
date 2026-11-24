@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import struct
 
+import numpy as np
 import pytest
 
 from dade.sopranos.archive import DIR_TAG, END_TAG, SECTOR_SIZE, STR_TAG, name_hash
@@ -27,7 +28,7 @@ _TRIANGLE_LIST = 3
 _NREG = 3
 
 
-def gif_tag(count: int, primitive: int, nreg: int = _NREG) -> bytes:
+def gif_tag(count: int, primitive: int, nreg: int = _NREG, mode: int = 0) -> bytes:
     """
     Build the GIFtag that opens a draw packet.
 
@@ -39,17 +40,21 @@ def gif_tag(count: int, primitive: int, nreg: int = _NREG) -> bytes:
         GS primitive type.
     nreg : int
         Per-vertex register count.
+    mode : int
+        The tag's fourth word.
 
     Returns
     -------
     bytes
         Sixteen bytes.
     """
-    return struct.pack('<4I', count | 0x8000, (primitive << 15) | (nreg << 28), 0x512, 0)
+    return struct.pack('<4I', count | 0x8000, (primitive << 15) | (nreg << 28), 0x512, mode)
 
 
 def prop_packet(vertices: Sequence[tuple[float, float, float, float, float]],
-                primitive: int = _TRIANGLE_LIST) -> bytes:
+                primitive: int = _TRIANGLE_LIST,
+                slots: Sequence[tuple[int, int]] = (),
+                mode: int = 0) -> bytes:
     """
     Build one ``.SGP2`` draw packet.
 
@@ -59,14 +64,139 @@ def prop_packet(vertices: Sequence[tuple[float, float, float, float, float]],
         Each vertex as ``(x, y, z, u, v)``.
     primitive : int
         GS primitive type.
+    slots : Sequence[tuple[int, int]]
+        Each vertex's two bone palette slots, written to the low bytes of U and V. Vertices past
+        the end select slot 0 twice.
+    mode : int
+        The GIFtag's fourth word.
 
     Returns
     -------
     bytes
         The tag followed by thirty-two bytes per vertex.
     """
-    body = b''.join(struct.pack('<8f', x, y, z, 0.0, u, v, 0.0, 0.0) for x, y, z, u, v in vertices)
-    return gif_tag(len(vertices), primitive) + body
+    body = bytearray()
+    for index, (x, y, z, u, v) in enumerate(vertices):
+        row = bytearray(struct.pack('<8f', x, y, z, 0.0, u, v, 0.0, 0.0))
+        first, second = slots[index] if index < len(slots) else (0, 0)
+        row[16] = first * 4
+        row[20] = second * 4
+        body += row
+    return gif_tag(len(vertices), primitive, mode=mode) + bytes(body)
+
+
+def palette_commands(palette: Sequence[int]) -> bytes:
+    """
+    Build the opcode 6 commands that load a bone palette.
+
+    Parameters
+    ----------
+    palette : Sequence[int]
+        Indices into the section's bone list, twelve to a command.
+
+    Returns
+    -------
+    bytes
+        One sixteen-byte command per twelve entries.
+    """
+    return b''.join(
+        struct.pack('<2H', 6, len(palette)) + bytes(palette[start:start + 12]).ljust(12, b'\0')
+        for start in range(0, len(palette), 12))
+
+
+def build_skeletons(skeletons: Sequence[tuple[str, Sequence[tuple[str, int, Sequence[float]]]]],
+                    *,
+                    hashes: Sequence[int] = ()) -> bytes:
+    """
+    Build a ``.SKL2`` file.
+
+    Parameters
+    ----------
+    skeletons : Sequence[tuple[str, Sequence[tuple[str, int, Sequence[float]]]]]
+        Per skeleton, its path and its bones as ``(name, parent, local)``, the local transform
+        being sixteen floats of a row-major matrix for row vectors.
+    hashes : Sequence[int]
+        Hashes to record in place of the paths' own, in skeleton order.
+
+    Returns
+    -------
+    bytes
+        The whole file.
+    """
+    out = bytearray()
+    for number, (name, bones) in enumerate(skeletons):
+        table = 0x20
+        strings_at = table + len(bones) * 0x90
+        strings = bytearray(name.encode() + b'\0')
+        records = bytearray()
+        world: list[np.ndarray] = []
+        for bone_name, parent, local in bones:
+            matrix = np.array(local, dtype=np.float64).reshape(4, 4)
+            world.append(matrix if parent < 0 else matrix @ world[parent])
+            records += struct.pack('<16f', *local)
+            records += struct.pack('<16f', *np.linalg.inv(world[-1]).reshape(16))
+            records += struct.pack('<hHI', parent, strings_at + len(strings), name_hash(bone_name))
+            records += bytes(8)
+            strings += bone_name.encode() + b'\0'
+        body = bytes(records) + bytes(strings)
+        body += bytes(-len(body) % 16)
+        hash_ = hashes[number] if number < len(hashes) else name_hash(name)
+        header = struct.pack('<2I', hash_, table + len(body)) + bytes(8)
+        header += struct.pack('<3H', len(bones), table, strings_at)
+        out += header.ljust(table, b'\0') + body
+    return bytes(out)
+
+
+def build_clips(
+    clips: Sequence[tuple[str, int, int,
+                          Sequence[tuple[str, int, Sequence[int], Sequence[Sequence[int]],
+                                         Sequence[Sequence[float]], tuple[float, float, float]]]]]
+) -> bytes:
+    """
+    Build a ``.SAM2`` file.
+
+    Parameters
+    ----------
+    clips : Sequence[tuple[str, int, int, Sequence[tuple[...]]]]
+        Per clip, its path, frame count, rate, and tracks. Each track is ``(bone, kind, frames,
+        rotations, translations, offset)``: the rotations are four stored half-words a key, the
+        translations three floats a key (written for kind 5 only), and the offset the constant
+        offset of a kind 4 track.
+
+    Returns
+    -------
+    bytes
+        The whole file.
+    """
+    out = bytearray(16)
+    for name, frame_count, rate, tracks in clips:
+        table = 0x18
+        data_at = table + len(tracks) * 32
+        data = bytearray()
+        records = bytearray()
+        for bone, kind, frames, rotations, translations, offset in tracks:
+            frames_at = data_at + len(data)
+            data += struct.pack(f'<{len(frames)}H', *frames)
+            data += bytes(-len(data) % 4)
+            keys_at = data_at + len(data)
+            for index, rotation in enumerate(rotations):
+                if kind == 5:
+                    data += struct.pack('<3f', *translations[index])
+                data += struct.pack('<4H', *rotation)
+            bone_at = data_at + len(data)
+            data += bone.encode() + b'\0'
+            data += bytes(-len(data) % 4)
+            records += struct.pack('<3f', *offset)
+            records += struct.pack('<4H', kind, bone_at + 0x10, len(frames), 0)
+            records += struct.pack('<3I', name_hash(bone), frames_at + 0x10, keys_at + 0x10)
+        name_at = data_at + len(data)
+        data += name.encode() + b'\0'
+        data += bytes(-len(data) % 4)
+        size = data_at + len(data)
+        header = struct.pack('<2I', size, name_hash(name)) + bytes(6)
+        header += struct.pack('<5H', name_at + 0x10, frame_count, rate, len(tracks), table + 0x10)
+        out += header + bytes(records) + bytes(data)
+    return bytes(out)
 
 
 def build_archive(files: Mapping[str, bytes], *, named: bool = True) -> bytes:
@@ -224,8 +354,13 @@ def level_bytes() -> Callable[..., bytes]:
     return build_level
 
 
-def build_section(name: str, materials: Sequence[Sequence[str]],
-                  items: Sequence[tuple[str, Sequence[tuple[int, Sequence[bytes]]]]]) -> bytes:
+def build_section(name: str,
+                  materials: Sequence[Sequence[str]],
+                  items: Sequence[tuple[str, Sequence[tuple[int, Sequence[bytes]]]]],
+                  *,
+                  bones: Sequence[str] = (),
+                  palettes: Sequence[Sequence[int]] = (),
+                  skeleton_hash: int = 0) -> bytes:
     """
     Build one ``.SGP2`` object section.
 
@@ -237,6 +372,13 @@ def build_section(name: str, materials: Sequence[Sequence[str]],
         Per material, the texture names it references.
     items : Sequence[tuple[str, Sequence[tuple[int, Sequence[bytes]]]]]
         Per item, its name and its groups as ``(material index, packets)``.
+    bones : Sequence[str]
+        The section's bone list. An empty name is written as a zero offset.
+    palettes : Sequence[Sequence[int]]
+        A bone palette loaded before each group, counting groups across every item. Groups past
+        the end load none.
+    skeleton_hash : int
+        The skeleton hash recorded at ``0x04``.
 
     Returns
     -------
@@ -257,6 +399,8 @@ def build_section(name: str, materials: Sequence[Sequence[str]],
     material_names = [[intern(texture) for texture in slots] for slots in materials]
     for item_name, _groups in items:
         intern(item_name)
+    bone_offsets = [intern(bone) if bone else 0 for bone in bones]
+    group_number = 0
     material_at = 0x60 + len(strings)
     blocks_at = material_at + len(materials) * 0x34
     blocks = bytearray()
@@ -269,6 +413,9 @@ def build_section(name: str, materials: Sequence[Sequence[str]],
             start = 0x10 + len(packets)
             for chunk in chunks:
                 packets += chunk
+            if group_number < len(palettes):
+                commands += palette_commands(palettes[group_number])
+            group_number += 1
             commands += struct.pack('<HHIII', 1, 0, material, 0, 0)
             commands += struct.pack('<HHIII', 7, 0, start, (len(packets) + 0x10 - start) // 16, 0)
         block = struct.pack('<4I', len(packets), 0, 0, len(commands) // 16)
@@ -287,14 +434,19 @@ def build_section(name: str, materials: Sequence[Sequence[str]],
         for slot, offset in enumerate(slots):
             struct.pack_into('<I', record, 4 + slot * 16, offset)
         material_table += record
+    bone_table = struct.pack(f'<{len(bone_offsets)}I', *bone_offsets)
     header = bytearray(0x60)
+    struct.pack_into('<I', header, 0x04, skeleton_hash)
     struct.pack_into('<I', header, 0x08, offsets[name])
-    struct.pack_into('<I', header, 0x0C, table_at + len(table))
+    struct.pack_into('<I', header, 0x0C, table_at + len(table) + len(bone_table))
+    struct.pack_into('<H', header, 0x3C, len(bone_offsets))
     struct.pack_into('<H', header, 0x3E, len(materials))
     struct.pack_into('<H', header, 0x40, len(records))
+    struct.pack_into('<I', header, 0x44, table_at + len(table))
     struct.pack_into('<I', header, 0x50, material_at)
     struct.pack_into('<I', header, 0x54, table_at)
-    return bytes(header) + bytes(strings) + bytes(material_table) + bytes(blocks) + bytes(table)
+    return (bytes(header) + bytes(strings) + bytes(material_table) + bytes(blocks) + bytes(table) +
+            bone_table)
 
 
 def build_library(sections: Sequence[bytes], images: Sequence[bytes] = ()) -> bytes:

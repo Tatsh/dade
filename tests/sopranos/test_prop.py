@@ -6,6 +6,7 @@ import pytest
 
 from dade.sopranos.prop import (
     is_alternate,
+    read_bones,
     read_items,
     read_materials,
     read_packets,
@@ -256,3 +257,47 @@ def test_read_items_passes_over_commands_it_does_not_know() -> None:
     items = read_items(_body(bytes(data)))
     # The group still closes, but with the material left at its default.
     assert items[0].groups[0].material == 0
+
+
+def _skinned(palettes: list[list[int]]) -> bytes:
+    groups = [(0, [prop_packet(_TRIANGLE)]) for _ in palettes]
+    return build_section('lib/man/man', [('body.tga',)], [('body', groups)],
+                         bones=('', 'hip', 'toe'),
+                         palettes=palettes,
+                         skeleton_hash=0x1234)
+
+
+def test_read_bones_gives_the_skeleton_hash_and_bone_names() -> None:
+    assert read_bones(_skinned([[0]])) == (0x1234, ('', 'hip', 'toe'))
+
+
+def test_read_bones_is_empty_for_an_object_without_bones() -> None:
+    assert read_bones(_body(_one_section())) == (0, ())
+
+
+def test_read_bones_ignores_a_tiny_section() -> None:
+    assert read_bones(bytes(16)) == (0, ())
+
+
+def test_read_bones_ignores_a_table_past_the_end() -> None:
+    data = bytearray(_skinned([[0]]))
+    struct.pack_into('<I', data, 0x44, 0xFFFFFF)
+    assert read_bones(bytes(data)) == (0, ())
+
+
+def test_read_items_gives_each_group_the_palette_in_force() -> None:
+    long_palette = list(range(14))
+    items = read_items(_skinned([[1, 2], long_palette, [2]]))
+    assert [group.palette for group in items[0].groups] == [(1, 2), tuple(long_palette), (2,)]
+
+
+def test_read_items_keeps_a_palette_for_the_groups_after_it() -> None:
+    groups = [(0, [prop_packet(_TRIANGLE)]), (0, [prop_packet(_TRIANGLE)])]
+    data = build_section('lib/man/man', [('body.tga',)], [('body', groups)], palettes=[[2, 1]])
+    assert [group.palette for group in read_items(data)[0].groups] == [(2, 1), (2, 1)]
+
+
+def test_read_packets_gives_each_vertex_its_palette_slots_and_the_packet_its_mode() -> None:
+    packet, = read_packets(prop_packet(_TRIANGLE, slots=[(1, 2), (3, 3)], mode=0x12))
+    assert packet.mode == 0x12
+    assert [vertex.slots for vertex in packet.vertices] == [(1, 2), (3, 3), (0, 0)]

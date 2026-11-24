@@ -40,16 +40,18 @@ from dade.common.gltf import (
 from .model import BLEND_PASSES, read_materials, read_meshes, triangles
 from .prop import (
     is_alternate,
+    read_bones,
     read_items,
     read_materials as read_prop_materials,
     read_sections,
     wardrobe_key,
 )
+from .skeleton import add_animations, add_skin, find_skeleton
 from .texture import decode, iter_geometry_textures
 from .typing import BlendMode
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
     from pathlib import Path
 
     from PIL.Image import Image
@@ -57,8 +59,19 @@ if TYPE_CHECKING:
     from .model import Mesh
     from .olv import Placement
     from .prop import PropSection
+    from .typing import Clip, Skeleton
 
-__all__ = ('GLB_MAGIC', 'build_glb', 'build_prop_glb', 'write_glb', 'write_prop_glb')
+__all__ = ('GLB_MAGIC', 'SKIN_NOTE', 'build_glb', 'build_prop_glb', 'build_skinned_glbs',
+           'write_glb', 'write_prop_glb', 'write_skinned_glbs')
+
+SKIN_NOTE = ('The weights are provisional because the files do not store them. A vertex selecting '
+             'two bones weighs each at 0.5, and one selecting one bone weighs it at 1. The unnamed '
+             'first bone of an object is bound to the skeleton root. Taking clip rates as frames '
+             'a second is unconfirmed.')
+"""Caveat recorded in the ``extras`` of every skin written.
+
+:meta hide-value:
+"""
 
 log = logging.getLogger(__name__)
 
@@ -77,6 +90,8 @@ _TRIANGLE_CORNERS = 3
 # GS TEST_1 alpha test: ATST GEQUAL with AREF 8 on the PS2's 0..128 scale, giving 16 of 255 here.
 _CUTOUT_REF = 16 / 255
 _SHORT_INDEX_LIMIT = 0xFFFF
+_TWO_BONES = 0x10
+_BYTE_JOINT_LIMIT = 0xFF
 
 
 def _finite(value: float) -> float:
@@ -246,7 +261,9 @@ def _prop_images(data: bytes) -> dict[str, tuple[bytes, str]]:
     return by_name
 
 
-def _prop_meshes(section: bytes) -> list[tuple[str, tuple[str, ...], bytes, bytes, list[int], int]]:
+def _prop_meshes(
+    section: bytes
+) -> list[tuple[str, tuple[str, ...], bytes, bytes, list[int], int, list[tuple[int, int]]]]:
     """
     Flatten a ``.SGP2`` section into one entry per draw group.
 
@@ -263,13 +280,15 @@ def _prop_meshes(section: bytes) -> list[tuple[str, tuple[str, ...], bytes, byte
 
     Returns
     -------
-    list[tuple[str, tuple[str, ...], bytes, bytes, list[int], int]]
+    list[tuple[str, tuple[str, ...], bytes, bytes, list[int], int, list[tuple[int, int]]]]
         Per group: the item's name, its material's texture names, positions, texture coordinates,
-        triangle indices, and the vertex count.
+        triangle indices, the vertex count, and the two entries of the section's bone list each
+        vertex follows, the same entry twice for a vertex that follows one bone. A palette slot
+        past the end of the palette selects entry 0.
     """
     materials = read_prop_materials(section)
     worn: set[str] = set()
-    out: list[tuple[str, tuple[str, ...], bytes, bytes, list[int], int]] = []
+    out: list[tuple[str, tuple[str, ...], bytes, bytes, list[int], int, list[tuple[int, int]]]] = []
     for item in read_items(section):
         if is_alternate(item.name):
             key = wardrobe_key(item.name)
@@ -280,11 +299,16 @@ def _prop_meshes(section: bytes) -> list[tuple[str, tuple[str, ...], bytes, byte
             positions = bytearray()
             texcoords = bytearray()
             indices: list[int] = []
+            bones: list[tuple[int, int]] = []
+            palette = group.palette
             base = 0
-            for primitive, vertices in group.packets:
+            for primitive, vertices, mode in group.packets:
                 for v in vertices:
                     positions += struct.pack('<3f', v.x, v.z, -v.y)
                     texcoords += struct.pack('<2f', v.u, 1.0 - v.v)
+                    first, second = (palette[slot] if slot < len(palette) else 0
+                                     for slot in v.slots)
+                    bones.append((first, second if mode & _TWO_BONES else first))
                 for a, b, c in triangles(len(vertices), primitive):
                     if len({vertices[a][:3], vertices[b][:3],
                             vertices[c][:3]}) == _TRIANGLE_CORNERS:
@@ -293,7 +317,7 @@ def _prop_meshes(section: bytes) -> list[tuple[str, tuple[str, ...], bytes, byte
             if not indices:
                 continue
             names = materials[group.material] if group.material < len(materials) else ()
-            out.append((item.name, names, bytes(positions), bytes(texcoords), indices, base))
+            out.append((item.name, names, bytes(positions), bytes(texcoords), indices, base, bones))
     return out
 
 
@@ -541,7 +565,7 @@ def build_glb(  # ruff: ignore[complex-structure, too-many-locals]
             number, section = found
             body = libraries[number][section.offset:section.offset + section.size]
             entries = []
-            for _label, names, positions, texcoords, indices, count in _prop_meshes(body):
+            for _label, names, positions, texcoords, indices, count, _bones in _prop_meshes(body):
                 floats = struct.unpack(f'<{count * 3}f', positions)
                 axes = [floats[i::3] for i in range(3)]
                 wide = count > _SHORT_INDEX_LIMIT
@@ -630,21 +654,46 @@ def build_prop_glb(data: bytes, *, generator: str = 'dade') -> bytes | None:
     bytes | None
         The ``.glb`` file, or ``None`` when the library includes no decodable geometry.
     """
-    by_name = _prop_images(data)
     document = GLBDocument(generator)
-    gltf_meshes = document.meshes
-    nodes = document.nodes
-    gltf_materials = document.materials
-    material_for: dict[str, int] = {}
+    materials: dict[str, int] = {}
+    by_name = _prop_images(data)
+    for section in read_sections(data):
+        label = section.name.rsplit('/', 1)[-1]
+        mesh = _section_mesh(document, data[section.offset:section.offset + section.size], label,
+                             by_name, materials)
+        if mesh is not None:
+            document.nodes.append({'name': label, 'mesh': mesh})
+    if not document.meshes:
+        return None
+    return document.finish('scene')
 
-    def material(name: str) -> int | None:
-        if name in material_for:
-            return material_for[name]
-        found = by_name.get(name)
-        if found is None:
+
+def _material(document: GLBDocument, by_name: dict[str, tuple[bytes, str]],
+              materials: dict[str, int], name: str) -> int | None:
+    """
+    Give the glTF material drawing with one of a library's textures, adding it on first use.
+
+    Parameters
+    ----------
+    document : GLBDocument
+        GLB under construction.
+    by_name : dict[str, tuple[bytes, str]]
+        The library's textures, from :py:func:`_prop_images`.
+    materials : dict[str, int]
+        Materials already added, by texture name, updated in place.
+    name : str
+        The lowercased texture name.
+
+    Returns
+    -------
+    int | None
+        Index of the material, or :py:obj:`None` when the library has no texture of that name.
+    """
+    if name not in materials:
+        if (found := by_name.get(name)) is None:
             return None
         png, mode = found
-        gltf_materials.append({
+        document.materials.append({
             'name': name,
             'pbrMetallicRoughness': {
                 'baseColorFactor': [1.0, 1.0, 1.0, 1.0],
@@ -656,58 +705,184 @@ def build_prop_glb(data: bytes, *, generator: str = 'dade') -> bytes | None:
             'alphaMode': 'BLEND' if mode == 'GLOW' else mode,
             'doubleSided': True
         })
-        material_for[name] = len(gltf_materials) - 1
-        return material_for[name]
+        materials[name] = len(document.materials) - 1
+    return materials[name]
 
+
+def _section_mesh(document: GLBDocument,
+                  body: bytes,
+                  label: str,
+                  by_name: dict[str, tuple[bytes, str]],
+                  materials: dict[str, int],
+                  joints: Sequence[int] | None = None) -> int | None:
+    """
+    Add one ``.SGP2`` section as a glTF mesh.
+
+    Parameters
+    ----------
+    document : GLBDocument
+        GLB under construction.
+    body : bytes
+        The section's bytes.
+    label : str
+        Name for the mesh.
+    by_name : dict[str, tuple[bytes, str]]
+        The library's textures, from :py:func:`_prop_images`.
+    materials : dict[str, int]
+        Materials already added, by texture name, updated in place.
+    joints : Sequence[int] | None
+        The skin joint of each entry of the section's bone list, to write ``JOINTS_0`` and
+        ``WEIGHTS_0``, or :py:obj:`None` for a mesh without a skin.
+
+    Returns
+    -------
+    int | None
+        Index of the mesh, or :py:obj:`None` when the section draws nothing.
+    """
+    entries = []
+    for _item, names, positions, texcoords, indices, base, bones in _prop_meshes(body):
+        floats = struct.unpack(f'<{base * 3}f', positions)
+        axes = [floats[i::3] for i in range(3)]
+        wide = base > _SHORT_INDEX_LIMIT
+        packed = struct.pack(f'<{len(indices)}{"I" if wide else "H"}', *indices)
+        attributes = {
+            'POSITION':
+                document.accessor(positions,
+                                  ARRAY_BUFFER,
+                                  componentType=FLOAT,
+                                  count=base,
+                                  type='VEC3',
+                                  min=[min(a) for a in axes],
+                                  max=[max(a) for a in axes]),
+            'TEXCOORD_0':
+                document.accessor(texcoords,
+                                  ARRAY_BUFFER,
+                                  componentType=FLOAT,
+                                  count=base,
+                                  type='VEC2')
+        }
+        if joints is not None:
+            attributes['JOINTS_0'], attributes['WEIGHTS_0'] = _skin_attributes(
+                document, bones, joints)
+        primitive_entry: dict[str, Any] = {
+            'attributes':
+                attributes,
+            'indices':
+                document.accessor(packed,
+                                  ELEMENT_ARRAY_BUFFER,
+                                  componentType=UNSIGNED_INT if wide else UNSIGNED_SHORT,
+                                  count=len(indices),
+                                  type='SCALAR'),
+            'mode':
+                TRIANGLES
+        }
+        chosen = next((m for m in (_material(document, by_name, materials, n.lower())
+                                   for n in names) if m is not None), None)
+        if chosen is not None:
+            primitive_entry['material'] = chosen
+        entries.append(primitive_entry)
+    if not entries:
+        return None
+    document.meshes.append({'name': label, 'primitives': entries})
+    return len(document.meshes) - 1
+
+
+def _skin_attributes(document: GLBDocument, bones: Sequence[tuple[int, int]],
+                     joints: Sequence[int]) -> tuple[int, int]:
+    """
+    Add the ``JOINTS_0`` and ``WEIGHTS_0`` accessors of one primitive.
+
+    The files store which bones move a vertex and not how much each one does. A vertex following
+    two bones therefore weighs each at a half, and every unused slot is joint 0 at weight 0. An
+    entry past the end of the bone list is joint 0.
+
+    Parameters
+    ----------
+    document : GLBDocument
+        GLB under construction.
+    bones : Sequence[tuple[int, int]]
+        Per vertex, the two entries of the section's bone list it follows.
+    joints : Sequence[int]
+        The skin joint of each entry of the section's bone list.
+
+    Returns
+    -------
+    tuple[int, int]
+        Indices of the joints accessor and the weights accessor.
+    """
+    narrow = max(joints, default=0) <= _BYTE_JOINT_LIMIT
+    code = 'B' if narrow else 'H'
+    joint_data = bytearray()
+    weight_data = bytearray()
+    for first, second in bones:
+        a, b = (joints[index] if index < len(joints) else 0 for index in (first, second))
+        joint_data += struct.pack(f'<4{code}', a, b if a != b else 0, 0, 0)
+        weight_data += struct.pack('<4f', *((0.5, 0.5) if a != b else (1.0, 0.0)), 0.0, 0.0)
+    return (document.accessor(bytes(joint_data),
+                              ARRAY_BUFFER,
+                              componentType=UNSIGNED_BYTE if narrow else UNSIGNED_SHORT,
+                              count=len(bones),
+                              type='VEC4'),
+            document.accessor(bytes(weight_data),
+                              ARRAY_BUFFER,
+                              componentType=FLOAT,
+                              count=len(bones),
+                              type='VEC4'))
+
+
+def build_skinned_glbs(data: bytes,
+                       skeletons: Sequence[Skeleton],
+                       clips: Sequence[Clip] = (),
+                       *,
+                       generator: str = 'dade') -> Iterator[tuple[str, bytes]]:
+    """
+    Build one binary glTF for each skinned object of a ``.SGP2`` library.
+
+    Each file has the object's mesh, the skeleton's bones as joint nodes at their bind pose, a skin
+    binding the two, and one animation per clip whose every track drives a bone of the skeleton. The
+    skeleton is found with :py:func:`~dade.sopranos.skeleton.find_skeleton`. A bone the object uses
+    that the skeleton lacks, the unnamed first one included, is bound to the skeleton's root.
+
+    Parameters
+    ----------
+    data : bytes
+        The whole ``.SGP2`` file.
+    skeletons : Sequence[Skeleton]
+        Candidate skeletons, the preferred ones first.
+    clips : Sequence[Clip]
+        Candidate clips.
+    generator : str
+        Value recorded in the glTF ``asset.generator`` field.
+
+    Yields
+    ------
+    tuple[str, bytes]
+        The object's name and its ``.glb`` file.
+    """
+    by_name = _prop_images(data)
     for section in read_sections(data):
         body = data[section.offset:section.offset + section.size]
-        label = section.name.rsplit('/', 1)[-1]
-        entries = []
-        for _item, names, positions, texcoords, indices, base in _prop_meshes(body):
-            floats = struct.unpack(f'<{base * 3}f', positions)
-            axes = [floats[i::3] for i in range(3)]
-            wide = base > _SHORT_INDEX_LIMIT
-            packed = struct.pack(f'<{len(indices)}{"I" if wide else "H"}', *indices)
-            attributes = {
-                'POSITION':
-                    document.accessor(positions,
-                                      ARRAY_BUFFER,
-                                      componentType=FLOAT,
-                                      count=base,
-                                      type='VEC3',
-                                      min=[min(a) for a in axes],
-                                      max=[max(a) for a in axes]),
-                'TEXCOORD_0':
-                    document.accessor(texcoords,
-                                      ARRAY_BUFFER,
-                                      componentType=FLOAT,
-                                      count=base,
-                                      type='VEC2')
-            }
-            primitive_entry: dict[str, Any] = {
-                'attributes':
-                    attributes,
-                'indices':
-                    document.accessor(packed,
-                                      ELEMENT_ARRAY_BUFFER,
-                                      componentType=UNSIGNED_INT if wide else UNSIGNED_SHORT,
-                                      count=len(indices),
-                                      type='SCALAR'),
-                'mode':
-                    TRIANGLES
-            }
-            chosen = next((m for m in (material(n.lower()) for n in names) if m is not None), None)
-            if chosen is not None:
-                primitive_entry['material'] = chosen
-            entries.append(primitive_entry)
-        if not entries:
+        skeleton_hash, bones = read_bones(body)
+        if not bones:
             continue
-        gltf_meshes.append({'name': label, 'primitives': entries})
-        nodes.append({'name': label, 'mesh': len(gltf_meshes) - 1})
-
-    if not gltf_meshes:
-        return None
-    return document.finish('scene')
+        skeleton = find_skeleton(section.name, skeleton_hash, bones, skeletons)
+        if skeleton is None or not skeleton.bones:
+            log.debug('No skeleton fits `%s`.', section.name)
+            continue
+        label = section.name.rsplit('/', 1)[-1]
+        names = [bone.name for bone in skeleton.bones]
+        document = GLBDocument(generator)
+        skin = add_skin(document, skeleton, SKIN_NOTE)
+        # Bone 0 is always a root, every parent coming before its children.
+        joints = [names.index(bone) if bone in names else 0 for bone in bones]
+        if (mesh := _section_mesh(document, body, label, by_name, {}, joints)) is None:
+            continue
+        document.nodes.append({'mesh': mesh, 'name': label, 'skin': skin})
+        add_animations(document, skeleton, skin, clips)
+        yield label, document.finish(label, [
+            len(document.nodes) - 1, *(i
+                                       for i, bone in enumerate(skeleton.bones) if bone.parent < 0)
+        ])
 
 
 def write_prop_glb(path: Path, output_dir: Path) -> tuple[Path, ...]:
@@ -732,6 +907,42 @@ def write_prop_glb(path: Path, output_dir: Path) -> tuple[Path, ...]:
     destination = output_dir / f'{path.stem}_props.glb'
     destination.write_bytes(glb)
     return (destination,)
+
+
+def write_skinned_glbs(
+    path: Path, output_dir: Path, skeletons: Sequence[Skeleton],
+    clips: Sequence[Clip] = ()) -> tuple[Path, ...]:
+    """
+    Write a ``.glb`` for each skinned object of one ``.SGP2`` library.
+
+    The files go in a ``<stem>_skinned`` directory, each named after its object. Where two objects
+    share a name, the first is written.
+
+    Parameters
+    ----------
+    path : Path
+        The ``.SGP2`` file to read.
+    output_dir : Path
+        Directory to write into.
+    skeletons : Sequence[Skeleton]
+        Candidate skeletons, the preferred ones first.
+    clips : Sequence[Clip]
+        Candidate clips.
+
+    Returns
+    -------
+    tuple[Path, ...]
+        The files written.
+    """
+    written: dict[Path, None] = {}
+    for label, glb in build_skinned_glbs(path.read_bytes(), skeletons, clips):
+        destination = output_dir / f'{path.stem}_skinned' / f'{label}.glb'
+        if destination in written:
+            continue
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(glb)
+        written[destination] = None
+    return tuple(written)
 
 
 def write_glb(

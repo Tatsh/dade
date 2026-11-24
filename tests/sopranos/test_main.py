@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+import json
 import struct
 
 from click.testing import CliRunner
 import pytest
 
 from dade.common.exceptions import InvalidFormatError
+from dade.sopranos.archive import name_hash
 from dade.sopranos.main import (
     _prop_libraries,  # ruff: ignore[import-private-name]
     archive_directory,
@@ -19,11 +21,13 @@ from .conftest import (
     FORMAT_RGBA,
     build_archive,
     build_bank,
+    build_clips,
     build_geometry,
     build_image,
     build_level,
     build_library,
     build_section,
+    build_skeletons,
     mesh_packet,
     prop_packet,
 )
@@ -424,6 +428,70 @@ def test_gltf_writes_a_prop_library(runner: CliRunner, tmp_path: Path) -> None:
     source.write_bytes(library())
     assert runner.invoke(sopranos, ['gltf', str(source)]).exit_code == 0
     assert (tmp_path / 'cast_props.glb').is_file()
+
+
+_ROOT = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+
+def _skinned(name: str, rig: str) -> bytes:
+    return build_section(name, [], [('body', [(0, [prop_packet(_PROP_TRIANGLE)])])],
+                         bones=('', 'hip'),
+                         palettes=[[1]],
+                         skeleton_hash=name_hash(rig))
+
+
+def _rig_file(name: str) -> bytes:
+    return build_skeletons([(name, [('root', -1, _ROOT), ('hip', 0, _ROOT)])])
+
+
+def _clip_file(*names: str) -> bytes:
+    return build_clips([(name, 1, 10, [('hip', 4, (0,), ((0, 0, 0, 0x7800),), (), (0.0, 0.0, 0.0))])
+                        for name in names])
+
+
+def _animations(glb: Path) -> list[str]:
+    data = glb.read_bytes()
+    parsed = json.loads(data[20:20 + struct.unpack_from('<I', data, 12)[0]])
+    return [animation['name'] for animation in parsed.get('animations', [])]
+
+
+def test_gltf_skins_a_library_with_the_skeletons_and_clips_of_its_level(
+        runner: CliRunner, tmp_path: Path) -> None:
+    cooked = tmp_path / 'cooked'
+    for directory in ('p_cman', 'p_0man_hub', 'p_xother'):
+        (cooked / directory).mkdir(parents=True)
+    (cooked / 'notes.txt').write_text('')
+    (cooked / 'p_cman' / 'readme.txt').write_text('')
+    source = cooked / 'p_cman' / 'cast.sgp2'
+    source.write_bytes(
+        build_library(
+            [_skinned('lib/man/man', 'lib/other/rig'),
+             _skinned('lib/man/boy', 'lib/man/rig')]))
+    (cooked / 'p_cman' / 'rig.skl2').write_bytes(_rig_file('lib/man/rig'))
+    (cooked / 'p_cman' / 'walk.sam2').write_bytes(_clip_file('lib/anim/walk'))
+    (cooked / 'p_0man_hub' / 'more.sam2').write_bytes(_clip_file('lib/anim/walk', 'lib/anim/run'))
+    (cooked / 'p_xother' / 'other.skl2').write_bytes(_rig_file('lib/other/rig'))
+    (cooked / 'p_xother' / 'other.sam2').write_bytes(_clip_file('lib/anim/jump'))
+    result = runner.invoke(sopranos, ['gltf', str(source), '-o', str(tmp_path / 'out')])
+    assert result.exit_code == 0, result.output
+    assert 'cast.sgp2: 3 file(s).' in result.output
+    skinned = tmp_path / 'out' / 'cast_skinned'
+    assert _animations(skinned / 'man.glb') == ['walk', 'run']
+    assert _animations(skinned / 'boy.glb') == ['walk', 'run']
+
+
+def test_unpack_converts_a_skinned_library(runner: CliRunner, tmp_path: Path) -> None:
+    archive = tmp_path / 'DATA_P.FS'
+    archive.write_bytes(
+        build_archive({
+            'cooked/p_cman/cast.sgp2': build_library([_skinned('lib/man/man', 'lib/man/rig')]),
+            'cooked/p_cman/rig.skl2': _rig_file('lib/man/rig'),
+        }))
+    result = runner.invoke(
+        sopranos, ['unpack', str(archive), '-o',
+                   str(tmp_path / 'out'), '--convert'])
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / 'out' / 'data' / 'cooked' / 'p_cman' / 'cast_skinned' / 'man.glb').is_file()
 
 
 def test_audio_converts_a_sound_bank(runner: CliRunner, tmp_path: Path) -> None:
