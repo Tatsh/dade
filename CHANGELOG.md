@@ -56,6 +56,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `dade monopoly08 extract` writes the Xbox 360 mesh of Mr. Monopoly as a GLB with a glTF skin of
   93 joints. The motions of every motion bank animating his skeleton (idles, walks, runs, and the
   cutscenes) become glTF animations, decoded from the SKA codec of EA's character toolkit.
+- `dade maxpayne skin2glb` converts every character of _Max Payne_ and _Max Payne 2_ to a GLB
+  rigged to its skeleton, with a glTF skin, per-vertex joints and weights from the `.skd`, and the
+  animations its scripts list as glTF animations. A JSON file beside each GLB records the bones and
+  each clip's file, frame count, frame rate, and animation indices.
+
+- Max Payne 2 models split into per-material batches now index each batch's own vertices and draw
+  each batch with its material. Model images are found whatever the case of their directory.
 
 ## [0.3.0] - 2026-11-23
 

@@ -106,6 +106,7 @@ cdtitle
 cgbi
 chara
 charactercollision
+charanim
 checkerboard
 chunksize
 cigam
@@ -519,6 +520,7 @@ offs
 okumura
 onefile
 oneline
+orthonormalized
 outofsync
 outros
 overpromised

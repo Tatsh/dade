@@ -212,3 +212,55 @@ def test_read_model_rejects_an_index_buffer_past_its_chunk() -> None:
     faces = _chunk(0x00010007, 1, b'\x02' + struct.pack('<i', 1000) + bytes(6))
     with pytest.raises(InvalidModelError, match='does not fit inside its chunk'):
         read_model(_chunk(0x00010005, 1, faces))
+
+
+def test_read_model_reads_the_node_parent_and_transform(make_model: Callable[..., bytes]) -> None:
+    transform = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.5, 1.0, 2.0)
+    model = read_model(
+        make_model(name='Pelvis',
+                   transform=transform,
+                   bones=(('Head', 'Pelvis', (*transform[:9], 0.0, 0.5, 0.0)),)))
+    pelvis, head = model.meshes
+    assert (pelvis.name, pelvis.parent, pelvis.transform) == ('Pelvis', '', transform)
+    assert (head.name, head.parent) == ('Head', 'Pelvis')
+    assert head.transform[10] == pytest.approx(0.5)
+    assert head.faces == ()
+
+
+def test_read_model_leaves_the_transform_empty_without_one(
+        make_model: Callable[..., bytes]) -> None:
+    assert read_model(make_model()).meshes[0].transform == ()
+
+
+def test_read_model_rebases_batched_indices(make_model: Callable[..., bytes]) -> None:
+    # Two batches of three vertices, each indexing its own from nought, each with its material.
+    model = read_model(
+        make_model(packed=True,
+                   positions=((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (2.0, 0.0, 0.0),
+                              (3.0, 0.0, 0.0), (2.0, 0.0, 1.0)),
+                   faces=((0, 1, 2), (0, 1, 2)),
+                   coords=((0.0, 0.0, 0.0),) * 6,
+                   materials=(('Skin', 'skin.png'), ('Cloth', 'cloth.png')),
+                   face_materials=(),
+                   batches=((3, 1), (3, 1))))
+    faces = model.meshes[0].faces
+    assert [f.positions for f in faces] == [(0, 1, 2), (3, 4, 5)]
+    assert [f.material for f in faces] == [0, 1]
+
+
+def test_read_model_keeps_the_face_materials_over_the_batches(
+        make_model: Callable[..., bytes]) -> None:
+    model = read_model(
+        make_model(packed=True,
+                   positions=((0.0, 0.0, 0.0),) * 6,
+                   faces=((0, 1, 2), (0, 1, 2)),
+                   coords=((0.0, 0.0, 0.0),) * 6,
+                   materials=(('Skin', 'skin.png'), ('Cloth', 'cloth.png')),
+                   face_materials=(1, 1),
+                   batches=((3, 1), (3, 1))))
+    assert [f.material for f in model.meshes[0].faces] == [1, 1]
+
+
+def test_read_model_reads_a_single_batch_as_one_pool(make_model: Callable[..., bytes]) -> None:
+    model = read_model(make_model(packed=True, batches=((3, 1),)))
+    assert model.meshes[0].faces[0].positions == (0, 1, 2)

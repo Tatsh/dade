@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from typing import NamedTuple, TypeAlias
 
-__all__ = ('ArchiveHeader', 'Corner', 'Level', 'LevelGeometry', 'Material', 'MeshFace', 'Polygon',
-           'RASContents', 'RASDirectory', 'RASEntry', 'RenderMesh', 'StaticMesh', 'TaggedValue',
-           'TextureImage', 'Vector3')
+__all__ = ('Animation', 'AnimationTrack', 'ArchiveHeader', 'Corner', 'Level', 'LevelGeometry',
+           'Material', 'MeshFace', 'Polygon', 'RASContents', 'RASDirectory', 'RASEntry',
+           'RenderMesh', 'SkinWeights', 'StaticMesh', 'TaggedValue', 'TextureImage', 'Vector3')
 
 Vector3: TypeAlias = 'tuple[float, float, float]'
 """A point or direction in level space, where one unit is about a metre.
@@ -348,6 +348,13 @@ class ModelMesh(NamedTuple):
     """The mesh's triangles."""
     materials: tuple[str, ...]
     """Names of the materials the faces index, as they appear in :py:attr:`Model.materials`."""
+    parent: str = ''
+    """Name of the mesh this one hangs off, empty at the root. A skeleton is a model whose meshes
+    are its bones, and the parent names are its hierarchy."""
+    transform: tuple[float, ...] = ()
+    """Twelve floats, three basis rows then a translation, placing the mesh's exporter-space
+    vertices in its parent's space. A root's transform goes straight to game space, and a bone's
+    therefore composes down the hierarchy into its bind pose. Empty when the file stores none."""
 
 
 class Model(NamedTuple):
@@ -362,3 +369,41 @@ class Model(NamedTuple):
     textures: tuple[TextureImage, ...] = ()
     """The images themselves. A model does not embed them, and a caller that wants the model
     textured therefore has to read them off disk and put them here."""
+
+
+class SkinWeights(NamedTuple):
+    """A skin's ``.skd``: which bones move each vertex, and by how much."""
+
+    bones: tuple[str, ...]
+    """Bone names. An influence's bone is an index into this tuple."""
+    meshes: tuple[str, ...]
+    """Names of the meshes the weights belong to."""
+    influences: tuple[tuple[tuple[int, float], ...], ...]
+    """Per vertex of the mesh, in position order, each bone index and weight. The weights of a
+    vertex sum to one, and a vertex the file binds to nothing has none."""
+
+
+class AnimationTrack(NamedTuple):
+    """One bone's keys in a character animation."""
+
+    bone: str
+    """The bone the track drives."""
+    parent: str
+    """The bone it hangs off, empty at the root."""
+    keys: tuple[tuple[int, tuple[float, ...]], ...]
+    """Each key's frame and the bone's transform at that frame, three basis rows then a translation
+    in the parent's space. Keys are sparse and the frames between them are interpolated."""
+
+
+class Animation(NamedTuple):
+    """A character animation ``.kf2``, one track per bone."""
+
+    frames: int
+    """Frames in the clip. The last is at ``frames - 1``."""
+    rate: int
+    """Frames per second. ``2_GetHit_Crouched_0750ms.kf2`` stores 61 frames at 80, and the clip
+    runs from nought to 0.75 seconds."""
+    flag: bool
+    """A flag every track stores beside the rate. Its meaning is not known."""
+    tracks: tuple[AnimationTrack, ...]
+    """The tracks, in stored order."""

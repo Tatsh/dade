@@ -12,6 +12,10 @@ Y-up; positions and normals are rotated on the way out so a character stands up.
 coordinates are not touched at all. V runs negative, and the game hands it to Direct3D as written
 and lets wrapping sort it out.
 
+Each mesh's node records the mesh it hangs off and a transform into that mesh's space, and both are
+returned as stored. A skeleton is a model whose meshes are its bones, and those two fields are its
+hierarchy and its bind pose.
+
 A model does not embed its images. It records a search path, always ``textures`` then
 ``..\\sharedtextures``, and its materials reference files to be found along it. A caller that wants
 the model textured therefore has to read those off disk itself.
@@ -52,6 +56,7 @@ _FLOAT_SIZE = 4
 _INDEX_SIZE = 2
 """Width of one entry in a packed mesh's index buffer."""
 _TRIANGLE = 3
+_MATRIX_SIZE = 48
 _MAX_ELEMENTS = 4_000_000
 
 
@@ -344,7 +349,8 @@ def _read_mesh(data: bytes, offset: int, end: int) -> ModelMesh:
     ModelMesh
         The mesh.
     """
-    name = ''
+    name = parent = ''
+    transform: tuple[float, ...] = ()
     positions: list[Vector3] = []
     normals: list[Vector3] = []
     coords: list[tuple[float, float]] = []
@@ -352,29 +358,106 @@ def _read_mesh(data: bytes, offset: int, end: int) -> ModelMesh:
     coord_faces: list[tuple[int, ...]] = []
     materials: tuple[str, ...] = ()
     face_materials: list[int] = []
+    vertex_batches: tuple[int, ...] = ()
+    face_batches: tuple[int, ...] = ()
     # The mesh chunk's version does not decide the encoding. A skin's mesh is version 1 with
     # version 0 arrays inside it, and an object's is version 2 with version 1 arrays. Each array
     # chunk records for itself whether it is packed.
     for identifier, inner, body, tail in _chunks(data, offset, end):
         packed = inner >= _PACKED
         if identifier == _NODE:
-            name, _ = read_string(data, body)
+            name, cursor = read_string(data, body)
+            parent, cursor = read_string(data, cursor)
+            if cursor + 1 + _MATRIX_SIZE <= tail and data[cursor] == BasicType.MATRIX4X3:
+                transform = struct.unpack_from('<12f', data, cursor + 1)
         elif identifier == _POSITIONS:
             count, cursor = _read_count(data, body)
             positions, cursor = _read_vectors(data, cursor, count, tail, packed=packed)
             if packed:
-                normals, _ = _read_vectors(data, cursor, count, tail, packed=True)
+                normals, cursor = _read_vectors(data, cursor, count, tail, packed=True)
+                vertex_batches = _read_batches(data, cursor, tail)
         elif identifier == _FACES:
-            position_faces = _read_faces(data, body, tail, packed=packed)
+            position_faces, face_batches = _read_faces(data, body, tail, packed=packed)
         elif identifier == _COORDS:
             coord_faces, coords = _read_coords(data, body, tail, packed=packed)
         elif identifier == _MATERIALS:
             materials, face_materials = _read_mesh_materials(data, body, tail)
+    if len(vertex_batches) > 1 and len(vertex_batches) == len(face_batches):
+        position_faces, batch_materials = _rebase(position_faces, vertex_batches, face_batches)
+        if not face_materials and len(materials) == len(vertex_batches):
+            face_materials = batch_materials
     return _assemble(name, positions, normals, coords, position_faces, coord_faces, materials,
-                     face_materials)
+                     face_materials)._replace(parent=parent, transform=transform)
 
 
-def _read_faces(data: bytes, offset: int, end: int, *, packed: bool) -> list[tuple[int, ...]]:
+def _read_batches(data: bytes, offset: int, end: int) -> tuple[int, ...]:
+    """
+    Read the batch table a packed array closes with.
+
+    The second game splits a skin into one batch per material, and each packed array ends with how
+    many of its elements each batch takes. A first-game object writes the same table with one
+    entry.
+
+    Parameters
+    ----------
+    data : bytes
+        A decompressed model.
+    offset : int
+        Offset just past the array.
+    end : int
+        Offset of the chunk's end.
+
+    Returns
+    -------
+    tuple[int, ...]
+        The element count of each batch, or empty when the chunk ends with the array.
+    """
+    if offset >= end:
+        return ()
+    count, offset = _read_count(data, offset)
+    out = []
+    for _ in range(count):
+        value, offset = read_int(data, offset)
+        out.append(value)
+    return tuple(out)
+
+
+def _rebase(faces: Sequence[tuple[int, ...]], vertices: Sequence[int],
+            triangles: Sequence[int]) -> tuple[list[tuple[int, ...]], list[int]]:
+    """
+    Turn batch-relative indices into indices of the whole vertex pool.
+
+    Each batch's triangles index that batch's vertices from nought. ``Kaufman_L0.kf2`` stores four
+    batches whose largest index is 641, the size of its largest batch less one, and read as one
+    pool its faces join a hand to the pelvis.
+
+    Parameters
+    ----------
+    faces : collections.abc.Sequence[tuple[int, ...]]
+        The triangles, batch-relative.
+    vertices : collections.abc.Sequence[int]
+        Vertices in each batch.
+    triangles : collections.abc.Sequence[int]
+        Triangles in each batch.
+
+    Returns
+    -------
+    tuple[list[tuple[int, ...]], list[int]]
+        The triangles with absolute indices, and the batch each one belongs to. A batch draws with
+        the material of the same index.
+    """
+    out: list[tuple[int, ...]] = []
+    batches: list[int] = []
+    base = 0
+    for batch, (size, count) in enumerate(zip(vertices, triangles, strict=True)):
+        out.extend(tuple(base + i for i in face) for face in faces[len(out):len(out) + count])
+        batches.extend([batch] * count)
+        base += size
+    return out, batches
+
+
+def _read_faces(data: bytes, offset: int, end: int, *,
+                packed: bool) -> tuple[list[tuple[int, ...]], tuple[int, ...]]:
     """
     Read the triangles: a flat index buffer when packed, one chunk per face otherwise.
 
@@ -391,8 +474,8 @@ def _read_faces(data: bytes, offset: int, end: int, *, packed: bool) -> list[tup
 
     Returns
     -------
-    list[tuple[int, ...]]
-        One tuple of indices per face.
+    tuple[list[tuple[int, ...]], tuple[int, ...]]
+        One tuple of indices per face, and the triangle count of each batch of a packed buffer.
 
     Raises
     ------
@@ -401,12 +484,13 @@ def _read_faces(data: bytes, offset: int, end: int, *, packed: bool) -> list[tup
     """
     count, cursor = _read_count(data, offset)
     if not packed:
-        return _read_face_indices(data, cursor, end)
+        return _read_face_indices(data, cursor, end), ()
     if cursor + count * _INDEX_SIZE > end:
         msg = f'An index buffer of {count} at offset {cursor} does not fit inside its chunk.'
         raise InvalidModelError(msg)
     indices = struct.unpack_from(f'<{count}H', data, cursor)
-    return [tuple(indices[at:at + _TRIANGLE]) for at in range(0, count - 2, _TRIANGLE)]
+    return ([tuple(indices[at:at + _TRIANGLE]) for at in range(0, count - 2, _TRIANGLE)],
+            _read_batches(data, cursor + count * _INDEX_SIZE, end))
 
 
 def _read_coords(data: bytes, offset: int, end: int, *,

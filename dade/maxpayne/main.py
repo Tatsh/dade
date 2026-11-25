@@ -8,6 +8,7 @@ from .commands.ldb2glb import ldb2glb
 from .commands.ldb_textures import ldb_textures
 from .commands.ras_extract import ras_extract
 from .commands.ras_list import ras_list
+from .commands.skin2glb import skin2glb
 
 __all__ = ('cli',)
 
@@ -22,3 +23,4 @@ cli.add_command(ldb2glb)
 cli.add_command(ldb_textures)
 cli.add_command(ras_extract)
 cli.add_command(ras_list)
+cli.add_command(skin2glb)

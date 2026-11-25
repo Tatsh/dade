@@ -13,6 +13,7 @@ from dade.maxpayne.crypto import next_seed
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from pathlib import Path
 
 _ARCHIVER_ID = 3
 _SYSTEMTIME = struct.pack('<8H', 2001, 7, 3, 11, 17, 54, 28, 0)
@@ -617,18 +618,24 @@ def make_model() -> Callable[..., bytes]:
     collections.abc.Callable[..., bytes]
         A callable returning a decompressed ``.kfs`` or ``.kf2``.
     """
-    def build(*,
-              packed: bool = False,
-              name: str = 'body',
-              positions: Sequence[tuple[float, float, float]] = ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0),
-                                                                 (0.0, 0.0, 1.0)),
-              faces: Sequence[Sequence[int]] = ((0, 1, 2),),
-              coords: Sequence[tuple[float, float,
-                                     float]] = ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, -1.0, 0.0)),
-              coord_faces: Sequence[Sequence[int]] = ((0, 1, 2),),
-              materials: Sequence[tuple[str, str]] = (('Skin', 'skin.png'),),
-              face_materials: Sequence[int] = (0,),
-              search: str = 'textures;..\\sharedtextures') -> bytes:
+    def build(
+        *,
+        packed: bool = False,
+        name: str = 'body',
+        positions: Sequence[tuple[float, float,
+                                  float]] = ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, 1.0)),
+        faces: Sequence[Sequence[int]] = ((0, 1, 2),),
+        coords: Sequence[tuple[float, float,
+                               float]] = ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, -1.0, 0.0)),
+        coord_faces: Sequence[Sequence[int]] = ((0, 1, 2),),
+        materials: Sequence[tuple[str, str]] = (('Skin', 'skin.png'),),
+        face_materials: Sequence[int] = (0,),
+        search: str = 'textures;..\\sharedtextures',
+        parent: str = '',
+        transform: Sequence[float] | None = None,
+        batches: Sequence[tuple[int, int]] = (),
+        bones: Sequence[tuple[str, str, Sequence[float]]] = ()
+    ) -> bytes:
         library = _string(search) + _int(len(materials))
         library += b''.join(starmap(_model_material, materials))
         if packed:
@@ -638,6 +645,9 @@ def make_model() -> Callable[..., bytes]:
             flat = [i for face in faces for i in face]
             triangles = _tag(0x10, struct.pack('<H', len(flat)))
             triangles += b''.join(struct.pack('<H', i) for i in flat)
+            if batches:
+                vertices += _int(len(batches)) + b''.join(_int(v) for v, _ in batches)
+                triangles += _int(len(batches)) + b''.join(_int(t) for _, t in batches)
             uv = _int(0) + _tag(0x11, bytes((len(coords),)))
             uv += b''.join(struct.pack('<3f', *c) for c in coords)
         else:
@@ -647,7 +657,7 @@ def make_model() -> Callable[..., bytes]:
             uv += b''.join(_face_chunk(f) for f in coord_faces)
             uv += _int(0) + _int(0) + _int(len(coords))
             uv += b''.join(starmap(_vec3, coords))
-        mesh = _chunk(0x00010000, 1, _string(name) + _string(''))
+        mesh = _chunk(0x00010000, 1, _node(name, parent, transform))
         mesh += _chunk(0x00010006, 1 if packed else 0, vertices)
         mesh += _chunk(0x00010007, 1 if packed else 0, triangles)
         used = _int(len(materials)) + b''.join(_string(n) for n, _ in materials)
@@ -655,7 +665,175 @@ def make_model() -> Callable[..., bytes]:
             used += _int(len(face_materials)) + b''.join(_int(i) for i in face_materials)
         mesh += _chunk(0x0001000C, 1 if packed else 0, used)
         mesh += _chunk(0x0001000E, 1 if packed else 0, uv)
-        return _chunk(0x0001000F, 0, library) + _chunk(0x00010005, 2 if packed else 1, mesh)
+        out = _chunk(0x0001000F, 0, library) + _chunk(0x00010005, 2 if packed else 1, mesh)
+        return out + b''.join(
+            _chunk(0x00010005, 1, _chunk(0x00010000, 1, _node(bone, above, matrix)))
+            for bone, above, matrix in bones)
+
+    return build
+
+
+def _node(name: str, parent: str, transform: Sequence[float] | None) -> bytes:
+    """Write a mesh's node chunk body, with its name, its parent, and any transform given."""
+    body = _string(name) + _string(parent)
+    if transform is not None:
+        body += _tag(0x1A, struct.pack('<12f', *transform)) + _tag(0x0E, b'\x01') + _string('')
+    return body
+
+
+@pytest.fixture
+def make_weights() -> Callable[..., bytes]:
+    """
+    Build a ``.skd`` in memory, in either game's layout.
+
+    Returns
+    -------
+    collections.abc.Callable[..., bytes]
+        A callable returning a decompressed ``.skd``.
+    """
+    def build(influences: Sequence[Sequence[tuple[int,
+                                                  float]]] = (((0, 1.0),), ((0, 0.25), (1, 0.75)),
+                                                              ((1, 1.0),)),
+              *,
+              bones: Sequence[str] = ('Pelvis', 'Head'),
+              meshes: Sequence[str] = ('body',),
+              version: int = 0) -> bytes:
+        if version == 0:
+            runs: list[list[tuple[int, int, float]]] = [[], [], []]
+            for vertex, entries in enumerate(influences):
+                for at, (bone, weight) in enumerate(entries):
+                    runs[0 if len(entries) == 1 else min(at + 1, 2)].append((vertex, bone, weight))
+            body = b''.join(
+                _int(len(run)) + b''.join(_int(v) + _int(b) + _float(w) for v, b, w in run)
+                for run in runs)
+            body += _int(len(meshes)) + b''.join(_string(m) for m in meshes)
+            body += _int(len(bones)) + b''.join(_string(b) for b in bones)
+            body += _int(len(influences)) + b''.join(_vec3(0.0, 0.0, 0.0) for _ in influences)
+            return _chunk(0x00010014, 0, body)
+        starts = []
+        flat: list[tuple[int, float]] = []
+        for entries in influences:
+            starts.append(len(flat))
+            flat.extend(entries)
+
+        def array(values: Sequence[bytes]) -> bytes:
+            return _tag(0x1C) + _int(len(values)) + b''.join(values)
+
+        body = array([_string(m) for m in meshes]) + array([_string(b) for b in bones])
+        body += array([_int(s) for s in starts]) + array([_int(len(e)) for e in influences])
+        body += array([_int(b) for b, _ in flat]) + array([_float(w) for _, w in flat])
+        body += array([_int(len(influences))]) + array([_int(0)])
+        return _chunk(0x00010014, 1, body)
+
+    return build
+
+
+@pytest.fixture
+def make_animation() -> Callable[..., bytes]:
+    """
+    Build a character animation ``.kf2`` in memory.
+
+    Returns
+    -------
+    collections.abc.Callable[..., bytes]
+        A callable returning a decompressed animation. Each track is the bone, its parent, its
+        frame count, and its keys as a frame and twelve floats.
+    """
+    def build(tracks: Sequence[tuple[str, str, int, Sequence[tuple[int,
+                                                                   Sequence[float]]]]] = (
+                                                                       ('Pelvis', '', 3,
+                                                                        ((0, (*_IDENTITY, 0.0, 1.0,
+                                                                              0.0)),
+                                                                         (2, (*_IDENTITY, 0.0, 1.5,
+                                                                              0.0)))),
+                                                                       ('Head', 'Pelvis', 3,
+                                                                        ((0, (*_IDENTITY, 0.0, 0.5,
+                                                                              0.0)),
+                                                                         (2, (*_HALF_TURN, 0.0, 0.5,
+                                                                              0.0)))),
+                                                                   ),
+              *,
+              rate: int = 30,
+              flag: bool = True) -> bytes:
+        out = b''
+        for bone, parent, frames, keys in tracks:
+            header = _chunk(0x00010013, 0, _string(bone) + _int(rate) + _bool(value=flag))
+            body = header + _string(parent) + _bool(value=True) + _int(frames) + _int(len(keys))
+            body += b''.join(
+                _int(frame) + _tag(0x1A, struct.pack('<12f', *matrix)) for frame, matrix in keys)
+            body += _tag(0x11, b'\x01') + _tag(0x11, b'\x00') + _float(1.0)
+            out += _chunk(0x00010012, 5, body)
+        return out
+
+    return build
+
+
+_SKIN_TRANSFORM = (-1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0, 0.0, 0.9, 0.0)
+"""A first-game skin's node: the exporter's Z-up turned to Y-up, facing about, at pelvis height."""
+_SKIN_SCRIPT = """#include <shared.h>
+// [Animation] Index = CHARANIM_GONE; Filename = anim\\gone.kf2;
+[Properties]
+Skeleton = "{skeleton}";
+/* Skeleton = wrong; */
+[LOD] [Geometry] ExportData = "{name}_l0.kfs"; SkinData = "{name}_l0.skd";
+"""
+_SHARED_SCRIPT = """#include <shared.h>
+[Animation] Index = CHARANIM_WALK; Filename = "anim\\Walk.kf2";
+[Animation] Index = CHARANIM_WALK2; Filename = anim\\walk.kf2;
+"""
+_SKELETON_SCRIPT = """[Skeleton]
+{
+    [Geometry] ExportData = collision.kfs; CrossMode = Orthonormalized;
+    [Animation] Index = CHARANIM_STAND; Filename = anim\\stand.kf2;
+    [Animation] Index = CHARANIM_MISSING; Filename = anim\\missing.kf2;
+}
+"""
+
+
+@pytest.fixture
+def make_character_database(tmp_path: Path, make_model: Callable[..., bytes],
+                            make_weights: Callable[..., bytes],
+                            make_animation: Callable[..., bytes]) -> Callable[..., Path]:
+    """
+    Build a game database with one character, its skeleton, and its animations.
+
+    Returns
+    -------
+    collections.abc.Callable[..., pathlib.Path]
+        A callable returning the ``data/database`` directory. ``scripted`` lays the skeleton out the
+        first game's way, with a script, and otherwise the second game's way, without one.
+    """
+    def build(*,
+              name: str = 'transit_cop',
+              skeleton: str = 'default_skeleton',
+              scripted: bool = True,
+              weights: bytes | None = None,
+              model: bytes | None = None) -> Path:
+        root = tmp_path / 'database'
+        skins = root / 'skins'
+        (skins / name).mkdir(parents=True)
+        (skins / 'Sharedtextures').mkdir()
+        (skins / 'Sharedtextures' / 'skin.png').write_bytes(b'\x89PNGfake')
+        (skins / f'{name}.txt').write_text(_SKIN_SCRIPT.format(name=name, skeleton=skeleton))
+        (skins / 'shared.h').write_text(_SHARED_SCRIPT)
+        (skins / name / f'{name}_l0.kfs').write_bytes(model if model is not None else make_model(
+            transform=_SKIN_TRANSFORM))
+        (skins / name /
+         f'{name.upper()}_L0.SKD').write_bytes(weights if weights is not None else make_weights())
+        bones = make_model(name='Pelvis',
+                           transform=(*_IDENTITY, 0.0, 1.0, 0.0),
+                           bones=(('Head', 'Pelvis', (*_IDENTITY, 0.0, 0.5, 0.0)),))
+        directory = root / 'skeletons' / skeleton
+        (directory / 'anim').mkdir(parents=True)
+        if scripted:
+            (root / 'skeletons' / f'{skeleton}.txt').write_text(_SKELETON_SCRIPT)
+            (directory / 'collision.kfs').write_bytes(bones)
+        else:
+            (directory / f'skeleton_{skeleton}.kf2').write_bytes(bones)
+        for clip in ('walk', 'stand', 'extra'):
+            (directory / 'anim' / f'{clip}.kf2').write_bytes(make_animation())
+        (directory / 'anim' / 'broken.kf2').write_bytes(b'\x00')
+        return root
 
     return build
 

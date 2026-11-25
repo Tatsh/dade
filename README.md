@@ -729,6 +729,48 @@ Read them as evenly spaced straight lines instead and a clip that eases hard run
 for most of its length. Measured against the game's evaluation, the worst of the first five levels
 is most of its motion out of step.
 
+### Characters
+
+```shell
+dade maxpayne skin2glb extracted/data/database -o characters
+dade maxpayne skin2glb MP2_Data/data/database -s S_MonaSax_A --all-clips -o characters
+```
+
+`skin2glb` converts each character under `skins` to a `.glb` rigged to its skeleton, from either
+game. The skin's script identifies the model, the `.skd` weights, and the skeleton. The bones are
+written as glTF joints, every vertex has up to four joints and weights, and each animation the
+scripts list is a glTF animation of the joints. `-s`/`--skin` restricts a run to the skins given,
+and `-a`/`--all-clips` adds every animation in the skeleton's `anim` directory. A `.json` beside
+each `.glb` records the bones and each clip's file, frame count, frame rate, and the animation
+indices the scripts play it under.
+
+A skeleton is a model whose meshes are its bones. The first game's is the collision model
+`skeletons/default_skeleton/maxpayne-collision.kfs`, and the second game's is
+`skeletons/male/skeleton_male.kf2` and `skeleton_female.kf2`. Each bone records its parent and a
+transform into the parent's space. Composed down the hierarchy, the transforms give the pose the
+skins were modelled in, with the feet at height nought. The skin's transform places its vertices
+in the same space. Every one of the 45 first-game and 69 second-game `.skd` files reads to the last
+byte, has one entry per vertex, and sums each vertex's weights to one.
+
+An animation is one track per bone, each a run of the bone's transform at sparse frames. A child's
+translation always equals the skeleton's, only its rotation changes, and the clips are recorded in
+place. The rate recorded beside each track is frames per second. `2_GetHit_Crouched_0750ms.kf2`
+stores 61 frames at 80, 0.75 seconds, and `Sub_Face_Talk_3s.kf2` stores 91 at 30. Frames
+between keys are interpolated linearly.
+
+The second game splits a skin into one batch per material, and each batch's faces index its own
+vertices from nought. Read as one vertex pool, the faces of `Kaufman_L0.kf2` join a hand to the
+pelvis.
+
+Several limits apply:
+
+- The game drives some bones itself, and a clip has no track for them. The second game's forearm
+  twist bones, its fingers, and its face are played from separate layers, and they remain in the
+  bind pose here.
+- Many second-game skins list no animation in their scripts, and their `.glb` has the rig with no
+  clips. Pass `--all-clips` for those.
+- Characters in a level from `ldb2glb` are still written without a rig.
+
 ## Extreme-G, Interstate '76, and Tony Hawk's Pro Skater 2
 
 ```shell

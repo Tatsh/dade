@@ -26,6 +26,7 @@ import math
 import struct
 
 from PIL import Image
+import numpy as np
 
 from dade.common.gltf import (
     ARRAY_BUFFER,
@@ -35,29 +36,33 @@ from dade.common.gltf import (
     TRIANGLES,
     UNLIT,
     UNSIGNED_INT,
+    UNSIGNED_SHORT,
     GLBDocument,
     image_mime,
 )
 
 from .decals import DECAL_STEP, layer_faces
+from .typing import Level, LevelGeometry
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
     from .typing import (
+        Animation,
         Corner,
-        Level,
         Model,
+        ModelMesh,
         Placement,
         Polygon,
         PropAnimation,
         RenderMesh,
+        SkinWeights,
         StaticMesh,
         TextureImage,
         Vector3,
     )
 
-__all__ = ('GLB_MAGIC', 'build_glb')
+__all__ = ('GLB_MAGIC', 'build_character_glb', 'build_glb')
 
 log = logging.getLogger(__name__)
 
@@ -1356,3 +1361,324 @@ def build_glb(level: Level,
             raise ValueError(msg)
         _add_bsp(document, level.geometry.polygons, level.geometry.vertices, name)
     return document.finish(name)
+
+
+_INFLUENCES = 4
+"""Joints glTF gives a vertex in ``JOINTS_0``. No shipped skin binds a vertex to more.
+
+:meta hide-value:
+"""
+_IDENTITY = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0)
+
+
+def _exporter(point: Vector3) -> Vector3:
+    """
+    Undo :py:func:`dade.maxpayne.model.read_model`'s turn to Y-up.
+
+    A skin's transform maps exporter-space vertices into game space, and composed with the
+    skeleton's that is the bind pose. It has to be given the vertices as stored.
+
+    Parameters
+    ----------
+    point : Vector3
+        A position or normal as the model reader returns it.
+
+    Returns
+    -------
+    Vector3
+        The same vector in the exporter's Z-up space.
+    """
+    return (point[0], point[2], -point[1])
+
+
+def _joint_weights(influences: Sequence[tuple[int, float]],
+                   joints: Sequence[int]) -> tuple[tuple[int, ...], tuple[float, ...]]:
+    """
+    Turn one vertex's influences into glTF's four joints and four weights.
+
+    Parameters
+    ----------
+    influences : collections.abc.Sequence[tuple[int, float]]
+        Each ``.skd`` bone index and weight.
+    joints : collections.abc.Sequence[int]
+        The joint each ``.skd`` bone index drives.
+
+    Returns
+    -------
+    tuple[tuple[int, ...], tuple[float, ...]]
+        Four joints and four weights summing to one. Unused slots take joint nought at weight
+        nought, and a vertex bound to nothing follows joint nought entirely.
+    """
+    # Two influences can land on one joint, when a `.skd` lists a bone twice or lists one the
+    # skeleton lacks, and glTF requires each joint of a vertex to be different.
+    merged: dict[int, float] = {}
+    for bone, weight in influences:
+        if 0 <= bone < len(joints) and weight > 0:
+            merged[joints[bone]] = merged.get(joints[bone], 0.0) + weight
+    strongest = sorted(merged.items(), key=lambda pair: -pair[1])[:_INFLUENCES]
+    if not strongest:
+        strongest = [(0, 1.0)]
+    total = sum(w for _, w in strongest)
+    padded = strongest + [(0, 0.0)] * (_INFLUENCES - len(strongest))
+    return tuple(j for j, _ in padded), tuple(w / total for _, w in padded)
+
+
+def _add_skin(document: _Document, skeleton: Model) -> tuple[dict[str, int], list[int]]:
+    """
+    Add a skeleton's bones as joint nodes, and a skin over them.
+
+    Each bone's transform is split into translation, rotation and scale so that clips can drive it.
+    The inverse bind matrices are the inverses of the bones' composed transforms, the pose the
+    skin was modelled in.
+
+    Parameters
+    ----------
+    document : _Document
+        The document being built.
+    skeleton : Model
+        The skeleton, one mesh per bone.
+
+    Returns
+    -------
+    tuple[dict[str, int], list[int]]
+        Lowercased bone name to joint index, and the nodes of the root bones. Names are matched
+        ignoring case, as the game does. The ``MaxPayne`` skin's weights write
+        ``Bip01 L ForeArm`` for the skeleton's ``Bip01 L Forearm``.
+    """
+    first = len(document.nodes)
+    index: dict[str, int] = {}
+    worlds: list[np.ndarray] = []
+    roots = []
+    for at, bone in enumerate(skeleton.meshes):
+        transform = bone.transform or _IDENTITY
+        translation, rotation, scale = _decompose(transform)
+        document.nodes.append({
+            'name': bone.name,
+            'rotation': rotation,
+            'scale': scale,
+            'translation': translation
+        })
+        local = np.array(_node_matrix(transform), dtype=np.float64).reshape(4, 4).T
+        # Every shipped skeleton writes a parent before its children. A bone whose parent has not
+        # been seen is therefore taken as a root, and a malformed hierarchy cannot form a cycle.
+        if (parent := index.get(bone.parent.lower())) is None:
+            roots.append(first + at)
+            worlds.append(local)
+        else:
+            document.nodes[first + parent].setdefault('children', []).append(first + at)
+            worlds.append(worlds[parent] @ local)
+        index.setdefault(bone.name.lower(), at)
+    inverse = b''.join(struct.pack('<16f', *np.linalg.inv(world).T.reshape(16)) for world in worlds)
+    document.skins.append({
+        'inverseBindMatrices':
+            document.accessor(inverse, None, componentType=FLOAT, count=len(worlds), type='MAT4'),
+        'joints':
+            list(range(first, first + len(worlds))),
+        'skeleton':
+            roots[0]
+    })
+    return index, roots
+
+
+def _add_skinned_mesh(document: _Document, model: Model, mesh: ModelMesh, weights: SkinWeights,
+                      joints: Sequence[int]) -> int:
+    """
+    Add a skin mesh in its bind pose, with each corner's joints and weights.
+
+    Parameters
+    ----------
+    document : _Document
+        The document being built.
+    model : Model
+        The model the mesh belongs to, with its images.
+    mesh : ModelMesh
+        The mesh the weights belong to.
+    weights : SkinWeights
+        The weights, one entry per position of *mesh*.
+    joints : collections.abc.Sequence[int]
+        The joint each bone of *weights* drives.
+
+    Returns
+    -------
+    int
+        Index of the node.
+    """
+    matrix = _node_matrix(mesh.transform or _IDENTITY)
+    positions: list[Vector3] = []
+    normals: list[Vector3] = []
+    coords: list[tuple[float, float]] = []
+    bound: list[tuple[int, ...]] = []
+    strengths: list[tuple[float, ...]] = []
+    groups: dict[int, list[int]] = {}
+    for face in mesh.faces:
+        base = len(positions)
+        for corner in face.positions:
+            positions.append(_place(matrix, _mirror(_exporter(mesh.positions[corner]))))
+            normal = _turn(matrix, _mirror(_exporter(
+                mesh.normals[corner]))) if mesh.normals else (0.0, 1.0, 0.0)
+            # A few second-game skins store a zero normal, and glTF requires unit length.
+            length = math.sqrt(sum(v * v for v in normal))
+            normals.append((normal[0] / length, normal[1] / length,
+                            normal[2] / length) if length > _STILL else (0.0, 1.0, 0.0))
+            joint, strength = _joint_weights(
+                weights.influences[corner] if corner < len(weights.influences) else (), joints)
+            bound.append(joint)
+            strengths.append(strength)
+        coords.extend(mesh.coords[c] if mesh.coords else (0.0, 0.0) for c in face.coords)
+        groups.setdefault(face.material, []).extend((base, base + 2, base + 1))
+    attributes = {
+        'JOINTS_0':
+            document.accessor(b''.join(struct.pack('<4H', *j) for j in bound),
+                              ARRAY_BUFFER,
+                              componentType=UNSIGNED_SHORT,
+                              count=len(bound),
+                              type='VEC4'),
+        'NORMAL':
+            document.floats(normals, 'VEC3', target=ARRAY_BUFFER),
+        'POSITION':
+            document.floats(positions, 'VEC3', bounds=True, target=ARRAY_BUFFER),
+        'TEXCOORD_0':
+            document.floats(coords, 'VEC2', target=ARRAY_BUFFER),
+        'WEIGHTS_0':
+            document.floats(strengths, 'VEC4', target=ARRAY_BUFFER)
+    }
+    images = {texture.path.lower(): texture for texture in model.textures}
+    document.meshes.append({
+        'name':
+            mesh.name,
+        'primitives': [{
+            'attributes':
+                attributes,
+            'indices':
+                document.indices(flat),
+            'material':
+                document.model_material(mesh.materials[key] if key < len(mesh.materials) else '',
+                                        model, images),
+            'mode':
+                TRIANGLES
+        } for key, flat in sorted(groups.items())]
+    })
+    document.nodes.append({'mesh': len(document.meshes) - 1, 'name': mesh.name, 'skin': 0})
+    return len(document.nodes) - 1
+
+
+def _add_clip(document: _Document, name: str, clip: Animation, joints: Mapping[str, int]) -> bool:
+    """
+    Add one character animation, driving the joint of each track's bone.
+
+    Keys are written at the frames the file stores them on, ``frame / rate`` seconds in, and
+    interpolated linearly in between. A joint the clip has no track for stays in its bind pose.
+    Rotation is always written; translation and scale only where a key moves them off the bind
+    pose, true of a root's translation and of nothing else on most clips.
+
+    Parameters
+    ----------
+    document : _Document
+        The document being built.
+    name : str
+        Name for the glTF animation.
+    clip : Animation
+        The clip.
+    joints : collections.abc.Mapping[str, int]
+        Lowercased bone name to the index of its joint node.
+
+    Returns
+    -------
+    bool
+        Whether the clip drove any joint.
+    """
+    rate = clip.rate or 1
+    samplers: list[dict[str, Any]] = []
+    channels: list[dict[str, Any]] = []
+    for track in clip.tracks:
+        if (target := joints.get(track.bone.lower())) is None or not track.keys:
+            continue
+        node = document.nodes[target]
+        poses = [_decompose(transform) for _frame, transform in track.keys]
+        rotations = [poses[0][1]]
+        for _translation, turned, _scale in poses[1:]:
+            near = sum(a * b for a, b in zip(rotations[-1], turned, strict=True)) >= 0
+            rotations.append(turned if near else [-v for v in turned])
+        times = document.floats([(frame / rate,) for frame, _transform in track.keys],
+                                'SCALAR',
+                                bounds=True)
+        series = (('rotation', 'VEC4', rotations), ('translation', 'VEC3', [p[0] for p in poses]),
+                  ('scale', 'VEC3', [p[2] for p in poses]))
+        for path, kind, values in series:
+            if path != 'rotation' and all(
+                    math.dist(value, node[path]) <= _STILL for value in values):
+                continue
+            samplers.append({
+                'input': times,
+                'interpolation': 'LINEAR',
+                'output': document.floats(values, kind)
+            })
+            channels.append({
+                'sampler': len(samplers) - 1,
+                'target': {
+                    'node': target,
+                    'path': path
+                }
+            })
+    if not channels:
+        return False
+    document.animations.append({'channels': channels, 'name': name, 'samplers': samplers})
+    return True
+
+
+def build_character_glb(model: Model,
+                        skeleton: Model,
+                        weights: SkinWeights,
+                        clips: Sequence[tuple[str, Animation]] = (),
+                        *,
+                        name: str = 'character') -> bytes:
+    """
+    Build a ``.glb`` of a character, rigged to its skeleton and with its animations.
+
+    The skin's mesh is written in its bind pose under a glTF skin whose joints are the skeleton's
+    bones. Each clip becomes a glTF animation of the joints. The game's left-handed space is
+    mirrored to glTF's right-handed one, as levels are.
+
+    Parameters
+    ----------
+    model : Model
+        The skin, with its images read in.
+    skeleton : Model
+        The skeleton, one mesh per bone.
+    weights : SkinWeights
+        The skin's weights.
+    clips : collections.abc.Sequence[tuple[str, Animation]]
+        Each clip with the name to give its glTF animation.
+    name : str
+        Name given to the scene.
+
+    Returns
+    -------
+    bytes
+        A complete binary glTF.
+
+    Raises
+    ------
+    ValueError
+        If the skeleton has no bones or the skin has no faces.
+    """
+    mesh = next((m for m in model.meshes if m.name in weights.meshes and m.faces),
+                next((m for m in model.meshes if m.faces), None))
+    if not skeleton.meshes or mesh is None:
+        msg = 'The skeleton has no bones or the skin has no faces.'
+        raise ValueError(msg)
+    document = _Document(
+        Level(geometry=LevelGeometry(polygons=(), vertices=()),
+              materials={},
+              mesh=None,
+              textures=()))
+    joints, roots = _add_skin(document, skeleton)
+    missing = sorted({bone for bone in weights.bones if bone.lower() not in joints})
+    if missing:
+        log.warning('Bones the skeleton lacks follow its root: %s.', ', '.join(missing))
+    node = _add_skinned_mesh(document, model, mesh, weights,
+                             [joints.get(bone.lower(), 0) for bone in weights.bones])
+    targets = {bone: document.skins[0]['joints'][joint] for bone, joint in joints.items()}
+    added = sum(_add_clip(document, clip_name, clip, targets) for clip_name, clip in clips)
+    log.debug('Wrote %d of %d clips.', added, len(clips))
+    return document.finish(name, [node, *roots])

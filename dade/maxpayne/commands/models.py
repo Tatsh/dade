@@ -9,12 +9,14 @@ from dade.maxpayne.blocks import unwrap
 from dade.maxpayne.model import InvalidModelError, read_model
 from dade.maxpayne.typing import TextureImage
 
+from .utils import find_path
+
 if TYPE_CHECKING:
     from pathlib import Path
 
     from dade.maxpayne.typing import Level, Model
 
-__all__ = ('load_models',)
+__all__ = ('load_models', 'read_model_file')
 
 log = logging.getLogger(__name__)
 
@@ -72,12 +74,12 @@ def _item(database: Path, item: str) -> Path | None:
     return model if model.is_file() else None
 
 
-def _read(path: Path) -> Model | None:
+def read_model_file(path: Path) -> Model | None:
     """
     Read one model and the images its materials name.
 
     The model records a search path, its ``textures`` directory, then the shared one beside
-    it -- and the images are looked up along it in order.
+    it -- and the images are looked up along it in order, ignoring case.
 
     Parameters
     ----------
@@ -97,8 +99,7 @@ def _read(path: Path) -> Model | None:
     textures = []
     for file in dict.fromkeys(model.materials.values()):
         for folder in model.search:
-            candidate = path.parent / folder / file
-            if candidate.is_file():
+            if (candidate := find_path(path.parent, f'{folder}/{file}')) and candidate.is_file():
                 textures.append(TextureImage(data=candidate.read_bytes(), kind=0, path=file))
                 break
         else:
@@ -130,7 +131,7 @@ def load_models(database: Path, level: Level) -> dict[str, Model]:
         if path is None:
             log.debug('No model for `%s`.', label)
             continue
-        model = _read(path)
+        model = read_model_file(path)
         if model is not None:
             out[label] = model
     log.debug('Read %d of %d models.', len(out), len(wanted))
