@@ -12,7 +12,7 @@ from dade.common.disc import (
     open_image,
 )
 from dade.common.exceptions import InvalidFormatError
-from dade.common.iso9660 import Iso9660Image
+from dade.common.iso9660 import ISO9660Image
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -68,7 +68,7 @@ def test_open_image_iso(make_iso9660: Callable[..., bytes], tmp_path: Path) -> N
     iso = tmp_path / 'game.iso'
     iso.write_bytes(make_iso9660())
     image = open_image(iso)
-    assert isinstance(image, Iso9660Image)
+    assert isinstance(image, ISO9660Image)
     assert image.contains('GEN/MAIN.ARK')
 
 

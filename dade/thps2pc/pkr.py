@@ -44,8 +44,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
-__all__ = ('DIR_SIZE', 'FILE_SIZE', 'HEADER_SIZE', 'PKR_MAGIC', 'CompressionMethod', 'PkrArchive',
-           'PkrDirEntry', 'PkrFileEntry', 'PkrHeader', 'UnsafePathError', 'extract_all',
+__all__ = ('DIR_SIZE', 'FILE_SIZE', 'HEADER_SIZE', 'PKR_MAGIC', 'CompressionMethod', 'PKRArchive',
+           'PKRDirEntry', 'PKRFileEntry', 'PKRHeader', 'UnsafePathError', 'extract_all',
            'extract_entry', 'iter_entries', 'parse')
 
 log = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ class UnsafePathError(Exception):
     """Raised when a pack entry specifies a path that would escape the destination directory."""
 
 
-class PkrHeader(NamedTuple):
+class PKRHeader(NamedTuple):
     """Header of a ``PKR2`` pack together with the derived table offsets."""
 
     alignment: int
@@ -119,7 +119,7 @@ class PkrHeader(NamedTuple):
     """Absolute offset of the first resource byte."""
 
 
-class PkrDirEntry(NamedTuple):
+class PKRDirEntry(NamedTuple):
     """One directory record from table A."""
 
     name: str
@@ -130,7 +130,7 @@ class PkrDirEntry(NamedTuple):
     """Number of files in this directory."""
 
 
-class PkrFileEntry(NamedTuple):
+class PKRFileEntry(NamedTuple):
     """One file record from table B."""
 
     name: str
@@ -145,14 +145,14 @@ class PkrFileEntry(NamedTuple):
     """Number of bytes to read from the pack."""
 
 
-class PkrArchive(NamedTuple):
+class PKRArchive(NamedTuple):
     """A parsed pack: its header and both record tables."""
 
-    header: PkrHeader
+    header: PKRHeader
     """The pack header."""
-    dirs: tuple[PkrDirEntry, ...]
+    dirs: tuple[PKRDirEntry, ...]
     """Every directory record, in file order."""
-    files: tuple[PkrFileEntry, ...]
+    files: tuple[PKRFileEntry, ...]
     """Every file record, in file order."""
 
 
@@ -194,7 +194,7 @@ def _decompress_rle(src: bytes, out_size: int, count_width: int) -> bytes:
     return bytes(out[:out_size])
 
 
-def parse(data: bytes) -> PkrArchive:
+def parse(data: bytes) -> PKRArchive:
     """
     Parse a pack's header and both record tables.
 
@@ -205,7 +205,7 @@ def parse(data: bytes) -> PkrArchive:
 
     Returns
     -------
-    PkrArchive
+    PKRArchive
         The parsed header and tables.
 
     Raises
@@ -231,32 +231,32 @@ def parse(data: bytes) -> PkrArchive:
     for i in range(dir_count):
         name, child_offset, child_count = struct.unpack_from(_DIR_FMT, data,
                                                              table_a_start + i * DIR_SIZE)
-        dirs.append(PkrDirEntry(read_cstring(name), child_offset, child_count))
+        dirs.append(PKRDirEntry(read_cstring(name), child_offset, child_count))
     files = []
     for i in range(file_count):
         record = struct.unpack_from(_FILE_FMT, data, table_b_start + i * FILE_SIZE)
-        files.append(PkrFileEntry(read_cstring(record[0]), *record[1:]))
-    header = PkrHeader(alignment=alignment,
+        files.append(PKRFileEntry(read_cstring(record[0]), *record[1:]))
+    header = PKRHeader(alignment=alignment,
                        dir_count=dir_count,
                        file_count=file_count,
                        table_b_start=table_b_start,
                        data_region_start=data_region_start)
     log.debug('Parsed PKR2 with %d directories and %d files.', dir_count, file_count)
-    return PkrArchive(header, tuple(dirs), tuple(files))
+    return PKRArchive(header, tuple(dirs), tuple(files))
 
 
-def iter_entries(archive: PkrArchive) -> Iterator[tuple[str, PkrFileEntry]]:
+def iter_entries(archive: PKRArchive) -> Iterator[tuple[str, PKRFileEntry]]:
     """
     Yield every file in the pack as its full path paired with its record.
 
     Parameters
     ----------
-    archive : PkrArchive
+    archive : PKRArchive
         A parsed pack.
 
     Yields
     ------
-    tuple[str, PkrFileEntry]
+    tuple[str, PKRFileEntry]
         The file's full path and its record.
     """
     for entry in archive.dirs:
@@ -265,7 +265,7 @@ def iter_entries(archive: PkrArchive) -> Iterator[tuple[str, PkrFileEntry]]:
             yield entry.name + archive.files[index].name, archive.files[index]
 
 
-def extract_entry(data: bytes, entry: PkrFileEntry) -> bytes:
+def extract_entry(data: bytes, entry: PKRFileEntry) -> bytes:
     """
     Decode one file's resource bytes according to its compression method.
 
@@ -273,7 +273,7 @@ def extract_entry(data: bytes, entry: PkrFileEntry) -> bytes:
     ----------
     data : bytes
         The whole pack file.
-    entry : PkrFileEntry
+    entry : PKRFileEntry
         The record to decode.
 
     Returns

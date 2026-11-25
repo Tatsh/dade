@@ -8,7 +8,7 @@ import zlib
 import pytest
 
 from dade.thps2pc import pkr
-from dade.thps2pc.test_utils import PkrFileSpec, pkr_archive, stored_file
+from dade.thps2pc.test_utils import PKRFileSpec, pkr_archive, stored_file
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -72,7 +72,7 @@ def test_extract_entry_rejects_resource_past_eof() -> None:
 
 
 def test_extract_entry_rejects_unknown_method() -> None:
-    data = pkr_archive((('d/', (PkrFileSpec('a.bin', b'raw', 99, 3),)),))
+    data = pkr_archive((('d/', (PKRFileSpec('a.bin', b'raw', 99, 3),)),))
     archive = pkr.parse(data)
     with pytest.raises(NotImplementedError, match=r'Unknown compression method 99'):
         pkr.extract_entry(data, archive.files[0])
@@ -85,21 +85,21 @@ def test_extract_entry_rejects_unknown_method() -> None:
                           (pkr.CompressionMethod.RLE16, struct.pack('<HB', 4, 0x43), 4, b'CCCC')])
 def test_extract_entry_decodes_run_length(method: int, stored: bytes, size: int,
                                           expected: bytes) -> None:
-    data = pkr_archive((('d/', (PkrFileSpec('a.bin', stored, method, size),)),))
+    data = pkr_archive((('d/', (PKRFileSpec('a.bin', stored, method, size),)),))
     archive = pkr.parse(data)
     assert pkr.extract_entry(data, archive.files[0]) == expected
 
 
 def test_run_length_pads_with_the_last_value() -> None:
     stored = bytes((2, 0x5A))
-    data = pkr_archive((('d/', (PkrFileSpec('a.bin', stored, pkr.CompressionMethod.RLE8, 5),)),))
+    data = pkr_archive((('d/', (PKRFileSpec('a.bin', stored, pkr.CompressionMethod.RLE8, 5),)),))
     archive = pkr.parse(data)
     assert pkr.extract_entry(data, archive.files[0]) == b'ZZZZZ'
 
 
 def test_run_length_stops_before_overflowing_the_output() -> None:
     stored = bytes((2, 0x41, 9, 0x42))
-    data = pkr_archive((('d/', (PkrFileSpec('a.bin', stored, pkr.CompressionMethod.RLE8, 4),)),))
+    data = pkr_archive((('d/', (PKRFileSpec('a.bin', stored, pkr.CompressionMethod.RLE8, 4),)),))
     archive = pkr.parse(data)
     assert pkr.extract_entry(data, archive.files[0]) == b'AAAA'
 
@@ -107,7 +107,7 @@ def test_run_length_stops_before_overflowing_the_output() -> None:
 def test_extract_entry_inflates_zlib() -> None:
     payload = b'compressible' * 8
     compressed = zlib.compress(payload)
-    spec = PkrFileSpec('a.bin', compressed, pkr.CompressionMethod.ZLIB, len(payload))
+    spec = PKRFileSpec('a.bin', compressed, pkr.CompressionMethod.ZLIB, len(payload))
     data = pkr_archive((('d/', (spec,)),))
     archive = pkr.parse(data)
     assert pkr.extract_entry(data, archive.files[0]) == payload

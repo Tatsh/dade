@@ -15,7 +15,7 @@ from dade.maxpayne.ras import MAGIC
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
-    from dade.common.iso9660 import Iso9660Image
+    from dade.common.iso9660 import ISO9660Image
 
 __all__ = ('ARCHIVE_SUFFIXES', 'CABINET_NAME', 'NoArchivesFoundError', 'iter_archives')
 
@@ -72,13 +72,13 @@ def _iter_cabinet(cabinet: Path) -> Iterator[tuple[str, bytes]]:
         yield from _iter_directory(Path(work_dir))
 
 
-def _loose_archives(image: Iso9660Image, paths: Sequence[str]) -> Iterator[tuple[str, bytes]]:
+def _loose_archives(image: ISO9660Image, paths: Sequence[str]) -> Iterator[tuple[str, bytes]]:
     """
     Yield the archives lying loose on one image.
 
     Parameters
     ----------
-    image : dade.common.iso9660.Iso9660Image
+    image : dade.common.iso9660.ISO9660Image
         The opened image.
     paths : collections.abc.Sequence[str]
         Every path on it.
@@ -94,13 +94,13 @@ def _loose_archives(image: Iso9660Image, paths: Sequence[str]) -> Iterator[tuple
             yield path, image.read_file(path)
 
 
-def _stage_cabinet(image: Iso9660Image, paths: Sequence[str], staging: Path) -> int:
+def _stage_cabinet(image: ISO9660Image, paths: Sequence[str], staging: Path) -> int:
     """
     Copy one image's share of the cabinet into the staging directory.
 
     Parameters
     ----------
-    image : dade.common.iso9660.Iso9660Image
+    image : dade.common.iso9660.ISO9660Image
         The opened image.
     paths : collections.abc.Sequence[str]
         Every path on it.

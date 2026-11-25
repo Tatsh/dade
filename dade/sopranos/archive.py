@@ -18,7 +18,7 @@ import struct
 
 from dade.common.exceptions import InvalidFormatError
 from dade.common.io import MmapReader
-from dade.common.iso9660 import Iso9660Image
+from dade.common.iso9660 import ISO9660Image
 
 from .typing import FSEntry
 
@@ -139,7 +139,7 @@ def iter_disc_archives(path: Path) -> Iterator[tuple[str, int, int]]:
         The archive's name, its byte offset within the image, and its length.
     """
     with MmapReader(path) as reader:
-        image = Iso9660Image(reader)
+        image = ISO9660Image(reader)
         for name, _size in image.iter_files():
             if name.lower().endswith('.fs'):
                 offset, length = image.locate(name)

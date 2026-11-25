@@ -142,7 +142,7 @@ def test_iter_disc_archives_yields_only_archives(mocker: MockerFixture, tmp_path
     image.iter_files.return_value = [('DATA/DATA_P.FS', 10), ('DATA/README.TXT', 5)]
     image.locate.return_value = (2048, 10)
     mocker.patch('dade.sopranos.archive.MmapReader')
-    mocker.patch('dade.sopranos.archive.Iso9660Image', return_value=image)
+    mocker.patch('dade.sopranos.archive.ISO9660Image', return_value=image)
     assert list(iter_disc_archives(tmp_path / 'game.iso')) == [('DATA_P.FS', 2048, 10)]
 
 

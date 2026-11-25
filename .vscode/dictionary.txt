@@ -5,6 +5,7 @@ abits
 accum
 adat
 addopts
+adms
 adpcm
 agrp
 aica
@@ -64,6 +65,7 @@ bfres
 bfstm
 bfttf
 bfwav
+bgchanges
 bgra
 bidx
 bigf
@@ -85,6 +87,7 @@ brti
 bsky
 bspan
 bsum
+burnq
 bwav
 bwsp
 byteswap
@@ -162,6 +165,7 @@ ddrsplus
 deadbeefdeadbeef
 deathmatch
 debugpy
+decomp
 decompresscommand
 decompressobj
 decryptor
@@ -206,6 +210,7 @@ ealayer
 eboot
 eeyore
 efmt
+ekpu
 elem
 elif
 empy
@@ -358,6 +363,7 @@ isort
 istart
 itemsize
 itertools
+itgps
 itun
 ivask
 iviv
@@ -375,6 +381,7 @@ jubeatskmpledata
 junkjunk
 kdei
 keepdims
+keepends
 kemco
 kext
 keybind
@@ -452,13 +459,16 @@ mopp
 mousedown
 mousemove
 mouseup
+moveaxis
 movs
 movt
+mpegvideo
 mrts
 mscal
 mtllib
 mult
 multich
+muska
 myproject
 mypy
 namedtuples
@@ -489,6 +499,7 @@ noone
 noqa
 norecursedirs
 noseparator
+nosongbg
 nostdin
 notachart
 notarytool
@@ -512,7 +523,6 @@ numpages
 numpy
 numpydoc
 nums
-nverts
 objfile
 objtex
 ocff
@@ -535,6 +545,8 @@ pathlib
 pavelzw
 payloadinfo
 pbag
+pckf
+pcks
 pcobject
 pdta
 phdr
@@ -596,6 +608,8 @@ quadwords
 quat
 quicktime
 rarm
+rasta
+rastapart
 rawmode
 rawptr
 rawsize
@@ -625,6 +639,7 @@ rocm
 romaji
 romfs
 roundtrips
+roxor
 rpaths
 rpks
 rrggbb
@@ -707,6 +722,7 @@ sndh
 sneaker
 sniker
 snorm
+songbackground
 sosb
 sosp
 soundbank
@@ -856,6 +872,7 @@ xform
 xmap
 xoff
 xother
+xpart
 xsecond
 xyzw
 yapf

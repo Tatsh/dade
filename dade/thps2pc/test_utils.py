@@ -13,7 +13,7 @@ import struct
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-__all__ = ('FaceSpec', 'PkrFileSpec', 'SectorSpec', 'TextureSpec', 'face_record', 'pkr_archive',
+__all__ = ('FaceSpec', 'PKRFileSpec', 'SectorSpec', 'TextureSpec', 'face_record', 'pkr_archive',
            'psx_lighting', 'psx_scene', 'stored_file')
 
 _DESCRIPTOR_SIZE = 0x24
@@ -22,7 +22,7 @@ _TERMINATOR = 0xFFFFFFFF
 _TEXTURE_INDEX_MIN_LENGTH = 5
 
 
-class PkrFileSpec(NamedTuple):
+class PKRFileSpec(NamedTuple):
     """One file to place in a synthetic pack."""
 
     name: str
@@ -78,7 +78,7 @@ class TextureSpec(NamedTuple):
     """Width in pixels."""
 
 
-def stored_file(name: str, payload: bytes) -> PkrFileSpec:
+def stored_file(name: str, payload: bytes) -> PKRFileSpec:
     """
     Describe an uncompressed pack entry.
 
@@ -91,13 +91,13 @@ def stored_file(name: str, payload: bytes) -> PkrFileSpec:
 
     Returns
     -------
-    PkrFileSpec
+    PKRFileSpec
         A specification using the stored compression method.
     """
-    return PkrFileSpec(name=name, stored=payload, method=-2, uncompressed_size=len(payload))
+    return PKRFileSpec(name=name, stored=payload, method=-2, uncompressed_size=len(payload))
 
 
-def pkr_archive(directories: Sequence[tuple[str, Sequence[PkrFileSpec]]],
+def pkr_archive(directories: Sequence[tuple[str, Sequence[PKRFileSpec]]],
                 alignment: int = 4,
                 magic: bytes = b'PKR2') -> bytes:
     """
@@ -105,7 +105,7 @@ def pkr_archive(directories: Sequence[tuple[str, Sequence[PkrFileSpec]]],
 
     Parameters
     ----------
-    directories : Sequence[tuple[str, Sequence[PkrFileSpec]]]
+    directories : Sequence[tuple[str, Sequence[PKRFileSpec]]]
         Each directory's name, including its trailing separator, and the files inside it.
     alignment : int
         Value recorded in the header's alignment field.

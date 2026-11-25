@@ -5,14 +5,14 @@ from pathlib import Path
 
 import click
 
-from dade.thps2pc.pkr import PkrArchive, UnsafePathError, extract_all, iter_entries, parse
+from dade.thps2pc.pkr import PKRArchive, UnsafePathError, extract_all, iter_entries, parse
 
 from .utils import debug_option
 
 __all__ = ('unpack_pkr',)
 
 
-def _parse(pkr: Path, data: bytes) -> PkrArchive:
+def _parse(pkr: Path, data: bytes) -> PKRArchive:
     """
     Parse a pack, reporting a malformed one as a Click abort.
 
@@ -25,7 +25,7 @@ def _parse(pkr: Path, data: bytes) -> PkrArchive:
 
     Returns
     -------
-    PkrArchive
+    PKRArchive
         The parsed pack.
 
     Raises

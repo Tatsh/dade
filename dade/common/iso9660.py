@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from dade.common.io import Reader
 
-__all__ = ('Iso9660Image',)
+__all__ = ('ISO9660Image',)
 
 _PVD_OFFSET = 16 * 2048
 """Byte offset of the primary volume descriptor (logical block address 16).
@@ -109,7 +109,7 @@ _VERSION_RE = re.compile(r';\d+$')
 """Match a trailing ``;N`` version suffix on an ISO 9660 file identifier."""
 
 
-class Iso9660Image:
+class ISO9660Image:
     """
     A read-only view over an ISO 9660 image.
 

@@ -35,6 +35,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `Iso9660Image` is renamed `ISO9660Image`, and the THPS2 `Pkr*` classes are renamed `PKR*`.
 - An Amplitude `.tnm` is decoded as a `Rnd::TransAnim` keyframe animation, and its JSON sidecar
   lists every rotation, translation, and scale key. A FreQuency `.tnm` is scanned for references as
   before.

@@ -6,7 +6,7 @@ import pytest
 
 from dade.common.cuebin import cuebin_to_iso
 from dade.common.exceptions import InvalidFormatError
-from dade.common.iso9660 import Iso9660Image
+from dade.common.iso9660 import ISO9660Image
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -23,7 +23,7 @@ def test_cuebin_round_trips_iso(mode: str, make_iso9660: Callable[..., bytes],
 def test_cuebin_feeds_iso_reader(make_iso9660: Callable[..., bytes],
                                  make_cuebin: Callable[..., Path]) -> None:
     iso = make_iso9660(ark_data=b'reassembled')
-    image = Iso9660Image.from_bytes(cuebin_to_iso(make_cuebin(iso)))
+    image = ISO9660Image.from_bytes(cuebin_to_iso(make_cuebin(iso)))
     assert image.read_file('GEN/MAIN.ARK') == b'reassembled'
 
 

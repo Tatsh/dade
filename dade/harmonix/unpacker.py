@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Callable, Iterator
     from pathlib import Path
 
-    from dade.common.iso9660 import Iso9660Image
+    from dade.common.iso9660 import ISO9660Image
 
     from .typing import ArkLayout
 
@@ -39,7 +39,7 @@ def _dir_ark_layouts(root: Path) -> Iterator[ArkLayout]:
             yield 'frequency' if src.read(4) == _FREQ_MAGIC else 'amplitude'
 
 
-def _image_ark_layouts(image: Iso9660Image) -> Iterator[ArkLayout]:
+def _image_ark_layouts(image: ISO9660Image) -> Iterator[ArkLayout]:
     for path, _ in image.iter_files():
         if path.upper().endswith('.ARK'):
             yield 'frequency' if image.read_file(path, 4) == _FREQ_MAGIC else 'amplitude'

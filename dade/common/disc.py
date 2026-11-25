@@ -19,7 +19,7 @@ import anyio
 
 from dade.common.cuebin import bin_to_iso, cuebin_to_iso
 from dade.common.io import MmapReader
-from dade.common.iso9660 import Iso9660Image
+from dade.common.iso9660 import ISO9660Image
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterator
@@ -33,7 +33,7 @@ _ARK_SUFFIX = '.ARK'
 """
 
 
-def open_image(source: Path) -> Iso9660Image:
+def open_image(source: Path) -> ISO9660Image:
     """
     Open a disc-image file as an ISO 9660 image.
 
@@ -50,16 +50,16 @@ def open_image(source: Path) -> Iso9660Image:
 
     Returns
     -------
-    dade.common.iso9660.Iso9660Image
+    dade.common.iso9660.ISO9660Image
         The parsed image.
     """
     if source.suffix.lower() == '.cue':
-        return Iso9660Image.from_bytes(cuebin_to_iso(source))
+        return ISO9660Image.from_bytes(cuebin_to_iso(source))
     if source.suffix.lower() == '.bin':
         sheet = source.with_suffix('.cue')
-        return Iso9660Image.from_bytes(
+        return ISO9660Image.from_bytes(
             cuebin_to_iso(sheet) if sheet.is_file() else bin_to_iso(source))
-    return Iso9660Image(MmapReader(source))
+    return ISO9660Image(MmapReader(source))
 
 
 def iter_ark_bytes(source: Path) -> Iterator[bytes]:
@@ -171,13 +171,13 @@ async def materialize(source: Path, out: Path) -> None:
     await asyncio.to_thread(_extract_image, image, out)
 
 
-def _extract_image(image: Iso9660Image, dest: Path) -> None:
+def _extract_image(image: ISO9660Image, dest: Path) -> None:
     """
     Write every file of an image into ``dest`` mirroring its paths.
 
     Parameters
     ----------
-    image : dade.common.iso9660.Iso9660Image
+    image : dade.common.iso9660.ISO9660Image
         The image to extract.
     dest : pathlib.Path
         The directory to populate (must already exist).
