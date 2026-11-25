@@ -794,6 +794,24 @@ the weights, pivots, and turn axes are those of its pose and skinning code. Only
 converted. The Windows port stores the same riders, but its display lists use opcodes the reader
 does not decode yet.
 
+```shell
+dade thps2pc skater2glb data/ -o skaters/
+```
+
+`skater2glb` writes each _Tony Hawk's Pro Skater 2_ skater model as a GLB with one joint per body
+part and its clips as animations. A source is a `.PSX` file with its `.PSH` header beside it, or a
+directory searched for both. Every vertex follows its part. The game closes the seams between parts
+with vertices that reuse a vertex of the part above, and those vertices are bound to that part. The
+embedded textures are written into the file.
+
+Each main skater file (`HAWK.PSX`, `MUSKA.PSX`, and the rest) stores 78 clips. The
+outfits and the low-detail models (`HAWK2.PSX`, `HAWK2_L.PSX`) store only a pose. They are given
+the 218 clips of `SK2ANIM.PSX`, the set the game shares between skaters, matched to their parts by
+name. `--clips` selects another file. A model the shared clips do not fit, such as a vehicle, is
+written with the poses it stores. A clip plays at 60 frames a second, the rate the game advances it.
+A part's angles give its rotation in model space directly, and only its position is relative to
+the part above. Positions are divided by 2048, and a skateboard comes out about 0.8 m long.
+
 ## Development
 
 ```shell

@@ -12,6 +12,8 @@ converts them to open formats:
   :func:`dade.thps2pc.textures.decode_instance` - decode the palettes and textures embedded in
   a ``*_L.PSX`` lighting file.
 - :func:`dade.thps2pc.mesh.build_batches` - group a scene's triangles by texture for export.
+- :func:`dade.thps2pc.skater.read_skater` and :func:`dade.thps2pc.skater.build_skater_glb` - decode
+  a skater's hierarchy and clips and write it as a skinned GLB.
 - :mod:`dade.thps2pc.render` - top-down and isometric software renders of a scene.
 
 Everything above works on ``bytes`` and needs no external tools. ImageMagick is only invoked when

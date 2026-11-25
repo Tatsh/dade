@@ -11,6 +11,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `dade thps2pc skater2glb` writes each skater model as a skinned GLB with its embedded textures,
+  one joint per body part, and its clips as glTF animations. Outfits and low-detail models are given
+  the clips the game shares between skaters, matched by part name.
 - `dade mkw extract` writes the skeleton of every model with more than one bone into its GLB as a
   glTF skin, with the rest pose, the inverse bind matrices, and up to four weighted bones for each
   vertex. Blender imports the skin as an armature.

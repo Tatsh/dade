@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 _EXPECTED = ('convert-scene', 'decode-textures', 'dump-descriptors', 'psx-info',
              'render-authoritative', 'render-layers', 'render-node-map', 'render-object-models',
-             'render-objects', 'unpack-pkr')
+             'render-objects', 'skater2glb', 'unpack-pkr')
 
 
 def test_group_registers_every_subcommand() -> None:

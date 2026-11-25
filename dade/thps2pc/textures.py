@@ -21,8 +21,8 @@ Every table is preceded by a 32-bit count::
 Palette entries are 16-bit ``BGR555``. Two values are treated as fully transparent and decode to
 magenta so they stand out: zero and ``0x7C1F``.
 
-The level and object scenes place their checksum table after a per-sector array instead. Those are
-read by :py:meth:`dade.thps2pc.psx.Scene.texture_checksums`.
+The level and object scenes place their checksum table after a per-sector array instead. Those
+checksum tables are read by :py:meth:`dade.thps2pc.psx.Scene.texture_checksums`.
 """
 from __future__ import annotations
 
@@ -137,7 +137,8 @@ def decode_instance(data: bytes, instance: TextureInstance,
     cluts = tables.cluts_16 if instance.is_4bpp else tables.cluts_256
     clut_offset = cluts.get(instance.clut_id)
     if clut_offset is None:
-        log.debug('Instance at %#x names missing palette %d.', instance.offset, instance.clut_id)
+        log.debug('Instance at %#x references missing palette %d.', instance.offset,
+                  instance.clut_id)
         return None
     out = bytearray()
     for pixel in range(instance.width * instance.height):
@@ -171,14 +172,18 @@ def iter_decoded(data: bytes, tables: LightingTextures) -> Iterator[tuple[Textur
             yield instance, pixels
 
 
-def parse_lighting(data: bytes) -> LightingTextures:
+def parse_lighting(data: bytes, *, skip: int = 0) -> LightingTextures:
     """
     Decode every table that follows the chunk list of a lighting file.
+
+    A skater model stores the same tables, preceded by one 32-bit value per sector.
 
     Parameters
     ----------
     data : bytes
         The whole lighting file.
+    skip : int
+        Number of 32-bit values between the chunk list and the checksum table.
 
     Returns
     -------
@@ -188,7 +193,7 @@ def parse_lighting(data: bytes) -> LightingTextures:
     offset = u32(data, 4)
     while i32(data, offset) != -1:
         offset = offset + 8 + u32(data, offset + 4)
-    base = offset + 4
+    base = offset + 4 + skip * 4
     num_checksums = u32(data, base)
     checksums = tuple(u32(data, base + 4 + i * 4) for i in range(num_checksums))
     position = base + 4 + num_checksums * 4

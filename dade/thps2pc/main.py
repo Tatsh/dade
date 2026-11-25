@@ -14,6 +14,7 @@ from .commands.render import (
     render_object_models_command,
     render_objects_command,
 )
+from .commands.skater2glb import skater2glb
 from .commands.unpack_pkr import unpack_pkr
 
 __all__ = ('cli',)
@@ -33,4 +34,5 @@ cli.add_command(render_layers_command)
 cli.add_command(render_node_map_command)
 cli.add_command(render_object_models_command)
 cli.add_command(render_objects_command)
+cli.add_command(skater2glb)
 cli.add_command(unpack_pkr)

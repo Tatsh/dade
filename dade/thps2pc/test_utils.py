@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
 __all__ = ('FaceSpec', 'PKRFileSpec', 'SectorSpec', 'TextureSpec', 'face_record', 'pkr_archive',
-           'psx_lighting', 'psx_scene', 'stored_file')
+           'psx_lighting', 'psx_scene', 'skater_clips', 'stored_file')
 
 _DESCRIPTOR_SIZE = 0x24
 _SECTOR_HEADER_SIZE = 0x1C
@@ -59,6 +59,8 @@ class SectorSpec(NamedTuple):
     """Encoded face records, as produced by :py:func:`face_record`."""
     count_b: int
     """How many of the vertices are ghost or stitch vertices."""
+    flags: Sequence[int] = ()
+    """Fourth 16-bit field of each vertex, zero for each vertex beyond the end of ``flags``."""
 
 
 class TextureSpec(NamedTuple):
@@ -183,7 +185,9 @@ def psx_scene(sectors: Sequence[SectorSpec] = (),
               descriptors: Sequence[tuple[int, tuple[int, int, int]]] = (),
               chunks: Sequence[tuple[int, bytes]] = (),
               checksums: Sequence[int] = (),
-              version: int = 0x00020004) -> bytes:
+              version: int = 0x00020004,
+              cluts_256: Mapping[int, Sequence[int]] | None = None,
+              instances: Sequence[TextureSpec] | None = None) -> bytes:
     """
     Build a synthetic ``.PSX`` scene.
 
@@ -200,6 +204,12 @@ def psx_scene(sectors: Sequence[SectorSpec] = (),
         The texture checksum table written after the chunk list.
     version : int
         Value recorded in the header's version field.
+    cluts_256 : Mapping[int, Sequence[int]] | None
+        256-colour palettes by identifier, written after the checksum table as a skater model
+        stores them. Each is padded or truncated to 256 entries.
+    instances : Sequence[TextureSpec] | None
+        Texture instances written after the palettes. Given neither, the file ends at the checksum
+        table.
 
     Returns
     -------
@@ -216,8 +226,9 @@ def psx_scene(sectors: Sequence[SectorSpec] = (),
         block = bytearray(_SECTOR_HEADER_SIZE)
         struct.pack_into('<HHH', block, 2,
                          len(spec.vertices) - spec.count_b, spec.count_b, len(spec.faces))
-        for x, y, z in spec.vertices:
-            block += struct.pack('<hhhh', x, y, z, 0)
+        flags = list(spec.flags) + [0] * len(spec.vertices)
+        for (x, y, z), flag in zip(spec.vertices, flags[:len(spec.vertices)], strict=True):
+            block += struct.pack('<hhhH', x, y, z, flag)
         for record in spec.faces:
             block += record
         body += block
@@ -241,7 +252,47 @@ def psx_scene(sectors: Sequence[SectorSpec] = (),
         out += struct.pack('<I', offset)
     out += body
     out += chunk_bytes
-    return bytes(out)
+    if cluts_256 is None and instances is None:
+        return bytes(out)
+    out += struct.pack('<I', 0)
+    out += struct.pack('<I', len(cluts_256 or {}))
+    for identifier, entries in (cluts_256 or {}).items():
+        out += struct.pack('<I', identifier)
+        out += struct.pack('<256H', *(list(entries) + [0] * 256)[:256])
+    specs = list(instances or ())
+    out += struct.pack('<I', len(specs))
+    start = len(out) + len(specs) * 4
+    records = bytearray()
+    for texture in specs:
+        out += struct.pack('<I', start + len(records))
+        header = bytearray(0x14)
+        struct.pack_into('<III', header, 4, texture.num_colors, texture.clut_id, texture.page)
+        struct.pack_into('<HH', header, 0x10, texture.width, texture.height)
+        records += bytes(header) + texture.pixels
+    return bytes(out + records)
+
+
+def skater_clips(clips: Sequence[tuple[int, Sequence[bytes]]]) -> bytes:
+    """
+    Build the payload of a compressed clip chunk (``0x2C``).
+
+    Parameters
+    ----------
+    clips : Sequence[tuple[int, Sequence[bytes]]]
+        Each clip's frame count and its encoded channels, six for each part in part order.
+
+    Returns
+    -------
+    bytes
+        The chunk payload: the count, each clip's offset and frame count, then the channels.
+    """
+    body = bytearray()
+    table = bytearray(struct.pack('<I', len(clips)))
+    start = 4 + len(clips) * 8
+    for frames, channels in clips:
+        table += struct.pack('<II', start + len(body), frames)
+        body += b''.join(channels)
+    return bytes(table + body)
 
 
 def psx_lighting(
@@ -261,7 +312,7 @@ def psx_lighting(
     cluts_16 : Mapping[int, Sequence[int]] | None
         16-colour palettes by identifier. Each is padded to sixteen entries.
     cluts_256 : Mapping[int, Sequence[int]] | None
-        256-colour palettes by identifier. Each is padded to 256 entries.
+        256-colour palettes by identifier. Each is padded or truncated to 256 entries.
     instances : Sequence[TextureSpec]
         The texture instances to write.
     chunks : Sequence[tuple[int, bytes]]
