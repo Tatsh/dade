@@ -53,6 +53,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - _Extreme-G 2_ clip GLBs place each joint at its pivot and turn it about the skeleton's axes, in the
   order its channel codes give.
 - A GLB without meshes omits the empty `meshes` array the glTF validator rejects.
+- `dade monopoly08 extract` writes the Xbox 360 mesh of Mr. Monopoly as a GLB with a glTF skin of
+  93 joints. The motions of every motion bank animating his skeleton (idles, walks, runs, and the
+  cutscenes) become glTF animations, decoded from the SKA codec of EA's character toolkit.
 
 ## [0.3.0] - 2026-11-23
 

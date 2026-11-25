@@ -3,7 +3,7 @@ Monopoly 2008
 
 Readers and converters for the 2008 Electronic Arts *Monopoly* disc across its Xbox 360, PS3, PS2,
 and Wii releases: platform detection, the big-file container, RefPack decompression, audio,
-images, and meshes.
+images, meshes, skeletons, and motion banks.
 
 ``dade.monopoly08.audio``
 ---------------------------
@@ -33,6 +33,12 @@ images, and meshes.
 ----------------------------
 
 .. automodule:: dade.monopoly08.meshes
+   :members:
+
+``dade.monopoly08.motion``
+----------------------------
+
+.. automodule:: dade.monopoly08.motion
    :members:
 
 ``dade.monopoly08.namehash``

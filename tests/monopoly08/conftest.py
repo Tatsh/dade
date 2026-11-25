@@ -636,3 +636,214 @@ def make_disc(tmp_path: Path) -> Callable[[Sequence[str]], Path]:
         return root
 
     return build
+
+
+_RESOURCE_HEADER = bytes(16)
+"""The zero-filled header preceding a skeleton or motion bank blob."""
+_SKA_HEADER_SIZE = 0xD0
+"""Size of an SKA motion header, ahead of its bone descriptors."""
+
+
+def _align(value: int, alignment: int = 16) -> int:
+    return -(-value // alignment) * alignment
+
+
+@pytest.fixture
+def make_skeleton() -> Callable[..., bytes]:
+    """
+    Build a skeleton resource.
+
+    Returns
+    -------
+    collections.abc.Callable[..., bytes]
+        A callable taking the skeleton identifier, each bone's parent, and each bone's 16-float
+        inverse bind matrix.
+    """
+    def build(character: int, parents: Sequence[int],
+              inverse_binds: Sequence[Sequence[float]]) -> bytes:
+        count = len(parents)
+        blob = bytearray(0x90)
+        struct.pack_into('>I', blob, 8, character)
+        struct.pack_into('>I', blob, 0x1C, 0x78)
+        links = len(blob)
+        matrices = links + 20 * count
+        struct.pack_into('>IIII', blob, 0x78, character, count, links, matrices)
+        for parent in parents:
+            blob += struct.pack('>5i', parent, -1, -1, 1, 1)
+        for matrix in inverse_binds:
+            blob += struct.pack('>16f', *matrix)
+        return _RESOURCE_HEADER + bytes(blob)
+
+    return build
+
+
+@pytest.fixture
+def make_ska() -> Callable[..., bytes]:
+    """
+    Build an SKA motion, laid out as the engine distributes its streams.
+
+    The motion must be placed at a 16-byte aligned offset of the bank blob.
+
+    Returns
+    -------
+    collections.abc.Callable[..., bytes]
+        A callable taking the bone descriptors, the counts (``rotation_masks``,
+        ``rotation_bytes_per_frame``, ``float_bones``, ``trans8_bones``, ``trans8_per_frame``,
+        ``trans16_bones``, and ``trans16_per_frame``), the mode words (``rotation``, ``trans8``,
+        and ``trans16``), and each stream as a keyword.
+    """
+    def build(descriptors: Sequence[int],
+              counts: Mapping[str, int] | None = None,
+              masks: Mapping[str, Sequence[int]] | None = None,
+              **streams: bytes) -> bytes:
+        count = dict.fromkeys(
+            ('rotation_masks', 'rotation_bytes_per_frame', 'float_bones', 'trans8_bones',
+             'trans8_per_frame', 'trans16_bones', 'trans16_per_frame'), 0) | dict(counts or {})
+        words = {'rotation': (), 'trans8': (), 'trans16': ()} | dict(masks or {})
+        stream = dict.fromkeys(
+            ('base', 'frame_floats', 'frame_rotations', 'frame_table', 'static_rotations',
+             'static_translations', 'trans8_base', 'trans8_data', 'trans16_base', 'trans16_data',
+             'vlc'), b'') | streams
+        vlc = stream['vlc'] + bytes(-len(stream['vlc']) % 4)
+        header = bytearray(_SKA_HEADER_SIZE)
+        struct.pack_into('>IIII', header, 0, 1, len(stream['static_rotations']),
+                         len(stream['frame_floats']), len(stream['static_translations']))
+        struct.pack_into('>hxxIHH', header, 0x14, count['rotation_bytes_per_frame'],
+                         len(stream['base']), len(descriptors), 2 * len(descriptors))
+        struct.pack_into('>HHHHxxHHhxxHhhhhh', header, 0x20, len(stream['trans16_base']),
+                         len(stream['trans8_base']), len(stream['trans16_data']),
+                         len(stream['trans8_data']), len(stream['frame_table']),
+                         len(vlc) // 4, count['rotation_masks'], len(stream['frame_rotations']),
+                         count['float_bones'], count['trans16_bones'], count['trans8_bones'],
+                         count['trans16_per_frame'], count['trans8_per_frame'])
+        body = bytearray(header + struct.pack(f'<{len(descriptors)}H', *descriptors))
+        body += bytes(_align(len(body)) - len(body))
+        for key, total, per_word in (('rotation', count['rotation_masks'],
+                                      8), ('trans16', count['trans16_bones'], 16),
+                                     ('trans8', count['trans8_bones'], 16)):
+            group = ((total - 1) // per_word + 1) * 8 if total else 0
+            body += struct.pack(f'>{len(words[key])}I', *words[key]).ljust(group, b'\0')
+        for key in ('static_rotations', 'base', 'frame_floats', 'trans16_data', 'trans8_data',
+                    'static_translations', 'trans16_base', 'trans8_base', 'frame_table'):
+            body += stream[key]
+        if stream['frame_table']:
+            body += vlc
+        return bytes(body + stream['frame_rotations'])
+
+    return build
+
+
+@pytest.fixture
+def make_bank() -> Callable[..., bytes]:
+    """
+    Build a motion bank resource.
+
+    Returns
+    -------
+    collections.abc.Callable[..., bytes]
+        A callable taking the skeleton identifier, the motions as ``(frames, codec, ska)``, and
+        the states as ``(name, motion, ticks per frame, state tag, motion node tag)``.
+    """
+    def build(character: int, motions: Sequence[tuple[int, int, bytes]],
+              states: Sequence[tuple[str, int, float, int, int]]) -> bytes:
+        blob = bytearray(0x40)
+        struct.pack_into('>I', blob, 0x0C, character)
+        offsets = []
+        for frames, codec, ska in motions:
+            blob += bytes(_align(len(blob)) - len(blob))
+            record = bytearray(0x40)
+            struct.pack_into('>I', record, 0x1C, frames)
+            struct.pack_into('>I', record, 0x24, 0x80000000 | codec)
+            offsets.append(len(blob))
+            blob += record + ska
+        motion_table = len(blob)
+        blob += struct.pack(f'>{len(offsets)}I', *offsets)
+        state_table = len(blob)
+        blob += bytes(4 * len(states))
+        for index, (name, motion, ticks, state_tag, node_tag) in enumerate(states):
+            state = len(blob)
+            struct.pack_into('>I', blob, state_table + 4 * index, state)
+            blob += bytes(8)
+            node = len(blob)
+            blob += struct.pack('>IIII', state_tag, 0, 0, node + 16)
+            blob += struct.pack('>IIIIIff', node_tag, 0, 0, offsets[motion], 0, 0.0, ticks)
+            struct.pack_into('>II', blob, state, len(blob), node)
+            blob += name.encode() + b'\0'
+        struct.pack_into('>IIII', blob, 0x24, len(states), state_table, len(motions), motion_table)
+        return _RESOURCE_HEADER + bytes(blob)
+
+    return build
+
+
+@pytest.fixture
+def make_skinned_mesh() -> Callable[..., bytes]:
+    """
+    Build an Xbox 360 ``NPM7`` mesh skinned to a skeleton.
+
+    Returns
+    -------
+    collections.abc.Callable[..., bytes]
+        A callable taking the bones as ``(name, parent, inverse bind)`` and the submeshes as
+        ``(format, stride, vertex bytes, vertex count, strip indices, palette)``, a palette of
+        :py:obj:`None` standing for a rigid submesh. ``block_size`` overrides every submesh's
+        recorded size.
+    """
+    def build(bones: Sequence[tuple[str, int, Sequence[float]]],
+              submeshes: Sequence[tuple[int, int, bytes, int, Sequence[int], bytes | None]],
+              *,
+              block_size: int | None = None) -> bytes:
+        body = bytearray(0xC8)
+        body[0:4] = b'NPM7'
+        for offset in (0x20, 0x34, 0x48):
+            struct.pack_into('>f', body, offset, 0.001)
+        groups = len(body)
+        body += bytes(0x30)
+        part = len(body)
+        body += bytes(0x30)
+        subs = len(body)
+        body += bytes(0x30 * len(submeshes))
+        struct.pack_into('>II', body, 0x80, 1, groups)
+        struct.pack_into('>I', body, groups + 0x20, 1)
+        struct.pack_into('>I', body, groups + 0x24, part)
+        struct.pack_into('>I', body, part + 0x20, len(submeshes))
+        struct.pack_into('>I', body, part + 0x28, subs)
+        palette_at = []
+        for *_, palette in submeshes:
+            palette_at.append(len(body) if palette is not None else 0)
+            if palette is not None:
+                body += bytes((len(palette),)) + palette
+        names = []
+        for name, *_ in bones:
+            names.append(len(body))
+            body += name.encode() + b'\0'
+        body += bytes(-len(body) % 4)
+        name_table = len(body)
+        body += struct.pack(f'>{len(names)}I', *names)
+        parents = len(body)
+        body += bytes(p & 0xFF for _, p, _ in bones)
+        body += bytes(-len(body) % 16)
+        skeleton = len(body)
+        body += struct.pack('>HxxII', len(bones), name_table, parents).ljust(0x20, b'\0')
+        for _, _, matrix in bones:
+            body += struct.pack('>16f', *matrix)
+        struct.pack_into('>I', body, 0xA0, skeleton)
+        body += bytes(-len(body) % 16)
+        geometry = len(body)
+        struct.pack_into('>I', body, 0x0C, geometry)
+        for index, (fmt, stride, vertices, count, strip, _) in enumerate(submeshes):
+            at = len(body)
+            index_at = at + 0x50 + len(vertices)
+            indices = bytes(16) + struct.pack(f'>{len(strip)}H', *strip)
+            size = _align(0x50 + len(vertices) + len(indices))
+            block = bytearray(0x50)
+            block[0:2] = b'PH'
+            struct.pack_into('>II', block, 8, fmt, size if block_size is None else block_size)
+            block[0x1C] = stride
+            struct.pack_into('>IxxxxIH', block, 0x20, index_at - geometry, len(strip), count)
+            body += (block + vertices + indices).ljust(size, b'\0')
+            struct.pack_into('>II', body, subs + 0x30 * index + 0x20, at, 0)
+            struct.pack_into('>I', body, subs + 0x30 * index + 0x28, palette_at[index])
+        struct.pack_into('>I', body, 4, len(body))
+        return bytes(body)
+
+    return build

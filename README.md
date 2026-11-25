@@ -198,6 +198,17 @@ dade monopoly08 extract ROOT
 Unpack and convert an extracted _Monopoly_ (2008, Electronic Arts) disc for Xbox 360, PS3, PS2, or
 Wii. The platform is auto-detected and every output is written next to its source inside `ROOT`.
 
+Mr. Monopoly is the only mesh the game skins to a skeleton, and on the Xbox 360 his mesh is also
+written as a GLB with a glTF skin. Each vertex blends up to four of the 93 bones, and the joints
+take the bone names the mesh records. The skeleton resource in the same pack directory supplies the
+joint hierarchy. Every motion bank there animating that skeleton adds its motions as glTF
+animations, one per state of the bank, such as `idle`, `walk`, and each cutscene. The banks use the
+SKA codec of EA's character toolkit, and every frame is decoded as the game decodes it.
+
+Meshes bound rigidly to a skeleton, such as the jail and the spotlights of the worldwide room, are
+not written as GLB, and neither are the PS3, PS2, and Wii meshes. The `.anim` files animate cameras
+rather than bones, and they are still written as JSON.
+
 ## jubeat plus
 
 ```shell

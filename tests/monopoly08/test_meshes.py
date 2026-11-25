@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 import json
+import math
 import struct
 
 import pytest
@@ -226,3 +227,152 @@ def test_convert_rejects_an_unknown_magic(make_mesh: Callable[..., bytes], tmp_p
 
 def test_extensions() -> None:
     assert {'.npm7', '.ppm7', '.rpm7', '.spm7'} == EXTENSIONS
+
+
+# --------------------------------------------------------------------------- #
+# Skinned glTF                                                                 #
+# --------------------------------------------------------------------------- #
+
+_IDENTITY = (1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 1.0)
+_ARM = (0.0, -1, 0, 0, 1, 0.0, 0, 0, 0, 0, 1.0, 0, 0, -2, 0, 1.0)
+"""Inverse bind, for row vectors, of a bone turned 90 degrees about Z and two units along -X."""
+_OTHER = (2.0, 0, 0, 0, 0, 2.0, 0, 0, 0, 0, 2.0, 0, 0, 0, 0, 1.0)
+_SKIN_FORMAT = 0x22011
+_RIGID_FORMAT = 0x19
+
+
+def _skinned_vertex(position: tuple[int, int, int], pairs: Sequence[tuple[int, int]]) -> bytes:
+    return struct.pack('>3Hxx', *position) + bytes(v for pair in pairs for v in pair) + bytes(8)
+
+
+_SKINNED_VERTICES = (_skinned_vertex(
+    (1000, 0, 0), ((0, 255), (0xFF, 0), (0, 0), (0, 0))) + _skinned_vertex(
+        (0, 1000, 0), ((0, 128), (1, 127), (0xFF, 0), (0xFF, 0))) + _skinned_vertex(
+            (0, 0, 1000), ((1, 255), (0, 0), (0, 0), (0, 0))))
+_BONES = (('root', -1, _IDENTITY), ('arm', 0, _ARM))
+_SUBMESHES = ((_SKIN_FORMAT, 24, _SKINNED_VERTICES, 3, (0, 1, 2),
+               b'\x01\x00'), (_RIGID_FORMAT, 16, bytes(48), 3, (0, 1, 2), None),
+              (_SKIN_FORMAT, 24, _SKINNED_VERTICES, 3, (0, 1), b'\x01\x00'))
+
+
+def _glb(path: Path) -> tuple[dict[str, Any], bytes]:
+    data = path.read_bytes()
+    length = struct.unpack_from('<I', data, 12)[0]
+    return json.loads(data[20:20 + length]), data[28 + length:]
+
+
+def _accessor_bytes(document: dict[str, Any], blob: bytes, index: int) -> bytes:
+    view = document['bufferViews'][document['accessors'][index]['bufferView']]
+    return blob[view['byteOffset']:view['byteOffset'] + view['byteLength']]
+
+
+def _bank_motion(make_ska: Callable[..., bytes]) -> bytes:
+    return make_ska((0x80, 0x40, 0xA0, 0x44),
+                    frame_floats=struct.pack('>6f', 1, 0, 0, 2, 0, 0),
+                    frame_rotations=struct.pack('>16h', 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0,
+                                                -4096, 0, 0, 2896, 2896),
+                    counts={
+                        'float_bones': 1,
+                        'rotation_bytes_per_frame': 16
+                    },
+                    static_rotations=struct.pack('>8h', 0, 0, 0, 4096, 0, 0, 0, 4096),
+                    static_translations=bytes(24))
+
+
+def _populate(directory: Path, make_skeleton: Callable[..., bytes], make_bank: Callable[..., bytes],
+              make_ska: Callable[..., bytes]) -> None:
+    files = {
+        'skeleton.bin': (
+            '00007892', make_skeleton(0x77, (-1, 0, 0, 1), (_OTHER, _IDENTITY, _ARM, _ARM))),
+        'larger.bin': ('00007892',
+                       make_skeleton(0x77, (-1, 0, 0, 1, 0),
+                                     (_OTHER, _IDENTITY, _ARM, _ARM, _OTHER))),
+        'unrelated.bin': ('00007892', make_skeleton(0x99, (-1,), (_OTHER,))),
+        'bank.bin': ('0000694b',
+                     make_bank(0x77, [(2, 0, _bank_motion(make_ska))],
+                               [('wave', 0, 2.0, 0x02010000, 0x16000001)])),
+        'short.bin': ('0000694b', make_bank(0x77, [(1, 0, make_ska((0x20,)))], [])),
+        'stranger.bin': ('0000694b', make_bank(0x99, [(1, 0, make_ska((0x20,)))], []))
+    }
+    lines = ['name\tmagic\toffset\tsize\tnameHash\ttypeId', 'missing.bin\t0\t0\t0\t0\t0000694b']
+    for name, (type_id, data) in files.items():
+        (directory / name).write_bytes(data)
+        lines.append(f'{name}\t0\t0\t{len(data)}\t0\t{type_id}')
+    (directory / '_manifest.tsv').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+
+
+def test_convert_writes_a_skinned_glb(make_skinned_mesh: Callable[..., bytes],
+                                      make_skeleton: Callable[...,
+                                                              bytes], make_bank: Callable[...,
+                                                                                          bytes],
+                                      make_ska: Callable[..., bytes], tmp_path: Path) -> None:
+    _populate(tmp_path, make_skeleton, make_bank, make_ska)
+    convert(_write(tmp_path, 'm.npm7', make_skinned_mesh(_BONES, _SUBMESHES)))
+    document, blob = _glb(tmp_path / 'm.glb')
+    assert [node['name']
+            for node in document['nodes']] == ['m', 'bone_00', 'root', 'bone_02', 'arm']
+    assert document['scenes'][0]['nodes'] == [0, 1]
+    assert document['nodes'][1]['children'] == [2, 3]
+    assert document['nodes'][4]['translation'] == pytest.approx([-2, 0, 0])
+    assert document['nodes'][4]['rotation'] == pytest.approx([0, 0, math.sqrt(0.5), math.sqrt(0.5)])
+    assert document['skins'][0]['joints'] == [1, 2, 3, 4]
+    (primitive,) = document['meshes'][0]['primitives']
+    attributes = primitive['attributes']
+    assert _accessor_bytes(document, blob, attributes['JOINTS_0']) == bytes(
+        (3, 0, 0, 0, 3, 1, 0, 0, 1, 0, 0, 0))
+    assert _accessor_bytes(document, blob, attributes['WEIGHTS_0']) == bytes(
+        (255, 0, 0, 0, 128, 127, 0, 0, 255, 0, 0, 0))
+    assert struct.unpack('<9f', _accessor_bytes(
+        document, blob, attributes['POSITION'])) == pytest.approx((1, 0, 0, 0, 1, 0, 0, 0, 1))
+    (animation,) = document['animations']
+    assert animation['name'] == 'wave'
+    targets = [(c['target']['node'], c['target']['path']) for c in animation['channels']]
+    assert targets == [(1, 'rotation'), (1, 'translation'), (2, 'rotation'), (2, 'translation'),
+                       (3, 'rotation'), (4, 'rotation'), (4, 'translation')]
+    counts = [document['accessors'][s['output']]['count'] for s in animation['samplers']]
+    assert counts == [1, 1, 1, 1, 1, 2, 2]
+    rotations = struct.unpack('<8f',
+                              _accessor_bytes(document, blob, animation['samplers'][5]['output']))
+    assert rotations == pytest.approx((0, 0, 0, 1, 0, 0, math.sqrt(0.5), math.sqrt(0.5)), abs=1e-4)
+
+
+def test_convert_skinned_glb_without_a_skeleton(make_skinned_mesh: Callable[..., bytes],
+                                                tmp_path: Path) -> None:
+    convert(_write(tmp_path, 'm.npm7', make_skinned_mesh(_BONES, _SUBMESHES[:1])))
+    document, blob = _glb(tmp_path / 'm.glb')
+    assert [node['name'] for node in document['nodes']] == ['m', 'root', 'arm']
+    assert 'animations' not in document
+    attributes = document['meshes'][0]['primitives'][0]['attributes']
+    assert _accessor_bytes(document, blob, attributes['JOINTS_0']) == bytes(
+        (1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0))
+
+
+def test_convert_skinned_glb_with_many_bones(make_skinned_mesh: Callable[..., bytes],
+                                             tmp_path: Path) -> None:
+    bones = [('root', -1, _IDENTITY), *((f'b{i}', 0, _IDENTITY) for i in range(1, 300))]
+    palette = bytes((0, 0))
+    convert(
+        _write(
+            tmp_path, 'm.npm7',
+            make_skinned_mesh(bones,
+                              ((_SKIN_FORMAT, 24, _SKINNED_VERTICES, 3, (0, 1, 2), palette),))))
+    document, _blob = _glb(tmp_path / 'm.glb')
+    joints = document['meshes'][0]['primitives'][0]['attributes']['JOINTS_0']
+    assert document['accessors'][joints]['componentType'] == 5123
+
+
+@pytest.mark.parametrize('submeshes', [_SUBMESHES[1:2], _SUBMESHES[2:]])
+def test_convert_skips_a_glb_without_skinned_triangles(make_skinned_mesh: Callable[..., bytes],
+                                                       submeshes: Sequence[Any],
+                                                       tmp_path: Path) -> None:
+    convert(_write(tmp_path, 'm.npm7', make_skinned_mesh(_BONES, submeshes)))
+    assert not (tmp_path / 'm.glb').exists()
+
+
+def test_convert_stops_at_a_short_submesh(make_skinned_mesh: Callable[..., bytes],
+                                          tmp_path: Path) -> None:
+    convert(
+        _write(tmp_path, 'm.npm7',
+               make_skinned_mesh(_BONES, (_SUBMESHES[0], _SUBMESHES[0]), block_size=0x10)))
+    document, _blob = _glb(tmp_path / 'm.glb')
+    assert len(document['meshes'][0]['primitives']) == 1

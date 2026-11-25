@@ -28,25 +28,44 @@ Status (honest, current state):
   the PH block differs from NPM7 (known TODO), and the PPM7 ``.obj`` may be
   garbage. Its ``.json`` metadata is fine.
 * Wii **RPM7** shares the big-endian PH path with NPM7.
+* An NPM7 mesh skinned to a skeleton is also written as ``<stem>.glb`` with a glTF skin and the
+  motions of :py:mod:`~dade.monopoly08.motion` banks as animations. Rigid submeshes are skipped.
 """
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple, TypedDict
+from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict
+import logging
 import math
 import re
 import struct
 
+import numpy as np
+
 from dade.common import io
+from dade.common.gltf import (
+    ARRAY_BUFFER,
+    FLOAT,
+    TRIANGLES,
+    UNSIGNED_BYTE,
+    UNSIGNED_SHORT,
+    GLBDocument,
+)
 from dade.common.json import write_json
 from dade.common.utils import align_up
 
+from .motion import bank_character, parse_bank, parse_skeleton
+
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from dade.common.typing import Endian
 
+    from .motion import Clip, Skeleton
+
 __all__ = ('EXTENSIONS', 'convert')
+
+log = logging.getLogger(__name__)
 
 EXTENSIONS = frozenset({'.npm7', '.ppm7', '.rpm7', '.spm7'})
 """File extensions handled by this module.
@@ -125,6 +144,15 @@ _PH_MARKER = b'PH'
 
 :meta hide-value:
 """
+_PH_HEADER = 0x50
+_INDEX_HEADER = 0x10
+_SKELETON_TYPE = '00007892'
+_BANK_TYPE = '0000694b'
+_IBM_TOLERANCE = 1e-4
+_SKIN_FORMAT = 0x20000
+_NO_PARENT = 0xFF
+_BYTE_JOINTS = 0xFF
+_INFLUENCES = 4
 
 
 def _endian(b: bytes) -> Endian:
@@ -493,6 +521,268 @@ def _write_obj(submeshes: Sequence[_Submesh],
     return path
 
 
+class _MeshSkeleton(NamedTuple):
+    """The bones an NPM7 mesh is skinned to, and each submesh's bone palette."""
+
+    inverse_binds: tuple[tuple[float, ...], ...]
+    """Each bone's inverse bind matrix, 16 floats for row vectors with the translation last."""
+    names: tuple[str, ...]
+    """Each bone's name."""
+    palettes: dict[int, bytes]
+    """Bone indices a vertex of a submesh selects from, keyed by the submesh's ``PH`` offset."""
+    parents: tuple[int, ...]
+    """Each bone's parent index, or ``-1`` for a root."""
+
+
+class _SkinnedBlock(NamedTuple):
+    """One decoded skinned submesh."""
+
+    joints: list[tuple[int, ...]]
+    """Four mesh bone indices per vertex."""
+    positions: list[tuple[float, ...]]
+    """Vertex positions."""
+    tris: list[tuple[int, int, int]]
+    """Triangles as indices into :py:attr:`positions`."""
+    weights: list[tuple[int, ...]]
+    """Four weights per vertex out of 255."""
+
+
+def _mesh_skeleton(b: bytes) -> _MeshSkeleton | None:
+    # The record at 0xA0 is the skeleton: a bone count, the offset of a table of name offsets,
+    # the offset of the parent bytes, and the inverse bind matrices from 0x20. Submeshes hang off
+    # a three-level table at 0x80, the innermost record giving the PH offset and its palette.
+    if b[:4] != b'NPM7' or not (at := io.u32(b, 0xA0, endian='>')):
+        return None
+    count = io.u16(b, at, endian='>')
+    names_at, parents_at = io.u32(b, at + 4, endian='>'), io.u32(b, at + 8, endian='>')
+    names = tuple(io.read_cstring(b, io.u32(b, names_at + 4 * i, endian='>')) for i in range(count))
+    parents = tuple(-1 if p == _NO_PARENT else p for p in b[parents_at:parents_at + count])
+    inverse = struct.unpack_from(f'>{16 * count}f', b, at + 0x20)
+    palettes: dict[int, bytes] = {}
+    groups, groups_at = io.u32(b, 0x80, endian='>'), io.u32(b, 0x84, endian='>')
+    for group in range(groups):
+        record = groups_at + 0x30 * group
+        for part in range(io.u32(b, record + 0x20, endian='>')):
+            part_at = io.u32(b, record + 0x24, endian='>') + 0x30 * part
+            for sub in range(io.u32(b, part_at + 0x20, endian='>')):
+                sub_at = io.u32(b, part_at + 0x28, endian='>') + 0x30 * sub
+                if palette := io.u32(b, sub_at + 0x28, endian='>'):
+                    palettes[io.u32(b, sub_at + 0x20,
+                                    endian='>')] = b[palette + 1:palette + 1 + b[palette]]
+    return _MeshSkeleton(tuple(inverse[16 * i:16 * i + 16] for i in range(count)), names, palettes,
+                         parents)
+
+
+def _skinned_blocks(b: bytes, skeleton: _MeshSkeleton) -> Iterator[_SkinnedBlock]:
+    # Unlike the OBJ path, the PH header is read exactly: the format word at +0x08, the stride at
+    # +0x1C, the vertex count at +0x2C, and the index buffer at +0x20 from the geometry start,
+    # its count at +0x28. A format with bit 0x20000 stores four (palette index, weight) pairs in
+    # bytes 8 to 15 of a vertex. Submeshes without them are rigid, and are skipped.
+    hdr = _mesh_header(b)
+    geometry = io.u32(b, 0x0C, endian='>')
+    at = geometry
+    while at + _PH_HEADER <= len(b) and b[at:at + 2] == _PH_MARKER:
+        stride, count = b[at + 0x1C], io.u16(b, at + 0x2C, endian='>')
+        if io.u32(b, at + 8, endian='>') & _SKIN_FORMAT and (palette := skeleton.palettes.get(at)):
+            indices = geometry + io.u32(b, at + 0x20, endian='>') + _INDEX_HEADER
+            vertices = range(at + _PH_HEADER, at + _PH_HEADER + count * stride, stride)
+            yield _SkinnedBlock([
+                tuple(palette[b[v + k]] if b[v + k + 1] else 0 for k in range(8, 16, 2))
+                for v in vertices
+            ], [_decode_pos(hdr, v) for v in vertices],
+                                _strips(hdr, indices,
+                                        indices + 2 * io.u32(b, at + 0x28, endian='>'), count),
+                                [tuple(b[v + 9:v + 16:2]) for v in vertices])
+        if (size := io.u32(b, at + 0x0C, endian='>')) < _PH_HEADER:
+            break
+        at += size
+
+
+def _manifest(directory: Path, type_id: str) -> Iterator[Path]:
+    manifest = directory / '_manifest.tsv'
+    if not manifest.is_file():
+        return
+    for line in manifest.read_text(encoding='utf-8').splitlines()[1:]:
+        name, *_, kind = line.split('\t')
+        if kind == type_id and (directory / name).is_file():
+            yield directory / name
+
+
+def _match_bones(mesh: _MeshSkeleton, skeleton: Skeleton) -> list[int] | None:
+    # A mesh lists its bones in its own order, a skeleton breadth first, and only the inverse
+    # bind matrices identify a bone in both. Equal matrices are told apart by their parents.
+    mapping: list[int] = []
+    for bone, inverse in enumerate(mesh.inverse_binds):
+        candidates = [
+            index for index, other in enumerate(skeleton.inverse_binds)
+            if index not in mapping and max(
+                abs(x - y) for x, y in zip(inverse, other, strict=True)) < _IBM_TOLERANCE
+        ]
+        if not candidates:
+            return None
+        parent = mapping[mesh.parents[bone]] if mesh.parents[bone] >= 0 else -1
+        mapping.append(
+            next((index for index in candidates if skeleton.parents[index] == parent),
+                 candidates[0]))
+    return mapping
+
+
+def _find_skeleton(directory: Path, mesh: _MeshSkeleton) -> tuple[Skeleton, list[int]] | None:
+    found: list[tuple[Skeleton, list[int]]] = []
+    for path in _manifest(directory, _SKELETON_TYPE):
+        skeleton = parse_skeleton(path.read_bytes())
+        if (mapping := _match_bones(mesh, skeleton)) is not None:
+            found.append((skeleton, mapping))
+    # A mesh with one identity-bound bone matches any skeleton; the smallest is the likeliest.
+    return min(found, key=lambda pair: len(pair[0].parents), default=None)
+
+
+def _clips(directory: Path, skeleton: Skeleton) -> list[Clip]:
+    clips: list[Clip] = []
+    for path in _manifest(directory, _BANK_TYPE):
+        data = path.read_bytes()
+        if bank_character(data) != skeleton.character:
+            continue
+        clips.extend(clip for clip in parse_bank(data).clips if all(
+            len(frame) == len(skeleton.parents) for frame in clip.frames))
+    return clips
+
+
+def _rest_pose(inverse_binds: Sequence[Sequence[float]],
+               parents: Sequence[int]) -> list[tuple[list[float], list[float]]]:
+    # Row-vector matrices: a bone's world matrix is its inverse bind inverted, and its local
+    # matrix is that times the parent's inverse bind. glTF uses column vectors, the transpose.
+    matrices = np.array(inverse_binds, dtype=np.float64).reshape(-1, 4, 4)
+    world = np.linalg.inv(matrices)
+    out = []
+    for bone, parent in enumerate(parents):
+        local = world[bone] @ matrices[parent] if parent >= 0 else world[bone]
+        out.append((local[3, :3].tolist(), _quaternion(local[:3, :3].T)))
+    return out
+
+
+def _quaternion(rotation: Any) -> list[float]:
+    m = np.asarray(rotation, dtype=np.float64)
+    w = math.sqrt(max(0.0, 1.0 + m[0, 0] + m[1, 1] + m[2, 2])) / 2
+    x = math.copysign(math.sqrt(max(0.0, 1.0 + m[0, 0] - m[1, 1] - m[2, 2])) / 2, m[2, 1] - m[1, 2])
+    y = math.copysign(math.sqrt(max(0.0, 1.0 - m[0, 0] + m[1, 1] - m[2, 2])) / 2, m[0, 2] - m[2, 0])
+    z = math.copysign(math.sqrt(max(0.0, 1.0 - m[0, 0] - m[1, 1] + m[2, 2])) / 2, m[1, 0] - m[0, 1])
+    norm = math.sqrt(x * x + y * y + z * z + w * w)
+    return [x / norm, y / norm, z / norm, w / norm]
+
+
+def _add_clip(document: GLBDocument, clip: Clip, joints: Sequence[int]) -> None:
+    times = [(index * clip.frame_time,) for index in range(len(clip.frames))]
+    full = document.floats(times, 'SCALAR', bounds=True)
+    first = document.floats(times[:1], 'SCALAR', bounds=True)
+    channels: list[dict[str, Any]] = []
+    samplers: list[dict[str, Any]] = []
+    for bone, node in enumerate(joints):
+        rotations: list[tuple[float, ...]] = []
+        for frame in clip.frames:
+            q = np.array(frame[bone].rotation, dtype=np.float64)
+            q /= np.linalg.norm(q)
+            if rotations and float(np.dot(q, rotations[-1])) < 0:
+                q = -q
+            rotations.append(tuple(q.tolist()))
+        tracks: list[tuple[str, list[tuple[float, ...]], str]] = [('rotation', rotations, 'VEC4')]
+        if clip.frames[0][bone].translation is not None:
+            tracks.append(('translation', [
+                frame[bone].translation or (0.0, 0.0, 0.0) for frame in clip.frames
+            ], 'VEC3'))
+        for target, values, kind in tracks:
+            still = all(value == values[0] for value in values)
+            samplers.append({
+                'input': first if still else full,
+                'interpolation': 'LINEAR',
+                'output': document.floats(values[:1] if still else values, kind)
+            })
+            channels.append({
+                'sampler': len(samplers) - 1,
+                'target': {
+                    'node': node,
+                    'path': target
+                }
+            })
+    document.animations.append({'channels': channels, 'name': clip.name, 'samplers': samplers})
+
+
+def _primitive(document: GLBDocument, block: _SkinnedBlock, mapping: Sequence[int],
+               joint_count: int) -> dict[str, Any]:
+    wide = joint_count > _BYTE_JOINTS
+    joints = [
+        mapping[joint] if weight else 0
+        for vertex, weights in zip(block.joints, block.weights, strict=True)
+        for joint, weight in zip(vertex, weights, strict=True)
+    ]
+    return {
+        'attributes': {
+            'JOINTS_0':
+                document.accessor(struct.pack(f'<{len(joints)}{"H" if wide else "B"}', *joints),
+                                  ARRAY_BUFFER,
+                                  componentType=UNSIGNED_SHORT if wide else UNSIGNED_BYTE,
+                                  count=len(block.joints),
+                                  type='VEC4'),
+            'POSITION':
+                document.floats(block.positions, 'VEC3', bounds=True, target=ARRAY_BUFFER),
+            'WEIGHTS_0':
+                document.accessor(bytes(w for vertex in block.weights for w in vertex),
+                                  ARRAY_BUFFER,
+                                  componentType=UNSIGNED_BYTE,
+                                  count=len(block.weights),
+                                  normalized=True,
+                                  type='VEC4')
+        },
+        'indices': document.indices([i for tri in block.tris for i in tri]),
+        'mode': TRIANGLES
+    }
+
+
+def _write_skinned_glb(src: Path, b: bytes) -> None:
+    if (mesh := _mesh_skeleton(b)
+        ) is None or not (blocks := [block for block in _skinned_blocks(b, mesh) if block.tris]):
+        return
+    names, parents, inverse_binds = list(mesh.names), mesh.parents, mesh.inverse_binds
+    mapping = list(range(len(names)))
+    clips: list[Clip] = []
+    if (found := _find_skeleton(src.parent, mesh)) is not None:
+        skeleton, mapping = found
+        by_bone = dict(zip(mapping, names, strict=True))
+        names = [by_bone.get(index, f'bone_{index:02d}') for index in range(len(skeleton.parents))]
+        parents, inverse_binds = skeleton.parents, skeleton.inverse_binds
+        clips = _clips(src.parent, skeleton)
+    document = GLBDocument()
+    document.nodes.append({'mesh': 0, 'name': src.stem, 'skin': 0})
+    joints = [1 + index for index in range(len(names))]
+    for index, (name, (translation, rotation)) in enumerate(
+            zip(names, _rest_pose(inverse_binds, parents), strict=True)):
+        node: dict[str, Any] = {'name': name, 'rotation': rotation, 'translation': translation}
+        if children := [joints[child] for child, parent in enumerate(parents) if parent == index]:
+            node['children'] = children
+        document.nodes.append(node)
+    # The stored row-vector matrices, read column by column, are glTF's column-vector inverses.
+    document.skins.append({
+        'inverseBindMatrices':
+            document.accessor(b''.join(struct.pack('<16f', *m) for m in inverse_binds),
+                              componentType=FLOAT,
+                              count=len(inverse_binds),
+                              type='MAT4'),
+        'joints':
+            joints
+    })
+    document.meshes.append({
+        'name': src.stem,
+        'primitives': [_primitive(document, block, mapping, len(names)) for block in blocks]
+    })
+    for clip in clips:
+        _add_clip(document, clip, joints)
+    out = src.with_suffix('.glb')
+    out.write_bytes(
+        document.finish(
+            src.stem, [0, *(joints[index] for index, parent in enumerate(parents) if parent < 0)]))
+    log.debug('Wrote `%s` with %d joints and %d animations.', out, len(names), len(clips))
+
+
 def convert(path: str | Path) -> tuple[Path, Path, int, int]:
     """
     Convert an EA mesh (``.npm7``/``.ppm7``/``.spm7``/``.rpm7``) to OBJ + JSON.
@@ -500,6 +790,11 @@ def convert(path: str | Path) -> tuple[Path, Path, int, int]:
     Writes ``<stem>.obj`` (plus ``<stem>.mtl`` when materials are present) and
     ``<stem>.json`` next to the source file. Dispatch is by the 4-byte magic;
     the underlying parsers already handle all four platform variants.
+
+    An Xbox 360 mesh skinned to a skeleton is also written as ``<stem>.glb`` with a glTF skin.
+    The skeleton resource in the same pack directory whose inverse bind matrices include the
+    mesh's supplies the joint hierarchy, and every motion bank there animating that skeleton
+    adds its motions as glTF animations.
 
     Parameters
     ----------
@@ -531,6 +826,7 @@ def convert(path: str | Path) -> tuple[Path, Path, int, int]:
     json_path = stem.with_suffix('.json')
     meta = _parse_meta(b)
     write_json(json_path, meta, sort_keys=True, trailing_newline=False)
+    _write_skinned_glb(src, b)
 
     n_verts = sum(len(s['verts']) for s in sm)
     n_tris = sum(len(s['tris']) for s in sm)
