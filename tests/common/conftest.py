@@ -35,18 +35,33 @@ def make_ps2_icon() -> Callable[..., bytes]:
     Returns
     -------
     collections.abc.Callable[..., bytes]
-        A callable taking keyword ``vertices``, ``anim``, and ``magic`` values.
+        A callable taking keyword ``vertices``, ``anim``, ``magic``, ``frames``, ``texture``, and
+        ``texture_type`` values. ``frames`` are pairs of a shape and its keys of time and weight,
+        and ``texture`` is the bytes after the animation, a raw texture by default.
     """
-    def build(*, vertices: int = 3, anim: int = 1, magic: int = 0x10000) -> bytes:
+    def build(*,
+              vertices: int = 3,
+              anim: int = 1,
+              magic: int = 0x10000,
+              frames: tuple[tuple[int, tuple[tuple[float, float], ...]],
+                            ...] = ((0, ((0.0, 1.0),)),),
+              texture: bytes | None = None,
+              texture_type: int = 7) -> bytes:
         stride = 8 * anim + 16
-        out = bytearray(struct.pack('<4I', magic, anim, 0, 0) + struct.pack('<I', vertices))
+        out = bytearray(struct.pack('<3IfI', magic, anim, texture_type, 1.0, vertices))
         for i in range(vertices):
             vertex = bytearray(stride)
-            struct.pack_into('<3h', vertex, 0, i * 100, i * 200, i * 300)
+            for shape in range(anim):
+                struct.pack_into('<3h', vertex, 8 * shape, i * 100, i * 200 + shape * 4096, i * 300)
             struct.pack_into('<3h', vertex, 8 * anim, 0, 4096, 0)
             struct.pack_into('<2h', vertex, 8 * anim + 8, i * 512, i * 256)
+            struct.pack_into('<4B', vertex, 8 * anim + 12, 128, 64, 0, 128)
             out += vertex
-        return bytes(out) + bytes(range(256)) * (0x8000 // 256)
+        out += struct.pack('<2If2I', 1, 120, 1.0, 0, len(frames))
+        for shape, keys in frames:
+            out += struct.pack('<2I', shape, len(keys))
+            out += b''.join(struct.pack('<2f', *key) for key in keys)
+        return bytes(out) + (bytes(range(256)) * (0x8000 // 256) if texture is None else texture)
 
     return build
 

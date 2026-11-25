@@ -35,6 +35,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- PS2 3D icons (`.ico`, `.icn`) are written as GLB, and as glTF with the texture beside it as PNG,
+  instead of OBJ. Each animation shape is a morph target, the frames are a glTF animation of the
+  target weights, the vertex colours are retained, and compressed textures are decoded.
 - `Iso9660Image` is renamed `ISO9660Image`, and the THPS2 `Pkr*` classes are renamed `PKR*`.
 - An Amplitude `.tnm` is decoded as a `Rnd::TransAnim` keyframe animation, and its JSON sidecar
   lists every rotation, translation, and scale key. A FreQuency `.tnm` is scanned for references as
@@ -64,6 +67,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Max Payne 2 models split into per-material batches now index each batch's own vertices and draw
   each batch with its material. Model images are found whatever the case of their directory.
+
+### Removed
+
+- The OBJ output of PS2 3D icons, and `dade.common.ps2_icon.ps2_icon_decompose`.
 
 ## [0.3.0] - 2026-11-23
 
