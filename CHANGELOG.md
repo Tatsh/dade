@@ -11,6 +11,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `dade itgps2 extract` converts the PlayStation 2 discs of _In The Groove_ and of the _In The
+  Groove 2_ beta to a StepMania data tree. Songs come out as simfiles with WAV music and MPEG
+  movies, neither re-encoded, beside the courses, themes, note skins, and characters.
 - `dade thps2pc skater2glb` writes each skater model as a skinned GLB with its embedded textures,
   one joint per body part, and its clips as glTF animations. Outfits and low-detail models are given
   the clips the game shares between skaters, matched by part name.

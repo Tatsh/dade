@@ -51,6 +51,7 @@ Run `dade --help` to list the games, and `dade <game> --help` to list a game's s
 | `dade frequency`  | _FreQuency_ (PS2)                            | Harmonix                      |
 | `dade i76`        | _Interstate '76_ and _Interstate '82_        | Activision                    |
 | `dade incoming`   | _Incoming_ (PC and Dreamcast)                | Rage Software / Interplay     |
+| `dade itgps2`     | _In The Groove_ and _In The Groove 2_ (PS2)  | Roxor Games / RedOctane       |
 | `dade jubeatplus` | _jubeat plus_ (iOS)                          | Konami                        |
 | `dade marmalade`  | Any Marmalade SDK title (Derbh, IwResGroup)  | Marmalade / Ideaworks         |
 | `dade maxpayne`   | _Max Payne_ and _Max Payne 2_ (PC)           | Remedy Entertainment          |
@@ -130,6 +131,60 @@ matching `--*-path` option:
 - [spvr2png](https://github.com/nextgeniuspro/spvr2png) converts Sega Dreamcast PVR images to PNG.
 - [unshield](https://github.com/twogood/unshield) unpacks the InstallShield `DATA1.CAB` cabinet on
   the PC disc.
+
+## In The Groove (PlayStation 2)
+
+```shell
+dade itgps2 extract "In The Groove 2 (Beta).iso" -o out/
+```
+
+Convert the PlayStation 2 disc of _In The Groove_ or of the _In The Groove 2_ beta to the data of a
+StepMania installation. A source is an ISO image or a directory of the disc's files. The release
+is recognised from its executable, and each is written to a separate directory (`itg` or
+`itg2-beta`) with StepMania's layout: `Songs`, `Courses`, `Themes`, `NoteSkins`, `Characters`,
+`BackgroundEffects`, `BackgroundTransitions`, and `Data`.
+
+The game is StepMania built for the console, and it mounts every `PCKF` pack under `PCKS` over one
+file system. Most files in the packs are already StepMania's formats and are copied. The two
+releases arrange the pack directory differently. _In The Groove_ records a size, an offset, and a
+path, and _In The Groove 2_ adds an unpacked size and a flag for a deflate stream. Both are
+recognised.
+
+| Input                         | Output                                                  |
+| ----------------------------- | ------------------------------------------------------- |
+| `.av` music and movie streams | WAV of the 16-bit PCM, and the MPEG-1 video as `.mpg`   |
+| `.sm` simfiles                | `.sm` playing the WAV and the movie                     |
+| `*.png.orig`                  | The arcade original under the name without `.orig`      |
+| Reduced copies of an original | Omitted (the palette `.bmp` and the `(640x480)` `.png`) |
+| `*.sm.orig`                   | Copied. The arcade simfile, beside the PS2 one          |
+| `X (sample).av` previews      | WAV under `Samples`, the song's path less `Songs`       |
+| Memory card icons (`.ico`)    | GLB, and glTF with the texture beside it as PNG         |
+| `Cache`                       | Omitted. StepMania rebuilds it                          |
+| Any other file                | Copied                                                  |
+
+Neither stream is re-encoded. The PCM is written to WAV as stored, and the video is moved into an
+MPEG program stream. The PS2 simfiles play their background from `_movie`, the video of the song's
+stream, placed at beat -10000 and played in step with the music by the engine. StepMania starts a
+movie when its entry is reached, and the entry is moved to the beat on which the music starts.
+Several _In The Groove 2_ beta simfiles were shipped with unresolved CVS merge conflicts, and the
+first side of each, the PS2 revision, is retained.
+
+The _In The Groove_ songs on the _In The Groove 2_ beta disc are arcade simfiles. Their music is an
+OGG and their backgrounds are the arcade's shared movie clips, and the disc stores neither. Each has
+an `.av` stream of the same name instead, and the simfile is rewritten to play its WAV and, when the
+stream has video, its movie.
+
+`ffmpeg` must be on `PATH` or given with `--ffmpeg-path` to write the movies. Pass `--no-video` to
+skip them, `-j`/`--jobs` to set the number of streams converted at once, and `--debug` for verbose
+logging.
+
+The themes are written as the console shipped them. They refer to screens only the PS2 build has
+(the memory card screens, for one), and StepMania on a computer does not run them unmodified.
+
+StepMania plays a song's preview from its music at `#SAMPLESTART`, and the preview streams the PS2
+build plays instead are written outside `Songs`. The memory card icons are PS2 3D icons. Each
+animation shape is a morph target and the frames are an animation of the target weights, and an icon
+without a texture is coloured by its vertices.
 
 ## Amplitude and FreQuency
 

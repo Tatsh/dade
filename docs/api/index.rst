@@ -23,6 +23,7 @@ and :doc:`../utilities`.
    harmonix
    i76
    incoming
+   itgps2
    jubeatplus
    marmalade
    maxpayne

@@ -18,6 +18,7 @@ _GAMES = (
     'frequency',
     'i76',
     'incoming',
+    'itgps2',
     'jubeatplus',
     'marmalade',
     'maxpayne',
