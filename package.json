@@ -63,7 +63,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sass": "^1.83.0",
-    "sass-loader": "^17.0.1",
+    "sass-loader": "^17.1.1",
     "terser-webpack-plugin": "^5.3.11",
     "ts-loader": "^9.5.2",
     "typescript": "^7.0.2",
